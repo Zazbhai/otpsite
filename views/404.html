@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script>
+    const savedTheme = localStorage.getItem("otp_theme");
+    if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+  </script>
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center">
+  <div>
+    <div style="font-size:80px;line-height:1;margin-bottom:16px">⚡</div>
+    <h1 style="font-size:80px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1">404</h1>
+    <p style="color:var(--text-2);font-size:18px;margin:16px 0 32px">Page not found. Maybe it went to get an OTP.</p>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <a href="/" class="btn btn-primary">← Home</a>
+      <a href="/dashboard" class="btn btn-secondary">Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

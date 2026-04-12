@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/users" class="active">Users</a>
+      <a href="/admin/orders">Orders</a><button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item active">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+  <main class="main-content">
+    <div class="resp-header">
+      <h1 style="font-size:24px">Users <span id="total-count" class="text-muted text-sm"></span></h1>
+    </div>
+    <!-- Filters -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+      <div class="search-bar" style="max-width:300px">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="user-search" placeholder="Search username…" oninput="debounceSearch()" />
+      </div>
+      <select id="ban-filter" onchange="loadUsers(1)" style="width:auto;padding:8px 12px">
+        <option value="">All Users</option>
+        <option value="false">Active</option>
+        <option value="true">Banned</option>
+      </select>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table class="mobile-card-table">
+          <thead><tr><th>User</th><th>Email</th><th>Balance</th><th>Orders</th><th>Spent</th><th>Status</th><th>Joined</th><th style="min-width:180px"></th></tr></thead>
+          <tbody id="users-body">
+            <script>document.currentScript.outerHTML = skeletonTable(8, 10);</script>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pagination" class="mt-4"></div>
+  </main>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-backdrop" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Edit User</h3><button class="modal-close" onclick="closeModal('edit-modal')">✕</button></div>
+    <input type="hidden" id="edit-uid" />
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Balance ($)</label>
+        <input type="number" id="edit-balance" step="0.01" min="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea id="edit-notes" rows="3" placeholder="Admin notes…"></textarea>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveUser()">Save</button>
+        <button class="btn btn-danger" id="ban-btn" onclick="toggleBan()">Ban</button>
+        <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Deposit Modal -->
+<div class="modal-backdrop" id="deposit-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Add Balance</h3><button class="modal-close" onclick="closeModal('deposit-modal')">✕</button></div>
+    <input type="hidden" id="dep-uid" />
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" id="dep-amount" step="0.01" min="0.01" /></div>
+      <div class="form-group"><label class="form-label">Note</label><input type="text" id="dep-note" placeholder="Reason…" /></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-success" onclick="doDeposit()">Add Funds</button>
+        <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadUsers();
+  }
+  
+  let editUser = null, searchTimeout = null;
+
+  function debounceSearch() { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => loadUsers(1), 400); }
+
+  async function loadUsers(page = 1) {
+    const q = document.getElementById("user-search").value.trim();
+    const banned = document.getElementById("ban-filter").value;
+    const params = new URLSearchParams({ page, limit: 30 });
+    if (q) params.append("q", q);
+    if (banned !== "") params.append("banned", banned);
+    const tbody = document.getElementById("users-body");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+    try {
+      const data = await API.get(`/api/admin/users?${params}`);
+      const countEl = document.getElementById("total-count");
+      if (countEl) countEl.textContent = `(${data.total.toLocaleString()})`;
+      tbody.innerHTML = data.users.map(u => `
+        <tr onclick="window.location.href='/admin/users/${u._id}'" style="cursor:pointer">
+          <td data-label="User">
+            <div style="display:flex;align-items:center;gap:10px">
+              ${userAvatar(u, 32)}
+              <div>
+                <div style="font-weight:700">${u.username}</div>
+                <div style="font-size:11px;color:var(--text-3)">ID: ${u._id.slice(-6).toUpperCase()}</div>
+              </div>
+            </div>
+          </td>
+          <td data-label="Email" class="text-sm">${u.email || '—'}</td>
+          <td data-label="Balance" style="color:var(--success);font-weight:700">${fmtMoney(u.balance)}</td>
+          <td data-label="Orders">${u.total_orders || 0}</td>
+          <td data-label="Spent">${fmtMoney(u.total_spent || 0)}</td>
+          <td data-label="Status">${u.is_banned ? '<span class="badge badge-expired">Banned</span>' : '<span class="badge badge-active">Active</span>'}</td>
+          <td data-label="Joined" class="text-xs text-muted">${fmtDateShort(u.createdAt)}</td>
+          <td style="text-align:right">
+            <div style="display:flex;gap:6px;justify-content:flex-end">
+              <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openDeposit('${u._id}')">💰 Add</button>
+              <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openEditById('${u._id}')">✏️ Edit</button>
+            </div>
+          </td>
+        </tr>`).join("") || `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-3)">No users found</td></tr>`;
+      renderPagination("pagination", data.page, data.pages, loadUsers);
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  async function openEditById(id) {
+    try {
+      const users = await API.get("/api/admin/users");
+      const u = (users.users || users).find(x => x._id.toString() === id);
+      if (!u) return;
+      
+      editUser = u;
+      setVal("edit-uid", u._id);
+      setVal("edit-balance", u.balance);
+      setVal("edit-notes", u.notes || "");
+      
+      const banBtn = document.getElementById("ban-btn");
+      if (banBtn) {
+        banBtn.textContent = u.is_banned ? "Unban" : "Ban";
+        banBtn.className = u.is_banned ? "btn btn-success" : "btn btn-danger";
+      }
+      openModal("edit-modal");
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+  function openDeposit(uid) {
+    document.getElementById("dep-uid").value = uid;
+    document.getElementById("dep-amount").value = "";
+    document.getElementById("dep-note").value = "";
+    openModal("deposit-modal");
+  }
+  async function saveUser() {
+    const uid = document.getElementById("edit-uid").value;
+    const balance = parseFloat(document.getElementById("edit-balance").value);
+    const notes = document.getElementById("edit-notes").value;
+    try {
+      await API.patch(`/api/admin/users/${uid}`, { balance, notes });
+      toast("User updated", "success"); closeModal("edit-modal"); loadUsers();
+    } catch (e) { toast(e.message, "error"); }
+  }
+  async function toggleBan() {
+    const uid = document.getElementById("edit-uid").value;
+    try {
+      await API.patch(`/api/admin/users/${uid}`, { is_banned: !editUser.is_banned });
+      toast(editUser.is_banned ? "User unbanned" : "User banned", "success");
+      closeModal("edit-modal"); loadUsers();
+    } catch (e) { toast(e.message, "error"); }
+  }
+  async function doDeposit() {
+    const uid = document.getElementById("dep-uid").value;
+    const amount = parseFloat(document.getElementById("dep-amount").value);
+    const description = document.getElementById("dep-note").value;
+    if (!amount || amount <= 0) return toast("Invalid amount", "error");
+    try {
+      await API.post("/api/admin/transactions/deposit", { user_id: uid, amount, description });
+      toast(`Added $${amount.toFixed(2)} to user`, "success"); closeModal("deposit-modal"); loadUsers();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  async function loginAsUser(uid) {
+    if (!(await uiConfirm("Are you sure you want to login as this user? This will overwrite your current admin session in this tab."))) return;
+    try {
+      const data = await API.post(`/api/admin/users/${uid}/login-as`);
+      saveAuth(data.token, data.user);
+      toast("Successfully logged in as user. Redirecting...", "success");
+      setTimeout(() => window.location.href = "/dashboard", 1000);
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

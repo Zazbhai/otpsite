@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transactions — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/transactions" class="active">Transactions</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item active">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+  <main class="main-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <h1 style="font-size:24px">Transactions <span id="total-count" class="text-muted text-sm"></span></h1>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      <button class="btn btn-primary btn-sm" onclick="setFilter('all',this)">All</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('deposit',this)">Deposits</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('purchase',this)">Purchases</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('refund',this)">Refunds</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('bonus',this)">Bonuses</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>User ID</th><th>Amount</th><th>Balance After</th><th>Description</th><th>Order</th><th>Date</th></tr></thead>
+          <tbody id="tx-body"><tr><td colspan="7" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pagination" class="mt-4"></div>
+  </main>
+</div>
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadTx();
+  }
+  let txFilter = "all";
+
+  async function loadTx(page = 1) {
+    const tbody = document.getElementById("tx-body");
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+    const data = await API.get(`/api/admin/transactions?type=${txFilter}&page=${page}&limit=50`);
+    document.getElementById("total-count").textContent = `(${data.total.toLocaleString()})`;
+    tbody.innerHTML = data.transactions.map(t => `
+      <tr>
+        <td>${txBadge(t.type)}</td>
+        <td class="mono text-sm"><a href="/admin/users/${t.user_id}" style="color:var(--accent)">${t.user_id}</a></td>
+        <td>${txSign(t.type, t.amount)}</td>
+        <td class="mono text-sm">${fmtMoney(t.balance_after)}</td>
+        <td class="text-sm">${t.description || "—"}</td>
+        <td class="mono text-xs">${t.order_id || "—"}</td>
+        <td class="text-muted text-sm">${fmtDate(t.createdAt)}</td>
+      </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No transactions</td></tr>`;
+    renderPagination("pagination", data.page, data.pages, window.loadTx);
+  }
+
+  function setFilter(type, btn) {
+    txFilter = type;
+    document.querySelectorAll("[onclick^='setFilter']").forEach(b => b.className = "btn btn-secondary btn-sm");
+    btn.className = "btn btn-primary btn-sm";
+    loadTx(1);
+  }
+  init();
+</script>
+</body>
+</html>

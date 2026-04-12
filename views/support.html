@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <div class="nav-links" id="nav-links">
+      <a href="/pricing">Pricing</a><a href="/how-it-works">How It Works</a>
+      <a href="/support" class="active">Support</a><span id="nav-auth"></span>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div style="padding-top:64px">
+  <section class="section">
+    <div class="container container-sm">
+      <div class="section-header"><h1>Support & <span class="gradient-text">Contact</span></h1><p>We're here to help. Average response time: under 2 hours.</p></div>
+      <div class="grid-2 mb-8">
+        <a href="https://t.me/RapidOTPSupport" target="_blank" class="card card-glow" style="text-align:center;padding:36px">
+          <div style="font-size:48px;margin-bottom:12px">💬</div>
+          <h3>Telegram Support</h3>
+          <p class="text-muted text-sm" style="margin-top:8px">Chat with our support team directly on Telegram. Fastest response.</p>
+          <div class="btn btn-primary mt-8" style="display:inline-flex">Open @RapidOTPSupport</div>
+        </a>
+        <a href="https://t.me/RapidOTPbot" target="_blank" class="card card-glow" style="text-align:center;padding:36px">
+          <div style="font-size:48px;margin-bottom:12px">🤖</div>
+          <h3>Telegram Bot</h3>
+          <p class="text-muted text-sm" style="margin-top:8px">Use /help inside the bot for quick answers to common questions.</p>
+          <div class="btn btn-secondary mt-8" style="display:inline-flex">Open @RapidOTPbot</div>
+        </a>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:20px">Common Issues</h3>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="card" style="background:var(--surface-2);border-radius:var(--r-md)">
+            <strong>❓ I didn't receive my OTP</strong>
+            <p class="text-sm text-muted" style="margin-top:6px">Wait up to 3 minutes then contact support. If 20 minutes pass with no OTP, you'll be automatically refunded.</p>
+          </div>
+          <div class="card" style="background:var(--surface-2);border-radius:var(--r-md)">
+            <strong>💰 My deposit hasn't arrived</strong>
+            <p class="text-sm text-muted" style="margin-top:6px">Crypto deposits typically take 1–30 minutes. If it's been over an hour, contact support with your transaction hash.</p>
+          </div>
+          <div class="card" style="background:var(--surface-2);border-radius:var(--r-md)">
+            <strong>🔒 Login not working</strong>
+            <p class="text-sm text-muted" style="margin-top:6px">Make sure you're using Telegram login correctly. Clear your browser cache and try again. Contact support if the issue persists.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<footer>
+  <div class="container">
+    <div class="footer-bottom">
+      <p>© 2025 Rapid OTP. All rights reserved.</p>
+      <div style="display:flex;gap:16px"><a href="/" style="color:var(--text-3)">Home</a><a href="/terms" style="color:var(--text-3)">Terms</a></div>
+    </div>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+<script>
+  const navAuth = document.getElementById("nav-auth");
+  if (isLoggedIn()) navAuth.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
+  else navAuth.innerHTML = '<a href="/?login=1" class="btn btn-primary btn-sm">Login</a>';
+</script>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    :root {
+      --accent-glow: rgba(59, 130, 246, 0.18);
+    }
+
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(at 0% 0%, rgba(255,255,255,0.05) 0px, transparent 30%),
+                        radial-gradient(at 100% 100%, rgba(255,255,255,0.05) 0px, transparent 25%);
+      color: var(--text);
+    }
+
+    .main-content {
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dashboard-header {
+      margin-bottom: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .dashboard-header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: var(--grad-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    .dashboard-header p {
+      color: var(--text-3);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .refresh-pulse {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 15px var(--success); }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card-pro {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card-pro:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: var(--border-2);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18), 0 0 15px rgba(59, 130, 246, 0.12);
+    }
+
+    .stat-card-pro::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.05) 100%);
+      pointer-events: none;
+    }
+
+    .stat-card-pro .stat-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--surface-2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-card-pro .stat-label {
+      color: var(--text-3);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .stat-card-pro .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-2);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .analytics-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      backdrop-filter: blur(12px);
+    }
+    
+    @media (max-width: 600px) {
+      .analytics-card { padding: 16px; border-radius: 20px; }
+      .dashboard-header h1 { font-size: 24px; }
+    }
+
+    .analytics-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+    }
+
+    .service-row {
+      padding: 16px;
+      background: var(--surface-2);
+      border-radius: 16px;
+      border: 1px solid transparent;
+      transition: all 0.3s;
+      margin-bottom: 12px;
+    }
+
+    .service-row:hover {
+      background: var(--surface);
+      border-color: var(--border);
+      transform: translateX(4px);
+    }
+
+    .action-badge {
+      padding: 12px 20px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .action-badge:hover {
+      background: var(--surface);
+      border-color: var(--border-2);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
+    }
+
+    /* Staggered entry for cards */
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+    .stagger-4 { animation-delay: 0.4s; }
+
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin" class="active">Dashboard</a>
+      <a href="/admin/users">Users</a>
+      <a href="/admin/orders">Orders</a>
+      <a href="/admin/analytics">Analytics</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Overview</div>
+    <a href="/admin" class="sidebar-item active">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Users</div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Operations</div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Config</div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div class="resp-header">
+      <div>
+        <h1>System Overview</h1>
+        <p><span class="refresh-pulse"></span> <span id="last-updated">Synchronizing data…</span></p>
+      </div>
+      <div style="display:flex; gap:12px">
+        <button class="btn btn-secondary btn-sm" onclick="window.location.href='/dashboard'">User View</button>
+        <button class="btn btn-primary btn-sm" onclick="loadStats()">🔄 Force Sync</button>
+      </div>
+    </div>
+
+    <!-- Primary Metrics -->
+    <div class="grid-4">
+      <div class="stat-card-pro stagger-1">
+        <div class="stat-icon">👥</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value" id="s-users">—</div>
+        <div class="stat-trend" style="color:var(--success)">Today: <span id="s-users-today">0</span></div>
+      </div>
+      <div class="stat-card-pro stagger-2">
+        <div class="stat-icon">📈</div>
+        <div class="stat-label">Market Leader</div>
+        <div class="stat-value" id="s-top-service" style="font-size:22px; color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">—</div>
+        <div class="stat-trend" style="color:var(--accent)">Top Performer</div>
+      </div>
+      <div class="stat-card-pro stagger-3">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Daily Revenue</div>
+        <div class="stat-value" style="color:var(--success)" id="s-revenue">—</div>
+        <div class="stat-trend" style="color:var(--success)">Deposits: <span id="s-deposits-today">0</span></div>
+      </div>
+      <div class="stat-card-pro stagger-4">
+        <div class="stat-icon">⚖️</div>
+        <div class="stat-label">Success Rate</div>
+        <div class="stat-value" style="color:var(--warning)" id="s-success-rate">—</div>
+        <div class="stat-trend" style="color:var(--warning)">Global Avg</div>
+      </div>
+    </div>
+
+    <!-- Liability & Distribution -->
+    <div class="grid-2" style="margin-bottom: 32px;">
+      <div class="analytics-card">
+        <h3 style="color:var(--warning)">💎 System Financial Health</h3>
+        <div style="display:flex; flex-direction:column; gap:20px; margin-top:10px">
+          <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px">
+            <div class="stat-label" style="font-size:11px">Combined User Balances</div>
+            <div class="stat-value" id="s-liability" style="font-size:24px; color:var(--danger)">—</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px">
+            <div class="stat-label" style="font-size:11px">Lifetime Gross Volume</div>
+            <div class="stat-value" id="s-volume" style="font-size:24px; color:var(--success)">—</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px">
+            <div class="stat-label" style="font-size:11px">Total System Deposits</div>
+            <div class="stat-value" id="s-deposits-total" style="font-size:24px; color:var(--accent)">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="analytics-card">
+        <h3>📊 Order Distribution</h3>
+        <div style="height: 320px; position: relative;">
+          <canvas id="order-pie-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="analytics-card">
+        <h3>📈 Growth & Trends</h3>
+        <div style="height: 320px; position: relative;">
+          <canvas id="growth-chart"></canvas>
+        </div>
+      </div>
+      <div class="analytics-card">
+        <h3>🔥 Most Popular Services</h3>
+        <p class="text-xs text-muted" style="margin-top:-16px; margin-bottom:20px">Market demand analysis for top 6 items</p>
+        <div id="top-services" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="/js/main.js"></script>
+<script>
+  let growthChart = null;
+  let orderPieChart = null;
+
+  async function init() {
+    const ok = await requireAdmin();
+    if (!ok) return;
+    loadStats();
+    setInterval(loadStats, 60000);
+  }
+
+  async function loadStats() {
+    const updateLabel = document.getElementById("last-updated");
+    updateLabel.textContent = "Processing System Data…";
+    
+    try {
+      const data = await API.get("/api/admin/analytics");
+      
+      const m = data.metrics;
+      document.getElementById("s-users").textContent   = m.totalUsers.toLocaleString();
+      document.getElementById("s-users-today").textContent = "+" + m.todayUsers;
+      document.getElementById("s-revenue").textContent = fmtMoney(m.todayRevenue);
+      document.getElementById("s-deposits-today").textContent = fmtMoney(m.todayDeposits);
+      document.getElementById("s-success-rate").textContent = Math.round(m.successRate * 100) + "%";
+      
+      // Top Service Spotlight
+      if (data.topServices && data.topServices.length > 0) {
+        document.getElementById("s-top-service").textContent = data.topServices[0]._id;
+      }
+
+      document.getElementById("s-liability").textContent = fmtMoney(m.totalLiability);
+      document.getElementById("s-volume").textContent = fmtMoney(m.lifetimeVolume);
+      document.getElementById("s-deposits-total").textContent = fmtMoney(m.totalDeposits);
+      
+      updateLabel.textContent = "Data Synchronized • " + new Date().toLocaleTimeString();
+
+      renderChart(data.graphs.userGrowth);
+      renderTopServices(data.topServices);
+      renderPieChart(data.orderDistribution);
+      
+    } catch (e) {
+      console.error("Admin stats error:", e);
+      toast(e.message, "error");
+      updateLabel.textContent = "Cloud Sync Error.";
+    }
+  }
+
+  function renderPieChart(dist) {
+    if (!dist) return;
+    const ctx = document.getElementById("order-pie-chart").getContext("2d");
+    const labels = dist.map(d => d._id.charAt(0).toUpperCase() + d._id.slice(1));
+    const values = dist.map(d => d.count);
+    
+    const colors = { completed: '#22c55e', active: '#3b82f6', refunded: '#ef4444', expired: '#94a3b8', cancelled: '#64748b' };
+    const bgColors = dist.map(d => colors[d._id] || '#cbd5e1');
+
+    if (orderPieChart) orderPieChart.destroy();
+    
+    const totalCount = values.reduce((a, b) => a + b, 0);
+
+    orderPieChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: bgColors, borderWidth: 0, hoverOffset: 12 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 20, font: { size: 12, weight: '600' }, usePointStyle: true } },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            padding: 12,
+            borderRadius: 8,
+            callbacks: {
+              label: (item) => {
+                const val = item.raw;
+                const perc = ((val / totalCount) * 100).toFixed(1);
+                return ` ${val} (${perc}%)`;
+              }
+            }
+          }
+        },
+        cutout: '72%',
+        animation: { animateRotate: true, animateScale: true }
+      },
+      plugins: [{
+        id: 'centerText',
+        beforeDraw(chart) {
+          const { ctx, width, height } = chart;
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          const isMobile = window.innerWidth < 640;
+
+          // Total Label
+          ctx.font = isMobile ? '700 10px Inter, sans-serif' : '700 12px Inter, sans-serif';
+          ctx.fillStyle = '#64748b';
+          ctx.fillText('TOTAL orders', width / 2, height / 2 - (isMobile ? 8 : 12));
+          
+          // Count Value
+          ctx.font = isMobile ? '800 20px Inter, sans-serif' : '800 28px Inter, sans-serif';
+          ctx.fillStyle = '#fff';
+          ctx.fillText(totalCount.toLocaleString(), width / 2, height / 2 + (isMobile ? 10 : 14));
+          ctx.restore();
+        }
+      }]
+    });
+  }
+
+  function renderChart(growthData) {
+    const labels = growthData.map(d => d._id);
+    const values = growthData.map(d => d.count);
+    const ctx = document.getElementById("growth-chart").getContext("2d");
+    
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+    if (growthChart) growthChart.destroy();
+    growthChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: "New Registrations",
+          data: values,
+          borderColor: "#3b82f6",
+          backgroundColor: gradient,
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointBackgroundColor: "#fff",
+          pointBorderColor: "#3b82f6",
+          pointBorderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            titleColor: '#fff',
+            bodyColor: '#cbd5e1',
+            padding: 12,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.1)'
+          }
+        },
+        scales: {
+          x: { 
+            grid: { display: false }, 
+            ticks: { color: "#64748b", font: { size: 11, weight: '600' } } 
+          },
+          y: { 
+            beginAtZero: true,
+            grid: { color: "rgba(255,255,255,0.03)" }, 
+            ticks: { color: "#64748b", font: { size: 11, weight: '600' } } 
+          },
+        },
+      },
+    });
+  }
+
+  function renderTopServices(services) {
+    const topEl = document.getElementById("top-services");
+    if (!services || !services.length) {
+      topEl.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-3)">No active data yet.</div>';
+      return;
+    }
+
+    const max = Math.max(...services.map(s => s.count), 1);
+    topEl.innerHTML = services.map(s => `
+      <div class="service-row">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px; align-items: flex-end">
+          <div style="display:flex; flex-direction:column; gap:2px">
+            <span style="font-size:15px; font-weight:700; color:#fff">${s._id}</span>
+            <span style="font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px">Highest Traffic</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px; font-weight:700; color:var(--accent)">${s.count} orders</div>
+            <div style="font-size:12px; font-weight:600; color:var(--success)">${fmtMoney(s.revenue)}</div>
+          </div>
+        </div>
+        <div style="height:6px;border-radius:10px;background:rgba(255,255,255,0.05); overflow:hidden">
+          <div style="height:100%;border-radius:10px;background:var(--grad-primary);width:${(s.count/max*100).toFixed(1)}%; box-shadow: 0 0 10px rgba(59,130,246,0.5)"></div>
+        </div>
+      </div>`).join("");
+  }
+
+  init();
+</script>
+</body>
+</html>

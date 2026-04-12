@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Readymade Accounts — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+    .cat-card { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; transition: border-color .2s, transform .15s; }
+    .cat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .cat-card.inactive { opacity: .55; }
+    .cat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .cat-icon { font-size: 30px; }
+    .cat-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .stock-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .stock-ok    { background: rgba(16,185,129,.15); color: #10b981; }
+    .stock-empty { background: rgba(239,68,68,.15);  color: #ef4444; }
+    .cred-mono { font-family: monospace; background: var(--bg-2); padding: 4px 8px; border-radius: var(--r-sm); font-size: 12px; word-break: break-all; flex: 1; }
+
+    /* Toggle Switch */
+    .toggle-wrap { display:flex; align-items:center; gap:14px; background:var(--bg-1); border:1px solid var(--border); border-radius:var(--r-lg); padding:14px 20px; }
+    .toggle-switch { position:relative; display:inline-block; width:52px; height:28px; cursor:pointer; }
+    .toggle-switch input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; inset:0; background:var(--surface-2); border-radius:28px; transition:.3s; }
+    .toggle-slider:before { content:""; position:absolute; height:20px; width:20px; left:4px; bottom:4px; background:#fff; border-radius:50%; transition:.3s; }
+    input:checked + .toggle-slider { background:var(--accent); }
+    input:checked + .toggle-slider:before { transform:translateX(24px); }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a>
+      <a href="/admin/readymade" class="active">Accounts</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item active">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- ── Categories View ─────────────────────────────────────── -->
+    <div id="view-categories">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+        <h1 style="font-size:24px;margin:0">🗂️ Readymade Accounts</h1>
+        <button class="btn btn-primary" onclick="openCatModal()">+ New Category</button>
+      </div>
+
+      <!-- Global Feature Toggle -->
+      <div class="toggle-wrap mb-8" id="toggle-bar">
+        <div>
+          <div style="font-weight:700;font-size:15px">Feature Status</div>
+          <div class="text-muted text-sm">When OFF, the Accounts page is hidden from all users.</div>
+        </div>
+        <label class="toggle-switch" style="margin-left:auto" title="Toggle readymade accounts">
+          <input type="checkbox" id="feature-toggle" onchange="toggleFeature(this)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span id="toggle-label" class="font-bold text-sm" style="min-width:36px">…</span>
+      </div>
+
+      <!-- Category Grid -->
+      <div id="cat-grid" class="cat-grid">
+        <div style="text-align:center;padding:48px;grid-column:1/-1"><div class="spinner" style="margin:0 auto"></div></div>
+      </div>
+    </div>
+
+    <!-- ── Accounts Panel View ─────────────────────────────────── -->
+    <div id="view-accounts" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="showCategories()">← Back</button>
+        <h2 id="panel-title" style="margin:0;font-size:20px"></h2>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="openBulkModal()">📋 Add Accounts</button>
+          <button class="btn btn-secondary btn-sm" id="filter-btn" onclick="toggleFilter()">Filter: Available</button>
+        </div>
+      </div>
+
+      <!-- Inline add single account -->
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group" style="flex:1;min-width:200px;margin:0">
+            <label class="form-label" style="margin-bottom:6px">Quick Add Single Account</label>
+            <input type="text" id="quick-cred" placeholder="email@example.com:password123" style="font-family:monospace;width:100%" />
+          </div>
+          <div class="form-group" style="flex:0 0 200px;margin:0">
+            <label class="form-label" style="margin-bottom:6px">Notes (optional)</label>
+            <input type="text" id="quick-notes" placeholder="Region, plan, etc." style="width:100%" />
+          </div>
+          <button class="btn btn-success" style="height:42px;white-space:nowrap" onclick="quickAdd()">+ Add</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Credentials</th><th>Notes</th><th>Status</th><th>Sold</th><th style="min-width:60px"></th></tr></thead>
+            <tbody id="accounts-body">
+              <tr><td colspan="5" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-backdrop" id="cat-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="cat-modal-title">New Category</h3>
+      <button class="modal-close" onclick="closeModal('cat-modal')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Category Name *</label>
+        <input type="text" id="cat-name" placeholder="e.g. Netflix Premium" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input type="text" id="cat-desc" placeholder="Shown to users under the category name" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Icon (emoji)</label>
+          <input type="text" id="cat-icon" placeholder="🎬" maxlength="8" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price per account (₹) *</label>
+          <input type="number" id="cat-price" placeholder="199" step="0.01" min="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sort Order (lower = shown first)</label>
+        <input type="number" id="cat-sort" placeholder="0" />
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="cat-active" checked style="width:18px;height:18px;accent-color:var(--accent)" />
+        <label for="cat-active" class="form-label" style="margin:0;cursor:pointer">Active (visible to users)</label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
+        <button id="delete-cat-btn" class="btn btn-danger" style="display:none" onclick="deleteCategory()">Delete Category</button>
+        <button class="btn btn-secondary" onclick="closeModal('cat-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Add Modal -->
+<div class="modal-backdrop" id="bulk-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3>Bulk Add Accounts</h3>
+      <button class="modal-close" onclick="closeModal('bulk-modal')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <p class="text-muted text-sm">Paste credentials — one account per line. Each line becomes a separate account in stock.</p>
+      <textarea id="bulk-creds" rows="12" placeholder="email1@example.com:password1&#10;email2@example.com:password2&#10;user3:pass3" style="font-family:monospace;font-size:13px;line-height:1.6"></textarea>
+      <div id="bulk-preview" class="text-sm" style="color:var(--accent);font-weight:600"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="doBulkAdd()">✅ Add Accounts</button>
+        <button class="btn btn-secondary" onclick="closeModal('bulk-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadFeatureToggle();
+    loadCategories();
+  }
+  
+  init();
+  let editingCat  = null;
+  let showAll     = false;
+
+  /* ── Feature Toggle ─────────────────────────────────────────── */
+  async function loadFeatureToggle() {
+    try {
+      const { enabled } = await API.get('/api/admin/readymade/settings');
+      document.getElementById('feature-toggle').checked = enabled;
+      document.getElementById('toggle-label').textContent = enabled ? 'ON' : 'OFF';
+      document.getElementById('toggle-label').style.color = enabled ? 'var(--success)' : 'var(--danger)';
+    } catch(e) {}
+  }
+
+  async function toggleFeature(el) {
+    try {
+      const { enabled } = await API.post('/api/admin/readymade/settings/toggle');
+      el.checked = enabled;
+      document.getElementById('toggle-label').textContent = enabled ? 'ON' : 'OFF';
+      document.getElementById('toggle-label').style.color = enabled ? 'var(--success)' : 'var(--danger)';
+      toast(`Readymade Accounts feature is now ${enabled ? 'ENABLED' : 'DISABLED'}`, enabled ? 'success' : 'error');
+    } catch(e) {
+      toast(e.message, 'error');
+      el.checked = !el.checked; // revert on error
+    }
+  }
+
+  /* ── Categories ─────────────────────────────────────────────── */
+  async function loadCategories() {
+    const grid = document.getElementById('cat-grid');
+    try {
+      const cats = await API.get('/api/admin/readymade/categories');
+      if (!cats.length) {
+        grid.innerHTML = `<div class="text-muted text-center" style="grid-column:1/-1;padding:36px">No categories yet. Click <strong>+ New Category</strong> to get started.</div>`;
+        return;
+      }
+      grid.innerHTML = cats.map(c => `
+        <div class="cat-card${c.is_active ? '' : ' inactive'}">
+          <div class="cat-card-top" style="padding:22px 18px 16px;text-align:center;background:linear-gradient(160deg,rgba(59,130,246,.06) 0%,transparent 70%);border-bottom:1px solid var(--border)">
+            <span style="font-size:40px;display:block;margin-bottom:8px">${c.icon || '🗂️'}</span>
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">${c.name}</div>
+            <div style="font-size:12px;color:var(--text-3);min-height:16px">${c.description || '—'}</div>
+            <div style="font-size:22px;font-weight:800;color:var(--accent);margin-top:10px">₹${Number(c.price).toFixed(2)}</div>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <span class="stock-badge ${c.available > 0 ? 'stock-ok' : 'stock-empty'}">
+                ${c.available > 0 ? `✓ ${c.available} in stock` : '✗ Out of stock'}
+              </span>
+              <span class="stock-badge" style="background:rgba(100,116,139,.1);color:var(--text-2)">${c.sold} sold</span>
+              ${!c.is_active ? '<span class="badge badge-expired" style="font-size:11px">Inactive</span>' : ''}
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary btn-sm" style="flex:1" onclick="openAccounts('${c._id}','${c.name.replace(/'/g,"\\'")}','${(c.icon||'🗂️').replace(/'/g,"\\'")}')">
+                📂 Manage Accounts
+              </button>
+              <button class="btn btn-secondary btn-sm" title="Edit category" onclick="openEditCat(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
+            </div>
+          </div>
+        </div>`).join('');
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  function openCatModal() {
+    editingCat = null;
+    document.getElementById('cat-modal-title').textContent = 'New Category';
+    document.getElementById('cat-name').value  = '';
+    document.getElementById('cat-desc').value  = '';
+    document.getElementById('cat-icon').value  = '🗂️';
+    document.getElementById('cat-price').value = '';
+    document.getElementById('cat-sort').value  = '0';
+    document.getElementById('cat-active').checked = true;
+    document.getElementById('delete-cat-btn').style.display = 'none';
+    openModal('cat-modal');
+    document.getElementById('cat-name').focus();
+  }
+
+  function openEditCat(c) {
+    editingCat = c;
+    document.getElementById('cat-modal-title').textContent = 'Edit Category';
+    document.getElementById('cat-name').value  = c.name;
+    document.getElementById('cat-desc').value  = c.description || '';
+    document.getElementById('cat-icon').value  = c.icon || '🗂️';
+    document.getElementById('cat-price').value = c.price;
+    document.getElementById('cat-sort').value  = c.sort_order || 0;
+    document.getElementById('cat-active').checked = c.is_active !== false;
+    document.getElementById('delete-cat-btn').style.display = 'inline-flex';
+    openModal('cat-modal');
+  }
+
+  async function saveCategory() {
+    const body = {
+      name:        document.getElementById('cat-name').value.trim(),
+      description: document.getElementById('cat-desc').value.trim(),
+      icon:        document.getElementById('cat-icon').value.trim() || '🗂️',
+      price:       parseFloat(document.getElementById('cat-price').value),
+      sort_order:  parseInt(document.getElementById('cat-sort').value) || 0,
+      is_active:   document.getElementById('cat-active').checked,
+    };
+    if (!body.name)         return toast('Category name is required', 'error');
+    if (isNaN(body.price))  return toast('Price is required', 'error');
+    try {
+      if (editingCat) {
+        await API.patch(`/api/admin/readymade/categories/${editingCat._id}`, body);
+        toast('Category updated ✓', 'success');
+      } else {
+        await API.post('/api/admin/readymade/categories', body);
+        toast('Category created ✓', 'success');
+      }
+      closeModal('cat-modal');
+      loadCategories();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function deleteCategory() {
+    if (!editingCat) return;
+    if (!(await uiConfirm(`Delete "${editingCat.name}"? This is permanent.`))) return;
+    try {
+      await API.del(`/api/admin/readymade/categories/${editingCat._id}`);
+      toast('Category deleted', 'success');
+      closeModal('cat-modal');
+      loadCategories();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  /* ── Accounts Panel ─────────────────────────────────────────── */
+  function openAccounts(id, name, icon) {
+    selectedCat = id;
+    document.getElementById('panel-title').innerHTML = `${icon} ${name}`;
+    document.getElementById('view-categories').style.display = 'none';
+    document.getElementById('view-accounts').style.display = 'block';
+    showAll = false;
+    document.getElementById('filter-btn').textContent = 'Filter: Available';
+    loadAccounts();
+  }
+
+  function showCategories() {
+    selectedCat = null;
+    document.getElementById('view-accounts').style.display = 'none';
+    document.getElementById('view-categories').style.display = 'block';
+    loadCategories();
+  }
+
+  function toggleFilter() {
+    showAll = !showAll;
+    document.getElementById('filter-btn').textContent = showAll ? 'Filter: All' : 'Filter: Available';
+    loadAccounts();
+  }
+
+  async function loadAccounts() {
+    const tbody = document.getElementById('accounts-body');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+    try {
+      const qs = showAll ? '' : '?status=available';
+      const data = await API.get(`/api/admin/readymade/categories/${selectedCat}/accounts${qs}`);
+      if (!data.accounts.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-3)">No accounts found. Add some above.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.accounts.map(a => `
+        <tr>
+          <td><span class="cred-mono">${a.credentials}</span></td>
+          <td class="text-muted text-sm">${a.notes || '—'}</td>
+          <td>${a.status === 'available' ? '<span class="badge badge-active">Available</span>' : '<span class="badge badge-expired">Sold</span>'}</td>
+          <td class="text-muted text-sm">${a.sold_at ? fmtDateShort(a.sold_at) : '—'}</td>
+          <td>${a.status === 'available' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount('${a._id}')">🗑</button>` : ''}</td>
+        </tr>`).join('');
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function quickAdd() {
+    const cred  = document.getElementById('quick-cred').value.trim();
+    const notes = document.getElementById('quick-notes').value.trim();
+    if (!cred) return toast('Enter the credential first', 'error');
+    try {
+      await API.post(`/api/admin/readymade/categories/${selectedCat}/accounts/bulk`, { credentials: cred, notes: notes });
+      toast('Account added ✓', 'success');
+      document.getElementById('quick-cred').value  = '';
+      document.getElementById('quick-notes').value = '';
+      loadAccounts();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function deleteAccount(id) {
+    if (!(await uiConfirm('Delete this account credential? This cannot be undone.'))) return;
+    try {
+      await API.del(`/api/admin/readymade/accounts/${id}`);
+      toast('Account deleted', 'success');
+      loadAccounts();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  /* ── Bulk Add ───────────────────────────────────────────────── */
+  function openBulkModal() {
+    document.getElementById('bulk-creds').value = '';
+    document.getElementById('bulk-preview').textContent = '';
+    openModal('bulk-modal');
+    setTimeout(() => document.getElementById('bulk-creds').focus(), 150);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const ta = document.getElementById('bulk-creds');
+    if (ta) ta.addEventListener('input', () => {
+      const n = ta.value.split('\n').filter(l => l.trim()).length;
+      document.getElementById('bulk-preview').textContent = n ? `${n} account(s) ready to add` : '';
+    });
+  });
+
+  async function doBulkAdd() {
+    const creds = document.getElementById('bulk-creds').value;
+    if (!creds.trim()) return toast('Paste some credentials first', 'error');
+    try {
+      const res = await API.post(`/api/admin/readymade/categories/${selectedCat}/accounts/bulk`, { credentials: creds });
+      toast(`✅ Added ${res.added} account(s) successfully!`, 'success');
+      closeModal('bulk-modal');
+      loadAccounts();
+      // Update stock count on categories (if user goes back)
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  // ── Init ─────────────────────────────────────────────────────
+  loadFeatureToggle();
+  loadCategories();
+</script>
+</body>
+</html>

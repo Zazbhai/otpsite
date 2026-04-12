@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wallet — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <div class="nav-links" id="nav-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/dashboard/wallet" class="active">Wallet</a>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
+    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
+    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
+    <a href="/dashboard/wallet" class="sidebar-item active">💰 Wallet</a>
+    <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content" style="padding-bottom: 120px">
+    <h1 style="font-size:24px;margin-bottom:32px">Wallet</h1>
+
+    <!-- Balance Card -->
+    <div class="wallet-grid">
+      <div class="card" style="text-align:center;padding:36px;background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(99,102,241,0.1));border-color:rgba(59,130,246,0.3)">
+        <div style="font-size:13px;margin-bottom:8px;color:var(--text-2)">Available Balance</div>
+        <div style="font-size:42px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="wallet-balance">—</div>
+        <button class="btn btn-primary mt-8 w-full" onclick="openModal('deposit-modal')">+ Add Funds</button>
+      </div>
+      <div class="card" style="padding:28px">
+        <h3 style="margin-bottom:16px">Wallet Summary</h3>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Deposited</span><span id="total-deposited" class="text-success">—</span></div>
+          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Spent</span><span id="total-spent" class="text-danger">—</span></div>
+          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Refunds</span><span id="total-refunds" class="text-success">—</span></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Redeem Promo Card -->
+    <div class="card" style="margin-top:24px;background:rgba(59,130,246,0.05);border-style:dashed">
+      <h3 style="margin-bottom:12px;font-size:16px">🎟️ Redeem Promo Code</h3>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="promo-input" placeholder="Enter code (e.g. EXTRA50)" style="text-transform:uppercase" />
+        <button class="btn btn-primary" id="redeem-btn" onclick="redeemPromo()">Redeem</button>
+      </div>
+      <p class="text-xs text-muted mt-3">Enter a special code to get instant wallet credits.</p>
+    </div>
+
+    <!-- Transactions -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="tx-header">
+        <h3>Transaction History</h3>
+        <div class="tx-filters">
+          <button class="btn btn-primary btn-sm" onclick="setTxFilter('all',this)">All</button>
+          <button class="btn btn-secondary btn-sm" onclick="setTxFilter('deposit',this)">Deposits</button>
+          <button class="btn btn-secondary btn-sm" onclick="setTxFilter('purchase',this)">Purchases</button>
+          <button class="btn btn-secondary btn-sm" onclick="setTxFilter('refund',this)">Refunds</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Description</th><th>Amount</th><th>Balance After</th><th>Date</th></tr>
+          </thead>
+          <tbody id="tx-body">
+            <script>document.currentScript.outerHTML = skeletonTable(5, 8);</script>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pagination" class="mt-4"></div>
+  </main>
+</div>
+
+<!-- Deposit Modal -->
+<div class="modal-backdrop" id="deposit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Funds</h3>
+      <button class="modal-close" onclick="closeModal('deposit-modal')">✕</button>
+    </div>
+    <p class="text-sm text-muted" style="margin-bottom:20px">Contact support or use any of the payment methods below to top up your wallet.</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="padding:16px;display:flex;align-items:center;gap:14px">
+        <span style="font-size:28px">₿</span>
+        <div><div class="font-bold">Crypto</div><div class="text-xs text-muted">BTC, ETH, USDT, TON</div></div>
+        <a href="/support" class="btn btn-primary btn-sm" style="margin-left:auto">Contact</a>
+      </div>
+      <div class="card" style="padding:16px;display:flex;align-items:center;gap:14px">
+        <span style="font-size:28px">💬</span>
+        <div><div class="font-bold">Telegram Payment</div><div class="text-xs text-muted">Via @RapidOTPbot</div></div>
+        <a href="https://t.me/RapidOTPbot" target="_blank" class="btn btn-secondary btn-sm" style="margin-left:auto">Open Bot</a>
+      </div>
+      
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px">
+        <div class="form-group">
+          <label class="form-label">Redeem Promo Code</label>
+          <div style="display:flex;gap:10px">
+            <input type="text" id="promo-code" placeholder="ENTER CODE" class="form-input" style="text-transform:uppercase" />
+            <button class="btn btn-primary" onclick="redeemPromo()" id="redeem-btn">Verify</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+{
+  if (!requireLogin()) {}
+  let txFilter = "all", txPage = 1;
+
+  async function loadSummary() {
+    try {
+      const data = await API.get(`/api/user/wallet?page=1&limit=1000`);
+      document.getElementById("wallet-balance").textContent = fmtMoney(data.balance);
+      let deposited = 0, spent = 0, refunds = 0;
+      data.transactions.forEach(t => {
+        if (t.type === "deposit" || t.type === "bonus") deposited += t.amount;
+        if (t.type === "purchase") spent += Math.abs(t.amount);
+        if (t.type === "refund") refunds += t.amount;
+      });
+      document.getElementById("total-deposited").textContent = fmtMoney(deposited);
+      document.getElementById("total-spent").textContent = "-" + fmtMoney(spent);
+      document.getElementById("total-refunds").textContent = "+" + fmtMoney(refunds);
+    } catch (e) {}
+  }
+
+  async function redeemPromo() {
+    const code = document.getElementById("promo-input").value.trim();
+    if (!code) return toast("Please enter a code", "error");
+    
+    const btn = document.getElementById("redeem-btn");
+    btn.disabled = true;
+    btn.textContent = "Checking...";
+    
+    try {
+      const res = await API.post("/api/user/wallet/redeem-promo", { code });
+      toast(`Success! ${fmtMoney(res.amount)} added to your wallet.`, "success");
+      document.getElementById("promo-input").value = "";
+      loadWallet(); // Refresh balance and tx list
+    } catch (e) {
+      toast(e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Redeem";
+    }
+  }
+
+  async function loadWallet(page = 1) {
+    txPage = page;
+    const tbody = document.getElementById("tx-body");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+    try {
+      // Pass filter to API
+      const data = await API.get(`/api/user/wallet?page=${page}&limit=30&type=${txFilter}`);
+      document.getElementById("wallet-balance").textContent = fmtMoney(data.balance);
+
+      if (!data.transactions.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-3)">No transactions found</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.transactions.map(t => `
+        <tr>
+          <td>${txBadge(t.type)}</td>
+          <td class="text-sm">${t.description || "—"}</td>
+          <td>${txSign(t.type, t.amount)}</td>
+          <td class="mono text-sm">${fmtMoney(t.balance_after)}</td>
+          <td class="text-muted text-sm">${fmtDate(t.createdAt)}</td>
+        </tr>`).join("");
+      renderPagination("pagination", data.page, data.pages, "loadWallet");
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  window.setTxFilter = function(type, btn) {
+    txFilter = type;
+    document.querySelectorAll(".tx-filters .btn").forEach(b => {
+       b.classList.remove("btn-primary");
+       b.classList.add("btn-secondary");
+    });
+    btn.classList.remove("btn-secondary");
+    btn.classList.add("btn-primary");
+    loadWallet(1);
+  };
+
+  window.loadWallet = loadWallet;
+
+  window.redeemPromo = async function() {
+    const code = document.getElementById('promo-code').value.trim().toUpperCase();
+    if (!code) return toast('Please enter a code', 'error');
+    
+    const btn = document.getElementById('redeem-btn');
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+      const res = await API.post('/api/user/wallet/redeem-promo', { code });
+      toast(`Success! ₹${res.amount} added to your wallet.`, 'success');
+      document.getElementById('promo-code').value = '';
+      loadSummary();
+      loadWallet(1);
+      setTimeout(() => closeModal('deposit-modal'), 1500);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Verify';
+    }
+  };
+
+  loadSummary();
+  loadWallet();
+}
+</script>
+</body>
+</html>

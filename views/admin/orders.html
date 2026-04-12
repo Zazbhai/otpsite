@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orders — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/orders" class="active">Orders</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item active">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+  <main class="main-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <h1 style="font-size:24px">Orders <span id="total-count" class="text-muted text-sm"></span></h1>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="filter-btns">
+      <button class="btn btn-primary btn-sm" onclick="setFilter('all',this)">All</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('active',this)">⚡ Active</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('completed',this)">✅ Completed</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('refunded',this)">💰 Refunded</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('expired',this)">⌛ Expired</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order ID</th><th>User</th><th>Service</th><th>Phone</th><th>OTP</th><th>Cost</th><th>Status</th><th>Date</th><th></th></tr></thead>
+          <tbody id="orders-body">
+            <tr><td colspan="9" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pagination" class="mt-4"></div>
+  </main>
+</div>
+
+<!-- Order Edit Modal -->
+<div class="modal-backdrop" id="order-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Edit Order</h3><button class="modal-close" onclick="closeModal('order-modal')">✕</button></div>
+    <input type="hidden" id="o-id" />
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="o-status">
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+          <option value="refunded">Refunded (auto-refunds balance)</option>
+          <option value="expired">Expired</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Set OTP (manual)</label>
+        <input type="text" id="o-otp" placeholder="e.g. 483291" />
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveOrder()">Save</button>
+        <button class="btn btn-secondary" onclick="closeModal('order-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    window.loadOrders();
+  }
+  let currentFilter = "all";
+
+  window.loadOrders = async function(page = 1) {
+    const tbody = document.getElementById("orders-body");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+    try {
+      const url = `/api/admin/orders?status=${currentFilter}&page=${page}&limit=30`;
+      console.log("Loading orders from:", url);
+      const data = await API.get(url);
+      console.log("Orders response:", data);
+      document.getElementById("total-count").textContent = `(${data.total.toLocaleString()})`;
+      tbody.innerHTML = data.orders.map(o => `
+        <tr>
+          <td class="mono text-xs">${o.order_id}</td>
+          <td class="mono text-sm">${o.user_id}</td>
+          <td>${o.service_name}</td>
+          <td class="mono">${o.phone || "—"}</td>
+          <td class="mono font-bold" style="color:var(--accent)">${o.otp || "—"}</td>
+          <td>${fmtMoney(o.cost)}</td>
+          <td>${statusBadge(o.status)}</td>
+          <td class="text-muted text-sm">${fmtDateShort(o.createdAt)}</td>
+          <td><button class="btn btn-secondary btn-sm" onclick='openEdit(${JSON.stringify(o).replace(/'/g,"&#39;")})'>Edit</button></td>
+        </tr>`).join("") || `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-3)">No orders</td></tr>`;
+      renderPagination("pagination", data.page, data.pages, window.loadOrders);
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  window.setFilter = function(s, btn) {
+    currentFilter = s;
+    document.querySelectorAll("#filter-btns button").forEach(b => b.className = "btn btn-secondary btn-sm");
+    btn.className = "btn btn-primary btn-sm";
+    window.loadOrders(1);
+  }
+  window.openEdit = function(o) {
+    document.getElementById("o-id").value = o.order_id;
+    document.getElementById("o-status").value = o.status;
+    document.getElementById("o-otp").value = o.otp || "";
+    openModal("order-modal");
+  }
+  window.saveOrder = async function() {
+    const id = document.getElementById("o-id").value;
+    const status = document.getElementById("o-status").value;
+    const otp = document.getElementById("o-otp").value;
+    try {
+      await API.patch(`/api/admin/orders/${id}`, { status, otp: otp || undefined });
+      toast("Order updated", "success"); closeModal("order-modal"); window.loadOrders();
+    } catch (e) { toast(e.message, "error"); }
+  }
+  init();
+</script>
+</body>
+</html>

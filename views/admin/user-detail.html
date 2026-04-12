@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Detail — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/users" class="active">Users</a>
+      <a href="/admin/orders">Orders</a><button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item active">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <button class="btn btn-secondary btn-sm" onclick="history.back()">← Back</button>
+      <h1 style="font-size:24px;margin:0">User Details <span id="u-badge"></span></h1>
+    </div>
+
+    <!-- Spinner -->
+    <div id="loader" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></div>
+
+    <!-- Main Content -->
+    <div id="u-content" style="display:none;gap:24px" class="profile-grid">
+      <!-- Left Column: Avatar & Actions -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card" style="text-align:center;padding:32px">
+          <div id="u-avatar" style="display:flex;justify-content:center;margin-bottom:16px"></div>
+          <div id="u-name" style="font-size:20px;font-weight:700"></div>
+          <div id="u-username" class="text-muted text-sm" style="margin-bottom:8px"></div>
+          
+          <div class="badge" id="u-mode" style="margin:8px auto 0;display:inline-block"></div>
+
+          <div style="height:1px;background:var(--border);margin:24px 0"></div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn btn-primary w-full" onclick="loginAsUser()">🔑 Login As This User</button>
+            <button class="btn btn-secondary w-full" onclick="openDepositModal()">💰 Add Balance</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:16px">Admin Notes</h3>
+          <textarea id="u-notes" class="form-input" rows="4" placeholder="Private admin notes..." onchange="saveNotes()"></textarea>
+        </div>
+      </div>
+
+      <!-- Right Column: Details & Tables -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        
+        <!-- Info Grid -->
+        <div class="card" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">
+          <div>
+            <div class="text-sm text-muted">Email</div>
+            <div class="font-bold text-sm" id="u-email" style="word-break:break-all">—</div>
+          </div>
+          <div>
+            <div class="text-sm text-muted">Balance</div>
+            <div class="font-bold text-success" id="u-balance">—</div>
+          </div>
+          <div>
+            <div class="text-sm text-muted">Total Spent</div>
+            <div class="font-bold text-danger" id="u-spent">—</div>
+          </div>
+          <div>
+            <div class="text-sm text-muted">Orders</div>
+            <div class="font-bold" id="u-orders">—</div>
+          </div>
+          <div>
+            <div class="text-sm text-muted">ID</div>
+            <div class="font-bold text-xs mono" id="u-id" style="word-break:break-all">—</div>
+          </div>
+          <div>
+            <div class="text-sm text-muted">Status</div>
+            <div>
+              <button id="ban-btn" class="btn btn-sm" onclick="toggleBan()" style="margin-top:4px"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="tx-header">
+            <h3 style="margin:0">Recent Transactions</h3>
+          </div>
+          <div class="table-wrap">
+            <table class="mobile-card-table">
+              <thead><tr><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
+              <tbody id="tx-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="tx-header">
+            <h3 style="margin:0">Recent Orders</h3>
+          </div>
+          <div class="table-wrap">
+            <table class="mobile-card-table">
+              <thead><tr><th>Service</th><th>Phone</th><th>Cost</th><th>Status</th></tr></thead>
+              <tbody id="orders-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Deposit Modal -->
+<div class="modal-backdrop" id="deposit-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Add Balance</h3><button class="modal-close" onclick="closeModal('deposit-modal')">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" id="dep-amount" step="0.01" min="0.01" /></div>
+      <div class="form-group"><label class="form-label">Note</label><input type="text" id="dep-note" placeholder="Reason…" /></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-success" onclick="doDeposit()">Add Funds</button>
+        <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadUser();
+  }
+  
+  init();
+  
+  const userId = window.location.pathname.split("/").pop();
+  let userObj = null;
+
+  function orderBadge(status) {
+    if (status === "completed") return '<span class="badge badge-active">Completed</span>';
+    if (status === "active") return '<span class="badge badge-pending">Active</span>';
+    if (status === "expired") return '<span class="badge badge-expired">Expired</span>';
+    if (status === "cancelled") return '<span class="badge badge-expired">Cancelled</span>';
+    if (status === "refunded") return '<span class="badge badge-expired">Refunded</span>';
+    return `<span class="badge">${status}</span>`;
+  }
+
+  function txBadge(type) {
+    if (type === "deposit") return '<span class="badge badge-active">Deposit</span>';
+    if (type === "purchase") return '<span class="badge badge-pending">Purchase</span>';
+    if (type === "refund") return '<span class="badge badge-success">Refund</span>';
+    return `<span class="badge">${type}</span>`;
+  }
+
+  async function loadUser() {
+    try {
+      const data = await API.get(`/api/admin/users/${userId}`);
+      userObj = data.user;
+      
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("u-content").style.display = "grid";
+
+      // Left Col
+      document.getElementById("u-avatar").innerHTML = userAvatar({display_name: userObj.display_name, avatar_color: userObj.avatar_color}, 80);
+      document.getElementById("u-name").textContent = userObj.display_name || userObj.username;
+      
+      const un = document.getElementById("u-username");
+      if (userObj.username) {
+         un.innerHTML = `@${userObj.username}`;
+      } else {
+         un.innerHTML = `No username`;
+      }
+      
+      document.getElementById("u-mode").textContent = userObj.is_admin ? "👑 ADMIN" : "👤 USER";
+      document.getElementById("u-mode").className = userObj.is_admin ? "badge badge-pending" : "badge badge-active";
+
+      document.getElementById("u-notes").value = userObj.notes || "";
+
+      // Right Col Stats
+      document.getElementById("u-email").textContent = userObj.email || "No email";
+      document.getElementById("u-id").textContent = userObj._id || userObj.telegram_id;
+      document.getElementById("u-balance").textContent = fmtMoney(userObj.balance);
+      document.getElementById("u-spent").textContent = fmtMoney(userObj.total_spent);
+      document.getElementById("u-orders").textContent = userObj.total_orders;
+
+      // Ban Button
+      const banBtn = document.getElementById("ban-btn");
+      if(userObj.is_banned) {
+        banBtn.className = "btn btn-success btn-sm w-full";
+        banBtn.textContent = "Unban User";
+        document.getElementById("u-badge").innerHTML = `<span class="badge badge-expired" style="vertical-align:middle;margin-left:8px">BANNED</span>`;
+      } else {
+        banBtn.className = "btn btn-danger btn-sm w-full";
+        banBtn.textContent = "Ban User";
+        document.getElementById("u-badge").innerHTML = ``;
+      }
+
+        // Transactions
+        const txBody = document.getElementById("tx-body");
+        if(!data.recent_transactions.length) {
+          txBody.innerHTML = `<tr><td colspan="3" class="text-center text-muted" style="padding:24px">No transactions</td></tr>`;
+        } else {
+          txBody.innerHTML = data.recent_transactions.map(t => `
+            <tr>
+              <td data-label="Type">${txBadge(t.type)}</td>
+              <td data-label="Amount" class="mono ${t.amount>0?'text-success':'text-danger'}">${t.amount > 0 ? '+'+fmtMoney(t.amount) : fmtMoney(Math.abs(t.amount))}</td>
+              <td data-label="Date" class="text-muted text-sm">${fmtDateShort(t.createdAt)}</td>
+            </tr>
+          `).join("");
+        }
+  
+        // Orders
+        const orBody = document.getElementById("orders-body");
+        if(!data.recent_orders.length) {
+          orBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No orders</td></tr>`;
+        } else {
+          orBody.innerHTML = data.recent_orders.map(o => `
+            <tr onclick="window.location.href='/admin/orders/${o._id}'" style="cursor:pointer">
+              <td data-label="Service">${o.service_name}</td>
+              <td data-label="Phone" class="mono font-bold">${o.phone || '—'}</td>
+              <td data-label="Cost" class="text-danger">-${fmtMoney(o.cost)}</td>
+              <td data-label="Status">${orderBadge(o.status)}</td>
+            </tr>
+          `).join("");
+        }
+
+    } catch (e) {
+      toast("Error loading user details: " + e.message, "error");
+    }
+  }
+
+  async function loginAsUser() {
+    if (!(await uiConfirm("Are you sure you want to login as this user? This will overwrite your current admin session in this tab."))) return;
+    try {
+      const data = await API.post(`/api/admin/users/${userId}/login-as`);
+      saveAuth(data.token, data.user);
+      toast("Successfully logged in as user. Redirecting...", "success");
+      setTimeout(() => window.location.href = "/dashboard", 1000);
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+
+  function openDepositModal() { openModal("deposit-modal"); }
+  
+  async function doDeposit() {
+    const amount = parseFloat(document.getElementById("dep-amount").value);
+    const description = document.getElementById("dep-note").value;
+    if (!amount || amount <= 0) return toast("Invalid amount", "error");
+    try {
+      await API.post("/api/admin/transactions/deposit", { user_id: userId, amount, description });
+      toast(`Added balance successfully`, "success"); 
+      closeModal("deposit-modal"); 
+      loadUser();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  async function toggleBan() {
+    try {
+      await API.patch(`/api/admin/users/${userId}`, { is_banned: !userObj.is_banned });
+      toast(userObj.is_banned ? "User unbanned" : "User banned", "success");
+      loadUser();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  let notesTimeout;
+  function saveNotes() {
+    clearTimeout(notesTimeout);
+    notesTimeout = setTimeout(async () => {
+      try {
+        await API.patch(`/api/admin/users/${userId}`, { notes: document.getElementById("u-notes").value });
+        toast("Notes saved", "success");
+      } catch(e) {
+        toast("Failed to save notes", "error");
+      }
+    }, 1000);
+  }
+
+
+</script>
+</body>
+</html>

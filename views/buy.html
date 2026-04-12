@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buy Number — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+  <style>
+    .buy-container { max-width: 700px; margin: 0 auto; }
+    .buy-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 32px;
+      backdrop-filter: blur(12px);
+    }
+    .buy-header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .buy-header h2 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: var(--grad-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .buy-header p {
+      color: var(--text-2);
+      font-size: 14px;
+    }
+    .buy-steps {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .buy-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-3);
+      background: var(--surface-2);
+      transition: all 0.3s;
+    }
+    .buy-step.active {
+      background: var(--grad-primary);
+      color: #fff;
+    }
+    .buy-step.completed {
+      background: rgba(16,185,129,0.15);
+      color: var(--success);
+    }
+    .step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+    .dropdown-group {
+      margin-bottom: 20px;
+    }
+    .dropdown-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-2);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .dropdown-label .icon { font-size: 16px; }
+    .custom-select {
+      position: relative;
+      width: 100%;
+    }
+    .select-trigger {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-2);
+      border: 1px solid var(--border-2);
+      border-radius: var(--r-md);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .select-trigger:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    .select-trigger.placeholder {
+      color: var(--text-3);
+    }
+    .select-trigger .arrow {
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+    .custom-select.open .select-trigger .arrow {
+      transform: rotate(180deg);
+    }
+    .select-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: var(--bg-1);
+      border: 1px solid var(--border-2);
+      border-radius: var(--r-md);
+      box-shadow: var(--shadow-lg);
+      z-index: 100;
+      max-height: 280px;
+      overflow-y: auto;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s;
+    }
+    .custom-select.open .select-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .select-option {
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+      border-bottom: 1px solid var(--border);
+    }
+    .select-option:last-child { border-bottom: none; }
+    .select-option:hover {
+      background: var(--surface-2);
+    }
+    .select-option.selected {
+      background: rgba(59,130,246,0.1);
+      border-left: 3px solid var(--accent);
+    }
+    .option-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .option-icon { font-size: 24px; }
+    .option-info {}
+    .option-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .option-detail {
+      font-size: 12px;
+      color: var(--text-3);
+    }
+    .option-price {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 14px;
+    }
+    .option-price.affordable { color: var(--success); }
+    .option-price.expensive { color: var(--danger); }
+    .search-input {
+      width: 100%;
+      padding: 12px 16px 12px 40px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    .search-wrapper { position: relative; }
+    .search-wrapper .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+    }
+    .buy-summary {
+      background: var(--bg-2);
+      border: 1px solid var(--border-2);
+      border-radius: var(--r-md);
+      padding: 20px;
+      margin-top: 24px;
+    }
+    .summary-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { color: var(--text-2); font-size: 14px; }
+    .summary-value { font-weight: 600; color: var(--text); font-size: 14px; }
+    .summary-total {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 2px solid var(--border-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .summary-total .summary-label { font-weight: 700; font-size: 15px; color: var(--text); }
+    .summary-total .summary-value { font-size: 20px; font-weight: 900; color: var(--accent); }
+    .buy-btn {
+      width: 100%;
+      padding: 16px;
+      margin-top: 24px;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--r-md);
+      background: var(--grad-primary);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .buy-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(59,130,246,0.4);
+    }
+    .buy-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .buy-btn .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-3);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    /* New Service Grid Style */
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .service-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .service-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .service-icon-box {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .service-icon-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .service-info {
+      flex-grow: 1;
+      min-width: 0;
+    }
+    .service-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+    .service-price {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f59e0b; /* Gold/Orange */
+    }
+    .service-arrow {
+      color: var(--text-3);
+      font-size: 10px;
+      opacity: 0.5;
+    }
+
+    .warning-alert {
+      background: rgba(120, 53, 15, 0.15);
+      border: 1px solid rgba(120, 53, 15, 0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: #f59e0b;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      margin-top: 24px;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-3);
+    }
+    .section-badge {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Updated Search Bar to match image */
+    .search-group {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .search-group .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      font-size: 16px;
+    }
+    .new-search-input {
+      width: 100%;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px 14px 44px;
+      color: #fff;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .new-search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--surface-2);
+    }
+
+    /* Updated Modal & Server Options Style */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(100px) saturate(250%);
+      -webkit-backdrop-filter: blur(100px) saturate(250%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: all 0.5s ease;
+    }
+    .modal-card {
+      background: rgba(28, 28, 30, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(30px) saturate(160%);
+      -webkit-backdrop-filter: blur(30px) saturate(160%);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 50px 100px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+      transform-origin: bottom center;
+      animation: macMaximize 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .modal-card.closing {
+      animation: macMinimize 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+    }
+    @keyframes macMaximize { 
+      0% { transform: scale(0.3, 0.5) translateY(200px); opacity: 0; filter: blur(10px); }
+      40% { transform: scale(1.15, 0.85) translateY(-20px); opacity: 1; filter: blur(0); }
+      60% { transform: scale(0.95, 1.05) translateY(5px); }
+      80% { transform: scale(1.05, 0.95) translateY(-2px); }
+      100% { transform: scale(1, 1) translateY(0); opacity: 1; }
+    }
+    @keyframes macMinimize {
+      0% { transform: scale(1, 1) translateY(0); opacity: 1; filter: blur(0); }
+      100% { transform: scale(0.1, 0.5) translateY(400px); opacity: 0; filter: blur(20px); }
+    }
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title-box { display: flex; align-items: center; gap: 12px; }
+    .modal-service-icon { font-size: 24px; color: var(--accent); }
+    .modal-title { font-size: 18px; font-weight: 700; color: #fff; }
+    .modal-close { background: none; border: none; font-size: 20px; color: var(--text-3); cursor: pointer; }
+    .modal-body { padding: 20px; }
+    .modal-subtitle { font-size: 14px; color: var(--text-3); margin-bottom: 20px; font-weight: 500; }
+    
+    .server-option {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .server-option:hover {
+      background: rgba(59, 130, 246, 0.08);
+      border-color: var(--accent);
+      transform: scale(1.02);
+    }
+    .server-option:active { transform: scale(0.98); }
+    .server-main { display: flex; flex-direction: column; gap: 4px; }
+    .server-name { font-weight: 700; font-size: 14px; color: #fff; text-transform: uppercase; }
+    .server-stats { display: flex; gap: 12px; margin-top: 4px; }
+    .stat { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; }
+    .stat-success { color: var(--success); }
+    .stat-time { color: var(--text-3); }
+    .server-price { font-size: 16px; font-weight: 800; color: #f59e0b; }
+
+    @media (max-width: 640px) {
+      .buy-card { padding: 20px; }
+      .service-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .service-card { padding: 10px; gap: 8px; }
+      .service-icon-box { width: 32px; height: 32px; font-size: 16px; }
+      .service-name { font-size: 13px; }
+      .service-price { font-size: 12px; }
+      .modal-card { max-height: 90vh; overflow-y: auto; }
+      .server-option { padding: 12px; }
+      .server-name { font-size: 13px; }
+      .server-price { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <div class="nav-links" id="nav-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/dashboard/buy" class="active">Buy Number</a>
+      <a href="/dashboard/accounts">Accounts</a>
+      <a href="/dashboard/orders">Orders</a>
+      <a href="/dashboard/wallet">Wallet</a>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
+    <a href="/dashboard/buy" class="sidebar-item active">🛒 Buy Number</a>
+    <a href="/dashboard/accounts" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
+    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
+    <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
+    <div class="sidebar-divider"></div>
+    <a href="/support" class="sidebar-item">💬 Support</a>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div class="buy-container">
+      <div class="buy-card fade-in">
+        <div class="buy-header">
+          <h2>Buy Virtual Number</h2>
+          <p>Select your country first, then choose the service you need</p>
+        </div>
+
+        <div class="buy-steps">
+          <div class="buy-step active" id="step-1">
+            <span class="step-num">1</span>
+            <span>Country</span>
+          </div>
+          <div class="buy-step" id="step-2">
+            <span class="step-num">2</span>
+            <span>Service</span>
+          </div>
+          <div class="buy-step" id="step-3">
+            <span class="step-num">3</span>
+            <span>Confirm</span>
+          </div>
+        </div>
+
+        <!-- Step 1: Country Selection -->
+        <div class="dropdown-group" id="group-country">
+          <div class="dropdown-label">
+            <span class="icon">🌍</span>
+            <span>Select Country</span>
+          </div>
+          <div class="custom-select" id="select-country">
+            <div class="select-trigger placeholder" onclick="toggleDropdown('country')">
+              <span>Choose a country...</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="select-dropdown" id="dropdown-country">
+              <div class="search-wrapper" style="padding: 8px; border-bottom: 1px solid var(--border);">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Search countries..." id="search-country" oninput="filterOptions('country')" />
+              </div>
+              <div id="options-country"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Service Selection (Redesigned) -->
+        <div id="group-service" style="display: none;">
+          <div class="search-group">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="new-search-input" placeholder="Search service — Telegram, Google..." id="search-service" oninput="filterOptions('service')" />
+          </div>
+
+          <div class="section-header">
+            <span class="section-title">Choose a Service</span>
+            <span class="section-badge" id="service-count">0</span>
+          </div>
+
+          <div class="service-grid" id="options-service">
+            <script>document.currentScript.outerHTML = skeletonCards(12);</script>
+          </div>
+        </div>
+
+        <!-- Step 3: Confirmation & Summary -->
+        <div id="group-summary" style="display: none;">
+          <div class="buy-summary fade-in">
+            <div class="summary-title">📋 Order Summary</div>
+            <div class="summary-row">
+              <span class="summary-label">Service</span>
+              <span class="summary-value" id="summary-service">—</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Country</span>
+              <span class="summary-value" id="summary-country">—</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Server</span>
+              <span class="summary-value" id="summary-server">—</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Your Balance</span>
+              <span class="summary-value" id="summary-balance">—</span>
+            </div>
+            <div class="summary-total">
+              <span class="summary-label">Total Cost</span>
+              <span class="summary-value" id="summary-price">—</span>
+            </div>
+          </div>
+          <button class="buy-btn" id="buy-btn" onclick="placeOrder()">
+            <span>🚀</span>
+            <span>Buy Now</span>
+          </button>
+        </div>
+
+        <!-- Modal for Server Selection -->
+        <div id="service-modal" class="modal-overlay" style="display: none;">
+          <div class="modal-card">
+            <div class="modal-header">
+              <div class="modal-title-box">
+                <div class="modal-service-icon" id="modal-title-icon" style="width:40px;height:40px;border-radius:10px;overflow:hidden;background:var(--surface-2);display:flex;align-items:center;justify-content:center">📱</div>
+                <div class="modal-title" id="modal-service-name">Service Name</div>
+              </div>
+              <button class="modal-close" onclick="closeServiceModal()">✕</button>
+            </div>
+            <div class="modal-body">
+              <p class="modal-subtitle">Choose a server provider for this service</p>
+              <div id="server-options-list" class="server-options-list">
+                <!-- Server variants here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+{
+  if (!requireLogin()) {}
+
+  let allServices = [];
+  let allCountries = [];
+  let selectedService = null;
+  let selectedCountry = null;
+  let balance = 0;
+  let filteredServices = [];
+
+  window.initBuy = async function() {
+    try {
+      const resp = await Promise.allSettled([
+        API.get("/api/user/dashboard"),
+        API.get("/api/user/countries"),
+        API.get("/api/user/services")
+      ]);
+      
+      const dash = resp[0].status === 'fulfilled' ? resp[0].value : { balance: 0 };
+      const countries = resp[1].status === 'fulfilled' ? resp[1].value : [];
+      const services = resp[2].status === 'fulfilled' ? resp[2].value : [];
+
+      balance = dash.balance;
+      allCountries = countries;
+      allServices = services;
+      
+      renderCountryOptions(allCountries);
+      
+      // Auto-select India as default if available
+      const india = allCountries.find(c => 
+        (c.name && c.name.toLowerCase().includes('india')) || 
+        (c.code && (c.code.toString() === '91' || c.code.toString().toUpperCase() === 'IN'))
+      );
+      if (india) {
+        setTimeout(() => {
+          if (typeof window.selectCountryOption === 'function') {
+            window.selectCountryOption(india.code);
+          }
+        }, 300);
+      }
+    } catch (e) { toast(e.message, "error"); }
+  };
+
+  window.toggleDropdown = function(type) {
+    const select = document.getElementById(`select-${type}`);
+    if (!select) return;
+    const wasOpen = select.classList.contains('open');
+    document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('open'));
+    if (!wasOpen) {
+      select.classList.add('open');
+      setTimeout(() => document.getElementById(`search-${type}`)?.focus(), 100);
+    }
+  };
+
+  window.closeAllDropdowns = function() {
+    document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('open'));
+  };
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-select')) window.closeAllDropdowns();
+  });
+
+  function renderCountryOptions(countries) {
+    const container = document.getElementById('options-country');
+    if (!container) return;
+    if (!countries.length) {
+      container.innerHTML = '<div class="empty-state"><p>No countries available</p></div>';
+      return;
+    }
+    container.innerHTML = countries.map(c => `
+      <div class="select-option" onclick="selectCountryOption('${c.code}')" data-search="${c.name.toLowerCase()}">
+        <div class="option-left">
+          <span class="option-icon">${c.flag || '🌍'}</span>
+          <div class="option-info">
+            <div class="option-name">${c.name}</div>
+            <div class="option-detail">Code: ${c.code}</div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.selectCountryOption = function(countryCode) {
+    const country = allCountries.find(c => c.code === countryCode);
+    if (!country) return;
+    
+    selectedCountry = country;
+    const triggerEl = document.getElementById('select-country');
+    const trigger = triggerEl ? triggerEl.querySelector('.select-trigger') : null;
+    if (trigger) {
+      trigger.innerHTML = `<span>${country.flag || '🌍'} ${country.name}</span><span class="arrow">▼</span>`;
+      trigger.classList.remove('placeholder');
+    }
+    window.closeAllDropdowns();
+    
+    filteredServices = allServices.filter(s => s.server_id && s.server_id.country_id === country._id);
+    const countEl = document.getElementById('service-count');
+    if (countEl) countEl.textContent = filteredServices.length;
+    renderServiceOptions(filteredServices);
+    
+    const groupService = document.getElementById('group-service');
+    if (groupService) groupService.style.display = 'block';
+    
+    const groupSummary = document.getElementById('group-summary');
+    if (groupSummary) groupSummary.style.display = 'none';
+    
+    selectedService = null;
+    window.updateSteps(2);
+  };
+
+  const gradients = [
+    'linear-gradient(135deg, #3b82f6, #2563eb)',
+    'linear-gradient(135deg, #10b981, #059669)',
+    'linear-gradient(135deg, #f59e0b, #d97706)',
+    'linear-gradient(135deg, #ef4444, #dc2626)',
+    'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+    'linear-gradient(135deg, #ec4899, #db2777)',
+    'linear-gradient(135deg, #06b6d4, #0891b2)',
+    'linear-gradient(135deg, #f97316, #ea580c)',
+  ];
+
+  function getServiceIcon(service) {
+    if (service.image_url) {
+      return `<img src="${service.image_url}" alt="${service.name}" style="width:100%;height:100%;object-fit:cover;">`;
+    }
+    const color = service.icon_color || gradients[Math.abs(service.name.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % gradients.length];
+    return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${color};color:#fff;font-weight:800;font-size:18px;text-shadow:0 2px 4px rgba(0,0,0,0.1)">${service.name.charAt(0).toUpperCase()}</div>`;
+  }
+
+  function renderServiceOptions(services) {
+    const container = document.getElementById('options-service');
+    if (!container) return;
+    if (!services.length) {
+      container.innerHTML = '<div class="empty-state" style="grid-column: span 2;"><p>No services available for this country</p></div>';
+      return;
+    }
+
+    // Group services by name
+    const groups = {};
+    services.forEach(s => {
+      if (!groups[s.name]) groups[s.name] = [];
+      groups[s.name].push(s);
+    });
+
+    container.innerHTML = Object.keys(groups).sort().map(name => {
+      const groupItems = groups[name];
+      const minPrice = Math.min(...groupItems.map(i => i.price));
+      const s = groupItems[0];
+      
+      return `
+        <div class="service-card" onclick="selectServiceGroup('${name.replace(/'/g, "\\'")}')" data-search="${name.toLowerCase()}">
+          <div class="service-icon-box" style="overflow:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--surface-2)">
+            ${getServiceIcon(s)}
+          </div>
+          <div class="service-info">
+            <div class="service-name">${name}</div>
+            <div class="service-price">From ${fmtMoney(minPrice)}</div>
+          </div>
+          <div class="service-arrow">❯</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.selectServiceGroup = function(name) {
+    const items = filteredServices.filter(s => s.name === name);
+    window.showServiceModal(name, items);
+  };
+
+  window.showServiceModal = function(name, variants) {
+    const modal = document.getElementById('service-modal');
+    if (!modal) return;
+    
+    const titleEl = document.getElementById('modal-service-name');
+    if (titleEl) titleEl.textContent = name;
+
+    const iconBox = document.getElementById('modal-title-icon');
+    if (iconBox) iconBox.innerHTML = getServiceIcon(variants[0]);
+    
+    const list = document.getElementById('server-options-list');
+    if (list) {
+      list.innerHTML = variants.map(v => `
+        <div class="server-option" onclick="buyFromModal('${v._id}')">
+          <div class="server-main">
+            <div class="server-name">${v.server_id?.name || 'Standard Server'}</div>
+            <div class="server-stats">
+              <span class="stat stat-success">✓ ${v.success_rate || '95%'} Success</span>
+              <span class="stat stat-time">⏱ Avg ${v.avg_time || '2m'}</span>
+            </div>
+          </div>
+          <div class="server-price">${fmtMoney(v.price)}</div>
+        </div>
+      `).join('');
+    }
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeServiceModal = function() {
+    const modal = document.getElementById('service-modal');
+    if (!modal) return;
+    
+    const card = modal.querySelector('.modal-card');
+    if (card) card.classList.add('closing');
+    modal.style.opacity = '0';
+    
+    setTimeout(() => {
+      modal.style.display = 'none';
+      modal.style.opacity = '1';
+      if (card) card.classList.remove('closing');
+      document.body.style.overflow = '';
+    }, 400);
+  };
+
+  window.buyFromModal = async function(serviceId) {
+    const service = allServices.find(s => s._id === serviceId);
+    if (!service) return;
+    
+    selectedService = service;
+    window.closeServiceModal();
+    
+    // Explicitly update summary just in case they watch it before the redirect
+    window.updateSummary();
+    
+    // Initiate purchase
+    await window.placeOrder();
+  };
+
+  window.selectServiceOption = function(serviceId) {
+    const service = allServices.find(s => s._id === serviceId);
+    if (!service) return;
+    
+    selectedService = service;
+    window.closeAllDropdowns();
+    
+    const groupSummary = document.getElementById('group-summary');
+    if (groupSummary) groupSummary.style.display = 'block';
+    
+    window.updateSummary();
+    window.updateSteps(3);
+  };
+
+  function getPriceClass(price) {
+    if (price <= balance * 0.3) return 'affordable';
+    if (price > balance) return 'expensive';
+    return '';
+  }
+
+  window.filterOptions = function(type) {
+    const searchTerm = document.getElementById(`search-${type}`).value.toLowerCase();
+    const container = document.getElementById(`options-${type}`);
+    if (!container) return;
+    
+    const selector = type === 'country' ? '.select-option' : '.service-card';
+    container.querySelectorAll(selector).forEach(opt => {
+      const searchText = opt.dataset.search || opt.textContent.toLowerCase();
+      opt.style.display = searchText.includes(searchTerm) ? (type === 'service' ? 'flex' : 'flex') : 'none';
+    });
+  };
+
+  window.updateSummary = function() {
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+    
+    set('summary-service', selectedService?.name || '—');
+    set('summary-country', selectedCountry ? `${selectedCountry.flag || '🌍'} ${selectedCountry.name}` : '—');
+    set('summary-server', selectedService?.server_id?.name || 'Default');
+    set('summary-balance', fmtMoney(balance));
+    set('summary-price', selectedService?.price ? fmtMoney(selectedService.price) : '—');
+    
+    const buyBtn = document.getElementById('buy-btn');
+    if (buyBtn) {
+      if (selectedService && selectedService.price > balance) {
+        buyBtn.disabled = true;
+        buyBtn.innerHTML = '<span>⚠️</span><span>Insufficient Balance</span>';
+      } else if (selectedService) {
+        buyBtn.disabled = false;
+        buyBtn.innerHTML = '<span>🚀</span><span>Buy Now</span>';
+      }
+    }
+  };
+
+  window.updateSteps = function(step) {
+    for (let i = 1; i <= 3; i++) {
+      const stepEl = document.getElementById(`step-${i}`);
+      if (stepEl) {
+        stepEl.classList.remove('active', 'completed');
+        if (i < step) stepEl.classList.add('completed');
+        if (i === step) stepEl.classList.add('active');
+      }
+    }
+  };
+
+  window.placeOrder = async function() {
+    if (!selectedService || !selectedCountry) {
+      toast('Please select service and country', 'error');
+      return;
+    }
+    
+    const btn = document.getElementById('buy-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
+    
+    try {
+      const res = await API.post('/api/user/orders', {
+        service_id: selectedService._id
+      });
+      toast('Order placed successfully!', 'success');
+      setTimeout(() => SPA.navigate(`/dashboard/orders/${res.order.order_id}`), 1000);
+    } catch (e) {
+      toast(e.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<span>🚀</span><span>Buy Now</span>';
+    }
+  };
+
+  window.initBuy();
+}
+</script>
+</body>
+</html>

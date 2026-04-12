@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/analytics" class="active">Analytics</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item active">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+  <main class="main-content">
+    <h1 style="font-size:24px;margin-bottom:32px">Analytics</h1>
+    <div class="grid-4 mb-8">
+      <div class="stat-card"><div class="stat-icon" style="color:#a855f7;background:rgba(168,85,247,0.1)">👥</div><div class="stat-value" id="a-t-users">—</div><div class="stat-label">Total Users</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#3b82f6;background:rgba(59,130,246,0.1)">👤</div><div class="stat-value" id="a-users">—</div><div class="stat-label">New Users Today</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#10b981;background:rgba(16,185,129,0.1)">💵</div><div class="stat-value text-success" id="a-t-rev">—</div><div class="stat-label">Total Revenue</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#059669;background:rgba(5,150,105,0.1)">📈</div><div class="stat-value text-success" id="a-rev">—</div><div class="stat-label">Today's Revenue</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;background:rgba(245,158,11,0.1)">💰</div><div class="stat-value text-warning" id="a-t-dep">—</div><div class="stat-label">Total Deposits</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#d97706;background:rgba(217,119,6,0.1)">💸</div><div class="stat-value text-warning" id="a-dep">—</div><div class="stat-label">Today's Deposits</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#6366f1;background:rgba(99,102,241,0.1)">📦</div><div class="stat-value" id="a-t-ord">—</div><div class="stat-label">Total Orders</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#ec4899;background:rgba(236,72,153,0.1)">⚡</div><div class="stat-value text-accent" id="a-active">—</div><div class="stat-label">Active Orders</div></div>
+    </div>
+    
+    <div class="grid-2 mb-8">
+      <div class="card"><h3 style="margin-bottom:16px">Revenue & Deposits (14 days)</h3><canvas id="finance-chart" height="180"></canvas></div>
+      <div class="card"><h3 style="margin-bottom:16px">User Growth (14 days)</h3><canvas id="growth-chart" height="180"></canvas></div>
+    </div>
+    
+    <div class="grid-2 mb-8">
+      <div class="card"><h3 style="margin-bottom:16px">Top Services Breakdown</h3><div style="height:250px;position:relative"><canvas id="services-chart"></canvas></div></div>
+      <div class="card">
+        <h3 style="margin-bottom:16px">Top Services Output</h3>
+        <div id="top-table"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Top Services by Revenue</h3>
+      <div id="top-revenue-table"></div>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="/js/main.js"></script>
+<script>
+
+  const chartDefaults = {
+    scales: {
+      x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8", font: { size: 11 } } },
+      y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8", font: { size: 11 } } },
+    },
+    plugins: { legend: { labels: { color: "#94a3b8" } } },
+    responsive: true,
+  };
+
+  async function load() {
+    const data = await API.get("/api/admin/analytics");
+    
+    // Top Stats
+    document.getElementById("a-t-users").textContent = data.metrics.totalUsers.toLocaleString();
+    document.getElementById("a-users").textContent   = `+${data.metrics.todayUsers.toLocaleString()}`;
+    document.getElementById("a-t-rev").textContent   = fmtMoney(data.metrics.totalRevenue);
+    document.getElementById("a-rev").textContent     = fmtMoney(data.metrics.todayRevenue);
+    document.getElementById("a-t-dep").textContent   = fmtMoney(data.metrics.totalDeposits);
+    document.getElementById("a-dep").textContent     = fmtMoney(data.metrics.todayDeposits);
+    document.getElementById("a-t-ord").textContent   = data.metrics.totalOrders.toLocaleString();
+    document.getElementById("a-active").textContent  = data.metrics.activeOrders.toLocaleString();
+
+    // Align dates for charts (last 14 days)
+    const dates = [];
+    for(let i=13; i>=0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
+    }
+
+    const mapData = (arr, labelField, valField) => {
+      const map = new Map(arr.map(a => [a[labelField], a[valField]]));
+      return dates.map(d => map.get(d) || 0);
+    };
+
+    const depData = mapData(data.graphs.dailyDeposits, "_id", "total");
+    const revData = mapData(data.graphs.dailyRevenue, "_id", "total");
+    const usrData = mapData(data.graphs.userGrowth, "_id", "count");
+
+    // Finance Line Chart
+    new Chart(document.getElementById("finance-chart").getContext("2d"), {
+      type: "line",
+      data: {
+        labels: dates.map(d => d.slice(5)), // MM-DD
+        datasets: [
+          { label: "Deposits ($)", data: depData, borderColor: "#f59e0b", backgroundColor: "rgba(245,158,11,0.1)", fill: true, tension: 0.4 },
+          { label: "Revenue ($)", data: revData, borderColor: "#10b981", backgroundColor: "rgba(16,185,129,0.1)", fill: true, tension: 0.4 }
+        ],
+      },
+      options: { ...chartDefaults, interaction: { mode: 'index', intersect: false } },
+    });
+
+    // User Growth Bar Chart
+    new Chart(document.getElementById("growth-chart").getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: dates.map(d => d.slice(5)),
+        datasets: [{ label: "New Users", data: usrData, backgroundColor: "rgba(59,130,246,0.6)", borderColor: "#3b82f6", borderWidth: 1, borderRadius: 4 }],
+      },
+      options: { ...chartDefaults, plugins: { legend: { display: false } } },
+    });
+
+    // Top Services Doughnut
+    new Chart(document.getElementById("services-chart").getContext("2d"), {
+      type: "doughnut",
+      data: {
+        labels: data.topServices.map(s => s._id),
+        datasets: [{ data: data.topServices.map(s => s.count), backgroundColor: ["#3b82f6","#6366f1","#8b5cf6","#ec4899","#10b981", "#f59e0b"], borderWidth: 0, hoverOffset: 8 }],
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { 
+            position: window.innerWidth < 600 ? "bottom" : "right", 
+            labels: { color: "#94a3b8", padding: 12, boxWidth: 12, font: { size: 11 } } 
+          } 
+        } 
+      },
+    });
+
+    // Top Services Tables
+    const sum = data.topServices.reduce((acc, s) => acc + s.revenue, 0) || 1;
+    const tableHTML = `
+      <div class="table-wrap">
+        <table class="mobile-card-table">
+          <thead><tr><th>Service</th><th>Orders</th><th>Revenue</th><th>Share</th></tr></thead>
+          <tbody style="font-size:14px">
+            ${data.topServices.map(s => `
+              <tr>
+                <td data-label="Service" style="font-weight:600">${s._id}</td>
+                <td data-label="Orders">${s.count.toLocaleString()}</td>
+                <td data-label="Revenue" class="text-success">${fmtMoney(s.revenue)}</td>
+                <td data-label="Market Share" style="min-width:140px">
+                  <div style="display:flex;align-items:center;gap:8px;width:100%">
+                    <div style="flex:1;height:6px;border-radius:3px;background:var(--surface-2)">
+                      <div style="height:100%;border-radius:3px;background:var(--grad-primary);width:${(s.revenue/sum*100).toFixed(1)}%"></div>
+                    </div>
+                    <span class="text-xs text-muted" style="width:30px">${(s.revenue/sum*100).toFixed(0)}%</span>
+                  </div>
+                </td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+    
+    document.querySelectorAll("[id^='top-']").forEach(el => el.innerHTML = tableHTML);
+  }
+
+  async function init() {
+    if (!await requireAdmin()) return;
+    load().catch(e => toast(e.message, "error"));
+  }
+  
+  init();
+</script>
+</body>
+</html>

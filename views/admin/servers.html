@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Servers — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+  <style>
+    .servers-page { max-width: 900px; margin: 0 auto; }
+    
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      animation: slideDown 0.4s ease;
+    }
+    @media (max-width: 768px) {
+      .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .page-title h1 { font-size: 24px; margin: 0; }
+    .page-title p { font-size: 14px; color: var(--text-3); margin: 4px 0 0; }
+    
+    .server-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    
+    .server-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .server-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(59,130,246,0.15);
+    }
+    
+    .server-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    
+    .server-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--grad-primary);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 16px rgba(59,130,246,0.25);
+    }
+    
+    .server-info { flex: 1; }
+    .server-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+    .server-country { font-size: 13px; color: var(--text-3); display: flex; align-items: center; gap: 4px; }
+    
+    .server-status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .server-status.active { background: rgba(16,185,129,0.15); color: var(--success); }
+    .server-status.inactive { background: rgba(100,116,139,0.15); color: var(--text-3); }
+    
+    .server-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .stat-item {
+      background: var(--bg-2);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .stat-label { font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
+    .stat-value { font-size: 14px; font-weight: 600; }
+    
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      grid-column: 1/-1;
+    }
+    .empty-state .icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
+    .empty-state p { color: var(--text-3); margin-bottom: 24px; }
+    
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .modal-backdrop.open { display: flex; }
+    
+    .modal {
+      background: var(--bg-1);
+      border: 1px solid var(--border-2);
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 520px;
+      animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      margin: auto;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .modal-header h3 { font-size: 20px; margin: 0; }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-2);
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    .modal-close:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+    
+    .modal-form { display: flex; flex-direction: column; gap: 18px; }
+    
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+    
+    .form-input, .form-select {
+      padding: 12px 16px;
+      background: var(--bg-2);
+      border: 1px solid var(--border-2);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    
+    .url-input {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .modal-actions .btn { flex: 1; padding: 14px; }
+    
+    .btn { padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-primary { background: var(--grad-primary); color: #fff; box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59,130,246,0.4); }
+    .btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+    .btn-danger:hover { background: rgba(239,68,68,0.25); }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--surface-2); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+    
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    @media (max-width: 640px) {
+      .form-row, .form-row-3 { grid-template-columns: 1fr; }
+      .server-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/servers" class="active">Servers</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item active">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div class="servers-page">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>OTP Servers</h1>
+          <p>Configure SMS provider APIs for receiving OTP</p>
+        </div>
+        <button class="btn btn-primary" onclick="openCreate()">+ Add Server</button>
+      </div>
+      
+      <div id="servers-grid" class="server-grid">
+        <script>document.currentScript.outerHTML = skeletonCards(3);</script>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Server Modal -->
+<div class="modal-backdrop" id="srv-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="srv-title">Add Server</h3>
+      <button class="modal-close" type="button" onclick="closeModal('srv-modal')">✕</button>
+    </div>
+    <form class="modal-form" onsubmit="event.preventDefault(); saveServer()">
+      <input type="hidden" id="srv-id" />
+      
+      <div class="form-group">
+        <label class="form-label">Server Name</label>
+        <input type="text" id="srv-name" class="form-input" placeholder="OnlineSim Pro" required />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Country</label>
+        <select id="srv-country" class="form-select">
+          <option value="">Select Country</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input type="text" id="srv-key" class="form-input" placeholder="your_api_key_123" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Get Number URL</label>
+        <input type="text" id="srv-get-url" class="form-input url-input" placeholder="https://api.provider.com/?action=getNumber..." />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Check Status URL</label>
+        <input type="text" id="srv-check-url" class="form-input url-input" placeholder="https://api.provider.com/?action=getStatus..." />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Cancel URL</label>
+        <input type="text" id="srv-cancel-url" class="form-input url-input" placeholder="https://api.provider.com/?action=setStatus&status=8..." />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Retry (Next SMS) URL</label>
+        <input type="text" id="srv-retry-url" class="form-input url-input" placeholder="https://api.provider.com/?action=setStatus&status=3..." />
+      </div>
+      
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Auto-Cancel (min)</label>
+          <input type="number" id="srv-cancel-mins" class="form-input" value="20" min="1" max="999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Min Cancel (min)</label>
+          <input type="number" id="srv-min-cancel" class="form-input" value="0" min="0" max="999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Retries</label>
+          <input type="number" id="srv-retry-count" class="form-input" value="0" min="0" max="10" />
+        </div>
+      </div>
+
+      <div class="form-group" style="flex-direction:row; align-items:center; gap:10px; background:rgba(59,130,246,0.05); padding:12px; border-radius:12px">
+        <input type="checkbox" id="srv-multi-otp" style="width:18px; height:18px; cursor:pointer" />
+        <label for="srv-multi-otp" style="font-size:14px; font-weight:700; color:var(--accent); cursor:pointer">Support Multiple OTPs</label>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('srv-modal')">Cancel</button>
+      </div>
+      <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteServer()" style="display:none;margin-top:8px">Delete Server</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadData();
+  }
+  
+  let editingId = null;
+  let allCountries = [];
+  
+  async function loadData() {
+    try {
+      const [servers, countries] = await Promise.all([
+        API.get("/api/admin/servers"),
+        API.get("/api/admin/countries")
+      ]);
+      allCountries = countries;
+      renderServers(servers);
+      populateCountryDropdown();
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+  
+  function populateCountryDropdown() {
+    const sel = document.getElementById("srv-country");
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select Country</option>' + 
+      allCountries.map(c => `<option value="${c._id}">${c.flag || ''} ${c.name} (${c.code})</option>`).join("");
+  }
+  
+  function renderServers(servers) {
+    const grid = document.getElementById("servers-grid");
+    if (!grid) return;
+    
+    if (!servers.length) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">🖥️</div>
+          <h3>No servers yet</h3>
+          <p>Add OTP provider servers to start receiving numbers</p>
+          <button class="btn btn-primary" onclick="openCreate()">+ Add Server</button>
+        </div>`;
+      return;
+    }
+    
+    grid.innerHTML = servers.map((s, i) => {
+      const country = allCountries.find(c => c._id.toString() === (s.country_id?.toString() || ""));
+      return `
+        <div class="server-card" onclick="openEdit('${s._id}')" style="animation-delay: ${i * 50}ms">
+          <div class="server-header">
+            <div class="server-icon">🖥️</div>
+            <div class="server-info">
+              <div class="server-name">${s.name}</div>
+              <div class="server-country">${country ? `${country.flag || '🌍'} ${country.name}` : '🌍 No Country'}</div>
+            </div>
+            <div class="server-status ${s.is_active !== false ? 'active' : 'inactive'}">${s.is_active !== false ? 'Active' : 'Off'}</div>
+          </div>
+          <div class="server-stats">
+            <div class="stat-item">
+              <div class="stat-label">Multi-OTP</div>
+              <div class="stat-value">${s.multi_otp_supported ? '<span style="color:var(--success)">Yes</span>' : 'No'}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Auto-Cancel</div>
+              <div class="stat-value">${s.auto_cancel_minutes || 20} min</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm w-full" onclick="event.stopPropagation(); openEdit('${s._id}')">Edit Server</button>
+        </div>`;
+    }).join('');
+  }
+  
+  window.openCreate = function() {
+    if (!allCountries.length) {
+      toast("Add countries first in the Countries section", "error");
+      return;
+    }
+    editingId = null;
+    const title = document.getElementById("srv-title");
+    if (title) title.textContent = "Add Server";
+    
+    ["srv-id","srv-name","srv-country","srv-key","srv-get-url","srv-check-url","srv-cancel-url","srv-retry-url"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    const delBtn = document.getElementById("delete-btn");
+    if (delBtn) delBtn.style.display = "none";
+    openModal("srv-modal");
+  };
+  
+  window.openEdit = async function(id) {
+    try {
+      const servers = await API.get("/api/admin/servers");
+      const s = servers.find(x => x._id === id);
+      if (!s) return;
+      
+      editingId = s._id;
+      const title = document.getElementById("srv-title");
+      if (title) title.textContent = "Edit Server";
+      
+      const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      setVal("srv-id", s._id);
+      setVal("srv-name", s.name);
+      setVal("srv-country", s.country_id || "");
+      setVal("srv-key", s.api_key || "");
+      setVal("srv-get-url", s.api_get_number_url || "");
+      setVal("srv-check-url", s.api_check_status_url || "");
+      setVal("srv-cancel-url", s.api_cancel_url || "");
+      document.getElementById("srv-retry-url").value = s.api_retry_url || "";
+      document.getElementById("srv-cancel-mins").value = s.auto_cancel_minutes || 20;
+      document.getElementById("srv-min-cancel").value = s.min_cancel_minutes || 0;
+      document.getElementById("srv-retry-count").value = s.retry_count || 0;
+      document.getElementById("srv-multi-otp").checked = !!s.multi_otp_supported;
+      document.getElementById("delete-btn").style.display = "block";
+      openModal("srv-modal");
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  };
+
+  window.saveServer = async function() {
+    const body = {
+      name: document.getElementById("srv-name").value.trim(),
+      country_id: document.getElementById("srv-country").value || null,
+      api_key: document.getElementById("srv-key").value.trim(),
+      api_get_number_url: document.getElementById("srv-get-url").value.trim(),
+      api_check_status_url: document.getElementById("srv-check-url").value.trim(),
+      api_cancel_url: document.getElementById("srv-cancel-url").value.trim(),
+      api_retry_url: document.getElementById("srv-retry-url").value.trim(),
+      auto_cancel_minutes: parseInt(document.getElementById("srv-cancel-mins").value) || 20,
+      min_cancel_minutes: parseInt(document.getElementById("srv-min-cancel").value) || 0,
+      retry_count: parseInt(document.getElementById("srv-retry-count").value) || 0,
+      multi_otp_supported: document.getElementById("srv-multi-otp").checked
+    };
+    
+    if (!body.name) {
+      return toast("Server name is required", "error");
+    }
+    
+    const saveBtn = document.getElementById("save-btn");
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<div class="spinner"></div>';
+    
+    try {
+      if (editingId) {
+        await API.put(`/api/admin/servers/${editingId}`, body);
+        toast("Server updated!", "success");
+      } else {
+        await API.post("/api/admin/servers", body);
+        toast("Server added!", "success");
+      }
+      closeModal('srv-modal');
+      loadData();
+    } catch (e) {
+      toast(e.message, "error");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = "Save";
+    }
+  };
+  
+  window.deleteServer = async function() {
+    if (!await uiConfirm("Delete this server? Orders using it may fail.")) return;
+    
+    const deleteBtn = document.getElementById("delete-btn");
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = "Deleting...";
+    
+    try {
+      await API.del(`/api/admin/servers/${editingId}`);
+      toast("Server deleted", "success");
+      closeModal('srv-modal');
+      loadData();
+    } catch (e) {
+      toast(e.message, "error");
+    } finally {
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = "Delete Server";
+    }
+  };
+  
+  loadData();
+</script>
+</body>
+</html>

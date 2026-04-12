@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Broadcast — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/broadcast" class="active">Broadcast</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item active">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+  <main class="main-content">
+    <h1 style="font-size:24px;margin-bottom:32px">📢 Broadcast Message</h1>
+    <div class="broadcast-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px">
+      <div class="card">
+        <h3 style="margin-bottom:20px">Compose</h3>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="form-group">
+            <label class="form-label">Target Audience</label>
+            <select id="bc-target">
+              <option value="all">All Users</option>
+              <option value="active">Active Users (ordered in last 30d)</option>
+              <option value="whales">Whales ($10+ spent)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message (supports Markdown)</label>
+            <textarea id="bc-text" rows="8" placeholder="🚀 *Rapid OTP Update*&#10;&#10;We've added new services! Check them out now." style="min-height:180px"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Button Label (optional)</label>
+            <input type="text" id="bc-btn-text" placeholder="Check it out" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Button URL (optional)</label>
+            <input type="text" id="bc-btn-url" placeholder="https://t.me/RapidOTPbot" />
+          </div>
+          <button class="btn btn-primary" onclick="sendBroadcast()">📤 Send Broadcast</button>
+        </div>
+      </div>
+      <div class="card" style="background:var(--bg-1);border-color:rgba(59,130,246,0.3)">
+        <h3 style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px">Live Preview</h3>
+        <div style="min-height:200px;display:flex;align-items:center;justify-content:center" id="bc-preview-container">
+          <p style="color:var(--text-3);font-size:13px" id="bc-preview-placeholder">Your message preview will appear here…</p>
+          <div id="bc-preview" style="display:none;width:100%;max-width:400px;text-align:center;background:var(--bg-1);border:1px solid rgba(59,130,246,0.3);box-shadow:0 0 40px rgba(59,130,246,0.15);border-radius:var(--r-lg);padding:24px;margin:0 auto"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    
+    textEl.addEventListener("input", updatePreview);
+    btnTextEl.addEventListener("input", updatePreview);
+    btnUrlEl.addEventListener("input", updatePreview);
+  }
+  
+  const textEl = document.getElementById("bc-text");
+  const btnTextEl = document.getElementById("bc-btn-text");
+  const btnUrlEl = document.getElementById("bc-btn-url");
+  const prevEl = document.getElementById("bc-preview");
+  const prevPlaceholder = document.getElementById("bc-preview-placeholder");
+
+  init();
+
+  function updatePreview() {
+    const text = textEl.value.trim();
+    const btnText = btnTextEl.value.trim();
+    const btnUrl = btnUrlEl.value.trim();
+
+    if (!text) {
+      prevEl.style.display = "none";
+      prevPlaceholder.style.display = "block";
+      return;
+    }
+
+    prevPlaceholder.style.display = "none";
+    prevEl.style.display = "block";
+
+    const cleanText = text.replace(/\*(.*?)\*/g, "<strong>$1</strong>").replace(/_(.*?)_/g, "<em>$1</em>");
+    let html = `
+      <div style="font-size:48px;margin-bottom:16px">📢</div>
+      <h3 style="font-size:22px;margin-bottom:16px;color:var(--text)">Important Update</h3>
+      <div style="font-size:15px;color:var(--text-2);line-height:1.6;margin-bottom:28px;white-space:pre-wrap;text-align:left;background:rgba(255,255,255,0.03);padding:16px;border-radius:var(--r-md)">${cleanText}</div>
+      <div style="display:flex;gap:12px;flex-direction:column">
+    `;
+    if (btnUrl) {
+      html += `<a href="${btnUrl}" class="btn btn-primary w-full" onclick="event.preventDefault()">${btnText || "Check it out"}</a>`;
+    }
+    html += `<button class="btn btn-secondary w-full" onclick="event.preventDefault()">Got it, thanks</button></div>`;
+    prevEl.innerHTML = html;
+  }
+
+
+
+  async function sendBroadcast() {
+    const text = textEl.value.trim();
+    if (!text) return toast("Please write a message", "error");
+    if (!(await uiConfirm("Send broadcast to ALL users on the website?"))) return;
+    
+    try {
+      const btnText = document.getElementById("bc-btn-text").value.trim();
+      const btnUrl = document.getElementById("bc-btn-url").value.trim();
+      
+      const res = await API.post("/api/admin/broadcast", {
+         text, btn_text: btnText, btn_url: btnUrl
+      });
+      toast("Broadcast is now live for all users!", "success");
+      textEl.value = "";
+      btnTextEl.value = "";
+      btnUrlEl.value = "";
+      updatePreview();
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+</script>
+</body>
+</html>

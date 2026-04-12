@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    body {
+      background-image: 
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(99, 102, 241, 0.08) 0px, transparent 50%);
+    }
+
+    .main-content {
+      animation: slideInUp 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @keyframes slideInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dashboard-hero { margin-bottom: 40px; }
+    .dashboard-hero h1 { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+    .dashboard-hero p { color: var(--text-3); font-size: 16px; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-item .stat-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--surface-2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-item .stat-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .stat-item .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .stat-item .stat-value.success { color: var(--success); }
+    .stat-item .stat-value.accent { color: var(--accent); }
+
+    .action-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .action-card {
+      padding: 14px 24px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: #fff;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .action-card:hover {
+      background: var(--grad-primary);
+      border-color: transparent;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .table-card { margin-bottom: 40px; }
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+
+    td {
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      color: #fff;
+      font-weight: 500;
+    }
+
+    td:first-child { border-radius: 12px 0 0 12px; }
+    td:last-child { border-radius: 0 12px 12px 0; }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <div class="nav-links" id="nav-links">
+      <a href="/dashboard" class="active">Dashboard</a>
+      <a href="/dashboard/buy">Buy Number</a>
+      <a href="/dashboard/orders">Orders</a>
+      <a href="/dashboard/wallet">Wallet</a>
+      <a href="/dashboard/profile">Profile</a>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div id="user-info" style="display:flex;align-items:center;gap:12px;padding:16px;background:rgba(255,255,255,0.03);border-radius:16px;margin-bottom:12px; border: 1px solid var(--glass-border)">
+      <div id="avatar-wrap"></div>
+      <div style="min-width:0">
+        <div id="user-name" class="font-bold truncate" style="font-size:15px; color:#fff"></div>
+        <div id="user-balance" class="text-sm font-bold" style="color:var(--success)"></div>
+      </div>
+    </div>
+    <div class="sidebar-label">Navigation</div>
+    <a href="/dashboard" class="sidebar-item active">🏠 Home</a>
+    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
+    <a href="/dashboard/accounts" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
+    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
+    <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
+    <div class="sidebar-divider"></div>
+    <a href="https://t.me/RapidOTPbot" target="_blank" class="sidebar-item">🤖 Telegram Bot</a>
+    <a href="/support" class="sidebar-item">💬 Support</a>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div class="dashboard-hero">
+      <h1 id="greeting">Welcome back 👋</h1>
+      <p>Efficiently manage your virtual communications</p>
+    </div>
+
+    <!-- Core Stats -->
+    <div class="stat-grid">
+      <div class="glass-card stat-item">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Total Credits</div>
+        <div class="stat-value success" id="stat-balance">—</div>
+      </div>
+      <div class="glass-card stat-item">
+        <div class="stat-icon">📦</div>
+        <div class="stat-label">Orders Placed</div>
+        <div class="stat-value" id="stat-orders">—</div>
+      </div>
+      <div class="glass-card stat-item">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-label">Currently Active</div>
+        <div class="stat-value accent" id="stat-active">—</div>
+      </div>
+      <div class="glass-card stat-item">
+        <div class="stat-icon">📈</div>
+        <div class="stat-label">Lifetime Spend</div>
+        <div class="stat-value" id="stat-spent">—</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="action-grid">
+      <div class="action-card" onclick="SPA.navigate('/dashboard/buy')">
+        <span>🛒</span> Buy New Number
+      </div>
+      <div class="action-card" onclick="SPA.navigate('/dashboard/accounts')">
+        <span>🗂️</span> Get Accounts
+      </div>
+      <div class="action-card" onclick="SPA.navigate('/dashboard/wallet')">
+        <span>💳</span> Add Credits
+      </div>
+      <div class="action-card" onclick="SPA.navigate('/dashboard/orders')">
+        <span>📋</span> View History
+      </div>
+    </div>
+
+    <!-- Recent Activity Table -->
+    <div class="glass-card table-card">
+      <div class="table-header">
+        <h3 style="font-size:18px; color:#fff">📋 Recent Activity</h3>
+        <button class="btn btn-secondary btn-sm" onclick="SPA.navigate('/dashboard/orders')">Full History</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>App/Service</th><th>Region</th><th>Phone Identity</th><th>Code</th><th>Status</th><th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="recent-orders-body">
+            <tr><td colspan="6" style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+{
+  if (!requireLogin()) {}
+
+  window.initDashboard = async function() {
+    const user = getUser();
+    if (user) {
+      const greetingEl = document.getElementById("greeting");
+      if (greetingEl) greetingEl.textContent = `Welcome back, ${user.first_name || user.username} 👋`;
+      const avatarWrap = document.getElementById("avatar-wrap");
+      if (avatarWrap) avatarWrap.innerHTML = userAvatar(user, 40);
+      const userNameEl = document.getElementById("user-name");
+      if (userNameEl) userNameEl.textContent = user.first_name || user.username;
+    }
+
+    try {
+      const data = await API.get("/api/user/dashboard");
+      const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setSafe("stat-balance", fmtMoney(data.balance));
+      setSafe("stat-orders", data.total_orders);
+      setSafe("stat-active", data.active_orders);
+      setSafe("stat-spent", fmtMoney(data.total_spent));
+      setSafe("user-balance", fmtMoney(data.balance));
+      
+      const tbody = document.getElementById("recent-orders-body");
+      if (!tbody) return;
+
+      if (!data.recent_orders?.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-3)">Secure your first number now.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.recent_orders.map(o => `
+        <tr onclick="SPA.navigate('/dashboard/orders/${o.order_id}')">
+          <td>${o.service_name}</td>
+          <td>${o.server_country || o.country || "Global"}</td>
+          <td style="font-family:monospace">${o.phone || "Assigning..."}</td>
+          <td style="font-family:monospace">${o.otp || "—"}</td>
+          <td>${statusBadge(o.status)}</td>
+          <td style="color:var(--text-3); font-size:13px">${fmtDateShort(o.createdAt)}</td>
+        </tr>`).join("");
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  initDashboard();
+}
+</script>
+</body>
+</html>

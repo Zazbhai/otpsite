@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Services — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/services" class="active">Services</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item active">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+  <main class="main-content">
+    <div id="view-main">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <h1 style="font-size:24px">Services</h1>
+        <button class="btn btn-primary" onclick="openCreate()">+ Add Service</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Server</th><th>Service Code</th><th>Country</th><th>Price</th><th>Status</th><th></th></tr></thead>
+            <tbody id="services-body">
+              <tr><td colspan="7" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Service Modal -->
+<div class="modal-backdrop" id="svc-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><h3 id="svc-modal-title">Add Service</h3><button class="modal-close" onclick="closeModal('svc-modal')">✕</button></div>
+    <input type="hidden" id="svc-id" />
+    <div style="display:flex;flex-direction:column;gap:16px">
+      
+      <div class="form-group"><label class="form-label">Name</label><input type="text" id="svc-name" placeholder="WhatsApp" /></div>
+      <div class="form-group"><label class="form-label">Assigned Server</label>
+        <select id="svc-server"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Service Code</label><input type="text" id="svc-code" placeholder="wa" /></div>
+      </div>
+      <div class="form-group"><label class="form-label">Price</label><input type="number" id="svc-price" step="0.5" placeholder="5.00" /></div>
+      <div class="form-group">
+        <label class="form-label">Enabled</label>
+        <select id="svc-active"><option value="true">Yes</option><option value="false">No</option></select>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveService()">Save</button>
+        <button class="btn btn-danger" id="del-svc-btn" onclick="deleteService()" class="hidden">Delete</button>
+        <button class="btn btn-secondary" onclick="closeModal('svc-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  if (!requireAdmin()) {}
+  let editingId = null;
+  let allServers = [];
+  let allCountries = [];
+
+  async function loadInitialData() {
+    const [servers, countries] = await Promise.all([
+      API.get("/api/admin/servers"),
+      API.get("/api/admin/countries")
+    ]);
+    allServers = servers;
+    allCountries = countries;
+    
+    const sel = document.getElementById("svc-server");
+    sel.innerHTML = '<option value="">Select Server</option>' + 
+      allServers.map(s => {
+        const country = allCountries.find(c => c._id === s.country_id);
+        return `<option value="${s._id}">${s.name} ${country ? `(${country.flag} ${country.name})` : ''}</option>`;
+      }).join("");
+    loadServices();
+  }
+
+  async function loadServices() {
+    const data = await API.get("/api/admin/services");
+    const tbody = document.getElementById("services-body");
+    tbody.innerHTML = data.map(s => {
+      const server = allServers.find(x => x._id === s.server_id);
+      const country = server ? allCountries.find(c => c._id === server.country_id) : null;
+      return `
+      <tr>
+        <td><strong>${s.name}</strong></td>
+        <td>${server ? `${server.name} ${country ? country.flag || '' : ''}` : '—'}</td>
+        <td class="mono text-sm">${s.service_code || "—"}</td>
+        <td>${country ? `${country.flag || ''} ${country.name}` : '—'}</td>
+        <td>₹${s.price || 0}</td>
+        <td>${s.is_active ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-expired">Disabled</span>'}</td>
+        <td style="text-align:right">
+          <button class="btn btn-secondary btn-sm" onclick='openEdit(${JSON.stringify(s).replace(/'/g,"&#39;")})'>Edit</button>
+        </td>
+      </tr>`
+    }).join("") || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No services yet. Add countries and servers first!</td></tr>`;
+  }
+
+  function openCreate() {
+    if(!allServers.length) return toast("Add a Server first!", "error");
+    editingId = null;
+    document.getElementById("svc-modal-title").textContent = "Add Service";
+    ["svc-id","svc-name","svc-code","svc-price"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("svc-active").value = "true";
+    document.getElementById("del-svc-btn").classList.add("hidden");
+    openModal("svc-modal");
+  }
+
+  function openEdit(s) {
+    editingId = s._id;
+    document.getElementById("svc-modal-title").textContent = "Edit Service";
+    document.getElementById("svc-id").value = s._id;
+    document.getElementById("svc-name").value = s.name;
+    document.getElementById("svc-server").value = s.server_id || "";
+    document.getElementById("svc-code").value = s.service_code || "";
+    document.getElementById("svc-price").value = s.price || 0;
+    document.getElementById("svc-active").value = String(s.is_active);
+    document.getElementById("del-svc-btn").classList.remove("hidden");
+    openModal("svc-modal");
+  }
+
+  async function saveService() {
+    const body = {
+      name: document.getElementById("svc-name").value,
+      server_id: document.getElementById("svc-server").value,
+      service_code: document.getElementById("svc-code").value,
+      price: parseFloat(document.getElementById("svc-price").value || 0),
+      is_active: document.getElementById("svc-active").value === "true",
+    };
+    try {
+      if (editingId) await API.put(`/api/admin/services/${editingId}`, body);
+      else await API.post("/api/admin/services", body);
+      toast("Saved!", "success"); closeModal("svc-modal"); loadServices();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  async function deleteService() {
+    if (!(await uiConfirm("Delete this service?"))) return;
+    try {
+      await API.del(`/api/admin/services/${editingId}`);
+      toast("Deleted", "success"); closeModal("svc-modal"); loadServices();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  loadInitialData();
+</script>
+</body>
+</html>

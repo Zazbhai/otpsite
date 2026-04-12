@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Documentation — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .endpoint-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 14px;
+      color: var(--text-1);
+      margin: 16px 0;
+      word-break: break-all;
+    }
+    .method-badge {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 12px;
+      margin-right: 8px;
+    }
+    .docs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      background: var(--surface-2);
+      border-radius: var(--r-md);
+      overflow: hidden;
+    }
+    .docs-table th, .docs-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .docs-table th {
+      background: var(--surface-3);
+      color: var(--text-2);
+      font-weight: 600;
+    }
+    .docs-table tr:last-child td { border-bottom: none; }
+    
+    code.inline {
+      background: var(--surface-3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--accent);
+    }
+    
+    pre.code-block {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: var(--r-md);
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+    }
+
+    /* Sub-nav inside content */
+    .docs-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .docs-nav a {
+      background: var(--surface-2);
+      padding: 8px 16px;
+      border-radius: var(--r-full);
+      font-size: 13px;
+      color: var(--text-2);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .docs-nav a:hover {
+      background: var(--surface-3);
+      color: var(--text-1);
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <div class="nav-links" id="nav-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/dashboard/buy">Buy Number</a>
+      <a href="/dashboard/orders">Orders</a>
+      <a href="/dashboard/wallet">Wallet</a>
+      <a href="/dashboard/profile" class="active">Profile</a>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- Same dashboard sidebar -->
+  <aside class="sidebar">
+    <div id="user-info" style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--surface);border-radius:var(--r-lg);margin-bottom:8px">
+      <div id="avatar-wrap"></div>
+      <div style="min-width:0">
+        <div id="user-name" class="font-bold truncate" style="font-size:14px">Loading...</div>
+      </div>
+    </div>
+    <div class="sidebar-label">Navigation</div>
+    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
+    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
+    <a href="/dashboard/accounts" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
+    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
+    <a href="/dashboard/profile" class="sidebar-item active">👤 Profile</a>
+    <div class="sidebar-divider"></div>
+    <a href="https://t.me/RapidOTPbot" target="_blank" class="sidebar-item">🤖 Telegram Bot</a>
+    <a href="/support" class="sidebar-item">💬 Support</a>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px;">
+      <div>
+        <h1 style="font-size:24px;">REST API Documentation</h1>
+        <p class="text-muted" style="margin-top:4px;">Automate SMS verifications via our Activate API protocol.</p>
+      </div>
+      <div>
+        <a href="/dashboard/profile" class="btn btn-primary">Get API Key</a>
+      </div>
+    </div>
+
+    <!-- Quick Jumps -->
+    <div class="docs-nav">
+      <a href="#intro">Introduction</a>
+      <a href="#getBalance">Balance</a>
+      <a href="#getNumber">Get Number</a>
+      <a href="#getStatus">Get Status</a>
+      <a href="#setStatus">Change Status</a>
+      <a href="#meta">Metadata (Prices/Countries)</a>
+      <a href="#errors">Errors</a>
+    </div>
+
+    <!-- Intro Card -->
+    <div class="card" id="intro">
+      <h3 style="margin-bottom:12px">Introduction & Authentication</h3>
+      <p style="color:var(--text-2); font-size:15px; margin-bottom:16px;">
+        Our API uses the widely adopted <code>stubs/handler_api.php</code> format. It is fully compatible with major SMS verification bot software. 
+      </p>
+      <div style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); padding:16px; border-radius:var(--r-md); margin-bottom:16px;">
+        <strong style="color:var(--text-1)">Authentication:</strong> All endpoints require your unique <code>api_key</code> to be passed as a query parameter.
+      </div>
+      <p style="color:var(--warning); font-size:14px; font-weight:600;">Keep your API key absolutely secret. Do not expose it on the frontend.</p>
+    </div>
+
+    <!-- Get Balance -->
+    <div class="card" id="getBalance">
+      <h3 style="margin-bottom:8px">Get Balance</h3>
+      <p style="color:var(--text-2); font-size:14px;">Retrieve your current account balance.</p>
+      
+      <div class="endpoint-box">
+        <span class="method-badge">GET</span> /stubs/handler_api.php?api_key=$api_key&amp;action=getBalance
+      </div>
+
+      <h4 style="margin-bottom:8px; font-size:14px;">Parameters</h4>
+      <table class="docs-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">action</code></td><td>String</td><td>Must be <code>getBalance</code></td></tr>
+          <tr><td><code class="inline">api_key</code></td><td>String</td><td>Your API Key</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-bottom:8px; font-size:14px;">Response</h4>
+      <pre class="code-block">ACCESS_BALANCE:100.20</pre>
+    </div>
+
+    <!-- Get Number -->
+    <div class="card" id="getNumber">
+      <h3 style="margin-bottom:8px">Request a Number</h3>
+      <p style="color:var(--text-2); font-size:14px;">Purchases a virtual phone number for a specific service and country.</p>
+      
+      <div class="endpoint-box">
+        <span class="method-badge">GET</span> /stubs/handler_api.php?api_key=$api_key&amp;action=getNumber&amp;service=$service&amp;country=$country
+      </div>
+
+      <h4 style="margin-bottom:8px; font-size:14px;">Parameters</h4>
+      <table class="docs-table">
+        <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">action</code></td><td>Yes</td><td>Must be <code>getNumber</code></td></tr>
+          <tr><td><code class="inline">service</code></td><td>Yes</td><td>Service identifier (e.g. <code>wa</code>). If you cannot send an operator param, prefix it here (e.g. <code>6-wa</code>).</td></tr>
+          <tr><td><code class="inline">country</code></td><td>Yes</td><td>Numeric country ID (e.g. <code>21</code> for USA).</td></tr>
+          <tr><td><code class="inline">operator</code></td><td>No</td><td>Provider routing filter (e.g. <code>any</code> or <code>6</code>).</td></tr>
+          <tr><td><code class="inline">maxPrice</code></td><td>No</td><td>Maximum allowed price you consent to. Recommended to prevent overcharging.</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-bottom:8px; font-size:14px;">Responses</h4>
+      <table class="docs-table">
+        <thead><tr><th>Code</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline" style="color:var(--success)">ACCESS_NUMBER:ORD-5K8H:125550198</code></td><td>Success! Returns Order ID and the Phone number (digits only).</td></tr>
+          <tr><td><code class="inline" style="color:var(--danger)">NO_NUMBERS</code></td><td>No numbers available for requested parameters.</td></tr>
+          <tr><td><code class="inline" style="color:var(--danger)">NO_BALANCE</code></td><td>Insufficient wallet balance.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Get Status -->
+    <div class="card" id="getStatus">
+      <h3 style="margin-bottom:8px">Get SMS Status</h3>
+      <p style="color:var(--text-2); font-size:14px;">Poll this endpoint to check if the SMS code has arrived for an active order.</p>
+      
+      <div class="endpoint-box">
+        <span class="method-badge">GET</span> /stubs/handler_api.php?api_key=$api_key&amp;action=getStatus&amp;id=$id
+      </div>
+
+      <h4 style="margin-bottom:8px; font-size:14px;">Parameters</h4>
+      <table class="docs-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">action</code></td><td>String</td><td>Must be <code>getStatus</code></td></tr>
+          <tr><td><code class="inline">id</code></td><td>String</td><td>Order ID returned by getNumber.</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-bottom:8px; font-size:14px;">Responsess</h4>
+      <table class="docs-table">
+        <thead><tr><th>Code</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline" style="color:var(--success)">STATUS_OK:883190</code></td><td>SMS received! Contains the verification code.</td></tr>
+          <tr><td><code class="inline">STATUS_WAIT_CODE</code></td><td>Number active, waiting for SMS delivery.</td></tr>
+          <tr><td><code class="inline" style="color:var(--danger)">STATUS_CANCEL</code></td><td>Order was cancelled or timed out.</td></tr>
+        </tbody>
+      </table>
+      
+      <div style="margin-top:16px;">
+        <h4 style="margin-bottom:8px; font-size:14px;">Batch Status Check (V2)</h4>
+        <p style="font-size:13px; color:var(--text-2)">Check multiple IDs at once: <code>action=getStatusV2&amp;id=123,124</code></p>
+        <pre class="code-block">{ "123": "STATUS_WAIT_CODE", "124": "STATUS_OK:5489" }</pre>
+      </div>
+    </div>
+
+
+    <!-- Change Status -->
+    <div class="card" id="setStatus">
+      <h3 style="margin-bottom:8px">Change Request Status</h3>
+      <p style="color:var(--text-2); font-size:14px;">Action an active order (Cancel for refund, or request secondary SMS).</p>
+      
+      <div class="endpoint-box">
+        <span class="method-badge">GET</span> /stubs/handler_api.php?api_key=$api_key&amp;action=setStatus&amp;status=$status&amp;id=$id
+      </div>
+
+      <h4 style="margin-bottom:8px; font-size:14px;">Parameters</h4>
+      <table class="docs-table">
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">status</code></td><td><strong>8:</strong> Cancel Order. &nbsp;&nbsp; <strong>3:</strong> Request another SMS.</td></tr>
+          <tr><td><code class="inline">id</code></td><td>Order ID.</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-bottom:8px; font-size:14px;">Responses</h4>
+      <table class="docs-table">
+        <tbody>
+          <tr><td><code class="inline" style="color:var(--success)">ACCESS_CANCEL</code></td><td>Successfully cancelled and remaining balance was refunded.</td></tr>
+          <tr><td><code class="inline" style="color:var(--warning)">ACCESS_CANCEL_ALREADY</code></td><td>The order was already cancelled previously.</td></tr>
+          <tr><td><code class="inline">ACCESS_RETRY_GET</code></td><td>Waiting for next SMS (if status=3).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Meta / Prices -->
+    <div class="card" id="meta">
+      <h3 style="margin-bottom:8px">Metadata Endpoints</h3>
+      <p style="color:var(--text-2); font-size:14px; margin-bottom: 24px;">Use these to configure your software menus dynamically.</p>
+      
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+        <div style="background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--border)">
+          <div style="font-weight:bold; margin-bottom:4px; font-size:14px;">Get Prices</div>
+          <code class="inline">action=getPrices</code>
+          <pre class="code-block" style="margin-top:8px;">{
+  "21": { // Country ID
+    "wa": { // Service Slug
+      "1.50": "460" // Price : Qty
+    }
+  }
+}</pre>
+        </div>
+        
+        <div style="background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--border)">
+          <div style="font-weight:bold; margin-bottom:4px; font-size:14px;">Get Countries</div>
+          <code class="inline">action=getCountries</code>
+          <pre class="code-block" style="margin-top:8px;">{
+  "1": "Ukraine",
+  "21": "USA",
+  "22": "Canada"
+}</pre>
+        </div>
+
+        <div style="background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--border)">
+          <div style="font-weight:bold; margin-bottom:4px; font-size:14px;">Get Services</div>
+          <code class="inline">action=getServices</code>
+          <pre class="code-block" style="margin-top:8px;">{
+  "wa": "WhatsApp",
+  "tg": "Telegram",
+  "ig": "Instagram"
+}</pre>
+        </div>
+        
+        <div style="background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--border)">
+          <div style="font-weight:bold; margin-bottom:4px; font-size:14px;">Get Operators</div>
+          <code class="inline">action=getOperators</code>
+          <pre class="code-block" style="margin-top:8px;">{
+  "Any": "any",
+  "Server 1": "server_slug"
+}</pre>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Live Platform Lookup Tables -->
+    <div class="card" id="lookup">
+      <h3 style="margin-bottom:8px">Lookup Tables</h3>
+      <p style="color:var(--text-2); font-size:14px; margin-bottom: 24px;">The exact service codes and operator slugs currently active on the platform. Use these values in your API calls.</p>
+      
+      <div style="display:flex; flex-wrap:wrap; gap:24px;">
+        <!-- Services Table -->
+        <div style="flex: 1; min-width:300px;">
+          <h4 style="margin-bottom:12px; font-size:14px;">Available Services</h4>
+          <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--r-md);">
+            <table class="docs-table" style="margin:0;">
+              <thead style="position:sticky; top:0; z-index:10;">
+                <tr><th>Code (service)</th><th>Service Name</th></tr>
+              </thead>
+              <tbody id="live-services-tbl">
+                <tr><td colspan="2" class="text-center text-muted">Loading live data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Operators Table -->
+        <div style="flex: 1; min-width:300px;">
+          <h4 style="margin-bottom:12px; font-size:14px;">Available Operators</h4>
+          <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--r-md);">
+            <table class="docs-table" style="margin:0;">
+              <thead style="position:sticky; top:0; z-index:10;">
+                <tr><th>Code (operator)</th><th>Server Network</th></tr>
+              </thead>
+              <tbody id="live-operators-tbl">
+                <tr><td colspan="2" class="text-center text-muted">Loading live data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Errors -->
+    <div class="card" id="errors">
+      <h3 style="margin-bottom:12px; color:var(--danger)">Error Responses</h3>
+      <table class="docs-table" style="margin:0;">
+        <thead><tr><th>Code</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">BAD_KEY</code></td><td>Invalid or missing API key.</td></tr>
+          <tr><td><code class="inline">BAD_ACTION</code></td><td>Invalid action requested.</td></tr>
+          <tr><td><code class="inline">USER_BANNED</code></td><td>Your account has been banned.</td></tr>
+          <tr><td><code class="inline">BAD_SERVICE</code></td><td>Requested service is unavailable or invalid.</td></tr>
+          <tr><td><code class="inline">BAD_COUNTRY</code></td><td>Invalid or unsupported country code.</td></tr>
+          <tr><td><code class="inline">NO_ACTIVATION</code></td><td>Activation ID is missing or invalid.</td></tr>
+          <tr><td><code class="inline">BAD_STATUS</code></td><td>The requested status is invalid or cannot be processed.</td></tr>
+          <tr><td><code class="inline">ERROR</code></td><td>A generic server error occurred.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  if (!requireLogin()) {}
+  
+  async function init() {
+    try {
+      const data = await API.get("/api/user/profile");
+      document.getElementById("user-name").textContent = `${data.first_name || ''} ${data.last_name || ''}`.trim() || data.username || "User";
+      
+      const avatarHTML = userAvatar(data, 32);
+      document.getElementById("avatar-wrap").innerHTML = avatarHTML;
+
+      // Fetch live data if API key exists
+      if (data.api_key) {
+        populateLiveTables(data.api_key);
+      } else {
+        const msg = `<tr><td colspan="2" class="text-center" style="color:var(--warning)">Generate an API Key first to view live data.</td></tr>`;
+        document.getElementById("live-services-tbl").innerHTML = msg;
+        document.getElementById("live-operators-tbl").innerHTML = msg;
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  async function populateLiveTables(apiKey) {
+    try {
+      // Fetch Services
+      const svcRes = await fetch(`/stubs/handler_api.php?api_key=${apiKey}&action=getServices`);
+      const svcData = await svcRes.json();
+      const svcHtml = Object.entries(svcData).map(([slug, name]) => 
+        `<tr><td><code class="inline">${slug}</code></td><td>${name}</td></tr>`
+      ).join("");
+      document.getElementById("live-services-tbl").innerHTML = svcHtml || `<tr><td colspan="2">No services active</td></tr>`;
+
+      // Fetch Operators
+      const opRes = await fetch(`/stubs/handler_api.php?api_key=${apiKey}&action=getOperators`);
+      const opData = await opRes.json();
+      const opHtml = Object.entries(opData).map(([name, slug]) => 
+        `<tr><td><code class="inline">${slug}</code></td><td>${name}</td></tr>`
+      ).join("");
+      document.getElementById("live-operators-tbl").innerHTML = opHtml || `<tr><td colspan="2">No operators active</td></tr>`;
+    } catch(e) {
+      console.error("Failed to load live tables:", e);
+    }
+  }
+  
+  init();
+</script>
+</body>
+</html>

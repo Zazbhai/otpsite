@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Promo Codes — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <div class="nav-links">
+      <a href="/admin">Dashboard</a>
+      <a href="/admin/promo-codes" class="active">Promo Codes</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/promo-codes" class="sidebar-item active">🎟️ Promo Codes</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px">
+      <h1 style="font-size:24px;margin:0">🎟️ Promo Codes</h1>
+      <button class="btn btn-primary" onclick="openModal('promo-modal')">+ Create Code</button>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Usage</th>
+              <th>Expiry</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="promo-body">
+            <script>document.currentScript.outerHTML = skeletonTable(7, 5);</script>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pagination" class="mt-4"></div>
+  </main>
+</div>
+
+<!-- Create Promo Modal -->
+<div class="modal-backdrop" id="promo-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Create New Promo Code</h3>
+      <button class="modal-close" onclick="closeModal('promo-modal')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Code (e.g. WELCOME50)</label>
+        <input type="text" id="p-code" placeholder="WELCOME50" style="text-transform:uppercase" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Credit Amount (₹)</label>
+        <input type="number" id="p-amount" placeholder="50" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Total Usage Limit</label>
+        <input type="number" id="p-limit" placeholder="100" value="1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expiry Date (Optional)</label>
+        <input type="date" id="p-expiry" />
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-success" onclick="savePromo()">✅ Create Code</button>
+        <button class="btn btn-secondary" onclick="closeModal('promo-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadPromos();
+  }
+  
+  init();
+
+  async function loadPromos(page = 1) {
+    const tbody = document.getElementById('promo-body');
+    if (!tbody) return;
+    try {
+      const data = await API.get(`/api/admin/promo-codes?page=${page}`);
+      if (!data.codes.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No promo codes found</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.codes.map(c => `
+        <tr>
+          <td><span class="mono font-bold" style="color:var(--accent)">${c.code}</span></td>
+          <td class="text-success font-bold">${fmtMoney(c.amount)}</td>
+          <td>
+            <span class="badge ${c.is_active ? 'badge-deposit' : 'badge-purchase'}">
+              ${c.is_active ? 'Active' : 'Inactive'}
+            </span>
+          </td>
+          <td class="text-sm">${c.used_count} / ${c.usage_limit}</td>
+          <td class="text-muted text-sm">${c.expired_at ? fmtDateShort(c.expired_at) : 'Never'}</td>
+          <td class="text-muted text-sm">${fmtDateShort(c.createdAt)}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="deletePromo('${c._id}')">🗑️</button>
+          </td>
+        </tr>`).join('');
+      renderPagination('pagination', data.page, data.pages, loadPromos);
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function savePromo() {
+    const code = document.getElementById('p-code').value.trim().toUpperCase();
+    const amount = parseFloat(document.getElementById('p-amount').value);
+    const usage_limit = parseInt(document.getElementById('p-limit').value);
+    const expired_at = document.getElementById('p-expiry').value;
+
+    if (!code || !amount) return toast('Code and amount are required', 'error');
+
+    try {
+      await API.post('/api/admin/promo-codes', { code, amount, usage_limit, expired_at });
+      toast('Promo code created!', 'success');
+      closeModal('promo-modal');
+      loadPromos();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function deletePromo(id) {
+    if (!await uiConfirm('Delete this promo code? This cannot be undone.')) return;
+    try {
+      await API.delete(`/api/admin/promo-codes/${id}`);
+      toast('Promo code deleted', 'success');
+      loadPromos();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+</script>
+</body>
+</html>

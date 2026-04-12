@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payments — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a>
+      <a href="/admin/payments" class="active">Payments</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item active">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px">
+      <h1 style="font-size:24px;margin:0">💰 Payments & Deposits</h1>
+      <button class="btn btn-primary" onclick="openModal('deposit-modal')">+ Manual Deposit</button>
+    </div>
+
+    <!-- BharatPe Configuration -->
+    <div class="card mb-8">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h3 style="margin:0">BharatPe Gateway Config</h3>
+        <div style="display:flex;align-items:center;gap:10px">
+          <label class="switch">
+            <input type="checkbox" id="pe-enabled">
+            <span class="slider round"></span>
+          </label>
+          <span style="font-size:13px;font-weight:600">Enabled</span>
+        </div>
+      </div>
+      
+      <div class="grid-3 mb-4">
+        <div class="form-group">
+          <label class="form-label">Merchant ID</label>
+          <input type="text" id="pe-merchant" placeholder="e.g. 1234567" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Access Token</label>
+          <input type="password" id="pe-token" placeholder="BharatPe Auth Token" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Session Cookie (Optional)</label>
+          <input type="text" id="pe-cookie" placeholder="Cookie string if needed" />
+        </div>
+      </div>
+      
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="savePeConfig()">Save Configuration</button>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid-4 mb-8">
+      <div class="stat-card"><div class="stat-icon" style="color:#10b981;background:rgba(16,185,129,.1)">💵</div><div class="stat-value text-success" id="s-total">—</div><div class="stat-label">Total Deposited</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#3b82f6;background:rgba(59,130,246,.1)">📅</div><div class="stat-value" id="s-today">—</div><div class="stat-label">Today's Deposits</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;background:rgba(245,158,11,.1)">🧾</div><div class="stat-value" id="s-count">—</div><div class="stat-label">Total Transactions</div></div>
+      <div class="stat-card"><div class="stat-icon" style="color:#8b5cf6;background:rgba(139,92,246,.1)">👥</div><div class="stat-value" id="s-users">—</div><div class="stat-label">Unique Payers</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <div class="search-bar" style="max-width:280px">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-uid" placeholder="Search by User ID…" oninput="debounceSearch()" />
+      </div>
+      <select id="type-filter" onchange="loadPayments(1)" style="width:auto;padding:8px 12px">
+        <option value="deposit">Deposits only</option>
+        <option value="all">All Transactions</option>
+        <option value="purchase">Purchases</option>
+        <option value="refund">Refunds</option>
+      </select>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User ID</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Balance After</th>
+              <th>Description</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pay-body">
+            <script>document.currentScript.outerHTML = skeletonTable(7, 10);</script>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pagination" class="mt-4"></div>
+  </main>
+</div>
+
+<!-- Manual Deposit Modal -->
+<div class="modal-backdrop" id="deposit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Manual Deposit</h3>
+      <button class="modal-close" onclick="closeModal('deposit-modal')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group">
+        <label class="form-label">User (search by email or username)</label>
+        <input type="text" id="dep-search" placeholder="Start typing email or username…" oninput="debounceUserSearch()" />
+        <div id="dep-user-results" style="margin-top:6px;display:flex;flex-direction:column;gap:6px"></div>
+        <input type="hidden" id="dep-uid" />
+        <div id="dep-selected" style="display:none;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3);border-radius:var(--r-sm);padding:8px 12px;margin-top:6px;font-size:13px;display:flex;align-items:center;gap:8px"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (₹)</label>
+        <input type="number" id="dep-amount" placeholder="100" step="0.01" min="0.01" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason / Note</label>
+        <input type="text" id="dep-note" placeholder="e.g. UPI payment from user, promo bonus…" />
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-success" onclick="doDeposit()">✅ Add Balance</button>
+        <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  /* ── BharatPe Config ─────────────────────────────────────── */
+  async function loadPeConfig() {
+    try {
+      const config = await API.get('/api/admin/payments/config');
+      const b = config.bharatpe || {};
+      document.getElementById('pe-enabled').checked = !!b.enabled;
+      document.getElementById('pe-merchant').value = b.merchant_id || '';
+      document.getElementById('pe-token').value    = b.access_token || '';
+      document.getElementById('pe-cookie').value   = b.session_cookie || '';
+    } catch(e) { console.error('Failed to load BharatPe config', e); }
+  }
+
+  async function savePeConfig() {
+    const config = {
+      bharatpe: {
+        enabled: document.getElementById('pe-enabled').checked,
+        merchant_id: document.getElementById('pe-merchant').value.trim(),
+        access_token: document.getElementById('pe-token').value.trim(),
+        session_cookie: document.getElementById('pe-cookie').value.trim()
+      }
+    };
+    try {
+      await API.post('/api/admin/payments/config', config);
+      toast('BharatPe configuration saved!', 'success');
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadStats();
+    loadPayments();
+    loadPeConfig();
+  }
+  
+  let searchTimeout = null, userSearchTimeout = null;
+  init();
+
+  function debounceSearch() { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => loadPayments(1), 400); }
+  function debounceUserSearch() { clearTimeout(userSearchTimeout); userSearchTimeout = setTimeout(searchUsers, 400); }
+
+  /* ── User Search for Deposit Modal ─────────────────────────── */
+  async function searchUsers() {
+    const q = document.getElementById('dep-search').value.trim();
+    const box = document.getElementById('dep-user-results');
+    if (!q) { box.innerHTML = ''; return; }
+    try {
+      const data = await API.get(`/api/admin/users?q=${encodeURIComponent(q)}&limit=5`);
+      box.innerHTML = data.users.map(u => `
+        <div onclick="selectUser('${u._id}', '${(u.display_name || u.username).replace(/'/g,"\\'")}', '${u.email}')"
+          style="padding:8px 12px;border-radius:var(--r-sm);cursor:pointer;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:13px">
+          ${userAvatar(u, 28)}
+          <div>
+            <div class="font-bold">${u.display_name || u.username}</div>
+            <div class="text-muted text-xs">${u.email} · Balance: ${fmtMoney(u.balance)}</div>
+          </div>
+        </div>`).join('');
+    } catch(e) {}
+  }
+
+  function selectUser(id, name, email) {
+    document.getElementById('dep-uid').value = id;
+    document.getElementById('dep-user-results').innerHTML = '';
+    document.getElementById('dep-search').value = '';
+    const sel = document.getElementById('dep-selected');
+    sel.innerHTML = `✅ <strong>${name}</strong> <span class="text-muted">&lt;${email}&gt;</span> <button onclick="clearUser()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px">✕</button>`;
+    sel.style.display = 'flex';
+  }
+
+  function clearUser() {
+    document.getElementById('dep-uid').value = '';
+    document.getElementById('dep-selected').style.display = 'none';
+  }
+
+  async function doDeposit() {
+    const uid    = document.getElementById('dep-uid').value;
+    const amount = parseFloat(document.getElementById('dep-amount').value);
+    const description = document.getElementById('dep-note').value.trim() || 'Manual deposit by admin';
+    if (!uid)              return toast('Select a user first', 'error');
+    if (!amount || amount <= 0) return toast('Enter a valid amount', 'error');
+    try {
+      await API.post('/api/admin/transactions/deposit', { user_id: uid, amount, description });
+      toast(`₹${amount.toFixed(2)} added successfully!`, 'success');
+      closeModal('deposit-modal');
+      clearUser();
+      document.getElementById('dep-amount').value = '';
+      document.getElementById('dep-note').value = '';
+      loadPayments(1);
+      loadStats();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  /* ── Transactions Table ─────────────────────────────────────── */
+  async function loadPayments(page = 1) {
+    const uid  = document.getElementById('search-uid').value.trim();
+    const type = document.getElementById('type-filter').value;
+    const params = new URLSearchParams({ page, limit: 40 });
+    if (uid && uid !== 'all') params.append('user_id', uid);
+    if (type !== 'all') params.append('type', type);
+
+    const tbody = document.getElementById('pay-body');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+
+    try {
+      const data = await API.get(`/api/admin/transactions?${params}`);
+      if (!data.transactions.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No transactions found</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.transactions.map(t => `
+        <tr>
+          <td>
+            <a href="/admin/users/${t.user_id}" class="mono text-sm" style="color:var(--accent)">
+              ${t.user_id.slice(-8)}…
+            </a>
+          </td>
+          <td>${txBadge(t.type)}</td>
+          <td class="font-bold ${t.amount >= 0 ? 'text-success' : 'text-danger'}">
+            ${t.amount >= 0 ? '+' : ''}${fmtMoney(Math.abs(t.amount))}
+          </td>
+          <td class="mono text-sm">${fmtMoney(t.balance_after)}</td>
+          <td class="text-muted text-sm" style="max-width:200px">${t.description || '—'}</td>
+          <td class="text-muted text-sm">${fmtDateShort(t.createdAt)}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="addDeposit('${t.user_id}')">+₹</button>
+          </td>
+        </tr>`).join('');
+      renderPagination('pagination', data.page, data.pages, window.loadPayments);
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function loadStats() {
+    try {
+      const data = await API.get('/api/admin/analytics');
+      document.getElementById('s-total').textContent = fmtMoney(data.metrics.totalDeposits);
+      document.getElementById('s-today').textContent = fmtMoney(data.metrics.todayDeposits);
+      document.getElementById('s-count').textContent = data.metrics.totalOrders.toLocaleString();
+    } catch(e) {}
+    // Unique payers from transactions
+    try {
+      const txData = await API.get('/api/admin/transactions?type=deposit&limit=500');
+      const uniq = new Set(txData.transactions.map(t => t.user_id));
+      document.getElementById('s-users').textContent = uniq.size.toLocaleString();
+    } catch(e) {}
+  }
+
+  // Quick-open deposit for a specific user from within the table
+  async function addDeposit(userId) {
+    try {
+      const d = await API.get(`/api/admin/users/${userId}`);
+      const u = d.user;
+      selectUser(u._id, u.display_name || u.username, u.email);
+      openModal('deposit-modal');
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+
+</script>
+</body>
+</html>

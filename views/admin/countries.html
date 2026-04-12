@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Countries — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .countries-page { max-width: 800px; margin: 0 auto; }
+    
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      animation: slideDown 0.4s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .page-title h1 { font-size: 24px; margin: 0; }
+    .page-title p { font-size: 14px; color: var(--text-3); margin: 4px 0 0; }
+    
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .country-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .country-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(59,130,246,0.15);
+    }
+    
+    .country-flag {
+      font-size: 36px;
+      width: 56px;
+      height: 56px;
+      background: var(--surface-2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .country-info { flex: 1; min-width: 0; }
+    .country-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+    .country-code { font-size: 13px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+    
+    .country-status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .country-status.active { background: rgba(16,185,129,0.15); color: var(--success); }
+    .country-status.inactive { background: rgba(100,116,139,0.15); color: var(--text-3); }
+    
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+    }
+    .empty-state .icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
+    .empty-state p { color: var(--text-3); margin-bottom: 24px; }
+    
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    
+    .modal {
+      background: var(--bg-1);
+      border: 1px solid var(--border-2);
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 440px;
+      animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .modal-header h3 { font-size: 20px; margin: 0; }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-2);
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    .modal-close:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+    
+    .modal-form { display: flex; flex-direction: column; gap: 20px; }
+    
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+    
+    .form-input {
+      padding: 12px 16px;
+      background: var(--bg-2);
+      border: 1px solid var(--border-2);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .modal-actions .btn { flex: 1; padding: 14px; }
+    
+    .btn { padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-primary { background: var(--grad-primary); color: #fff; box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59,130,246,0.4); }
+    .btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+    .btn-danger:hover { background: rgba(239,68,68,0.25); }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--surface-2); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+    
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .delete-btn {
+      background: rgba(239,68,68,0.1);
+      border: none;
+      color: var(--danger);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .delete-btn:hover { background: rgba(239,68,68,0.2); }
+    
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+      .country-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a>
+      <a href="/admin/services">Services</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item active">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div class="countries-page">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>Countries</h1>
+          <p>Manage available countries for services</p>
+        </div>
+        <button class="btn btn-primary" onclick="openCreate()">+ Add Country</button>
+      </div>
+      
+      <div id="countries-grid" class="country-grid">
+        <div class="empty-state">
+          <div class="spinner" style="margin: 0 auto"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Country Modal -->
+<div class="modal-backdrop" id="country-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Add Country</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <form class="modal-form" onsubmit="event.preventDefault(); saveCountry()">
+      <input type="hidden" id="country-id" />
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Country Code</label>
+          <input type="text" id="country-code" class="form-input" placeholder="91" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Flag Emoji</label>
+          <input type="text" id="country-flag" class="form-input" placeholder="🇮🇳" maxlength="4" />
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Country Name</label>
+        <input type="text" id="country-name" class="form-input" placeholder="India" required />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Sort Order</label>
+        <input type="number" id="country-sort" class="form-input" placeholder="0" value="0" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="country-active" class="form-input">
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      </div>
+      <button type="button" class="delete-btn" id="delete-btn" onclick="deleteCountry()" style="display:none;margin-top:8px">Delete Country</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadCountries();
+  }
+  
+  let editingId = null;
+  
+  async function loadCountries() {
+    try {
+      const countries = await API.get("/api/admin/countries");
+      const grid = document.getElementById("countries-grid");
+      
+      if (!countries.length) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column: 1/-1;">
+            <div class="icon">🌍</div>
+            <h3>No countries yet</h3>
+            <p>Add countries to use in your services</p>
+            <button class="btn btn-primary" onclick="openCreate()">+ Add Country</button>
+          </div>`;
+        return;
+      }
+      
+      grid.innerHTML = countries.map((c, i) => `
+        <div class="country-card" onclick="openEdit('${c._id}')" style="animation-delay: ${i * 50}ms">
+          <div class="country-flag">${c.flag || '🌍'}</div>
+          <div class="country-info">
+            <div class="country-name">${c.name}</div>
+            <div class="country-code">${c.code}</div>
+          </div>
+          <div class="country-status ${c.is_active ? 'active' : 'inactive'}">${c.is_active ? 'Active' : 'Inactive'}</div>
+        </div>
+      `).join('');
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+  
+  function openCreate() {
+    editingId = null;
+    document.getElementById("modal-title").textContent = "Add Country";
+    document.getElementById("country-id").value = "";
+    document.getElementById("country-code").value = "";
+    document.getElementById("country-flag").value = "";
+    document.getElementById("country-name").value = "";
+    document.getElementById("country-sort").value = "0";
+    document.getElementById("country-active").value = "true";
+    document.getElementById("delete-btn").style.display = "none";
+    document.getElementById("country-modal").classList.add("open");
+  }
+  
+  async function openEdit(id) {
+    try {
+      const countries = await API.get("/api/admin/countries");
+      const c = countries.find(x => x._id === id);
+      if (!c) return;
+      
+      editingId = c._id;
+      document.getElementById("modal-title").textContent = "Edit Country";
+      document.getElementById("country-id").value = c._id;
+      document.getElementById("country-code").value = c.code;
+      document.getElementById("country-flag").value = c.flag || "";
+      document.getElementById("country-name").value = c.name;
+      document.getElementById("country-sort").value = c.sort_order || 0;
+      document.getElementById("country-active").value = String(c.is_active);
+      document.getElementById("delete-btn").style.display = "block";
+      document.getElementById("country-modal").classList.add("open");
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+  
+  function closeModal() {
+    document.getElementById("country-modal").classList.remove("open");
+  }
+  
+  async function saveCountry() {
+    const body = {
+      code: document.getElementById("country-code").value.trim(),
+      name: document.getElementById("country-name").value.trim(),
+      flag: document.getElementById("country-flag").value.trim() || "🌍",
+      sort_order: parseInt(document.getElementById("country-sort").value) || 0,
+      is_active: document.getElementById("country-active").value === "true"
+    };
+    
+    if (!body.code || !body.name) {
+      return toast("Code and name are required", "error");
+    }
+    
+    const saveBtn = document.getElementById("save-btn");
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<div class="spinner"></div>';
+    
+    try {
+      if (editingId) {
+        await API.put(`/api/admin/countries/${editingId}`, body);
+        toast("Country updated!", "success");
+      } else {
+        await API.post("/api/admin/countries", body);
+        toast("Country added!", "success");
+      }
+      closeModal();
+      loadCountries();
+    } catch (e) {
+      toast(e.message, "error");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = "Save";
+    }
+  }
+  
+  async function deleteCountry() {
+    if (!await uiConfirm("Delete this country? Servers using this country will be affected.")) return;
+    
+    const deleteBtn = document.getElementById("delete-btn");
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = "Deleting...";
+    
+    try {
+      await API.del(`/api/admin/countries/${editingId}`);
+      toast("Country deleted", "success");
+      closeModal();
+      loadCountries();
+    } catch (e) {
+      toast(e.message, "error");
+    } finally {
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = "Delete Country";
+    }
+  }
+  
+  document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("modal-backdrop")) closeModal();
+  });
+  
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing — Rapid OTP</title>
+  <meta name="description" content="View all Rapid OTP service pricing by country and provider." />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <div class="nav-links" id="nav-links">
+      <a href="/pricing" class="active">Pricing</a>
+      <a href="/how-it-works">How It Works</a>
+      <a href="/support">Support</a>
+      <span id="nav-auth"></span>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div style="padding-top:64px">
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <h1>Service <span class="gradient-text">Pricing</span></h1>
+        <p>All prices in USD. Auto-refund if no OTP received.</p>
+      </div>
+      <div class="search-bar mb-8" style="max-width:360px;margin:0 auto 32px">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" placeholder="Search services…" oninput="filterPricing()" />
+      </div>
+      <div id="pricing-grid" style="display:flex;flex-direction:column;gap:16px">
+        <div style="text-align:center;padding:64px;color:var(--text-3)"><div class="spinner" style="margin:0 auto"></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+<footer>
+  <div class="container">
+    <div class="footer-bottom">
+      <p>© 2025 Rapid OTP. All rights reserved.</p>
+      <div style="display:flex;gap:16px"><a href="/" style="color:var(--text-3)">Home</a><a href="/support" style="color:var(--text-3)">Support</a><a href="/terms" style="color:var(--text-3)">Terms</a></div>
+    </div>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+<script>
+  const navAuth = document.getElementById("nav-auth");
+  if (isLoggedIn()) navAuth.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
+  else navAuth.innerHTML = '<a href="/?login=1" class="btn btn-primary btn-sm">Login</a>';
+
+  let services = [];
+  async function loadPricing() {
+    try {
+      services = await API.get("/api/user/services");
+      renderPricing(services);
+    } catch(e) {
+      document.getElementById("pricing-grid").innerHTML = `<div style="text-align:center;color:var(--danger)">${e.message}</div>`;
+    }
+  }
+
+  function renderPricing(list) {
+    const grid = document.getElementById("pricing-grid");
+    grid.innerHTML = list.map(s => `
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+          <span style="font-size:28px">${s.icon || "📱"}</span>
+          <div><div style="font-weight:700;font-size:16px">${s.name}</div><div class="text-xs text-muted">${s.category}</div></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Country</th><th>Provider</th><th>Price</th><th></th></tr></thead>
+            <tbody>
+              ${(s.countries || []).flatMap(c =>
+                (c.options || []).filter(o => o.is_active).map(o => `
+                  <tr>
+                    <td>${c.flag || "🌐"} ${c.country}</td>
+                    <td>${o.server_name}</td>
+                    <td class="text-success font-bold">${fmtMoney(o.price)}</td>
+                    <td><a href="/dashboard/buy" class="btn btn-primary btn-sm">Buy →</a></td>
+                  </tr>`)
+              ).join("") || `<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text-3)">No options available</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>`).join("") || `<div style="text-align:center;padding:64px;color:var(--text-3)">No services available yet</div>`;
+  }
+
+  function filterPricing() {
+    const q = document.getElementById("search").value.toLowerCase();
+    renderPricing(services.filter(s => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q)));
+  }
+
+  loadPricing();
+</script>
+</body>
+</html>

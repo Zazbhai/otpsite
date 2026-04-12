@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — Admin — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="/admin">Dashboard</a><a href="/admin/settings" class="active">Settings</a>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+    <a href="/admin/settings" class="sidebar-item active">🔧 Settings</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+  <main class="main-content">
+    <h1 style="font-size:24px;margin-bottom:32px">Bot Settings</h1>
+    <div style="max-width:600px;display:flex;flex-direction:column;gap:20px">
+      <div class="card">
+        <h3 style="margin-bottom:20px">General</h3>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="form-group"><label class="form-label">Bot Name</label><input type="text" id="s-bot-name" placeholder="Rapid OTP" /></div>
+          <div class="form-group"><label class="form-label">Welcome Message</label><textarea id="s-welcome" rows="3" placeholder="Welcome message for new users…"></textarea></div>
+          <div class="form-group"><label class="form-label">Order Expiry (minutes)</label><input type="number" id="s-expiry" value="20" min="1" max="60" /></div>
+          <div class="form-group"><label class="form-label">Default Theme</label>
+            <select id="s-default-theme">
+              <option value="dark">🌙 Dark</option>
+              <option value="light">☀️ Light</option>
+              <option value="midnight">🌌 Midnight</option>
+              <option value="ocean">🌊 Ocean</option>
+              <option value="sunset">🌅 Sunset</option>
+              <option value="forest">🌲 Forest</option>
+              <option value="lavender">💜 Lavender</option>
+              <option value="aurora">🌀 Aurora</option>
+              <option value="ember">🔥 Ember</option>
+              <option value="citrus">🍋 Citrus</option>
+              <option value="stone">🪨 Stone</option>
+              <option value="sage">🌿 Sage</option>
+              <option value="dawn">🌄 Dawn</option>
+              <option value="neon">🌐 Neon</option>
+              <option value="coral">🐚 Coral</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:20px">Theme Library</h3>
+        <div class="theme-swatch-grid">
+          <button type="button" class="theme-swatch" data-theme="dark">🌙 Dark</button>
+          <button type="button" class="theme-swatch" data-theme="light">☀️ Light</button>
+          <button type="button" class="theme-swatch" data-theme="midnight">🌌 Midnight</button>
+          <button type="button" class="theme-swatch" data-theme="ocean">🌊 Ocean</button>
+          <button type="button" class="theme-swatch" data-theme="sunset">🌅 Sunset</button>
+          <button type="button" class="theme-swatch" data-theme="forest">🌲 Forest</button>
+          <button type="button" class="theme-swatch" data-theme="lavender">💜 Lavender</button>
+          <button type="button" class="theme-swatch" data-theme="aurora">🌀 Aurora</button>
+          <button type="button" class="theme-swatch" data-theme="ember">🔥 Ember</button>
+          <button type="button" class="theme-swatch" data-theme="citrus">🍋 Citrus</button>
+          <button type="button" class="theme-swatch" data-theme="stone">🪨 Stone</button>
+          <button type="button" class="theme-swatch" data-theme="sage">🌿 Sage</button>
+          <button type="button" class="theme-swatch" data-theme="dawn">🌄 Dawn</button>
+          <button type="button" class="theme-swatch" data-theme="neon">🌐 Neon</button>
+          <button type="button" class="theme-swatch" data-theme="coral">🐚 Coral</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:20px">Referral System</h3>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="form-group"><label class="form-label">Referral Bonus ($)</label><input type="number" id="s-ref-bonus" step="0.01" min="0" placeholder="0.50" /></div>
+          <div class="form-group"><label class="form-label">Referral Commission (%)</label><input type="number" id="s-ref-pct" step="0.1" min="0" max="50" placeholder="5" /></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:20px">Maintenance</h3>
+        <div style="display:flex;align-items:center;gap:12px">
+          <input type="checkbox" id="s-maintenance" style="width:18px;height:18px" />
+          <label for="s-maintenance" style="font-size:14px">Enable Maintenance Mode (blocks all orders)</label>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Save All Settings</button>
+    </div>
+  </main>
+</div>
+<script src="/js/main.js"></script>
+<script>
+  async function init() {
+    if (!await requireAdmin()) return;
+    
+    document.querySelectorAll(".theme-swatch").forEach(btn => {
+      btn.addEventListener("click", () => selectTheme(btn.dataset.theme));
+    });
+    
+    const themeSelect = document.getElementById("s-default-theme");
+    if (themeSelect) {
+      themeSelect.addEventListener("change", (event) => {
+        const theme = event.target.value;
+        updateThemeSwatches(theme);
+        applyTheme(theme);
+      });
+    }
+    
+    loadSettings();
+  }
+  
+  init();
+
+  function updateThemeSwatches(activeTheme) {
+    document.querySelectorAll(".theme-swatch").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.theme === activeTheme);
+    });
+  }
+
+  function selectTheme(theme) {
+    const select = document.getElementById("s-default-theme");
+    if (!select) return;
+    select.value = theme;
+    updateThemeSwatches(theme);
+    applyTheme(theme);
+  }
+
+  async function loadSettings() {
+    try {
+      const s = await API.get("/api/admin/settings");
+      if (s.bot_name) document.getElementById("s-bot-name").value = s.bot_name;
+      if (s.welcome_message) document.getElementById("s-welcome").value = s.welcome_message;
+      if (s.order_expiry) document.getElementById("s-expiry").value = s.order_expiry;
+      if (s.referral_bonus) document.getElementById("s-ref-bonus").value = s.referral_bonus;
+      if (s.referral_pct) document.getElementById("s-ref-pct").value = s.referral_pct;
+      if (s.maintenance) document.getElementById("s-maintenance").checked = s.maintenance === true || s.maintenance === "true";
+      if (s.default_theme) {
+        document.getElementById("s-default-theme").value = s.default_theme;
+        updateThemeSwatches(s.default_theme);
+        applyTheme(s.default_theme);
+      }
+    } catch (e) { toast(e.message, "error"); }
+  }
+  async function saveSettings() {
+    const body = {
+      bot_name: document.getElementById("s-bot-name").value,
+      welcome_message: document.getElementById("s-welcome").value,
+      order_expiry: parseInt(document.getElementById("s-expiry").value),
+      referral_bonus: parseFloat(document.getElementById("s-ref-bonus").value || 0),
+      referral_pct: parseFloat(document.getElementById("s-ref-pct").value || 0),
+      maintenance: document.getElementById("s-maintenance").checked,
+      default_theme: document.getElementById("s-default-theme").value,
+    };
+    try {
+      await API.post("/api/admin/settings", body);
+      toast("Settings saved!", "success");
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+</script>
+</body>
+</html>

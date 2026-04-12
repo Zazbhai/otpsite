@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Profile — Rapid OTP</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --card-bg: rgba(30, 41, 59, 0.4);
+      --glass-border: rgba(255, 255, 255, 0.1);
+    }
+    
+    body { font-family: 'Outfit', sans-serif; }
+    
+    .profile-hero {
+      position: relative;
+      background: var(--grad-primary);
+      height: 180px;
+      border-radius: 24px;
+      margin-bottom: 80px;
+      overflow: visible;
+      box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+    }
+    
+    .hero-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent);
+      border-radius: 24px;
+    }
+
+    .profile-avatar-wrapper {
+      position: absolute;
+      bottom: -60px;
+      left: 40px;
+      padding: 6px;
+      background: var(--bg);
+      border-radius: 50%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    .profile-avatar-container {
+      width: 120px;
+      height: 120px;
+      background: var(--surface-2);
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid var(--border);
+    }
+
+    .profile-info-header {
+      padding-left: 175px;
+      padding-top: 20px;
+      color: #fff;
+    }
+    
+    .profile-name {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    
+    .profile-username {
+      font-size: 16px;
+      opacity: 0.8;
+      font-weight: 500;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+      background: var(--surface-2);
+      border-color: var(--accent);
+    }
+    
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at center, rgba(59, 130, 246, 0.03) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-3);
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text);
+    }
+    
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.success { color: var(--success); }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 24px;
+    }
+    
+    .api-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      height: 100%;
+    }
+    
+    .api-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .api-input-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      background: rgba(0,0,0,0.2);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    
+    .api-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-2);
+      font-family: 'JetBrains Mono', monospace;
+      padding: 10px 16px;
+      font-size: 14px;
+      outline: none;
+    }
+    
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    
+    .action-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 18px 24px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .action-pill:hover {
+      background: var(--surface-2);
+      transform: translateX(8px);
+      border-color: var(--accent);
+    }
+    
+    .action-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--grad-glow);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .action-grid { grid-template-columns: 1fr; }
+    }
+    
+    @media (max-width: 640px) {
+      .profile-hero { height: 140px; margin-bottom: 100px; }
+      .profile-info-header { 
+        padding-left: 0; 
+        padding-top: 130px; 
+        text-align: center; 
+        color: var(--text);
+      }
+      .profile-avatar-wrapper {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: -60px;
+      }
+      .profile-avatar-container { width: 100px; height: 100px; }
+      .stat-value { font-size: 24px; }
+      .profile-name { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <div class="nav-links" id="nav-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/dashboard/buy">Buy</a>
+      <a href="/dashboard/orders">Orders</a>
+      <a href="/dashboard/wallet">Wallet</a>
+    </div>
+    <button class="nav-burger" id="nav-burger">☰</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <main class="main-content">
+    
+    <div class="profile-hero">
+      <div class="hero-glow"></div>
+      <div class="profile-avatar-wrapper">
+        <div class="profile-avatar-container" id="profile-avatar">
+          <!-- JS injected -->
+        </div>
+      </div>
+      <div class="profile-info-header">
+        <div class="profile-name" id="profile-name">Loading...</div>
+        <div class="profile-username" id="profile-user">@username</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Balance</div>
+        <div class="stat-value success" id="p-balance">₹0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Orders</div>
+        <div class="stat-value" id="p-orders">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Spent</div>
+        <div class="stat-value accent" id="p-spent">₹0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">User ID</div>
+        <div class="stat-value" style="font-size: 16px; font-family: monospace;" id="p-tid">#000000</div>
+      </div>
+    </div>
+
+    <div class="action-grid">
+      <div class="api-card">
+        <div class="api-title">
+          <span class="action-icon">🔑</span>
+          API Access
+        </div>
+        <p style="color: var(--text-3); font-size: 14px; line-height: 1.6;">
+          Your unique API key allows you to integrate Rapid OTP services directly into your own applications. 
+          Keep this safe!
+        </p>
+        
+        <div class="api-input-group">
+          <input type="text" id="api-key-input" class="api-input" readonly value="••••••••••••••••" onclick="copyApiKey()" />
+          <button class="btn btn-secondary btn-sm" onclick="generateApiKey()" style="margin-right:4px">Regenerate</button>
+        </div>
+        
+        <div style="margin-top: 20px; font-size: 13px;">
+          <a href="/api-docs" target="_blank" style="color: var(--accent); text-decoration: none;">View Documentation ↗</a>
+        </div>
+      </div>
+
+      <div class="quick-links-area">
+        <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 20px;">Support & Links</h3>
+        <div class="quick-actions">
+          <a href="/dashboard/wallet" class="action-pill">
+            <span class="action-icon">💰</span>
+            Add Funds
+          </a>
+          <a href="https://t.me/RapidOTPbot" target="_blank" class="action-pill">
+            <span class="action-icon">🤖</span>
+            Telegram Bot
+          </a>
+          <a href="/support" class="action-pill">
+            <span class="action-icon">🛠️</span>
+            Support Desk
+          </a>
+          <button onclick="logout()" class="action-pill" style="width: 100%; border: none; cursor: pointer; text-align: left;">
+            <span class="action-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">🚪</span>
+            Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center; color: var(--text-3); font-size: 12px;" id="profile-joined">
+      Member since ...
+    </div>
+
+  </main>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+{
+  if (!requireLogin()) {}
+  
+  async function init() {
+    try {
+      const data = await API.get("/api/user/profile");
+      
+      // Update Name & Avatar
+      const av = document.getElementById("profile-avatar");
+      if (av) av.innerHTML = userAvatar(data, 120);
+      
+      document.getElementById("profile-name").textContent = `${data.first_name || ''} ${data.last_name || ''}`.trim() || data.username || "User";
+      document.getElementById("profile-user").textContent = data.username ? `@${data.username}` : `#${data.telegram_id}`;
+      
+      // Update Stats
+      document.getElementById("p-balance").textContent = fmtMoney(data.balance);
+      document.getElementById("p-orders").textContent = data.total_orders;
+      document.getElementById("p-spent").textContent = fmtMoney(data.total_spent);
+      document.getElementById("p-tid").textContent = `#${data.telegram_id}`;
+      
+      document.getElementById("profile-joined").textContent = "Member since " + fmtDateShort(data.created_at);
+      
+      const apiInput = document.getElementById("api-key-input");
+      if (apiInput) apiInput.value = data.api_key || "No key generated yet";
+      
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  window.copyApiKey = function() {
+    const el = document.getElementById("api-key-input");
+    if (el && el.value && el.value.includes('-')) { // check if valid key
+      navigator.clipboard.writeText(el.value);
+      toast("API Key copied to clipboard", "success");
+      el.style.color = 'var(--success)';
+      setTimeout(() => el.style.color = '', 1000);
+    }
+  };
+
+  window.generateApiKey = async function() {
+    if (!(await uiConfirm("Warning: This will invalidate your old API key immediately. Applications using the old key will stop working."))) return;
+    try {
+      const el = document.getElementById("api-key-input");
+      if (el) el.value = "Generating...";
+      const res = await API.post("/api/user/profile/key");
+      if (el) el.value = res.api_key;
+      toast("New API Key generated", "success");
+    } catch (e) {
+      toast(e.message, "error");
+      init();
+    }
+  };
+
+  init();
+}
+</script>
+</body>
+</html>
