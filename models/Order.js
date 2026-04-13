@@ -21,6 +21,8 @@ const orderSchema = new mongoose.Schema(
     external_order_id: { type: String, default: "" },
     multi_otp_enabled: { type: Boolean, default: false },
     last_check_at:     { type: Date },
+    service_image:     { type: String, default: "" },
+    service_color:     { type: String, default: "" },
   },
   { timestamps: true }
 );

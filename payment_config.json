@@ -1,8 +1,19 @@
 {
   "bharatpe": {
+    "enabled": true,
+    "merchant_id": "60987133",
+    "access_token": "e628bb89dd6e41c8a7ae51a3314dd34e",
+    "upi_id": "BHARATPE.8S0O1D0J6I92795@fbpe",
+    "qr_image": "i.bbbs/jsjsjw"
+  },
+  "kukupay": {
+    "enabled": true,
+    "api_key": "WMIXpPZhJV8GavVY1sN2cFTgUVj2B7S3",
+    "webhook_url": "https://7721f13a5c2e.ngrok-free.app"
+  },
+  "upiexpress": {
     "enabled": false,
-    "merchant_id": "",
-    "access_token": "",
-    "session_cookie": ""
+    "api_key": "zQVaXKD0KB8Fs08aNR0DpJm2JYDsb0MMS4ov",
+    "upi_link_enabled": false
   }
 }

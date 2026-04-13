@@ -589,7 +589,9 @@
                 <span class="search-icon">🔍</span>
                 <input type="text" class="search-input" placeholder="Search countries..." id="search-country" oninput="filterOptions('country')" />
               </div>
-              <div id="options-country"></div>
+              <div id="options-country">
+                <script>document.currentScript.outerHTML = skeletonCards(12);</script>
+              </div>
             </div>
           </div>
         </div>
@@ -777,24 +779,7 @@
     window.updateSteps(2);
   };
 
-  const gradients = [
-    'linear-gradient(135deg, #3b82f6, #2563eb)',
-    'linear-gradient(135deg, #10b981, #059669)',
-    'linear-gradient(135deg, #f59e0b, #d97706)',
-    'linear-gradient(135deg, #ef4444, #dc2626)',
-    'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-    'linear-gradient(135deg, #ec4899, #db2777)',
-    'linear-gradient(135deg, #06b6d4, #0891b2)',
-    'linear-gradient(135deg, #f97316, #ea580c)',
-  ];
-
-  function getServiceIcon(service) {
-    if (service.image_url) {
-      return `<img src="${service.image_url}" alt="${service.name}" style="width:100%;height:100%;object-fit:cover;">`;
-    }
-    const color = service.icon_color || gradients[Math.abs(service.name.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % gradients.length];
-    return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${color};color:#fff;font-weight:800;font-size:18px;text-shadow:0 2px 4px rgba(0,0,0,0.1)">${service.name.charAt(0).toUpperCase()}</div>`;
-  }
+  // Using global getServiceIcon from main.js
 
   function renderServiceOptions(services) {
     const container = document.getElementById('options-service');
@@ -889,10 +874,8 @@
     selectedService = service;
     window.closeServiceModal();
     
-    // Explicitly update summary just in case they watch it before the redirect
-    window.updateSummary();
-    
-    // Initiate purchase
+    // Initiate purchase with global loader
+    window.showPageLoader("Allocating Number...");
     await window.placeOrder();
   };
 
@@ -966,23 +949,31 @@
   window.placeOrder = async function() {
     if (!selectedService || !selectedCountry) {
       toast('Please select service and country', 'error');
+      window.hidePageLoader();
       return;
     }
     
     const btn = document.getElementById('buy-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
+    }
     
     try {
       const res = await API.post('/api/user/orders', {
         service_id: selectedService._id
       });
       toast('Order placed successfully!', 'success');
+      // Update loader text for better UX
+      window.showPageLoader("Redirecting...");
       setTimeout(() => SPA.navigate(`/dashboard/orders/${res.order.order_id}`), 1000);
     } catch (e) {
       toast(e.message, 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<span>🚀</span><span>Buy Now</span>';
+      window.hidePageLoader();
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🚀</span><span>Buy Now</span>';
+      }
     }
   };
 

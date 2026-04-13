@@ -25,7 +25,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Basic rate limiting on API
-app.use("/api/", rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
+// Increased rate limiting to support high-frequency polling (3s intervals)
+app.use("/api/", rateLimit({ windowMs: 15 * 60 * 1000, max: 2000, standardHeaders: true, legacyHeaders: false }));
 
 /* ─── Static Files ───────────────────────────────────────────── */
 app.use(express.static(path.join(__dirname, "public")));
@@ -98,6 +99,17 @@ async function connectMongo(retries = 0) {
 /* ─── Start ──────────────────────────────────────────────────── */
 const os = require("os");
 const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  connectMongo();
+  
+  // Start background order monitoring
+  try {
+    const { startWatcher } = require("./utils/orderWatcher");
+    startWatcher();
+  } catch (err) {
+    console.error("❌ Failed to start Order Watcher:", err.message);
+  }
+
   const nets = os.networkInterfaces();
   let localIp = "localhost";
   for (const name of Object.keys(nets)) {

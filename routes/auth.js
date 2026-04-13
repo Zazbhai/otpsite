@@ -130,7 +130,12 @@ router.post("/change-password", loginRequired, async (req, res) => {
 router.get("/settings", async (req, res) => {
   try {
     const Setting = require("../models/Setting");
-    const settings = await Setting.find({ key: { $in: ["default_theme"] } });
+    const keys = [
+      "default_theme", "site_name", "site_logo", "site_favicon", "primary_color",
+      "seo_title", "seo_description", "seo_keywords", "seo_og_image",
+      "custom_css", "head_scripts", "foot_scripts"
+    ];
+    const settings = await Setting.find({ key: { $in: keys } });
     const obj = {};
     settings.forEach(s => obj[s.key] = s.value);
     res.json(obj);

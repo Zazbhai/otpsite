@@ -46,37 +46,29 @@
       <button class="btn btn-primary" onclick="openModal('deposit-modal')">+ Manual Deposit</button>
     </div>
 
-    <!-- BharatPe Configuration -->
-    <div class="card mb-8">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <h3 style="margin:0">BharatPe Gateway Config</h3>
-        <div style="display:flex;align-items:center;gap:10px">
+    <!-- Payment Gateways Configuration -->
+    <div style="margin-bottom: 32px; max-width: 600px;">
+      
+      <!-- BharatPe -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h3 style="margin:0;display:flex;align-items:center;gap:10px">🇮🇳 BharatPe Integration</h3>
           <label class="switch">
             <input type="checkbox" id="pe-enabled">
             <span class="slider round"></span>
           </label>
-          <span style="font-size:13px;font-weight:600">Enabled</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-group"><label class="form-label text-sm">Merchant ID</label><input type="text" id="pe-merchant" /></div>
+          <div class="form-group"><label class="form-label text-sm">Access Token</label><input type="password" id="pe-token" /></div>
+          <div class="form-group"><label class="form-label text-sm">UPI ID</label><input type="text" id="pe-upi" /></div>
+          <div class="form-group"><label class="form-label text-sm">QR Image URL</label><input type="text" id="pe-qr" /></div>
         </div>
       </div>
-      
-      <div class="grid-3 mb-4">
-        <div class="form-group">
-          <label class="form-label">Merchant ID</label>
-          <input type="text" id="pe-merchant" placeholder="e.g. 1234567" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Access Token</label>
-          <input type="password" id="pe-token" placeholder="BharatPe Auth Token" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Session Cookie (Optional)</label>
-          <input type="text" id="pe-cookie" placeholder="Cookie string if needed" />
-        </div>
-      </div>
-      
-      <div style="display:flex;justify-content:flex-end">
-        <button class="btn btn-primary" onclick="savePeConfig()">Save Configuration</button>
-      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-bottom:32px">
+      <button class="btn btn-primary" style="padding:14px 40px;font-weight:700;box-shadow:0 10px 30px rgba(59,130,246,0.3)" onclick="saveGlobalConfig()">💾 Save Configurations</button>
     </div>
 
     <!-- Stats Row -->
@@ -158,30 +150,35 @@
 
 <script src="/js/main.js"></script>
 <script>
-  /* ── BharatPe Config ─────────────────────────────────────── */
-  async function loadPeConfig() {
+  /* ── Configuration Management ───────────────────────────── */
+  async function loadConfig() {
     try {
-      const config = await API.get('/api/admin/payments/config');
+      const config = await API.get('/api/admin/payment-config');
+      
+      // BharatPe
       const b = config.bharatpe || {};
       document.getElementById('pe-enabled').checked = !!b.enabled;
       document.getElementById('pe-merchant').value = b.merchant_id || '';
       document.getElementById('pe-token').value    = b.access_token || '';
-      document.getElementById('pe-cookie').value   = b.session_cookie || '';
-    } catch(e) { console.error('Failed to load BharatPe config', e); }
+      document.getElementById('pe-upi').value      = b.upi_id || '';
+      document.getElementById('pe-qr').value       = b.qr_image || '';
+
+    } catch(e) { console.error('Failed to load payment config', e); }
   }
 
-  async function savePeConfig() {
+  async function saveGlobalConfig() {
     const config = {
       bharatpe: {
         enabled: document.getElementById('pe-enabled').checked,
         merchant_id: document.getElementById('pe-merchant').value.trim(),
         access_token: document.getElementById('pe-token').value.trim(),
-        session_cookie: document.getElementById('pe-cookie').value.trim()
+        upi_id: document.getElementById('pe-upi').value.trim(),
+        qr_image: document.getElementById('pe-qr').value.trim()
       }
     };
     try {
-      await API.post('/api/admin/payments/config', config);
-      toast('BharatPe configuration saved!', 'success');
+      await API.post('/api/admin/payment-config', config);
+      toast('Payment configurations saved successfully!', 'success');
     } catch(e) { toast(e.message, 'error'); }
   }
 
@@ -189,7 +186,7 @@
     if (!await requireAdmin()) return;
     loadStats();
     loadPayments();
-    loadPeConfig();
+    loadConfig();
   }
   
   let searchTimeout = null, userSearchTimeout = null;

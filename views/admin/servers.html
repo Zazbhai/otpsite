@@ -429,10 +429,15 @@
     const title = document.getElementById("srv-title");
     if (title) title.textContent = "Add Server";
     
-    ["srv-id","srv-name","srv-country","srv-key","srv-get-url","srv-check-url","srv-cancel-url","srv-retry-url"].forEach(id => {
+    const fields = ["srv-id","srv-name","srv-country","srv-key","srv-get-url","srv-check-url","srv-cancel-url","srv-retry-url","srv-cancel-mins","srv-min-cancel","srv-retry-count"];
+    fields.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.value = "";
+      if (el) el.value = (id === "srv-cancel-mins") ? "20" : (id.includes("min") || id.includes("count") ? "0" : "");
     });
+
+    const multiOtp = document.getElementById("srv-multi-otp");
+    if (multiOtp) multiOtp.checked = false;
+
     const delBtn = document.getElementById("delete-btn");
     if (delBtn) delBtn.style.display = "none";
     openModal("srv-modal");
@@ -456,12 +461,17 @@
       setVal("srv-get-url", s.api_get_number_url || "");
       setVal("srv-check-url", s.api_check_status_url || "");
       setVal("srv-cancel-url", s.api_cancel_url || "");
-      document.getElementById("srv-retry-url").value = s.api_retry_url || "";
-      document.getElementById("srv-cancel-mins").value = s.auto_cancel_minutes || 20;
-      document.getElementById("srv-min-cancel").value = s.min_cancel_minutes || 0;
-      document.getElementById("srv-retry-count").value = s.retry_count || 0;
-      document.getElementById("srv-multi-otp").checked = !!s.multi_otp_supported;
-      document.getElementById("delete-btn").style.display = "block";
+      setVal("srv-retry-url", s.api_retry_url || "");
+      setVal("srv-cancel-mins", s.auto_cancel_minutes || 20);
+      setVal("srv-min-cancel", s.min_cancel_minutes || 0);
+      setVal("srv-retry-count", s.retry_count || 0);
+
+      const multiOtp = document.getElementById("srv-multi-otp");
+      if (multiOtp) multiOtp.checked = !!s.multi_otp_supported;
+
+      const delBtn = document.getElementById("delete-btn");
+      if (delBtn) delBtn.style.display = "block";
+      
       openModal("srv-modal");
     } catch (e) {
       toast(e.message, "error");

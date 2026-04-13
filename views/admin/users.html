@@ -125,7 +125,7 @@
     if (banned !== "") params.append("banned", banned);
     const tbody = document.getElementById("users-body");
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:16px">${renderSkeleton('list', 5)}</td></tr>`;
     try {
       const data = await API.get(`/api/admin/users?${params}`);
       const countEl = document.getElementById("total-count");

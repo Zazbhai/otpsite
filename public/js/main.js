@@ -24,6 +24,237 @@ async function handleRes(res) {
   return data;
 }
 
+// Global Page Loader Injection (Numbers Escaping Phone)
+(function() {
+  if (document.getElementById("page-loader")) return;
+  const loader = document.createElement("div");
+  loader.id = "page-loader";
+  loader.innerHTML = `
+    <div class="pl-scene" id="pl-scene">
+      <div class="pl-glow-ring"></div>
+      <div class="pl-glow-ring"></div>
+      <div class="pl-phone" id="pl-phone">
+        <div class="pl-notch"></div>
+        <div class="pl-screen" id="pl-screen">
+          <div class="pl-screen-flash"></div>
+          <svg class="pl-crack-svg" viewBox="0 0 106 200" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="53,0 47,35 62,65 35,110 52,155 44,200" fill="none" stroke="#8877ff" stroke-width="1" opacity="0.8"/>
+            <polyline points="62,65 78,82 72,115" fill="none" stroke="#8877ff" stroke-width="0.6" opacity="0.6"/>
+            <polyline points="47,35 24,52" fill="none" stroke="#8877ff" stroke-width="0.5" opacity="0.5"/>
+            <polyline points="52,155 30,175" fill="none" stroke="#8877ff" stroke-width="0.5" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="pl-home-bar"></div>
+      </div>
+      <div class="pl-loading-text" id="pl-main-text">LOADING</div>
+      <div class="pl-sub-text" id="pl-sub-text">Please wait...</div>
+    </div>
+  `;
+  const style = document.createElement("style");
+  style.textContent = `
+    @keyframes plPhoneShake {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      25%       { transform: translate(-4px, 2px) rotate(-1deg); }
+      50%       { transform: translate(4px, -2px) rotate(1deg); }
+      75%       { transform: translate(-2px, 4px) rotate(-0.5deg); }
+    }
+    @-webkit-keyframes plPhoneShake {
+      0%, 100% { -webkit-transform: translate(0, 0) rotate(0deg); }
+      25%       { -webkit-transform: translate(-4px, 2px) rotate(-1deg); }
+      50%       { -webkit-transform: translate(4px, -2px) rotate(1deg); }
+      75%       { -webkit-transform: translate(-2px, 4px) rotate(-0.5deg); }
+    }
+    @keyframes plMatrixFall {
+      0%   { transform: translateY(-100%); opacity: 1; }
+      100% { transform: translateY(100%); opacity: 0; }
+    }
+    @keyframes plFlashPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    @keyframes plRingPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.04); opacity: 0.3; } }
+    @keyframes plBurst {
+      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; filter: blur(2px); }
+      15% { opacity: 1; filter: blur(0px); }
+      100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(var(--ts)); opacity: 0; filter: blur(3px); }
+    }
+    @keyframes plTrailFly {
+      0%   { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) scaleY(0.2); }
+      20%  { opacity: 0.6; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * -0.3)) scaleY(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * -1)) scaleY(0.3); }
+    }
+
+    #page-loader {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      display: none; align-items: center; justify-content: center; z-index: 999999;
+      opacity: 0; transition: opacity 0.4s ease;
+      overflow: hidden; font-family: 'Courier New', monospace;
+    }
+    #page-loader.visible { display: flex; opacity: 1; }
+    
+    /* Hide everything behind loader */
+    #page-loader.visible ~ * { visibility: hidden !important; }
+    body:has(#page-loader.visible) > *:not(#page-loader) { visibility: hidden !important; }
+    
+    .pl-scene { position: relative; width: 400px; height: 500px; display: flex; align-items: center; justify-content: center; transform: scale(1.2); }
+    
+    .pl-phone {
+      position: relative; width: 130px; height: 240px;
+      background: linear-gradient(160deg, #1c1c38 0%, #0e0e22 100%);
+      border-radius: 28px; border: 2.5px solid #2e2e5a;
+      box-shadow: 0 0 40px #5533ff33, 0 0 80px #3311ff18, inset 0 1px 0 #ffffff14;
+      z-index: 10; display: flex; align-items: center; justify-content: center;
+      animation: plPhoneShake 0.15s ease-in-out infinite !important;
+      -webkit-animation: plPhoneShake 0.15s ease-in-out infinite !important;
+    }
+    
+    .pl-notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 36px; height: 9px; background: #0e0e22; border-radius: 0 0 10px 10px; }
+    .pl-home-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; background: #2e2e5a; border-radius: 4px; }
+    .pl-screen { width: 106px; height: 200px; background: #07071a; border-radius: 14px; overflow: hidden; position: relative; }
+    
+    .pl-matrix-col { position: absolute; top: 0; display: flex; flex-direction: column; animation: plMatrixFall linear infinite; font-size: 11px; line-height: 1.5; letter-spacing: 1px; }
+    .pl-screen-flash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, #7766ff66 0%, transparent 70%); animation: plFlashPulse 0.6s ease-in-out infinite; }
+    .pl-crack-svg { position: absolute; inset: 0; pointer-events: none; opacity: 0.7; }
+    
+    .pl-glow-ring { position: absolute; width: 150px; height: 260px; border-radius: 32px; border: 1px solid #5544ff44; animation: plRingPulse 0.8s ease-in-out infinite; }
+    .pl-glow-ring:nth-of-type(2) { width: 170px; height: 280px; border-color: #4433ff22; animation-delay: 0.2s; }
+    
+    .pl-particle { position: absolute; font-weight: 700; pointer-events: none; z-index: 20; left: 50%; top: 50%; animation: plBurst var(--dur) var(--delay) ease-out infinite; }
+    .pl-loading-text { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: #8877ff; font-size: 13px; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; text-shadow: 0 0 15px rgba(136, 119, 255, 0.6); }
+    .pl-sub-text { position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.3); font-size: 10px; letter-spacing: 1px; white-space: nowrap; text-transform: uppercase; font-weight: 600; }
+    
+    .pl-trail { position: absolute; width: 2px; height: 50px; background: linear-gradient(to bottom, transparent, #5533ff88, transparent); transform-origin: center center; animation: plTrailFly var(--dur) var(--delay) ease-out infinite; left: 50%; top: 50%; opacity: 0; }
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(loader);
+
+  // ── Initialization Logic ──────────────────────────────────────────
+  const digits = '0123456789';
+  const scene = loader.querySelector('#pl-scene');
+  const screen = loader.querySelector('#pl-screen');
+  const colors = ['#4433dd', '#6655ff', '#8877ff', '#aa99ff', '#3322aa'];
+
+  // Matrix Rain
+  for (let c = 0; c < 9; c++) {
+    const col = document.createElement('div');
+    col.className = 'pl-matrix-col';
+    col.style.left = (c * 12 + 2) + 'px';
+    col.style.animationDuration = (0.8 + Math.random() * 1.2) + 's';
+    col.style.animationDelay = (-Math.random() * 2) + 's';
+    col.style.color = colors[Math.floor(Math.random() * colors.length)];
+    for (let r = 0; r < 20; r++) {
+      const span = document.createElement('span');
+      span.textContent = digits[Math.floor(Math.random() * digits.length)];
+      col.appendChild(span);
+    }
+    screen.appendChild(col);
+  }
+
+  // Particle Bursts
+  const particlesConfigs = [
+    { tx: -200, ty: -280, dur: 1.0, delay: 0.00, size: 36, color: '#ffffff' },
+    { tx:  180, ty: -260, dur: 0.9, delay: 0.08, size: 28, color: '#aa99ff' },
+    { tx: -150, ty: -200, dur: 0.7, delay: 0.16, size: 44, color: '#ffffff' },
+    { tx:  220, ty: -180, dur: 1.1, delay: 0.05, size: 20, color: '#ffdd88' },
+    { tx: -240, ty:  -80, dur: 0.85,delay: 0.22, size: 32, color: '#8877ff' },
+    { tx:  160, ty: -310, dur: 1.2, delay: 0.30, size: 24, color: '#ffffff' },
+    { tx:  -60, ty: -340, dur: 0.95,delay: 0.12, size: 40, color: '#aa99ff' },
+    { tx:  250, ty: -120, dur: 0.8, delay: 0.38, size: 16, color: '#ffdd88' },
+    { tx:  100, ty: -360, dur: 0.75,delay: 0.42, size: 22, color: '#8877ff' },
+  ];
+  particlesConfigs.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'pl-particle';
+    const scale = 0.6 + Math.random() * 1.0;
+    el.style.cssText = `--tx: ${p.tx}px; --ty: ${p.ty}px; --dur: ${p.dur}s; --delay: -${p.delay}s; --ts: ${scale}; font-size: ${p.size}px; color: ${p.color}; text-shadow: 0 0 12px ${p.color}cc;`;
+    el.textContent = digits[Math.floor(Math.random() * digits.length)];
+    scene.appendChild(el);
+  });
+
+  // Speed Trails
+  const trailCount = 12;
+  for (let i = 0; i < trailCount; i++) {
+    const angle = (i / trailCount) * 360;
+    const dist  = 100 + Math.random() * 150;
+    const trail = document.createElement('div');
+    trail.className = 'pl-trail';
+    trail.style.cssText = `--angle: ${angle}deg; --dist: ${dist}px; --dur: ${0.7 + Math.random() * 0.6}s; --delay: -${Math.random() * 1.5}s;`;
+    scene.appendChild(trail);
+  }
+
+  // Live Shuffling
+  setInterval(() => {
+    screen.querySelectorAll('.pl-matrix-col span').forEach(s => { if (Math.random() > 0.8) s.textContent = digits[Math.floor(Math.random() * digits.length)]; });
+    scene.querySelectorAll('.pl-particle').forEach(el => { if (Math.random() > 0.6) el.textContent = digits[Math.floor(Math.random() * digits.length)]; });
+  }, 150);
+})();
+
+// Show/Hide page loader (simple spinner for page navigation)
+window.showPageLoader = () => {
+  let loader = document.getElementById("simple-page-loader");
+  if (!loader) {
+    loader = document.createElement("div");
+    loader.id = "simple-page-loader";
+    loader.innerHTML = `<div class="spinner" style="width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999"></div>`;
+    document.body.appendChild(loader);
+  }
+  loader.style.display = "block";
+};
+
+window.hidePageLoader = () => {
+  const loader = document.getElementById("simple-page-loader");
+  if (loader) loader.style.display = "none";
+};
+
+// Original showLoader/hideLoader for number allocation (keep as is)
+window.showLoader = (text, subtext) => {
+  const loader = document.getElementById("page-loader");
+  if (!loader) return;
+  if (text) loader.querySelector("#pl-main-text").textContent = text;
+  if (subtext) loader.querySelector("#pl-sub-text").textContent = subtext;
+  loader.classList.add("visible");
+};
+
+window.hideLoader = () => {
+  const loader = document.getElementById("page-loader");
+  if (loader) {
+    loader.classList.remove("visible");
+    setTimeout(() => { 
+      if(!loader.classList.contains("visible")) {
+        loader.querySelector("#pl-main-text").textContent = "LOADING";
+        loader.querySelector("#pl-sub-text").textContent = "Please wait...";
+      }
+    }, 400);
+  }
+};
+
+// Update all balance displays on the page
+window.updateBalanceDisplay = async function() {
+  try {
+    const data = await API.get('/api/user/dashboard');
+    // Top nav global balance
+    const globalBal = document.getElementById("nav-global-wallet-bal");
+    if (globalBal) {
+      globalBal.classList.remove("loading-shimmer");
+      globalBal.textContent = fmtMoney(data.balance);
+    }
+    // Dashboard stat card
+    const statBal = document.getElementById("stat-balance");
+    if (statBal) statBal.textContent = fmtMoney(data.balance);
+    
+    return data;
+  } catch (e) { console.error("Balance sync failed", e); }
+};
+
+// Global click listener for loader
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("a");
+  if (link && link.href && !link.href.startsWith("javascript") && !link.href.startsWith("#") && !link.target && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
+    const url = new URL(link.href);
+    if (url.origin === window.location.origin && url.pathname !== window.location.pathname) {
+      window.showPageLoader();
+    }
+  }
+});
+
 // ── Auth helpers ──────────────────────────────────────────────────
 function getToken()   { return localStorage.getItem("otp_token"); }
 function getUser()    { try { return JSON.parse(localStorage.getItem("otp_user") || "null"); } catch { return null; } }
@@ -51,60 +282,214 @@ const THEMES = [
   { id: "sage", label: "Sage", icon: "🌿" },
   { id: "dawn", label: "Dawn", icon: "🌄" },
   { id: "neon", label: "Neon", icon: "🌐" },
-  { id: "coral", label: "Coral", icon: "🐚" }
+  { id: "coral", label: "Coral", icon: "🐚" },
+  { id: "rose", label: "Rose", icon: "🌹" },
+  { id: "violet", label: "Violet", icon: "💎" },
+  { id: "mint", label: "Mint", icon: "🍃" },
+  { id: "cherry", label: "Cherry", icon: "🍒" },
+  { id: "sky", label: "Sky", icon: "🎈" },
+  { id: "berry", label: "Berry", icon: "🫐" },
+  { id: "peach", label: "Peach", icon: "🍑" },
+  { id: "slate", label: "Slate", icon: "🌑" },
+  { id: "copper", label: "Copper", icon: "🥉" },
+  { id: "teal", label: "Teal", icon: "🐚" },
+  { id: "maroon", label: "Maroon", icon: "🎗️" },
+  { id: "gold", label: "Gold", icon: "✨" },
+  { id: "silver", label: "Silver", icon: "🥈" },
+  { id: "bronze", label: "Bronze", icon: "🥉" },
+  { id: "cyber", label: "Cyber", icon: "🤖" },
+  { id: "retro", label: "Retro", icon: "📺" },
+  { id: "matrix", label: "Matrix", icon: "💻" },
+  { id: "pastel", label: "Pastel", icon: "🎨" },
+  { id: "mono-minimal", label: "Mono Minimal", icon: "🌑" },
+  { id: "neon-highlights", label: "Neon High", icon: "⚡" },
+  { id: "warm-tones", label: "Warm Tones", icon: "🧶" },
+  { id: "muted-pastels", label: "Muted Pastels", icon: "🍬" },
+  { id: "jewel-tones", label: "Jewel Tones", icon: "💎" },
+  { id: "vibrant-contrast", label: "Vibrant", icon: "💥" }
 ];
 
 function getThemePreference() {
   const saved = localStorage.getItem(THEME_STORAGE_KEY);
   const validTheme = THEMES.find(t => t.id === saved);
-  if (validTheme) return saved;
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) return "light";
-  return "dark";
+  return validTheme ? saved : "dark";
 }
 
-function applyTheme(theme) {
-  const validTheme = THEMES.find(t => t.id === theme);
-  const mode = validTheme ? validTheme.id : "dark";
-  document.documentElement.setAttribute("data-theme", mode);
-  localStorage.setItem(THEME_STORAGE_KEY, mode);
-  const btn = document.getElementById("theme-toggle-btn");
-  if (btn) {
-    const nextTheme = THEMES[(THEMES.findIndex(t => t.id === mode) + 1) % THEMES.length];
-    btn.textContent = `${nextTheme.icon} ${nextTheme.label}`;
-    btn.title = `Current: ${validTheme?.label || "Dark"}`;
+function applyTheme(theme, isPreview = false) {
+  document.documentElement.setAttribute("data-theme", theme);
+  if (!isPreview) {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } else {
+    document.documentElement.style.removeProperty('--accent');
+    document.documentElement.style.removeProperty('--grad-primary');
   }
 }
 
 function toggleTheme() {
-  const current = document.documentElement.getAttribute("data-theme") || "dark";
-  const currentIndex = THEMES.findIndex(t => t.id === current);
-  const nextIndex = (currentIndex + 1) % THEMES.length;
-  applyTheme(THEMES[nextIndex].id);
+  const current = document.documentElement.getAttribute("data-theme");
+  // If we're in a specialized theme, toggle to light. If in light, toggle to dark.
+  const next = current === "light" ? "dark" : "light";
+  applyTheme(next);
+}
+
+// Global settings cache to avoid redundant fetches
+let _settingsCache = null;
+
+// PROACTIVE FETCH: Start getting settings immediately, don't wait for DOM
+const _settingsPromise = API.get("/api/auth/settings").then(s => {
+  _settingsCache = s;
+  return s;
+}).catch(() => null);
+
+const SERVICE_GRADIENTS = [
+  'linear-gradient(135deg, #3b82f6, #2563eb)',
+  'linear-gradient(135deg, #10b981, #059669)',
+  'linear-gradient(135deg, #f59e0b, #d97706)',
+  'linear-gradient(135deg, #ef4444, #dc2626)',
+  'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+  'linear-gradient(135deg, #ec4899, #db2777)',
+  'linear-gradient(135deg, #06b6d4, #0891b2)',
+  'linear-gradient(135deg, #f97316, #ea580c)',
+];
+
+function getServiceIcon(service, size = '100%') {
+  if (!service) return '';
+  const name = service.name || service.service_name || 'Service';
+  
+  if (service.image_url) {
+    return `<img src="${service.image_url}" alt="${name}" style="width:${size};height:${size};object-fit:cover;">`;
+  }
+  
+  const color = service.icon_color || SERVICE_GRADIENTS[Math.abs(name.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % SERVICE_GRADIENTS.length];
+  const fontSize = size === '100%' ? '18px' : '14px';
+  
+  return `<div style="width:${size};height:${size};display:flex;align-items:center;justify-content:center;background:${color};color:#fff;font-weight:800;font-size:${fontSize};text-shadow:0 2px 4px rgba(0,0,0,0.1);border-radius:inherit">${name.charAt(0).toUpperCase()}</div>`;
+}
+
+function renderSkeleton(type, count = 1) {
+  const layouts = {
+    'card': `<div class="skeleton skeleton-card" style="margin-bottom:12px"></div>`,
+    'text': `<div class="skeleton skeleton-text"></div>`,
+    'title': `<div class="skeleton skeleton-title"></div>`,
+    'list': `<div style="display:flex;flex-direction:column;gap:12px">
+        <div class="skeleton" style="height:60px;width:100%;border-radius:12px"></div>
+        <div class="skeleton" style="height:60px;width:100%;border-radius:12px"></div>
+        <div class="skeleton" style="height:60px;width:100%;border-radius:12px"></div>
+      </div>`,
+    'grid': `<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(200px,1fr));gap:16px">
+        ${Array(6).fill('<div class="skeleton skeleton-card"></div>').join('')}
+      </div>`
+  };
+  return Array(count).fill(layouts[type] || layouts['text']).join('');
+}
+
+async function applySiteSettings() {
+  try {
+    const settings = _settingsCache || await _settingsPromise;
+    if (!settings) return;
+
+    // 1. Apply Theme (DATABASE TRUTH)
+    if (settings.default_theme) {
+      applyTheme(settings.default_theme);
+      localStorage.setItem(THEME_STORAGE_KEY, settings.default_theme);
+    }
+    
+    // 2. Apply Brand Overrides
+    const root = document.documentElement;
+    if (settings.primary_color) {
+      root.style.setProperty('--accent', settings.primary_color);
+      const rgb = hexToRgb(settings.primary_color);
+      if (rgb) root.style.setProperty('--accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+      root.style.setProperty('--grad-primary', `linear-gradient(135deg, ${settings.primary_color}, ${adjustColor(settings.primary_color, -20)})`);
+    }
+
+    // 3. Identity
+    if (settings.site_name) {
+      document.title = settings.site_name;
+      document.querySelectorAll('.nav-logo').forEach(el => {
+        el.childNodes.forEach(node => { if(node.nodeType === 3) node.textContent = settings.site_name + ' '; });
+      });
+    }
+
+    if (settings.site_logo) {
+      document.querySelectorAll('.nav-logo').forEach(el => {
+        let img = el.querySelector('img');
+        if (!img) { img = document.createElement('img'); img.style.height = '24px'; img.style.marginRight = '8px'; el.prepend(img); }
+        img.src = settings.site_logo;
+      });
+    }
+
+    if (settings.site_favicon) {
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+      link.href = settings.site_favicon;
+    }
+
+    // 4. SEO & External Code
+    if (settings.seo_title && (location.pathname === "/" || location.pathname === "/index.html")) document.title = settings.seo_title;
+    if (settings.seo_description) {
+      let meta = document.querySelector('meta[name="description"]');
+      if (!meta) { meta = document.createElement('meta'); meta.name = "description"; document.head.appendChild(meta); }
+      meta.content = settings.seo_description;
+    }
+
+    if (settings.custom_css) {
+      let style = document.getElementById("custom-site-css");
+      if (!style) { style = document.createElement('style'); style.id = "custom-site-css"; document.head.appendChild(style); }
+      style.textContent = settings.custom_css;
+    }
+
+    // Dynamic Scripts
+    if (!window._scriptsInjected) {
+      const inject = (html, target) => {
+        if (!html) return;
+        const frag = document.createRange().createContextualFragment(html);
+        target.appendChild(frag);
+      };
+      inject(settings.head_scripts, document.head);
+      inject(settings.foot_scripts, document.body);
+      window._scriptsInjected = true;
+    }
+
+  } catch (e) { console.error("Identity retrieval failed", e); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // A. Apply cached theme for zero flicker
+  applyTheme(getThemePreference());
+  
+  // B. Sync with authoritative truth
+  applySiteSettings();
+
+  // C. Lightweight init
+  insertThemeToggle();
+  if (isLoggedIn()) updateBalanceDisplay();
+});
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+}
+
+function adjustColor(hex, amt) {
+  let usePound = false;
+  if (hex[0] == "#") { hex = hex.slice(1); usePound = true; }
+  let num = parseInt(hex, 16);
+  let r = (num >> 16) + amt;
+  if (r > 255) r = 255; else if (r < 0) r = 0;
+  let b = ((num >> 8) & 0x00FF) + amt;
+  if (b > 255) b = 255; else if (b < 0) b = 0;
+  let g = (num & 0x0000FF) + amt;
+  if (g > 255) g = 255; else if (g < 0) g = 0;
+  return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
 }
 
 async function insertThemeToggle() {
   const navLinks = document.getElementById("nav-links");
   if (!navLinks) return;
 
-  // 1. Check for Forced Admin Theme
-  let forcedTheme = null;
-  try {
-    const sRes = await fetch("/api/auth/settings");
-    if (sRes.ok) {
-      const sData = await sRes.json();
-      if (sData.default_theme) forcedTheme = sData.default_theme;
-    }
-  } catch (e) { console.warn("Theme fetch failed:", e); }
+  await applySiteSettings();
 
-  if (forcedTheme) {
-    // Force the theme and do NOT insert the toggle button (UX finality)
-    applyTheme(forcedTheme);
-    // Overwrite any local choice to ensure it persists across sessions
-    localStorage.setItem(THEME_STORAGE_KEY, forcedTheme);
-    return;
-  }
-
-  // 2. Normal User Choice Logic (only if no forced theme)
   if (document.getElementById("theme-toggle-btn")) return;
   const btn = document.createElement("button");
   btn.id = "theme-toggle-btn";
@@ -177,7 +562,53 @@ window.txSign = function(type, amount) {
   return `<span class="${pos ? 'text-success' : 'text-danger'}">${pos ? '+' : ''}${fmtMoney(amount)}</span>`;
 };
 
-// ── Skeleton UI Helpers (Moved to preloader.js) ──────────────────
+// ── Skeleton UI Helpers ─────────────────────────────────────────────
+window.skeletonTable = (cols, rows = 5) => {
+  let h = '';
+  for(let i=0; i<rows; i++) {
+    let cells = '';
+    for(let j=0; j<cols; j++) {
+      cells += '<td><div class="skeleton" style="height:20px;width:100%;border-radius:4px"></div></td>';
+    }
+    h += `<tr>${cells}</tr>`;
+  }
+  return h;
+};
+
+window.skeletonCards = (count = 6) => {
+  let h = '';
+  for(let i=0; i<count; i++) {
+    h += `<div class="skeleton" style="height:120px;width:100%;border-radius:16px;margin-bottom:12px"></div>`;
+  }
+  return h;
+};
+
+window.skeletonList = (count = 5) => {
+  let h = '';
+  for(let i=0; i<count; i++) {
+    h += `<div class="skeleton" style="height:48px;width:100%;border-radius:12px;margin-bottom:8px"></div>`;
+  }
+  return h;
+};
+
+window.skeletonStats = () => {
+  return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+    <div class="skeleton" style="height:80px;border-radius:16px"></div>
+    <div class="skeleton" style="height:80px;border-radius:16px"></div>
+    <div class="skeleton" style="height:80px;border-radius:16px"></div>
+    <div class="skeleton" style="height:80px;border-radius:16px"></div>
+  </div>`;
+};
+
+window.showSkeleton = (elementId, skeletonHtml) => {
+  const el = document.getElementById(elementId);
+  if (el) el.innerHTML = skeletonHtml;
+};
+
+window.hideSkeleton = (elementId, realContent) => {
+  const el = document.getElementById(elementId);
+  if (el) el.innerHTML = realContent;
+};
 
 
 // ── Avatar (letter-based, no Telegram photo) ─────────────────────
@@ -307,178 +738,46 @@ async function doRegister(username, email, password) {
 }
 
 // ── Nav burger ────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  const burger   = document.getElementById("nav-burger");
+function initNavBurger() {
+  const burger = document.getElementById("nav-burger");
   const navLinks = document.getElementById("nav-links");
-  if (burger && navLinks)
-    burger.addEventListener("click", () => navLinks.classList.toggle("mobile-open"));
+  if (burger && navLinks) {
+    const newBurger = burger.cloneNode(true);
+    burger.parentNode.replaceChild(newBurger, burger);
+    newBurger.addEventListener("click", () => navLinks.classList.toggle("mobile-open"));
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initNavBurger();
   applyTheme(getThemePreference());
   insertThemeToggle();
 });
 
-// ── SPA Engine ────────────────────────────────────────────────────
+// ── SPA Engine (Disabled) ─────────────────────────────────────────
 const SPA = {
-  active: true,
+  active: false,
   
   init() {
-    if (!this.active) return;
-    document.body.style.overflow = "";
-    
-    // Manage click-intercept
-    document.addEventListener("click", e => {
-      const link = e.target.closest("a");
-      if (!link) return;
-      const href = link.getAttribute("href");
-      if (href && (href.startsWith("/dashboard") || href.startsWith("/admin")) && !href.includes("#") && !link.target) {
-        e.preventDefault();
-        // Save scroll before moving
-        history.replaceState({ scrollY: window.scrollY }, "");
-        this.navigate(href);
-      }
-    });
-
-    // Handle Browser Back/Forward
-    window.addEventListener("popstate", e => {
-      this.navigate(window.location.pathname, false, e.state ? e.state.scrollY : 0);
-    });
+    // SPA disabled - using full page reloads
   },
 
-  async navigate(url, push = true, restoreScroll = 0) {
-    try {
-      closeMobileMoreMenu();
-
-      // Cleanup background tasks from previous page
-      if (window.intervals) {
-        window.intervals.forEach(clearInterval);
-        window.intervals = [];
-      }
-      if (window.timeouts) {
-        window.timeouts.forEach(clearTimeout);
-        window.timeouts = [];
-      }
-
-      // Ensure body scroll is unlocked when navigating
-      document.body.style.overflow = "";
-
-      const main = document.querySelector(".main-content");
-      if (!main) {
-        window.location.href = url;
-        return;
-      }
-      main.style.opacity = "0.5";
-
-      const res = await fetch(url);
-      const html = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      
-      const newMain = doc.querySelector(".main-content");
-      if (newMain) {
-        // Force full reload if crossing admin/dashboard boundary (to swap whole layout/sidebar)
-        const wasAdmin = window.location.pathname.startsWith("/admin");
-        const nextAdmin = url.startsWith("/admin");
-        if (wasAdmin !== nextAdmin) {
-           window.location.href = url;
-           return;
-        }
-
-        // 1. Sync Styles
-        const newStyles = doc.querySelectorAll('style, link[rel="stylesheet"]');
-        newStyles.forEach(s => {
-          if (s.src && document.querySelector(`link[href="${s.getAttribute('href')}"]`)) return;
-          if (!s.src && Array.from(document.querySelectorAll('style')).some(existing => existing.textContent === s.textContent)) return;
-          document.head.appendChild(s.cloneNode(true));
-        });
-
-        // 2. Swap content
-        main.innerHTML = newMain.innerHTML;
-        main.style.opacity = "1";
-        
-        // 3. History
-        document.title = doc.title;
-        if (push) {
-          history.pushState({ scrollY: 0 }, "", url);
-        }
-        
-        // 4. Scripts
-        const scripts = doc.querySelectorAll("script");
-        scripts.forEach(oldScript => {
-          if (oldScript.src && (oldScript.src.endsWith("main.js") || oldScript.src.endsWith("chart.js"))) return;
-          const newScript = document.createElement("script");
-          if (oldScript.src) {
-            newScript.src = oldScript.src;
-          } else {
-            // Wrap in a block scope to prevent const/let redeclaration errors between pages.
-            // Also, temporarily shim document.write to do nothing during SPA script execution
-            // (though we are migrating away from it, this is a safety measure).
-            newScript.textContent = `(function(){ 
-              const _w = document.write; 
-              document.write = (html) => { 
-                const s = document.currentScript; 
-                if(s) s.insertAdjacentHTML('beforebegin', html);
-              };
-              { ${oldScript.textContent} }
-              document.write = _w;
-            })()`;
-          }
-          document.body.appendChild(newScript);
-          setTimeout(() => newScript.remove(), 1000);
-        });
-
-        this.updateNavStates(url);
-        
-        // 5. Scroll Restoration
-        window.scrollTo(0, restoreScroll);
-      } else {
-        window.location.href = url;
-      }
-    } catch (e) {
-      console.error("SPA Nav Error:", e);
-      window.location.href = url;
-    }
+  navigate(url) {
+    window.location.href = url;
   },
 
   updateNavStates(url) {
     const path = url.split('?')[0];
-    
-    // 1. Top nav links
     document.querySelectorAll(".nav-links a").forEach(a => {
       const href = a.getAttribute("href");
       if (href) a.classList.toggle("active", path === href);
     });
-
-    // 2. Sidebar items
     document.querySelectorAll(".sidebar-item").forEach(a => {
       const href = a.getAttribute("href");
       if (!href) return;
-      // Handle active state including sub-paths (except /dashboard and /admin core)
       const isActive = (path === href) || (href !== "/dashboard" && href !== "/admin" && path.startsWith(href));
       a.classList.toggle("active", isActive);
     });
-
-    // 3. Mobile bottom nav items
-    document.querySelectorAll(".mb-nav-item").forEach(a => {
-      const href = a.getAttribute("href");
-      if (!href) return;
-      const isActive = (path === href) || (href !== "/dashboard" && href !== "/admin" && path.startsWith(href));
-      a.classList.toggle("active", isActive);
-      
-      // Also check if it's inside the "More" menu
-      const moreMenu = document.getElementById("mb-nav-more-menu");
-      if (moreMenu) {
-         moreMenu.querySelectorAll(".mb-more-item").forEach(mi => {
-            const mhref = mi.getAttribute("href");
-            mi.classList.toggle("active", path === mhref || (mhref !== "/dashboard" && mhref !== "/admin" && path.startsWith(mhref)));
-         });
-         // If any item in more menu is active, highlight the "More" button
-         const isMoreActive = Array.from(moreMenu.querySelectorAll(".mb-more-item")).some(mi => mi.classList.contains("active"));
-         const moreBtn = document.getElementById("mb-nav-more-btn");
-         if (moreBtn) moreBtn.classList.toggle("active", isMoreActive);
-      }
-    });
-
-    // 4. Update the Mobile Navbar
-    this.refreshMobileNav(path);
   },
 
   refreshMobileNav(path) {
@@ -490,7 +789,7 @@ const SPA = {
 
 window.SPA = SPA;
 
-// Start SPA
+// Start SPA (does nothing since active=false)
 document.addEventListener("DOMContentLoaded", () => SPA.init());
 
 // ── Mobile Bottom Navbar Injection ───────────────────────────────
@@ -751,12 +1050,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     container.appendChild(wrap);
   }
 
-  try {
-    const data = await API.get('/api/user/dashboard');
-    const b = document.getElementById("nav-global-wallet-bal");
-    b.classList.remove("loading-shimmer");
-    b.textContent = fmtMoney(data.balance);
-  } catch(e) {}
+  if (isLoggedIn()) {
+    updateBalanceDisplay();
+  }
 });
 
 // Inject Glassmorphism CSS for modals

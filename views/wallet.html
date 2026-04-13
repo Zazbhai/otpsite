@@ -88,90 +88,200 @@
 </div>
 
 <!-- Deposit Modal -->
-<div class="modal-backdrop" id="deposit-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Add Funds</h3>
-      <button class="modal-close" onclick="closeModal('deposit-modal')">✕</button>
+<div id="deposit-modal" class="modal-backdrop">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="font-size:22px" id="deposit-modal-title">Deposit Funds</h2>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('deposit-modal')">✕</button>
     </div>
-    <p class="text-sm text-muted" style="margin-bottom:20px">Contact support or use any of the payment methods below to top up your wallet.</p>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="card" style="padding:16px;display:flex;align-items:center;gap:14px">
-        <span style="font-size:28px">₿</span>
-        <div><div class="font-bold">Crypto</div><div class="text-xs text-muted">BTC, ETH, USDT, TON</div></div>
-        <a href="/support" class="btn btn-primary btn-sm" style="margin-left:auto">Contact</a>
+    
+    <!-- Step 0: Amount Screen -->
+    <div id="deposit-amount-screen" class="fade-in">
+      <p class="text-sm text-muted" style="margin-bottom:20px">Enter the amount you wish to add to your wallet (₹):</p>
+      
+      <div style="text-align:center; margin-bottom: 24px;">
+        <div style="position:relative; display:inline-block; width:100%">
+          <span style="position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:24px; font-weight:900; color:var(--accent)">₹</span>
+          <input type="number" id="deposit-amount-input" class="form-input" 
+                 style="font-size:32px; font-weight:900; text-align:center; padding: 20px; border-radius: 20px; background: rgba(255,255,255,0.03)" 
+                 placeholder="0.00" min="10" value="100" />
+        </div>
       </div>
-      <div class="card" style="padding:16px;display:flex;align-items:center;gap:14px">
-        <span style="font-size:28px">💬</span>
-        <div><div class="font-bold">Telegram Payment</div><div class="text-xs text-muted">Via @RapidOTPbot</div></div>
-        <a href="https://t.me/RapidOTPbot" target="_blank" class="btn btn-secondary btn-sm" style="margin-left:auto">Open Bot</a>
+
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:24px">
+        <div class="amount-chip" onclick="document.getElementById('deposit-amount-input').value=100">₹100</div>
+        <div class="amount-chip" onclick="document.getElementById('deposit-amount-input').value=500">₹500</div>
+        <div class="amount-chip" onclick="document.getElementById('deposit-amount-input').value=1000">₹1k</div>
+        <div class="amount-chip" onclick="document.getElementById('deposit-amount-input').value=2000">₹2k</div>
       </div>
       
-      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px">
-        <div class="form-group">
-          <label class="form-label">Redeem Promo Code</label>
+      <button class="btn btn-primary w-full" style="padding:16px; font-size:16px; font-weight:bold" onclick="nextToSelection()">Continue to Payment ❯</button>
+    </div>
+
+    <!-- Step 1: Selection Screen -->
+    <div id="deposit-selection" class="hidden fade-in">
+      <div style="background:var(--surface); border-radius:16px; padding:12px 16px; margin-bottom:24px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
+        <div>
+           <div class="text-xxs text-muted uppercase font-bold mb-1">Total Amount</div>
+           <div class="font-black text-xl" id="display-deposit-amount">₹0</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="showDepositMethod('amount-screen')" style="border-radius:10px">Edit</button>
+      </div>
+
+      <p class="text-xs text-muted font-bold mb-4 uppercase letter-spacing-1">Select Payment Method</p>
+      
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <!-- Option: UPI -->
+        <div class="payment-method-card" onclick="showDepositMethod('upi')">
+          <div class="method-badge">Instant</div>
+          <div class="method-icon" style="color:#ff4b2b">🇮🇳</div>
+          <div class="method-info">
+            <div class="method-name">UPI Payment</div>
+            <div class="method-desc">PhonePe, GPay, Paytm, Any UPI App</div>
+          </div>
+          <span style="opacity:0.3">❯</span>
+        </div>
+
+        <!-- Option: Crypto -->
+        <div class="payment-method-card" onclick="showDepositMethod('crypto')">
+          <div class="method-icon" style="color:#f7931a">₿</div>
+          <div class="method-info">
+            <div class="method-name">Crypto Currency</div>
+            <div class="method-desc">USDT, BTC, TON (Manual)</div>
+          </div>
+          <span style="opacity:0.3">❯</span>
+        </div>
+
+        <!-- Option: Promo -->
+        <div class="payment-method-card" onclick="showDepositMethod('promo')">
+          <div class="method-icon" style="color:var(--accent)">🎟️</div>
+          <div class="method-info">
+            <div class="method-name">Redeem Voucher</div>
+            <div class="method-desc">Use gift card or promo codes</div>
+          </div>
+          <span style="opacity:0.3">❯</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: UPI View -->
+    <div id="deposit-upi" class="hidden fade-in">
+      <button class="btn btn-secondary btn-sm mb-4" onclick="showDepositMethod('selection')">← Back</button>
+      
+      <div style="text-align: center; background: var(--surface); border-radius: 24px; padding: 32px 20px; border: 1px solid var(--border); margin-bottom: 20px;">
+        <h3 style="margin-bottom: 8px;">Scan & Pay</h3>
+        <p class="text-xs text-muted mb-6">Pay exactly <strong class="target-amount-text" style="color:var(--accent)">₹0</strong> to avoid delays</p>
+
+        <div class="qr-glow-border qr-pulse" style="display:inline-block; margin-bottom: 20px;">
+          <div id="qr-container" class="qr-container-wrapper">
+             <div id="upi-qr" style="width:200px; height:200px; display:flex; align-items:center; justify-content:center; color:#000; font-weight:bold;">Loading QR...</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:10px; margin-bottom: 24px;">
+           <button class="btn btn-secondary btn-sm" onclick="downloadQRCode()" style="background: rgba(255,255,255,0.05)">
+             <span style="margin-right:6px">⬇️</span> Download QR
+           </button>
+           <button class="btn btn-secondary btn-sm" onclick="copyUPILink()" style="background: rgba(255,255,255,0.05)">
+             <span style="margin-right:6px">🔗</span> Copy UPI ID
+           </button>
+        </div>
+
+        <!-- UTR Entry - Moved here -->
+        <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 18px; border: 1px solid var(--border); margin-bottom: 24px;">
+          <label class="text-xxs text-muted uppercase font-bold mb-3 block" style="text-align:left">Enter 12-Digit UTR Number</label>
           <div style="display:flex;gap:10px">
-            <input type="text" id="promo-code" placeholder="ENTER CODE" class="form-input" style="text-transform:uppercase" />
-            <button class="btn btn-primary" onclick="redeemPromo()" id="redeem-btn">Verify</button>
+            <input type="text" id="utr-input" placeholder="e.g. 401234567890" class="form-input" maxlength="12" style="background:rgba(0,0,0,0.2)" />
+            <button class="btn btn-primary" onclick="verifyBharatPe()" id="verify-bp-btn">Verify Now</button>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px; text-align: left; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 16px; border: 1px dashed var(--border)">
+          <div style="display:flex; gap:12px; align-items:center">
+            <span style="width:24px; height:24px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold">1</span>
+            <span class="text-xs">Scan the QR with any UPI App (GPay, PhonePe, etc.)</span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center">
+            <span style="width:24px; height:24px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold">2</span>
+            <span class="text-xs">Complete payment of <strong class="target-amount-text">₹0</strong></span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center">
+            <span style="width:24px; height:24px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold">3</span>
+            <span class="text-xs">Enter the 12-digit UTR below to verify</span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Step 2: Crypto View -->
+    <div id="deposit-crypto" class="hidden fade-in">
+      <button class="btn btn-secondary btn-sm mb-4" onclick="showDepositMethod('selection')">← Back</button>
+      <div class="card p-4 text-center">
+        <div style="font-size:40px; margin-bottom:12px">⏳</div>
+        <h4 style="margin-bottom:8px">Manual Crypto Deposit</h4>
+        <p class="text-sm text-muted mb-4">Transfer <strong class="target-amount-text">₹0</strong> worth of Crypto.</p>
+        <a href="/support" class="btn btn-primary w-full">Contact Support</a>
+      </div>
+    </div>
+
+    <!-- Step 2: Promo View -->
+    <div id="deposit-promo" class="hidden fade-in">
+      <button class="btn btn-secondary btn-sm mb-4" onclick="showDepositMethod('selection')">← Back</button>
+      <div class="card p-4">
+        <div class="form-group">
+          <label class="form-label">Gift Card / Promo Code</label>
+          <div style="display:flex;gap:10px">
+            <input type="text" id="promo-code" placeholder="ENTER CODE" class="form-input" style="text-transform:uppercase" />
+            <button class="btn btn-primary" onclick="redeemPromo()" id="redeem-btn">Redeem</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script src="/js/main.js"></script>
 <script>
-{
-  if (!requireLogin()) {}
+(function() {
+  if (typeof requireLogin === 'function' && !requireLogin()) return;
+
   let txFilter = "all", txPage = 1;
 
   async function loadSummary() {
     try {
       const data = await API.get(`/api/user/wallet?page=1&limit=1000`);
-      document.getElementById("wallet-balance").textContent = fmtMoney(data.balance);
+      const balEl = document.getElementById("wallet-balance");
+      if (balEl) balEl.textContent = fmtMoney(data.balance);
+      
       let deposited = 0, spent = 0, refunds = 0;
       data.transactions.forEach(t => {
         if (t.type === "deposit" || t.type === "bonus") deposited += t.amount;
         if (t.type === "purchase") spent += Math.abs(t.amount);
         if (t.type === "refund") refunds += t.amount;
       });
-      document.getElementById("total-deposited").textContent = fmtMoney(deposited);
-      document.getElementById("total-spent").textContent = "-" + fmtMoney(spent);
-      document.getElementById("total-refunds").textContent = "+" + fmtMoney(refunds);
-    } catch (e) {}
-  }
-
-  async function redeemPromo() {
-    const code = document.getElementById("promo-input").value.trim();
-    if (!code) return toast("Please enter a code", "error");
-    
-    const btn = document.getElementById("redeem-btn");
-    btn.disabled = true;
-    btn.textContent = "Checking...";
-    
-    try {
-      const res = await API.post("/api/user/wallet/redeem-promo", { code });
-      toast(`Success! ${fmtMoney(res.amount)} added to your wallet.`, "success");
-      document.getElementById("promo-input").value = "";
-      loadWallet(); // Refresh balance and tx list
+      
+      const depEl = document.getElementById("total-deposited");
+      const spentEl = document.getElementById("total-spent");
+      const refEl = document.getElementById("total-refunds");
+      
+      if (depEl) depEl.textContent = fmtMoney(deposited);
+      if (spentEl) spentEl.textContent = "-" + fmtMoney(spent);
+      if (refEl) refEl.textContent = "+" + fmtMoney(refunds);
     } catch (e) {
-      toast(e.message, "error");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Redeem";
+      console.warn("loadSummary error:", e);
     }
   }
 
-  async function loadWallet(page = 1) {
+  window.loadWallet = async function(page = 1) {
     txPage = page;
     const tbody = document.getElementById("tx-body");
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+    tbody.innerHTML = skeletonTable(5, 8);
     try {
-      // Pass filter to API
       const data = await API.get(`/api/user/wallet?page=${page}&limit=30&type=${txFilter}`);
-      document.getElementById("wallet-balance").textContent = fmtMoney(data.balance);
+      const balEl = document.getElementById("wallet-balance");
+      if (balEl) balEl.textContent = fmtMoney(data.balance);
 
       if (!data.transactions.length) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-3)">No transactions found</td></tr>`;
@@ -186,7 +296,9 @@
           <td class="text-muted text-sm">${fmtDate(t.createdAt)}</td>
         </tr>`).join("");
       renderPagination("pagination", data.page, data.pages, "loadWallet");
-    } catch (e) { toast(e.message, "error"); }
+    } catch (e) { 
+      if (typeof toast === 'function') toast(e.message, "error"); 
+    }
   }
 
   window.setTxFilter = function(type, btn) {
@@ -197,37 +309,174 @@
     });
     btn.classList.remove("btn-secondary");
     btn.classList.add("btn-primary");
-    loadWallet(1);
+    window.loadWallet(1);
   };
 
-  window.loadWallet = loadWallet;
-
   window.redeemPromo = async function() {
-    const code = document.getElementById('promo-code').value.trim().toUpperCase();
+    // Check both potential promo inputs
+    const input1 = document.getElementById("promo-input");
+    const input2 = document.getElementById("promo-code");
+    const code = (input1?.value || input2?.value || "").trim().toUpperCase();
+    
     if (!code) return toast('Please enter a code', 'error');
     
-    const btn = document.getElementById('redeem-btn');
-    btn.disabled = true;
-    btn.textContent = '...';
+    const btn = document.activeElement && document.activeElement.tagName === 'BUTTON' ? document.activeElement : null;
+    const originalText = btn ? btn.textContent : 'Verify';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '...';
+    }
 
     try {
       const res = await API.post('/api/user/wallet/redeem-promo', { code });
       toast(`Success! ₹${res.amount} added to your wallet.`, 'success');
-      document.getElementById('promo-code').value = '';
+      if (input1) input1.value = '';
+      if (input2) input2.value = '';
       loadSummary();
-      loadWallet(1);
-      setTimeout(() => closeModal('deposit-modal'), 1500);
+      window.loadWallet(1);
+      if (typeof closeModal === 'function') closeModal('deposit-modal');
     } catch (e) {
       toast(e.message, 'error');
     } finally {
-      btn.disabled = false;
-      btn.textContent = 'Verify';
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     }
   };
 
+  // Sound Helpers
+  const playSound = (type) => {
+    const successUrl = "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3";
+    const errorUrl = "https://assets.mixkit.co/active_storage/sfx/241/241-preview.mp3";
+    const audio = new Audio(type === 'success' ? successUrl : errorUrl);
+    audio.volume = 0.5;
+    audio.play().catch(() => {}); // Ignore interaction errors
+  };
+
+  window.verifyBharatPe = async function() {
+    const utr = document.getElementById('utr-input').value.trim();
+    if (!utr || utr.length !== 12) return toast('⚠️ Please enter the 12-digit UTR from your payment app!', 'error');
+    
+    const btn = document.getElementById('verify-bp-btn');
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.innerHTML = '<div class="spinner spinner-white"></div>';
+
+    try {
+      const res = await API.post('/api/user/wallet/verify-bharatpe', { utr });
+      playSound('success');
+      toast(`🎉 BOOM! ₹${res.amount || ''} Added Successfully! Enjoy! 🚀`, 'success');
+      document.getElementById('utr-input').value = '';
+      loadSummary();
+      window.loadWallet(1);
+      setTimeout(() => { if (typeof closeModal === 'function') closeModal('deposit-modal'); }, 3000);
+    } catch (e) {
+      playSound('error');
+      // Dynamic catchy error messages
+      let msg = e.message;
+      if (msg.includes('not found')) msg = "🔎 Payment not found yet! Please wait 60s and try again. ⏳";
+      else if (msg.includes('already been used')) msg = "🚫 Hey! This UTR was already redeemed. Don't be cheeky! 😉";
+      
+      toast(msg, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  };
+
+  let depositAmount = 0;
+
+  window.nextToSelection = function() {
+    const amt = parseFloat(document.getElementById('deposit-amount-input').value);
+    if (!amt || amt < 10) return toast('Minimum deposit is ₹10', 'error');
+    
+    depositAmount = amt;
+    document.getElementById('display-deposit-amount').textContent = `₹${amt}`;
+    document.querySelectorAll('.target-amount-text').forEach(el => el.textContent = `₹${amt}`);
+    window.showDepositMethod('selection');
+  };
+
+  let currentUpiId = "";
+
+  window.downloadQRCode = function() {
+    const img = document.querySelector('#upi-qr img');
+    if (!img) return toast('QR not ready', 'error');
+    
+    const link = document.createElement('a');
+    link.href = img.src;
+    link.download = `deposit_qr_${depositAmount}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('QR Code Downloaded', 'success');
+  };
+
+  window.copyUPILink = function() {
+    if (!currentUpiId) return toast('UPI ID not loaded', 'error');
+    navigator.clipboard.writeText(currentUpiId);
+    toast('UPI ID copied to clipboard', 'success');
+  };
+
+  window.generateUPI_QR = async function() {
+    const qrEl = document.getElementById('upi-qr');
+    if (!qrEl) return;
+    
+    qrEl.innerHTML = '<div class="spinner"></div>';
+    
+    try {
+      const config = await API.get('/api/user/wallet/payment-config');
+      currentUpiId = config.upi_id;
+      const name = config.upi_name;
+      
+      // Hardcode the amount into the UPI link
+      const upiLink = `upi://pay?pa=${currentUpiId}&pn=${encodeURIComponent(name)}&am=${depositAmount}&cu=INR&tn=Deposit`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
+      
+      qrEl.innerHTML = `<img src="${qrUrl}" alt="Scan to Pay" style="width:100%; height:100%" />`;
+    } catch (e) {
+      qrEl.textContent = "Error loading QR";
+    }
+  };
+
+  window.showDepositMethod = function(method) {
+    const screens = ['amount-screen', 'selection', 'upi', 'crypto', 'promo'];
+    screens.forEach(s => {
+      const el = document.getElementById(`deposit-${s}`);
+      if (el) el.classList.add('hidden');
+    });
+    
+    const target = document.getElementById(`deposit-${method}`);
+    if (target) target.classList.remove('hidden');
+
+    // Update title
+    const title = document.getElementById('deposit-modal-title');
+    if (title) {
+      if (method === 'amount-screen') title.textContent = 'Add Money';
+      else if (method === 'selection') title.textContent = 'Select Method';
+      else if (method === 'upi') title.textContent = 'UPI Payment';
+      else if (method === 'crypto') title.textContent = 'Crypto Deposit';
+      else if (method === 'promo') title.textContent = 'Redeem Promo';
+    }
+
+    if (method === 'upi') window.generateUPI_QR();
+  };
+
+  // Improved modal hook
+  if (typeof window.openModal === 'function') {
+    const originalOpen = window.openModal;
+    window.openModal = function(id) {
+      if (id === 'deposit-modal') {
+        window.showDepositMethod('amount-screen');
+      }
+      originalOpen(id);
+    };
+  }
+
+  // Initial load
   loadSummary();
-  loadWallet();
-}
+  window.loadWallet();
+})();
 </script>
 </body>
 </html>
