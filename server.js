@@ -27,6 +27,17 @@ app.use(express.urlencoded({ extended: true }));
 // Basic rate limiting on API
 // Increased rate limiting to support high-frequency polling (3s intervals)
 app.use("/api/", rateLimit({ windowMs: 15 * 60 * 1000, max: 2000, standardHeaders: true, legacyHeaders: false }));
+// Database Health Check Middleware
+// Prevents requests from hanging if MongoDB/MySQL is disconnected
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    const { DB_TYPE } = require("./utils/db");
+    if (DB_TYPE === "mongodb" && mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ message: "Database connection lost. Please check your internet or retry later." });
+    }
+  }
+  next();
+});
 
 /* ─── Static Files ───────────────────────────────────────────── */
 app.use(express.static(path.join(__dirname, "public")));
@@ -81,26 +92,14 @@ app.get("/admin/promo-codes",   (_, res) => res.sendFile(path.join(views, "admin
 // 404
 app.use((_, res) => res.status(404).sendFile(path.join(views, "404.html")));
 
-/* ─── MongoDB ────────────────────────────────────────────────── */
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/RapidOTP";
-mongoose.set("strictQuery", false);
-
-async function connectMongo(retries = 0) {
-  try {
-    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
-    console.log("✅ MongoDB connected");
-  } catch (err) {
-    const delay = Math.min(5000 * (retries + 1), 30000);
-    console.warn(`⚠️  MongoDB retry in ${delay / 1000}s… (${err.message})`);
-    setTimeout(() => connectMongo(retries + 1), delay);
-  }
-}
+/* ─── Database ────────────────────────────────────────────────── */
+const { connectDB } = require("./utils/db");
 
 /* ─── Start ──────────────────────────────────────────────────── */
 const os = require("os");
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  connectMongo();
+  connectDB();
   
   // Start background order monitoring
   try {
@@ -122,8 +121,8 @@ const server = app.listen(PORT, "0.0.0.0", () => {
   }
   console.log(`🚀 Rapid OTP running on:`);
   console.log(`   - Local:  http://localhost:${PORT}`);
+  console.log(`   - Local:  http://localhost:${PORT}`);
   console.log(`   - LAN:    http://${localIp}:${PORT}`);
-  connectMongo();
 });
 
 // Handle port-already-in-use gracefully

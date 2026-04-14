@@ -6,7 +6,8 @@ const API = {
   patch: (url, body, options = {}) => fetch(url, { method: "PATCH", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
   put:   (url, body, options = {}) => fetch(url, { method: "PUT", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
   del:   (url, options = {}) => fetch(url, { method: "DELETE", headers: authHeaders(), ...options }).then(handleRes),
-  upload: (url, formData, options = {}) => fetch(url, { method: "POST", headers: authHeaders(), body: formData, ...options }).then(handleRes),
+  delete: (url, options = {}) => API.del(url, options),
+  upload: (url, formData, method = "POST", options = {}) => fetch(url, { method: method, headers: authHeaders(), body: formData, ...options }).then(handleRes),
 };
 
 function authHeaders() {
@@ -24,184 +25,164 @@ async function handleRes(res) {
   return data;
 }
 
-// Global Page Loader Injection (Numbers Escaping Phone)
+// Global Page Loader Logic (Cyber Orbital & Numbers Escaping Phone)
 (function() {
-  if (document.getElementById("page-loader")) return;
-  const loader = document.createElement("div");
-  loader.id = "page-loader";
-  loader.innerHTML = `
-    <div class="pl-scene" id="pl-scene">
-      <div class="pl-glow-ring"></div>
-      <div class="pl-glow-ring"></div>
-      <div class="pl-phone" id="pl-phone">
-        <div class="pl-notch"></div>
-        <div class="pl-screen" id="pl-screen">
-          <div class="pl-screen-flash"></div>
-          <svg class="pl-crack-svg" viewBox="0 0 106 200" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="53,0 47,35 62,65 35,110 52,155 44,200" fill="none" stroke="#8877ff" stroke-width="1" opacity="0.8"/>
-            <polyline points="62,65 78,82 72,115" fill="none" stroke="#8877ff" stroke-width="0.6" opacity="0.6"/>
-            <polyline points="47,35 24,52" fill="none" stroke="#8877ff" stroke-width="0.5" opacity="0.5"/>
-            <polyline points="52,155 30,175" fill="none" stroke="#8877ff" stroke-width="0.5" opacity="0.4"/>
-          </svg>
-        </div>
-        <div class="pl-home-bar"></div>
-      </div>
-      <div class="pl-loading-text" id="pl-main-text">LOADING</div>
-      <div class="pl-sub-text" id="pl-sub-text">Please wait...</div>
-    </div>
-  `;
+  if (document.getElementById("pl-style")) return;
+  
   const style = document.createElement("style");
+  style.id = "pl-style";
   style.textContent = `
-    @keyframes plPhoneShake {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      25%       { transform: translate(-4px, 2px) rotate(-1deg); }
-      50%       { transform: translate(4px, -2px) rotate(1deg); }
-      75%       { transform: translate(-2px, 4px) rotate(-0.5deg); }
-    }
-    @-webkit-keyframes plPhoneShake {
-      0%, 100% { -webkit-transform: translate(0, 0) rotate(0deg); }
-      25%       { -webkit-transform: translate(-4px, 2px) rotate(-1deg); }
-      50%       { -webkit-transform: translate(4px, -2px) rotate(1deg); }
-      75%       { -webkit-transform: translate(-2px, 4px) rotate(-0.5deg); }
-    }
-    @keyframes plMatrixFall {
-      0%   { transform: translateY(-100%); opacity: 1; }
-      100% { transform: translateY(100%); opacity: 0; }
-    }
-    @keyframes plFlashPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-    @keyframes plRingPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.04); opacity: 0.3; } }
-    @keyframes plBurst {
-      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; filter: blur(2px); }
-      15% { opacity: 1; filter: blur(0px); }
-      100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(var(--ts)); opacity: 0; filter: blur(3px); }
-    }
-    @keyframes plTrailFly {
-      0%   { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) scaleY(0.2); }
-      20%  { opacity: 0.6; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * -0.3)) scaleY(1); }
-      100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * -1)) scaleY(0.3); }
-    }
-
-    #page-loader {
+    /* Common Loader Container */
+    .pl-container {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #000;
-      display: none; align-items: center; justify-content: center; z-index: 999999;
-      opacity: 0; transition: opacity 0.4s ease;
+      background: #000; display: none; align-items: center; justify-content: center;
+      z-index: 9999999 !important; opacity: 0; transition: opacity 0.4s ease;
       overflow: hidden; font-family: 'Courier New', monospace;
     }
-    #page-loader.visible { display: flex; opacity: 1; }
-    
-    /* Hide everything behind loader */
-    #page-loader.visible ~ * { visibility: hidden !important; }
-    body:has(#page-loader.visible) > *:not(#page-loader) { visibility: hidden !important; }
-    
-    .pl-scene { position: relative; width: 400px; height: 500px; display: flex; align-items: center; justify-content: center; transform: scale(1.2); }
-    
+    .pl-container.visible { display: flex; opacity: 1; }
+    .pl-container.glass { background: rgba(5, 6, 11, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+
+    /* Premium Phone Animation */
+    .pl-scene { position: relative; width: 400px; height: 500px; display: flex; align-items: center; justify-content: center; }
     .pl-phone {
       position: relative; width: 130px; height: 240px;
       background: linear-gradient(160deg, #1c1c38 0%, #0e0e22 100%);
       border-radius: 28px; border: 2.5px solid #2e2e5a;
       box-shadow: 0 0 40px #5533ff33, 0 0 80px #3311ff18, inset 0 1px 0 #ffffff14;
       z-index: 10; display: flex; align-items: center; justify-content: center;
-      animation: plPhoneShake 0.15s ease-in-out infinite !important;
-      -webkit-animation: plPhoneShake 0.15s ease-in-out infinite !important;
+      animation: plPhoneShake 0.3s ease-in-out infinite;
     }
-    
     .pl-notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 36px; height: 9px; background: #0e0e22; border-radius: 0 0 10px 10px; }
     .pl-home-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; background: #2e2e5a; border-radius: 4px; }
     .pl-screen { width: 106px; height: 200px; background: #07071a; border-radius: 14px; overflow: hidden; position: relative; }
-    
     .pl-matrix-col { position: absolute; top: 0; display: flex; flex-direction: column; animation: plMatrixFall linear infinite; font-size: 11px; line-height: 1.5; letter-spacing: 1px; }
-    .pl-screen-flash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, #7766ff66 0%, transparent 70%); animation: plFlashPulse 0.6s ease-in-out infinite; }
+    .pl-screen-flash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, #7766ff66 0%, transparent 70%); animation: plFlashPulse 0.6s ease-in-out infinite; pointer-events: none;}
     .pl-crack-svg { position: absolute; inset: 0; pointer-events: none; opacity: 0.7; }
-    
-    .pl-glow-ring { position: absolute; width: 150px; height: 260px; border-radius: 32px; border: 1px solid #5544ff44; animation: plRingPulse 0.8s ease-in-out infinite; }
+    .pl-glow-ring { position: absolute; width: 150px; height: 260px; border-radius: 32px; border: 1px solid #5544ff44; animation: plRingPulse 0.8s ease-in-out infinite; pointer-events: none;}
     .pl-glow-ring:nth-of-type(2) { width: 170px; height: 280px; border-color: #4433ff22; animation-delay: 0.2s; }
-    
-    .pl-particle { position: absolute; font-weight: 700; pointer-events: none; z-index: 20; left: 50%; top: 50%; animation: plBurst var(--dur) var(--delay) ease-out infinite; }
-    .pl-loading-text { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: #8877ff; font-size: 13px; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; text-shadow: 0 0 15px rgba(136, 119, 255, 0.6); }
-    .pl-sub-text { position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.3); font-size: 10px; letter-spacing: 1px; white-space: nowrap; text-transform: uppercase; font-weight: 600; }
-    
-    .pl-trail { position: absolute; width: 2px; height: 50px; background: linear-gradient(to bottom, transparent, #5533ff88, transparent); transform-origin: center center; animation: plTrailFly var(--dur) var(--delay) ease-out infinite; left: 50%; top: 50%; opacity: 0; }
+    .pl-particle { position: absolute; font-family: 'Courier New', monospace; font-weight: 700; pointer-events: none; z-index: 20; left: 50%; top: 50%; animation: plBurst var(--dur) var(--delay) ease-out infinite; }
+    .pl-loading-text { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #5544cc; font-size: 11px; letter-spacing: 4px; text-transform: uppercase; animation: plTextBlink 1s step-end infinite; white-space: nowrap; }
+    .pl-sub-text { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.2); font-size: 9px; letter-spacing: 1px; white-space: nowrap; text-transform: uppercase; font-weight: 600; }
+    .pl-trail { position: absolute; width: 1px; height: 40px; background: linear-gradient(to bottom, transparent, #5533ff88, transparent); transform-origin: center center; animation: plTrailFly var(--dur) var(--delay) ease-out infinite; left: 50%; top: 50%; opacity: 0; }
+
+    /* Orbital Animation */
+    .cyber-orbital-scene { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
+    .orbital-ring { position: absolute; border-radius: 50%; border: 2px solid transparent; animation: plOrbit linear infinite; }
+    .ring-1 { width: 100px; height: 100px; border-top-color: var(--accent); border-bottom-color: var(--accent); animation-duration: 2s; opacity: 0.8; }
+    .ring-2 { width: 75px; height: 75px; border-left-color: var(--accent-2); border-right-color: var(--accent-2); animation-duration: 1.5s; animation-direction: reverse; opacity: 0.6; }
+    .ring-3 { width: 50px; height: 50px; border-top-color: #fff; border-left-color: #fff; animation-duration: 1s; opacity: 0.4; }
+    .orbital-core { width: 12px; height: 12px; background: #fff; border-radius: 50%; box-shadow: 0 0 20px #fff, 0 0 40px var(--accent); animation: plPulseCore 2s ease-in-out infinite; }
+    .orbital-text { position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800; letter-spacing: 4px; text-shadow: 0 0 10px var(--accent); animation: plTextBlink 1.5s step-end infinite; white-space: nowrap; }
+
+    /* Keyframes */
+    @keyframes plPhoneShake { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 25% { transform: translate(-2px, 1px) rotate(-0.5deg); } 50% { transform: translate(2px, -1px) rotate(0.5deg); } 75% { transform: translate(-1px, 2px) rotate(-0.3deg); } }
+    @keyframes plMatrixFall { 0% { transform: translateY(-100%); opacity: 1; } 100% { transform: translateY(100%); opacity: 0; } }
+    @keyframes plFlashPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    @keyframes plRingPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.04); opacity: 0.3; } }
+    @keyframes plBurst { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; filter: blur(2px); } 15% { opacity: 1; filter: blur(0px); } 100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(var(--ts)); opacity: 0; filter: blur(3px); } }
+    @keyframes plTrailFly { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) scaleY(0.2); } 20% { opacity: 0.6; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * -0.3)) scaleY(1); } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--dist) * -1)) scaleY(0.3); } }
+    @keyframes plOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes plPulseCore { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
+    @keyframes plTextBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* Hidden Nav Logic */
+    body.pl-active { overflow: hidden; }
   `;
   document.head.appendChild(style);
-  document.body.appendChild(loader);
 
-  // ── Initialization Logic ──────────────────────────────────────────
-  const digits = '0123456789';
-  const scene = loader.querySelector('#pl-scene');
-  const screen = loader.querySelector('#pl-screen');
-  const colors = ['#4433dd', '#6655ff', '#8877ff', '#aa99ff', '#3322aa'];
-
-  // Matrix Rain
-  for (let c = 0; c < 9; c++) {
-    const col = document.createElement('div');
-    col.className = 'pl-matrix-col';
-    col.style.left = (c * 12 + 2) + 'px';
-    col.style.animationDuration = (0.8 + Math.random() * 1.2) + 's';
-    col.style.animationDelay = (-Math.random() * 2) + 's';
-    col.style.color = colors[Math.floor(Math.random() * colors.length)];
-    for (let r = 0; r < 20; r++) {
-      const span = document.createElement('span');
-      span.textContent = digits[Math.floor(Math.random() * digits.length)];
-      col.appendChild(span);
-    }
-    screen.appendChild(col);
-  }
-
-  // Particle Bursts
-  const particlesConfigs = [
-    { tx: -200, ty: -280, dur: 1.0, delay: 0.00, size: 36, color: '#ffffff' },
-    { tx:  180, ty: -260, dur: 0.9, delay: 0.08, size: 28, color: '#aa99ff' },
-    { tx: -150, ty: -200, dur: 0.7, delay: 0.16, size: 44, color: '#ffffff' },
-    { tx:  220, ty: -180, dur: 1.1, delay: 0.05, size: 20, color: '#ffdd88' },
-    { tx: -240, ty:  -80, dur: 0.85,delay: 0.22, size: 32, color: '#8877ff' },
-    { tx:  160, ty: -310, dur: 1.2, delay: 0.30, size: 24, color: '#ffffff' },
-    { tx:  -60, ty: -340, dur: 0.95,delay: 0.12, size: 40, color: '#aa99ff' },
-    { tx:  250, ty: -120, dur: 0.8, delay: 0.38, size: 16, color: '#ffdd88' },
-    { tx:  100, ty: -360, dur: 0.75,delay: 0.42, size: 22, color: '#8877ff' },
-  ];
-  particlesConfigs.forEach(p => {
-    const el = document.createElement('div');
-    el.className = 'pl-particle';
-    const scale = 0.6 + Math.random() * 1.0;
-    el.style.cssText = `--tx: ${p.tx}px; --ty: ${p.ty}px; --dur: ${p.dur}s; --delay: -${p.delay}s; --ts: ${scale}; font-size: ${p.size}px; color: ${p.color}; text-shadow: 0 0 12px ${p.color}cc;`;
-    el.textContent = digits[Math.floor(Math.random() * digits.length)];
-    scene.appendChild(el);
-  });
-
-  // Speed Trails
-  const trailCount = 12;
-  for (let i = 0; i < trailCount; i++) {
-    const angle = (i / trailCount) * 360;
-    const dist  = 100 + Math.random() * 150;
-    const trail = document.createElement('div');
-    trail.className = 'pl-trail';
-    trail.style.cssText = `--angle: ${angle}deg; --dist: ${dist}px; --dur: ${0.7 + Math.random() * 0.6}s; --delay: -${Math.random() * 1.5}s;`;
-    scene.appendChild(trail);
-  }
-
-  // Live Shuffling
-  setInterval(() => {
-    screen.querySelectorAll('.pl-matrix-col span').forEach(s => { if (Math.random() > 0.8) s.textContent = digits[Math.floor(Math.random() * digits.length)]; });
-    scene.querySelectorAll('.pl-particle').forEach(el => { if (Math.random() > 0.6) el.textContent = digits[Math.floor(Math.random() * digits.length)]; });
-  }, 150);
+  // Inject Premium Loader (Used for BUY page/specific actions)
+  const pl = document.createElement("div");
+  pl.id = "page-loader";
+  pl.className = "pl-container";
+  pl.innerHTML = `
+    <div class="pl-scene" id="pl-scene">
+      <div class="pl-glow-ring"></div>
+      <div class="pl-glow-ring"></div>
+      <div class="pl-phone" id="pl-phone"><div class="pl-notch"></div><div class="pl-screen" id="pl-screen"><div class="pl-screen-flash"></div><svg class="pl-crack-svg" viewBox="0 0 106 200"><polyline points="53,0 47,35 62,65 35,110 52,155 44,200" fill="none" stroke="#8877ff" stroke-width="1" opacity="0.8"/></svg></div><div class="pl-home-bar"></div></div>
+      <div class="pl-loading-text" id="pl-main-text">OVERFLOW</div>
+      <div class="pl-sub-text" id="pl-sub-text">Waiting for allocation...</div>
+    </div>
+  `;
+  document.body.appendChild(pl);
 })();
 
-// Show/Hide page loader (simple spinner for page navigation)
+// Show/Hide simple page loader
 window.showPageLoader = () => {
   let loader = document.getElementById("simple-page-loader");
   if (!loader) {
     loader = document.createElement("div");
     loader.id = "simple-page-loader";
-    loader.innerHTML = `<div class="spinner" style="width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999999"></div>`;
+    loader.innerHTML = `
+      <div class="cyber-orbital-scene">
+        <div class="orbital-ring ring-1"></div>
+        <div class="orbital-ring ring-2"></div>
+        <div class="orbital-ring ring-3"></div>
+        <div class="orbital-core"></div>
+        <div class="orbital-scan"></div>
+        <div class="orbital-text">LOADING</div>
+      </div>
+    `;
+    const style = document.createElement("style");
+    style.textContent = `
+      #simple-page-loader {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(5, 6, 11, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        display: none; align-items: center; justify-content: center; z-index: 10001;
+        opacity: 0; transition: opacity 0.3s ease;
+      }
+      #simple-page-loader.visible { display: flex; opacity: 1; }
+      
+      .cyber-orbital-scene { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
+      
+      .orbital-ring {
+        position: absolute; border-radius: 50%;
+        border: 2px solid transparent;
+        animation: orbit linear infinite;
+      }
+      .ring-1 { width: 100px; height: 100px; border-top-color: var(--accent); border-bottom-color: var(--accent); animation-duration: 2s; opacity: 0.8; }
+      .ring-2 { width: 75px; height: 75px; border-left-color: var(--accent-2); border-right-color: var(--accent-2); animation-duration: 1.5s; animation-direction: reverse; opacity: 0.6; }
+      .ring-3 { width: 50px; height: 50px; border-top-color: #ffffff; border-left-color: #ffffff; animation-duration: 1s; opacity: 0.4; }
+      
+      .orbital-core {
+        width: 12px; height: 12px; background: #fff; border-radius: 50%;
+        box-shadow: 0 0 20px #fff, 0 0 40px var(--accent);
+        animation: pulseCore 2s ease-in-out infinite;
+      }
+      
+      .orbital-scan {
+        position: absolute; width: 140px; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        opacity: 0.3; animation: scanMove 4s linear infinite;
+      }
+      
+      .orbital-text {
+        position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%);
+        color: var(--accent); font-family: 'JetBrains Mono', monospace;
+        font-size: 10px; font-weight: 800; letter-spacing: 4px;
+        text-shadow: 0 0 10px var(--accent); animation: textBlink 1.5s step-end infinite;
+      }
+
+      @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      @keyframes pulseCore { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
+      @keyframes scanMove { 0% { transform: rotate(0deg) translateY(-80px); } 100% { transform: rotate(360deg) translateY(-80px); } }
+      @keyframes textBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    `;
+    document.head.appendChild(style);
     document.body.appendChild(loader);
   }
-  loader.style.display = "block";
+  document.body.classList.add("pl-active"); // Hide navbar
+  loader.style.display = "flex";
+  setTimeout(() => loader.classList.add("visible"), 10);
 };
 
 window.hidePageLoader = () => {
   const loader = document.getElementById("simple-page-loader");
-  if (loader) loader.style.display = "none";
+  if (!loader) return;
+  document.body.classList.remove("pl-active"); // Show navbar
+  loader.classList.remove("visible");
+  setTimeout(() => { if(!loader.classList.contains("visible")) loader.style.display = "none"; }, 300);
 };
 
 // Original showLoader/hideLoader for number allocation (keep as is)
@@ -210,20 +191,23 @@ window.showLoader = (text, subtext) => {
   if (!loader) return;
   if (text) loader.querySelector("#pl-main-text").textContent = text;
   if (subtext) loader.querySelector("#pl-sub-text").textContent = subtext;
-  loader.classList.add("visible");
+  document.body.classList.add("pl-active"); // Hide navbar/etc
+  loader.style.display = "flex";
+  setTimeout(() => loader.classList.add("visible"), 10);
 };
 
 window.hideLoader = () => {
   const loader = document.getElementById("page-loader");
-  if (loader) {
-    loader.classList.remove("visible");
-    setTimeout(() => { 
-      if(!loader.classList.contains("visible")) {
-        loader.querySelector("#pl-main-text").textContent = "LOADING";
-        loader.querySelector("#pl-sub-text").textContent = "Please wait...";
-      }
-    }, 400);
-  }
+  if (!loader) return;
+  document.body.classList.remove("pl-active"); // Show navbar/etc
+  loader.classList.remove("visible");
+  setTimeout(() => { 
+    if(!loader.classList.contains("visible")) {
+      loader.style.display = "none";
+      loader.querySelector("#pl-main-text").textContent = "LOADING";
+      loader.querySelector("#pl-sub-text").textContent = "Please wait...";
+    }
+  }, 400);
 };
 
 // Update all balance displays on the page
@@ -239,21 +223,45 @@ window.updateBalanceDisplay = async function() {
     // Dashboard stat card
     const statBal = document.getElementById("stat-balance");
     if (statBal) statBal.textContent = fmtMoney(data.balance);
+    // Profile page balance
+    const profileBal = document.getElementById("p-balance");
+    if (profileBal) profileBal.textContent = fmtMoney(data.balance);
+    // Ready-made accounts balance
+    const accountsBal = document.getElementById('wallet-bal');
+    if (accountsBal) accountsBal.textContent = fmtMoney(data.balance);
     
     return data;
   } catch (e) { console.error("Balance sync failed", e); }
 };
 
-// Global click listener for loader
-document.addEventListener("click", (e) => {
-  const link = e.target.closest("a");
-  if (link && link.href && !link.href.startsWith("javascript") && !link.href.startsWith("#") && !link.target && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
-    const url = new URL(link.href);
-    if (url.origin === window.location.origin && url.pathname !== window.location.pathname) {
-      window.showPageLoader();
+// Global Balance Heartbeat
+function startBalanceHeartbeat() {
+  if (!isLoggedIn()) return;
+  // Poll every 10s on dashboard/billing, 30s elsewhere
+  const isPriorityPage = window.location.pathname.includes('/dashboard') || window.location.pathname.includes('/wallet');
+  const interval = isPriorityPage ? 10000 : 30000;
+  
+  setInterval(() => {
+    // Only poll if tab is active to save resources
+    if (document.visibilityState === 'visible') {
+      window.updateBalanceDisplay();
+      // If on dashboard and initDashboard exists, refresh it for real-time order states
+      if (typeof window.initDashboard === 'function' && window.location.pathname === '/dashboard') {
+        window.initDashboard();
+      }
+      // If on orders list and initOrders exists, refresh it
+      if (typeof window.initOrders === 'function' && window.location.pathname === '/dashboard/orders') {
+        window.initOrders();
+      }
     }
-  }
-});
+  }, interval);
+}
+
+// Start heartbeat if logged in
+if (isLoggedIn()) {
+  startBalanceHeartbeat();
+}
+
 
 // ── Auth helpers ──────────────────────────────────────────────────
 function getToken()   { return localStorage.getItem("otp_token"); }
@@ -319,8 +327,13 @@ function applyTheme(theme, isPreview = false) {
   document.documentElement.setAttribute("data-theme", theme);
   if (!isPreview) {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } else {
+  }
+  
+  // If we are applying a colorful/specialized theme, remove the global brand overrides
+  // so the CSS variables in main.css can take effect.
+  if (theme !== 'dark' && theme !== 'light') {
     document.documentElement.style.removeProperty('--accent');
+    document.documentElement.style.removeProperty('--accent-rgb');
     document.documentElement.style.removeProperty('--grad-primary');
   }
 }
@@ -332,14 +345,20 @@ function toggleTheme() {
   applyTheme(next);
 }
 
-// Global settings cache to avoid redundant fetches
 let _settingsCache = null;
+let _settingsPromise = null;
 
-// PROACTIVE FETCH: Start getting settings immediately, don't wait for DOM
-const _settingsPromise = API.get("/api/auth/settings").then(s => {
-  _settingsCache = s;
-  return s;
-}).catch(() => null);
+async function getSiteSettings(force = false) {
+  if (!force && _settingsCache) return _settingsCache;
+  _settingsPromise = API.get("/api/auth/settings").then(s => {
+    _settingsCache = s;
+    return s;
+  }).catch(() => ({}));
+  return _settingsPromise;
+}
+
+// Start proactive fetch
+getSiteSettings();
 
 const SERVICE_GRADIENTS = [
   'linear-gradient(135deg, #3b82f6, #2563eb)',
@@ -357,7 +376,15 @@ function getServiceIcon(service, size = '100%') {
   const name = service.name || service.service_name || 'Service';
   
   if (service.image_url) {
-    return `<img src="${service.image_url}" alt="${name}" style="width:${size};height:${size};object-fit:cover;">`;
+    // Add timestamp for cache-busting to ensure latest logo shows immediately
+    const buster = `?t=${Date.now()}`;
+    return `<img src="${service.image_url}${buster}" 
+                 alt="${name}" 
+                 style="width:${size};height:${size};object-fit:cover;" 
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div style="display:none; width:${size}; height:${size}; border-radius:inherit; background:${service.icon_color || '#3b82f6'}; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:calc(${size} * 0.4)">
+               ${name.charAt(0).toUpperCase()}
+            </div>`;
   }
   
   const color = service.icon_color || SERVICE_GRADIENTS[Math.abs(name.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % SERVICE_GRADIENTS.length];
@@ -383,24 +410,32 @@ function renderSkeleton(type, count = 1) {
   return Array(count).fill(layouts[type] || layouts['text']).join('');
 }
 
-async function applySiteSettings() {
+async function applySiteSettings(forceRefresh = false) {
   try {
-    const settings = _settingsCache || await _settingsPromise;
+    const settings = await getSiteSettings(forceRefresh);
     if (!settings) return;
 
-    // 1. Apply Theme (DATABASE TRUTH)
-    if (settings.default_theme) {
+    // 1. Apply Theme
+    const userTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (settings.default_theme && (!userTheme || forceRefresh)) {
       applyTheme(settings.default_theme);
-      localStorage.setItem(THEME_STORAGE_KEY, settings.default_theme);
     }
     
-    // 2. Apply Brand Overrides
+    // 2. Apply Brand Overrides (Global)
     const root = document.documentElement;
-    if (settings.primary_color) {
+    const currentTheme = getThemePreference();
+    const isBasicTheme = currentTheme === 'dark' || currentTheme === 'light';
+
+    if (settings.primary_color && isBasicTheme) {
       root.style.setProperty('--accent', settings.primary_color);
       const rgb = hexToRgb(settings.primary_color);
       if (rgb) root.style.setProperty('--accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
       root.style.setProperty('--grad-primary', `linear-gradient(135deg, ${settings.primary_color}, ${adjustColor(settings.primary_color, -20)})`);
+    } else if (!isBasicTheme) {
+      // Ensure overrides are cleared for colorful themes
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--accent-rgb');
+      root.style.removeProperty('--grad-primary');
     }
 
     // 3. Identity
@@ -1052,6 +1087,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (isLoggedIn()) {
     updateBalanceDisplay();
+    // Global poll every 10s
+    setInterval(() => {
+      if (document.visibilityState === "visible") updateBalanceDisplay();
+    }, 10000);
   }
 });
 
@@ -1061,15 +1100,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   s.textContent = `
     .glass-modal-overlay {
       background: rgba(15, 23, 42, 0.4) !important;
-      backdrop-filter: blur(8px) !important;
-      -webkit-backdrop-filter: blur(8px) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
       animation: fadeInModal 0.2s ease-out;
+      z-index: 10000 !important;
     }
     .glass-modal-box {
-      background: rgba(30, 41, 59, 0.7) !important;
-      backdrop-filter: blur(16px) !important;
-      -webkit-backdrop-filter: blur(16px) !important;
-      border: 1px solid rgba(255,255,255,0.1) !important;
+      background: #0D0D0D;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
       box-shadow: 0 24px 50px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05) !important;
       border-radius: 20px !important;
       transform: translateY(0) scale(1) !important;

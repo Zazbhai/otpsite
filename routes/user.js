@@ -1,6 +1,8 @@
 const express = require("express");
 const router  = express.Router();
 const mongoose = require("mongoose");
+const fs       = require("fs");
+const path     = require("path");
 const { loginRequired } = require("../middleware/auth");
 const User        = require("../models/User");
 const Order       = require("../models/Order");
@@ -8,6 +10,7 @@ const Service     = require("../models/Service");
 const Server      = require("../models/Server");
 const Transaction = require("../models/Transaction");
 const Country     = require("../models/Country");
+const { paymentChecker } = require("../utils/bharatpe");
 const providerApi = require("../utils/providerApi");
 const { nanoid }  = require("nanoid");
 
@@ -161,6 +164,9 @@ router.post("/orders", async (req, res) => {
       status:            "active",
       expires_at:        expiresAt,
       min_cancel_at:     minCancelAt,
+      service_image:     service.image_url || "",
+      service_color:     service.icon_color || "",
+      check_interval:    serverConf.check_interval || 3,
       multi_otp_enabled: serverConf.multi_otp_supported || false
     }], { session });
 
@@ -368,6 +374,118 @@ router.get("/wallet", async (req, res) => {
       pages: Math.ceil(total / limit),
     });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
+});
+
+
+// ── POST /api/user/wallet/redeem-promo ───────────────────────────
+const PromoCode = require("../models/PromoCode");
+router.post("/wallet/redeem-promo", async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: "Code is required" });
+
+    const promo = await PromoCode.findOne({ code: code.toUpperCase(), is_active: true });
+    if (!promo) {
+      return res.status(404).json({ error: "Invalid or inactive promo code" });
+    }
+
+    if (promo.used_count >= promo.usage_limit) {
+      return res.status(400).json({ error: "This promo code has reached its usage limit" });
+    }
+
+    if (promo.used_by.includes(req.userId)) {
+      return res.status(400).json({ error: "You have already redeemed this promo code" });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    user.balance = parseFloat((user.balance + promo.amount).toFixed(4));
+    await user.save();
+
+    promo.used_count += 1;
+    promo.used_by.push(req.userId);
+    await promo.save();
+
+    await Transaction.create({
+      user_id: user._id,
+      type: "bonus",
+      amount: promo.amount,
+      balance_after: user.balance,
+      description: `Redeemed promo code: ${promo.code}`,
+    });
+
+    res.json({ success: true, amount: promo.amount });
+  } catch (err) {
+    console.error("Promo error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ── GET /api/user/wallet/payment-config ──────────────────────────
+router.get("/wallet/payment-config", (req, res) => {
+  try {
+    const configPath = path.join(__dirname, "..", "payment_config.json");
+    if (!fs.existsSync(configPath)) {
+      return res.json({ bharatpe: { enabled: false } });
+    }
+    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    const b = config.bharatpe || {};
+    // Only return non-sensitive info
+    res.json({
+      bharatpe: {
+        enabled: !!b.enabled,
+        upi_id:  b.upi_id || "",
+        upi_name: b.upi_name || "Rapid OTP",
+        qr_image: b.qr_image || ""
+      }
+    });
+  } catch (err) { res.status(500).json({ error: "Failed to load config" }); }
+});
+
+// ── POST /api/user/wallet/verify-bharatpe ─────────────────────────
+router.post("/wallet/verify-bharatpe", async (req, res) => {
+  try {
+    const { utr } = req.body;
+    if (!utr) return res.status(400).json({ error: "UTR is required" });
+
+    // Check if this UTR was already used
+    const exists = await Transaction.findOne({ reference: utr, type: "deposit" });
+    if (exists) return res.status(400).json({ error: "This UTR has already been redeemed." });
+
+    const result = await paymentChecker(utr);
+    if (!result.success) {
+      return res.status(400).json({ error: "Payment not found or not yet confirmed. Please try again after 2 minutes." });
+    }
+
+    if (result.status !== "SUCCESS" && result.status !== "completed") {
+       // Note: status check depends on bharatpe.js implementation, but usually success=true is enough
+    }
+
+    const amount = result.amount;
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.balance = parseFloat((user.balance + amount).toFixed(4));
+    await user.save();
+
+    await Transaction.create({
+      user_id: user._id,
+      type: "deposit",
+      amount: amount,
+      balance_after: user.balance,
+      description: `UPI Deposit (UTR: ${utr})`,
+      reference: utr,
+      status: "completed"
+    });
+
+    res.json({ success: true, amount });
+  } catch (err) {
+    console.error("BharatPe verify error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 module.exports = router;

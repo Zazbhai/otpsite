@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Orders — Rapid OTP</title>
   <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
   <style>
     .orders-page { max-width: 900px; margin: 0 auto; }
     
@@ -221,11 +222,13 @@
   
   let currentPage = 1, currentFilter = 'all';
   
-  async function loadOrders(page = 1) {
+  async function loadOrders(page = 1, isBackground = false) {
     currentPage = page;
     const list = document.getElementById('orders-list');
     if (!list) return;
-    list.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>`;
+    if (!isBackground) {
+       list.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>`;
+    }
     
     try {
       const data = await API.get(`/api/user/orders?status=${currentFilter}&page=${page}&limit=15`);
@@ -245,10 +248,12 @@
       
       list.innerHTML = data.orders.map(o => `
         <div class="order-card" onclick="SPA.navigate('/dashboard/orders/${o.order_id}')">
+          <div style="width:40px;height:40px;border-radius:10px;overflow:hidden;background:var(--bg-2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+             ${getServiceIcon({ name: o.service_name, image_url: o.service_image, icon_color: o.service_color }, '40px')}
+          </div>
           <div class="order-main">
             <div class="order-id">${o.order_id}</div>
             <div class="order-service">
-              <span>📱</span>
               ${o.service_name}
               ${o.otp ? `<span class="otp-preview">${o.otp}</span>` : ''}
             </div>
@@ -279,7 +284,13 @@
   };
 
   window.loadOrders = loadOrders;
+  window.initOrders = () => loadOrders(currentPage, true);
   loadOrders();
+
+  const polling = setInterval(() => {
+    if (document.visibilityState === 'visible') loadOrders(currentPage, true);
+  }, 10000);
+  window.addEventListener('popstate', () => clearInterval(polling), { once: true });
 }
 </script>
 </body>

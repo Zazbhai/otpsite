@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rapid OTP — Instant Virtual Numbers for SMS Verification</title>
-  <meta name="description" content="Get instant virtual phone numbers for any SMS verification. 500+ services, 50+ countries, lightning-fast OTP delivery." />
-  <link rel="stylesheet" href="/css/main.css" />
-</head>
+   <meta name="description" content="Get instant virtual phone numbers for any SMS verification. 500+ services, 50+ countries, lightning-fast OTP delivery." />
+   <link rel="stylesheet" href="/css/main.css" />
+   <script src="/js/preloader.js"></script>
+ </head>
 <body>
 
 <!-- ── Navbar ── -->
@@ -307,7 +308,6 @@
 <section class="section">
   <div class="container">
     <div style="text-align:center;padding:72px 32px;background:var(--surface);border:1px solid var(--border);border-radius:32px;position:relative;overflow:hidden">
-      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 50% 80% at 50% 50%,rgba(99,102,241,0.12) 0%,transparent 70%);pointer-events:none"></div>
       <h2>Ready to Get Your OTP?</h2>
       <p style="color:var(--text-2);font-size:18px;margin:16px auto 36px;max-width:480px">Join thousands of users who get their verifications done in seconds.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
@@ -410,6 +410,7 @@
     const errEl = document.getElementById('l-error');
     errEl.classList.add('hidden');
     btn.disabled = true; btn.textContent = 'Signing in…';
+    window.showPageLoader();
     try {
       const data = await doLogin(document.getElementById('l-email').value, document.getElementById('l-pass').value);
       saveAuth(data.token, data.user);
@@ -417,6 +418,7 @@
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
       btn.disabled = false; btn.textContent = 'Sign In →';
+      window.hidePageLoader();
     }
   }
 
@@ -425,6 +427,7 @@
     const errEl = document.getElementById('r-error');
     errEl.classList.add('hidden');
     btn.disabled = true; btn.textContent = 'Creating account…';
+    window.showPageLoader();
     try {
       const data = await doRegister(
         document.getElementById('r-user').value,
@@ -436,6 +439,7 @@
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
       btn.disabled = false; btn.textContent = 'Create Account →';
+      window.hidePageLoader();
     }
   }
 

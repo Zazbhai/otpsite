@@ -7,32 +7,80 @@
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
   <style>
-    .buy-container { max-width: 700px; margin: 0 auto; }
+    .buy-container { width: 95%; max-width: 1400px; margin: 0 auto; }
     .buy-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--r-xl);
-      padding: 32px;
+      border-radius: 24px;
+      padding: 0;
       backdrop-filter: blur(12px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
-    .buy-header {
-      text-align: center;
-      margin-bottom: 32px;
-      padding-bottom: 24px;
+    .buy-card-header {
+      padding: 24px 32px;
       border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.01);
     }
-    .buy-header h2 {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      background: var(--grad-primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    .buy-card-header h2 { font-size: 20px; font-weight: 800; margin: 0; color: #fff; }
+    
+    .mini-country-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 140px;
+      position: relative;
     }
-    .buy-header p {
-      color: var(--text-2);
-      font-size: 14px;
+    .mini-country-selector:hover { border-color: var(--accent); background: var(--surface-2); }
+    
+    .services-main {
+      padding: 24px 32px 32px;
+    }
+    
+    .services-box {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-top: 16px;
+      max-height: 440px;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    /* Custom Scrollbar for Services Box */
+    .services-box::-webkit-scrollbar { width: 6px; }
+    .services-box::-webkit-scrollbar-track { background: transparent; }
+    .services-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    .services-box::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    
+    .services-box {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-top: 16px;
+      max-height: 380px; /* Max height to show ~3 rows of 3, but shrinks if less */
+      min-height: 100px;
+      overflow-y: auto;
+      padding: 16px;
     }
     .buy-steps {
       display: flex;
@@ -344,10 +392,8 @@
       font-size: 14px;
       font-weight: 600;
       color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       margin-bottom: 2px;
+      line-height: 1.2;
     }
     .service-price {
       font-size: 13px;
@@ -424,6 +470,15 @@
       outline: none;
       border-color: var(--accent);
       background: var(--surface-2);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+    
+    @media (max-width: 768px) {
+      .buy-container { padding: 0 12px; }
+      .buy-card-header { padding: 16px 20px; flex-direction: column; align-items: flex-start; gap: 12px; }
+      .mini-country-selector { width: 100%; }
+      .services-main { padding: 16px 20px 20px; }
+      .service-grid { grid-template-columns: 1fr; gap: 12px; }
     }
 
     /* Updated Modal & Server Options Style */
@@ -508,18 +563,11 @@
     .server-price { font-size: 16px; font-weight: 800; color: #f59e0b; }
 
     @media (max-width: 640px) {
-      .buy-card { padding: 20px; }
-      .service-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-      .service-card { padding: 10px; gap: 8px; }
-      .service-icon-box { width: 32px; height: 32px; font-size: 16px; }
-      .service-name { font-size: 13px; }
-      .service-price { font-size: 12px; }
-      .modal-card { max-height: 90vh; overflow-y: auto; }
-      .server-option { padding: 12px; }
-      .server-name { font-size: 13px; }
-      .server-price { font-size: 14px; }
+      .buy-container { width: 100%; padding: 0 10px; }
+      .service-grid { grid-template-columns: 1fr; gap: 12px; }
     }
   </style>
+  <script>document.body.style.overflowX = 'hidden';</script>
 </head>
 <body>
 <nav class="navbar">
@@ -553,95 +601,50 @@
   <main class="main-content">
     <div class="buy-container">
       <div class="buy-card fade-in">
-        <div class="buy-header">
-          <h2>Buy Virtual Number</h2>
-          <p>Select your country first, then choose the service you need</p>
-        </div>
-
-        <div class="buy-steps">
-          <div class="buy-step active" id="step-1">
-            <span class="step-num">1</span>
-            <span>Country</span>
-          </div>
-          <div class="buy-step" id="step-2">
-            <span class="step-num">2</span>
-            <span>Service</span>
-          </div>
-          <div class="buy-step" id="step-3">
-            <span class="step-num">3</span>
-            <span>Confirm</span>
-          </div>
-        </div>
-
-        <!-- Step 1: Country Selection -->
-        <div class="dropdown-group" id="group-country">
-          <div class="dropdown-label">
-            <span class="icon">🌍</span>
-            <span>Select Country</span>
-          </div>
-          <div class="custom-select" id="select-country">
-            <div class="select-trigger placeholder" onclick="toggleDropdown('country')">
-              <span>Choose a country...</span>
-              <span class="arrow">▼</span>
+        <div class="buy-card-header">
+          <h2>🛒 Buy Virtual Number</h2>
+          
+          <div class="custom-select" id="select-country" style="width: auto">
+            <div class="mini-country-selector" onclick="toggleDropdown('country')">
+              <span id="selected-country-name">Loading...</span>
+              <span style="font-size: 10px; opacity: 0.5">▼</span>
             </div>
-            <div class="select-dropdown" id="dropdown-country">
-              <div class="search-wrapper" style="padding: 8px; border-bottom: 1px solid var(--border);">
-                <span class="search-icon">🔍</span>
-                <input type="text" class="search-input" placeholder="Search countries..." id="search-country" oninput="filterOptions('country')" />
+            <div class="select-dropdown" id="dropdown-country" style="width: 240px; left: auto; right: 0;">
+              <div class="search-wrapper" style="padding: 10px; border-bottom: 1px solid var(--border);">
+                <input type="text" class="search-input" style="margin:0; padding-left:36px" placeholder="Search countries..." id="search-country" oninput="filterOptions('country')" />
+                <span class="search-icon" style="left:20px">🔍</span>
               </div>
-              <div id="options-country">
-                <script>document.currentScript.outerHTML = skeletonCards(12);</script>
-              </div>
+              <div id="options-country" style="max-height: 300px; overflow-y: auto"></div>
             </div>
           </div>
         </div>
 
-        <!-- Step 2: Service Selection (Redesigned) -->
-        <div id="group-service" style="display: none;">
-          <div class="search-group">
-            <span class="search-icon">🔍</span>
-            <input type="text" class="new-search-input" placeholder="Search service — Telegram, Google..." id="search-service" oninput="filterOptions('service')" />
+        <div class="services-main">
+          <!-- Search & Filter Area -->
+          <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
+             <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em">Find Service</span>
+                <div class="section-badge" id="service-count" style="margin:0; background:var(--accent); color:#fff; font-size:10px">0 Available</div>
+             </div>
+             <div class="search-group" style="margin: 0">
+                <input type="text" class="new-search-input" id="search-service" style="border-radius:12px; height: 50px; padding-left: 20px" placeholder="Search service..." oninput="filterOptions('service')" />
+             </div>
           </div>
 
-          <div class="section-header">
-            <span class="section-title">Choose a Service</span>
-            <span class="section-badge" id="service-count">0</span>
+          <!-- Services Scroll Box -->
+          <div class="services-box" id="options-service">
+             <div style="text-align: center; padding: 40px; color: var(--text-3);">
+                Select a country to view available services
+             </div>
           </div>
-
-          <div class="service-grid" id="options-service">
-            <script>document.currentScript.outerHTML = skeletonCards(12);</script>
-          </div>
+          
+          <div id="group-service" style="display: none;"></div><!-- Legacy compatibility -->
         </div>
 
-        <!-- Step 3: Confirmation & Summary -->
-        <div id="group-summary" style="display: none;">
-          <div class="buy-summary fade-in">
-            <div class="summary-title">📋 Order Summary</div>
-            <div class="summary-row">
-              <span class="summary-label">Service</span>
-              <span class="summary-value" id="summary-service">—</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-label">Country</span>
-              <span class="summary-value" id="summary-country">—</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-label">Server</span>
-              <span class="summary-value" id="summary-server">—</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-label">Your Balance</span>
-              <span class="summary-value" id="summary-balance">—</span>
-            </div>
-            <div class="summary-total">
-              <span class="summary-label">Total Cost</span>
-              <span class="summary-value" id="summary-price">—</span>
-            </div>
-          </div>
-          <button class="buy-btn" id="buy-btn" onclick="placeOrder()">
-            <span>🚀</span>
-            <span>Buy Now</span>
-          </button>
+        <!-- Summary Footer (Optional/Hidden until selected) -->
+        <div id="buy-summary-footer" style="padding: 16px 32px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); display: none; align-items: center; justify-content: space-between;">
+           <div id="selection-preview" style="font-size: 14px; color: var(--text-2);"></div>
+           <button class="btn btn-primary" onclick="confirmPurchase()">Buy Now</button>
         </div>
 
         <!-- Modal for Server Selection -->
@@ -703,11 +706,9 @@
         (c.code && (c.code.toString() === '91' || c.code.toString().toUpperCase() === 'IN'))
       );
       if (india) {
-        setTimeout(() => {
-          if (typeof window.selectCountryOption === 'function') {
-            window.selectCountryOption(india.code);
-          }
-        }, 300);
+         selectCountryOption(india.code);
+      } else if (allCountries.length) {
+         selectCountryOption(allCountries[0].code);
       }
     } catch (e) { toast(e.message, "error"); }
   };
@@ -756,64 +757,52 @@
     if (!country) return;
     
     selectedCountry = country;
-    const triggerEl = document.getElementById('select-country');
-    const trigger = triggerEl ? triggerEl.querySelector('.select-trigger') : null;
-    if (trigger) {
-      trigger.innerHTML = `<span>${country.flag || '🌍'} ${country.name}</span><span class="arrow">▼</span>`;
-      trigger.classList.remove('placeholder');
-    }
+    const trigger = document.getElementById('selected-country-name');
+    if (trigger) trigger.textContent = `${country.flag || '🌍'} ${country.name}`;
     window.closeAllDropdowns();
     
     filteredServices = allServices.filter(s => s.server_id && s.server_id.country_id === country._id);
     const countEl = document.getElementById('service-count');
-    if (countEl) countEl.textContent = filteredServices.length;
+    if (countEl) {
+      const uniqueCount = new Set(filteredServices.map(s => s.name)).size;
+      countEl.textContent = uniqueCount + " Services Available";
+    }
     renderServiceOptions(filteredServices);
     
-    const groupService = document.getElementById('group-service');
-    if (groupService) groupService.style.display = 'block';
-    
-    const groupSummary = document.getElementById('group-summary');
-    if (groupSummary) groupSummary.style.display = 'none';
-    
     selectedService = null;
-    window.updateSteps(2);
   };
-
-  // Using global getServiceIcon from main.js
 
   function renderServiceOptions(services) {
     const container = document.getElementById('options-service');
     if (!container) return;
     if (!services.length) {
-      container.innerHTML = '<div class="empty-state" style="grid-column: span 2;"><p>No services available for this country</p></div>';
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)">No services available for this country.</div>';
       return;
     }
 
-    // Group services by name
     const groups = {};
     services.forEach(s => {
       if (!groups[s.name]) groups[s.name] = [];
       groups[s.name].push(s);
     });
 
-    container.innerHTML = Object.keys(groups).sort().map(name => {
+    container.innerHTML = `<div class="service-grid">` + Object.keys(groups).sort().map(name => {
       const groupItems = groups[name];
       const minPrice = Math.min(...groupItems.map(i => i.price));
-      const s = groupItems[0];
+      const s = groupItems.find(i => i.image_url) || groupItems[0];
       
       return `
         <div class="service-card" onclick="selectServiceGroup('${name.replace(/'/g, "\\'")}')" data-search="${name.toLowerCase()}">
-          <div class="service-icon-box" style="overflow:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--surface-2)">
-            ${getServiceIcon(s)}
+          <div class="service-icon-box">
+            ${getServiceIcon(s, '40px')}
           </div>
           <div class="service-info">
             <div class="service-name">${name}</div>
-            <div class="service-price">From ${fmtMoney(minPrice)}</div>
+            <div class="service-price">${fmtMoney(minPrice)}</div>
           </div>
-          <div class="service-arrow">❯</div>
         </div>
       `;
-    }).join('');
+    }).join('') + `</div>`;
   }
 
   window.selectServiceGroup = function(name) {
@@ -874,8 +863,8 @@
     selectedService = service;
     window.closeServiceModal();
     
-    // Initiate purchase with global loader
-    window.showPageLoader("Allocating Number...");
+    // Initiate purchase with premium loader
+    window.showLoader("ALLOCATING", "Waiting for server...");
     await window.placeOrder();
   };
 
@@ -905,10 +894,19 @@
     if (!container) return;
     
     const selector = type === 'country' ? '.select-option' : '.service-card';
+    let visibleCount = 0;
+    
     container.querySelectorAll(selector).forEach(opt => {
       const searchText = opt.dataset.search || opt.textContent.toLowerCase();
-      opt.style.display = searchText.includes(searchTerm) ? (type === 'service' ? 'flex' : 'flex') : 'none';
+      const match = searchText.includes(searchTerm);
+      opt.style.display = match ? (type === 'service' ? 'flex' : 'flex') : 'none';
+      if (match) visibleCount++;
     });
+
+    if (type === 'service') {
+       const countEl = document.getElementById('service-count');
+       if (countEl) countEl.textContent = visibleCount;
+    }
   };
 
   window.updateSummary = function() {
@@ -949,7 +947,7 @@
   window.placeOrder = async function() {
     if (!selectedService || !selectedCountry) {
       toast('Please select service and country', 'error');
-      window.hidePageLoader();
+      window.hideLoader();
       return;
     }
     
@@ -965,11 +963,11 @@
       });
       toast('Order placed successfully!', 'success');
       // Update loader text for better UX
-      window.showPageLoader("Redirecting...");
+      window.showLoader("REDIRECTING", "Loading your order detail...");
       setTimeout(() => SPA.navigate(`/dashboard/orders/${res.order.order_id}`), 1000);
     } catch (e) {
       toast(e.message, 'error');
-      window.hidePageLoader();
+      window.hideLoader();
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<span>🚀</span><span>Buy Now</span>';

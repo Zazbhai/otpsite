@@ -5,13 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — Rapid OTP</title>
   <link rel="stylesheet" href="/css/main.css" />
-  <style>
-    body {
-      background-image: 
-        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(99, 102, 241, 0.08) 0px, transparent 50%);
-    }
+  <script src="/js/preloader.js"></script>
 
+  <style>
     .main-content {
       animation: slideInUp 0.6s cubic-bezier(0.23, 1, 0.32, 1);
     }
@@ -272,6 +268,11 @@
   }
 
   initDashboard();
+  
+  const polling = setInterval(() => {
+    if (document.visibilityState === 'visible') initDashboard();
+  }, 10000);
+  window.addEventListener('popstate', () => clearInterval(polling), { once: true });
 }
 </script>
 </body>

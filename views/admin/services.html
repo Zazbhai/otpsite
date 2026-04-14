@@ -61,24 +61,73 @@
   <div class="modal" style="max-width:500px">
     <div class="modal-header"><h3 id="svc-modal-title">Add Service</h3><button class="modal-close" onclick="closeModal('svc-modal')">✕</button></div>
     <input type="hidden" id="svc-id" />
-    <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:20px">
       
-      <div class="form-group"><label class="form-label">Name</label><input type="text" id="svc-name" placeholder="WhatsApp" /></div>
-      <div class="form-group"><label class="form-label">Assigned Server</label>
-        <select id="svc-server"></select>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Service Code</label><input type="text" id="svc-code" placeholder="wa" /></div>
-      </div>
-      <div class="form-group"><label class="form-label">Price</label><input type="number" id="svc-price" step="0.5" placeholder="5.00" /></div>
-      <div class="form-group">
-        <label class="form-label">Enabled</label>
-        <select id="svc-active"><option value="true">Yes</option><option value="false">No</option></select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label class="form-label">Service Name</label>
+          <input type="text" id="svc-name" placeholder="WhatsApp" oninput="updateSvcPreview()" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price (₹)</label>
+          <input type="number" id="svc-price" step="0.5" placeholder="5.00" />
+        </div>
       </div>
 
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-primary" onclick="saveService()">Save</button>
-        <button class="btn btn-danger" id="del-svc-btn" onclick="deleteService()" class="hidden">Delete</button>
+      <div class="form-group">
+        <label class="form-label">Assigned Server</label>
+        <select id="svc-server"></select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label class="form-label">Service Code</label>
+          <input type="text" id="svc-code" placeholder="wa" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Enabled</label>
+          <select id="svc-active">
+            <option value="true">Yes, Active</option>
+            <option value="false">No, Disabled</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="padding:16px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:16px">
+         <div class="text-xs font-bold uppercase mb-3 text-muted">Brand & Identity</div>
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px; align-items:end">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Service Logo</label>
+              <div class="file-upload-wrapper">
+                <label id="logo-label" for="svc-logo" class="file-upload-label">
+                   <span>📁</span> Upload Logo
+                </label>
+                <input type="file" id="svc-logo" class="file-upload-input" accept="image/*" onchange="previewLogo(this)" />
+              </div>
+            </div>
+            <div class="form-group" style="margin:0">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+                 <label class="form-label" style="margin:0">BG Color</label>
+                 <button class="btn btn-secondary" style="font-size:10px; padding:2px 6px; height:auto; border-radius:6px" onclick="resetSvcColor()">Auto</button>
+              </div>
+              <input type="color" id="svc-color" style="height:38px; padding:4px; width:100%" oninput="updateSvcPreview()" />
+            </div>
+         </div>
+         
+         <div id="svc-live-preview" style="margin-top:20px; padding:12px; background:rgba(0,0,0,0.2); border-radius:12px; display:flex; align-items:center; gap:12px">
+            <div id="logo-preview-box" style="width:44px; height:44px; border-radius:10px; overflow:hidden; background:var(--bg-2); display:flex; align-items:center; justify-content:center; flex-shrink:0">
+               <span style="opacity:0.3">?</span>
+            </div>
+            <div>
+               <div class="text-xxs uppercase font-black text-muted mb-1">Live Preview</div>
+               <div id="preview-name" class="font-bold text-sm">Service Name</div>
+            </div>
+         </div>
+      </div>
+
+      <div style="display:flex;gap:12px; margin-top:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveService()">🚀 Save Service</button>
+        <button class="btn btn-danger" id="del-svc-btn" onclick="deleteService()" class="hidden">🗑️ Delete</button>
         <button class="btn btn-secondary" onclick="closeModal('svc-modal')">Cancel</button>
       </div>
     </div>
@@ -117,7 +166,14 @@
       const country = server ? allCountries.find(c => c._id === server.country_id) : null;
       return `
       <tr>
-        <td><strong>${s.name}</strong></td>
+        <td>
+           <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:6px;overflow:hidden;background:var(--bg-2);flex-shrink:0">
+                 ${getServiceIcon(s, '32px')}
+              </div>
+              <strong>${s.name}</strong>
+           </div>
+        </td>
         <td>${server ? `${server.name} ${country ? country.flag || '' : ''}` : '—'}</td>
         <td class="mono text-sm">${s.service_code || "—"}</td>
         <td>${country ? `${country.flag || ''} ${country.name}` : '—'}</td>
@@ -133,8 +189,12 @@
   function openCreate() {
     if(!allServers.length) return toast("Add a Server first!", "error");
     editingId = null;
-    document.getElementById("svc-modal-title").textContent = "Add Service";
-    ["svc-id","svc-name","svc-code","svc-price"].forEach(id => document.getElementById(id).value = "");
+    ["svc-id","svc-name","svc-code","svc-price","svc-logo"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.value = "";
+    });
+    document.getElementById("svc-color").value = "#3b82f6";
+    document.getElementById("logo-preview-box").innerHTML = "";
     document.getElementById("svc-active").value = "true";
     document.getElementById("del-svc-btn").classList.add("hidden");
     openModal("svc-modal");
@@ -149,22 +209,34 @@
     document.getElementById("svc-code").value = s.service_code || "";
     document.getElementById("svc-price").value = s.price || 0;
     document.getElementById("svc-active").value = String(s.is_active);
+    document.getElementById("svc-color").value = s.icon_color || "#3b82f6";
+    document.getElementById("logo-preview-box").innerHTML = s.image_url ? `<img src="${s.image_url}" style="width:100%;height:100%;object-fit:cover;">` : "";
     document.getElementById("del-svc-btn").classList.remove("hidden");
     openModal("svc-modal");
   }
 
   async function saveService() {
-    const body = {
-      name: document.getElementById("svc-name").value,
-      server_id: document.getElementById("svc-server").value,
-      service_code: document.getElementById("svc-code").value,
-      price: parseFloat(document.getElementById("svc-price").value || 0),
-      is_active: document.getElementById("svc-active").value === "true",
-    };
+    const formData = new FormData();
+    formData.append("name", document.getElementById("svc-name").value);
+    formData.append("server_id", document.getElementById("svc-server").value);
+    formData.append("service_code", document.getElementById("svc-code").value);
+    formData.append("price", document.getElementById("svc-price").value || 0);
+    formData.append("is_active", document.getElementById("svc-active").value);
+    formData.append("icon_color", document.getElementById("svc-color").value);
+    
+    const fileInput = document.getElementById("svc-logo");
+    if (fileInput.files[0]) {
+      formData.append("logo", fileInput.files[0]);
+    }
+
     try {
-      if (editingId) await API.put(`/api/admin/services/${editingId}`, body);
-      else await API.post("/api/admin/services", body);
-      toast("Saved!", "success"); closeModal("svc-modal"); loadServices();
+      const url = editingId ? `/api/admin/services/${editingId}` : "/api/admin/services";
+      const method = editingId ? "PUT" : "POST";
+      
+      const res = await API.upload(url, formData, method);
+      toast("Saved Successfully!", "success"); 
+      closeModal("svc-modal"); 
+      loadServices();
     } catch (e) { toast(e.message, "error"); }
   }
 
@@ -174,6 +246,38 @@
       await API.del(`/api/admin/services/${editingId}`);
       toast("Deleted", "success"); closeModal("svc-modal"); loadServices();
     } catch (e) { toast(e.message, "error"); }
+  }
+
+  function previewLogo(input) {
+    const box = document.getElementById("logo-preview-box");
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        box.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+        document.getElementById("logo-label").innerHTML = "✅ Logo Selected";
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function updateSvcPreview() {
+    const name = document.getElementById("svc-name").value || "Service Name";
+    const color = document.getElementById("svc-color").value;
+    const previewName = document.getElementById("preview-name");
+    const box = document.getElementById("logo-preview-box");
+    
+    previewName.textContent = name;
+    
+    // Only update background color if NO image is in the preview box
+    if (!box.querySelector("img")) {
+       box.style.background = color;
+       box.innerHTML = `<span style="color:#fff;font-weight:800;font-size:18px">${name.charAt(0).toUpperCase()}</span>`;
+    }
+  }
+
+  function resetSvcColor() {
+     document.getElementById("svc-color").value = "#3b82f6";
+     updateSvcPreview();
   }
 
   loadInitialData();

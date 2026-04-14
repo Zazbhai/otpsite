@@ -9,6 +9,24 @@ const Server      = require("../models/Server");
 const Transaction = require("../models/Transaction");
 const Setting     = require("../models/Setting");
 const Country     = require("../models/Country");
+const multer      = require("multer");
+const path        = require("path");
+const fs          = require("fs");
+const { DB_TYPE } = require("../utils/db");
+
+// Multer Config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, "../public/uploads");
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage });
 
 router.use(adminRequired);
 
@@ -237,32 +255,92 @@ router.patch("/orders/:id", async (req, res) => {
 /* ─── SERVICES ─────────────────────────────────────────────────── */
 router.get("/services", async (_, res) => res.json(await Service.find().sort({ name: 1 })));
 
-router.post("/services", async (req, res) => {
+router.post("/services", upload.single("logo"), async (req, res) => {
   try {
-    const { server_id } = req.body;
+    const { server_id, name, service_code, price, is_active, icon_color } = req.body;
     if (!server_id) return res.status(400).json({ error: "Server selection is required" });
-    const server = await Server.findById(server_id).populate("country_id", "code");
-    if (!server) return res.status(404).json({ error: "Server not found" });
-    if (!server.country_id || !server.country_id.code) {
-      return res.status(400).json({ error: "Selected server must have a mapped country" });
+    
+    let server;
+    if (DB_TYPE === "mysql") {
+      server = await Server.findByPk(server_id);
+      if (server) {
+        const country = await Country.findByPk(server.country_id);
+        server.country_code = country ? country.code : "IN";
+      }
+    } else {
+      server = await Server.findById(server_id).populate("country_id", "code");
+      if (server && server.country_id) server.country_code = server.country_id.code;
     }
-    req.body.country_code = server.country_id.code;
-    res.status(201).json(await Service.create(req.body));
-  } catch (err) { res.status(400).json({ error: err.message }); }
+
+    if (!server) return res.status(404).json({ error: "Server not found" });
+    
+    let logo_url = "";
+    if (req.file) logo_url = "/uploads/" + req.file.filename;
+
+    const serviceData = {
+      name,
+      server_id,
+      service_code,
+      country_code: server.country_code || "IN",
+      price: parseFloat(price),
+      is_active: String(is_active) === "true",
+      image_url: logo_url,
+      icon_color: icon_color || "#3b82f6",
+      check_interval: parseInt(req.body.check_interval) || 3
+    };
+
+    const service = await Service.create(serviceData);
+    res.status(201).json(service);
+  } catch (err) { 
+    console.error("[Admin/Services] Create Error:", err.message);
+    res.status(400).json({ error: err.message }); 
+  }
 });
 
-router.put("/services/:id", async (req, res) => {
+router.put("/services/:id", upload.single("logo"), async (req, res) => {
   try {
-    if (req.body.server_id) {
-      const server = await Server.findById(req.body.server_id).populate("country_id", "code");
-      if (!server) return res.status(404).json({ error: "Server not found" });
-      if (!server.country_id || !server.country_id.code) {
-        return res.status(400).json({ error: "Selected server must have a mapped country" });
-      }
-      req.body.country_code = server.country_id.code;
+    const { server_id, name, service_code, price, is_active, icon_color } = req.body;
+    const service = await Service.findById(req.params.id);
+    if (!service) return res.status(404).json({ error: "Service not found" });
+
+    if (server_id) {
+       let server;
+       if (DB_TYPE === "mysql") {
+         server = await Server.findByPk(server_id);
+         if (server) {
+           const country = await Country.findByPk(server.country_id);
+           service.country_code = country ? country.code : service.country_code;
+         }
+       } else {
+         server = await Server.findById(server_id).populate("country_id", "code");
+         if (server && server.country_id) service.country_code = server.country_id.code;
+       }
+       service.server_id = server_id;
     }
-    res.json(await Service.findByIdAndUpdate(req.params.id, req.body, { new: true }));
-  } catch (err) { res.status(400).json({ error: err.message }); }
+
+    if (name) service.name = name;
+    if (service_code) service.service_code = service_code;
+    if (price !== undefined) service.price = parseFloat(price);
+    if (is_active !== undefined) service.is_active = String(is_active) === "true";
+    if (icon_color !== undefined) service.icon_color = icon_color;
+    if (req.body.check_interval !== undefined) service.check_interval = parseInt(req.body.check_interval) || 3;
+
+    if (req.file) {
+      console.log("[Admin/Services] New logo for", service.name, ":", req.file.filename);
+      if (service.image_url && service.image_url.startsWith("/uploads/")) {
+        const oldFile = path.basename(service.image_url);
+        const oldPath = path.join(__dirname, "../public/uploads", oldFile);
+        try { if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath); } catch(e) {}
+      }
+      service.image_url = "/uploads/" + req.file.filename;
+    }
+
+    await service.save();
+    res.json(service);
+  } catch (err) { 
+    console.error("[Admin/Services] Update Error:", err.message);
+    res.status(400).json({ error: err.message }); 
+  }
 });
 
 router.delete("/services/:id", async (req, res) => {
@@ -401,6 +479,59 @@ router.post("/broadcast", async (req, res) => {
     );
     res.json({ success: true, message: "Broadcast saved!" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
+});
+
+
+/* ─── PROMO CODES ──────────────────────────────────────────────── */
+const PromoCode = require("../models/PromoCode");
+
+router.get("/promo-codes", async (req, res) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const total = await PromoCode.countDocuments();
+    const codes = await PromoCode.find()
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+    res.json({ codes, total, page: parseInt(page), pages: Math.ceil(total / limit) });
+  } catch (err) { res.status(500).json({ error: "Server error" }); }
+});
+
+router.post("/promo-codes", async (req, res) => {
+  try {
+    const { code, amount, usage_limit } = req.body;
+    if (!code || !amount) return res.status(400).json({ error: "Code and amount are required" });
+    const promo = await PromoCode.create({ code: code.toUpperCase(), amount, usage_limit });
+    res.status(201).json(promo);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+router.delete("/promo-codes/:id", async (req, res) => {
+  try {
+    await PromoCode.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: "Server error" }); }
+});
+
+/* ─── PAYMENT CONFIG ────────────────────────────────────────── */
+const CONFIG_PATH = path.join(__dirname, "../payment_config.json");
+
+router.get("/payment-config", (req, res) => {
+  try {
+    if (!fs.existsSync(CONFIG_PATH)) {
+      return res.json({ bharatpe: { enabled: false } });
+    }
+    const data = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+    res.json(data);
+  } catch (err) { res.status(500).json({ error: "Failed to read config" }); }
+});
+
+router.post("/payment-config", (req, res) => {
+  try {
+    const config = req.body;
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: "Failed to save config" }); }
 });
 
 module.exports = router;

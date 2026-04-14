@@ -56,13 +56,12 @@
               <th>Amount</th>
               <th>Status</th>
               <th>Usage</th>
-              <th>Expiry</th>
               <th>Created</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="promo-body">
-            <script>document.currentScript.outerHTML = skeletonTable(7, 5);</script>
+            <script>document.currentScript.outerHTML = skeletonTable(6, 5);</script>
           </tbody>
         </table>
       </div>
@@ -91,10 +90,6 @@
         <label class="form-label">Total Usage Limit</label>
         <input type="number" id="p-limit" placeholder="100" value="1" />
       </div>
-      <div class="form-group">
-        <label class="form-label">Expiry Date (Optional)</label>
-        <input type="date" id="p-expiry" />
-      </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-success" onclick="savePromo()">✅ Create Code</button>
         <button class="btn btn-secondary" onclick="closeModal('promo-modal')">Cancel</button>
@@ -118,7 +113,7 @@
     try {
       const data = await API.get(`/api/admin/promo-codes?page=${page}`);
       if (!data.codes.length) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No promo codes found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-3)">No promo codes found</td></tr>`;
         return;
       }
       tbody.innerHTML = data.codes.map(c => `
@@ -131,7 +126,6 @@
             </span>
           </td>
           <td class="text-sm">${c.used_count} / ${c.usage_limit}</td>
-          <td class="text-muted text-sm">${c.expired_at ? fmtDateShort(c.expired_at) : 'Never'}</td>
           <td class="text-muted text-sm">${fmtDateShort(c.createdAt)}</td>
           <td>
             <button class="btn btn-danger btn-sm" onclick="deletePromo('${c._id}')">🗑️</button>
@@ -145,12 +139,11 @@
     const code = document.getElementById('p-code').value.trim().toUpperCase();
     const amount = parseFloat(document.getElementById('p-amount').value);
     const usage_limit = parseInt(document.getElementById('p-limit').value);
-    const expired_at = document.getElementById('p-expiry').value;
-
+    
     if (!code || !amount) return toast('Code and amount are required', 'error');
 
     try {
-      await API.post('/api/admin/promo-codes', { code, amount, usage_limit, expired_at });
+      await API.post('/api/admin/promo-codes', { code, amount, usage_limit });
       toast('Promo code created!', 'success');
       closeModal('promo-modal');
       loadPromos();

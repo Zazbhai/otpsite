@@ -654,7 +654,7 @@
       document.getElementById("save-bar").classList.remove("visible");
       if(btn) btn.disabled = false;
       // Propagate branding
-      if (typeof applySiteSettings === 'function') applySiteSettings();
+      if (typeof applySiteSettings === 'function') applySiteSettings(true);
     } catch (e) { toast(e.message, "error"); if(event?.target) event.target.disabled = false; }
   }
 

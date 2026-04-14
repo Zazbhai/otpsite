@@ -318,11 +318,18 @@
         <input type="text" id="srv-retry-url" class="form-input url-input" placeholder="https://api.provider.com/?action=setStatus&status=3..." />
       </div>
       
-      <div class="form-row-3">
+      <div class="form-row" style="grid-template-columns: 1fr 1fr">
         <div class="form-group">
           <label class="form-label">Auto-Cancel (min)</label>
           <input type="number" id="srv-cancel-mins" class="form-input" value="20" min="1" max="999" />
         </div>
+        <div class="form-group">
+          <label class="form-label">Polling Interval (Sec)</label>
+          <input type="number" id="srv-poll" class="form-input" value="3" min="1" max="60" />
+        </div>
+      </div>
+
+      <div class="form-row">
         <div class="form-group">
           <label class="form-label">Min Cancel (min)</label>
           <input type="number" id="srv-min-cancel" class="form-input" value="0" min="0" max="999" />
@@ -429,10 +436,12 @@
     const title = document.getElementById("srv-title");
     if (title) title.textContent = "Add Server";
     
-    const fields = ["srv-id","srv-name","srv-country","srv-key","srv-get-url","srv-check-url","srv-cancel-url","srv-retry-url","srv-cancel-mins","srv-min-cancel","srv-retry-count"];
+    const fields = ["srv-id","srv-name","srv-country","srv-key","srv-get-url","srv-check-url","srv-cancel-url","srv-retry-url","srv-cancel-mins","srv-min-cancel","srv-retry-count","srv-poll"];
     fields.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.value = (id === "srv-cancel-mins") ? "20" : (id.includes("min") || id.includes("count") ? "0" : "");
+      if (el) el.value = (id === "srv-cancel-mins") ? "20" : 
+                         (id === "srv-poll") ? "3" :
+                         (id.includes("min") || id.includes("count") ? "0" : "");
     });
 
     const multiOtp = document.getElementById("srv-multi-otp");
@@ -465,6 +474,7 @@
       setVal("srv-cancel-mins", s.auto_cancel_minutes || 20);
       setVal("srv-min-cancel", s.min_cancel_minutes || 0);
       setVal("srv-retry-count", s.retry_count || 0);
+      setVal("srv-poll", s.check_interval || 3);
 
       const multiOtp = document.getElementById("srv-multi-otp");
       if (multiOtp) multiOtp.checked = !!s.multi_otp_supported;
@@ -490,6 +500,7 @@
       auto_cancel_minutes: parseInt(document.getElementById("srv-cancel-mins").value) || 20,
       min_cancel_minutes: parseInt(document.getElementById("srv-min-cancel").value) || 0,
       retry_count: parseInt(document.getElementById("srv-retry-count").value) || 0,
+      check_interval: parseInt(document.getElementById("srv-poll").value) || 3,
       multi_otp_supported: document.getElementById("srv-multi-otp").checked
     };
     
