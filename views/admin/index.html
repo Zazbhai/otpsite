@@ -159,6 +159,9 @@
     @media (max-width: 600px) {
       .analytics-card { padding: 16px; border-radius: 20px; }
       .dashboard-header h1 { font-size: 24px; }
+      .chart-mobile-hint { display: block; }
+      .order-status-list { grid-template-columns: 1fr; gap: 8px; }
+      .order-status-item { padding: 12px; font-size: 13px; }
     }
 
     .analytics-card h3 {
@@ -168,6 +171,53 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      color: var(--text);
+    }
+    .chart-mobile-hint {
+      display: none;
+      font-size: 12px;
+      color: var(--text-3);
+      margin: -14px 0 14px;
+    }
+    .order-status-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .order-status-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-size: 12px;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: border-color .2s ease, background .2s ease;
+    }
+    .order-status-item:hover {
+      border-color: var(--border-2);
+      background: var(--surface);
+    }
+    .order-status-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .order-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .order-status-value {
+      font-weight: 700;
       color: var(--text);
     }
 
@@ -317,9 +367,11 @@
       </div>
       <div class="analytics-card">
         <h3>📊 Order Distribution</h3>
+        <p class="chart-mobile-hint">Tap a status below to quickly check exact counts.</p>
         <div style="height: 320px; position: relative;">
           <canvas id="order-pie-chart"></canvas>
         </div>
+        <div id="order-status-list" class="order-status-list"></div>
       </div>
     </div>
 
@@ -391,15 +443,35 @@
   function renderPieChart(dist) {
     if (!dist) return;
     const ctx = document.getElementById("order-pie-chart").getContext("2d");
-    const labels = dist.map(d => d._id.charAt(0).toUpperCase() + d._id.slice(1));
-    const values = dist.map(d => d.count);
+    const statusListEl = document.getElementById("order-status-list");
+    const normalized = {};
+    dist.forEach((d) => {
+      const key = d._id === "expired" ? "cancelled" : d._id;
+      normalized[key] = (normalized[key] || 0) + d.count;
+    });
+    const normalizedDist = Object.entries(normalized).map(([key, count]) => ({ _id: key, count }));
+
+    const labels = normalizedDist.map(d => d._id.charAt(0).toUpperCase() + d._id.slice(1));
+    const values = normalizedDist.map(d => d.count);
     
-    const colors = { completed: '#22c55e', active: '#3b82f6', refunded: '#ef4444', expired: '#94a3b8', cancelled: '#64748b' };
-    const bgColors = dist.map(d => colors[d._id] || '#cbd5e1');
+    const colors = { completed: '#22c55e', active: '#3b82f6', refunded: '#ef4444', cancelled: '#64748b' };
+    const bgColors = normalizedDist.map(d => colors[d._id] || '#cbd5e1');
 
     if (orderPieChart) orderPieChart.destroy();
     
     const totalCount = values.reduce((a, b) => a + b, 0);
+    if (statusListEl) {
+      statusListEl.innerHTML = normalizedDist.map((d) => {
+        const label = d._id.charAt(0).toUpperCase() + d._id.slice(1);
+        const pct = totalCount ? ((d.count / totalCount) * 100).toFixed(1) : "0.0";
+        return `
+          <button type="button" class="order-status-item" onclick="toast('${label}: ${d.count} orders (${pct}%)', 'info', 2200)">
+            <span class="order-status-name"><span class="order-status-dot" style="background:${colors[d._id] || '#cbd5e1'}"></span>${label}</span>
+            <span class="order-status-value">${d.count}</span>
+          </button>
+        `;
+      }).join("");
+    }
 
     orderPieChart = new Chart(ctx, {
       type: 'doughnut',

@@ -525,7 +525,7 @@
     const statusEl = document.getElementById('status-badge');
     if (statusEl) {
       statusEl.className = `status-badge ${o.status || 'active'}`;
-      const statusMap = { active: 'Active', completed: 'Completed', refunded: 'Refunded', expired: 'Expired', cancelled: 'Cancelled' };
+      const statusMap = { active: 'Active', completed: 'Completed', refunded: 'Refunded', expired: 'Cancelled', cancelled: 'Cancelled' };
       statusEl.innerHTML = `<span>${statusMap[o.status] || o.status || 'Active'}</span>`;
     }
 

@@ -14,6 +14,7 @@
 <nav class="navbar">
   <div class="container">
     <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <span id="nav-auth-mobile" class="nav-auth-mobile"></span>
     <div class="nav-links" id="nav-links">
       <a href="/pricing">Pricing</a>
       <a href="/how-it-works">How It Works</a>
@@ -75,20 +76,20 @@
     </div>
 
     <!-- Stats Bar -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);margin-top:16px">
-      <div style="text-align:center;padding:8px 0">
+    <div class="hero-stats">
+      <div class="hero-stat">
         <div style="font-size:28px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">2M+</div>
         <div class="text-sm text-muted mt-4">Numbers Sold</div>
       </div>
-      <div style="text-align:center;padding:8px 0;border-left:1px solid var(--border)">
+      <div class="hero-stat hero-stat-border">
         <div style="font-size:28px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">500+</div>
         <div class="text-sm text-muted mt-4">Services</div>
       </div>
-      <div style="text-align:center;padding:8px 0;border-left:1px solid var(--border)">
+      <div class="hero-stat hero-stat-border">
         <div style="font-size:28px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">50+</div>
         <div class="text-sm text-muted mt-4">Countries</div>
       </div>
-      <div style="text-align:center;padding:8px 0;border-left:1px solid var(--border)">
+      <div class="hero-stat hero-stat-border">
         <div style="font-size:28px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">3s</div>
         <div class="text-sm text-muted mt-4">Avg Delivery</div>
       </div>
@@ -141,9 +142,9 @@
 <!-- ── How it works ── -->
 <section class="section" style="background:var(--bg-1)">
   <div class="container">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center">
+    <div class="how-grid">
       <div>
-        <div class="section-header" style="text-align:left;margin-bottom:40px">
+        <div class="section-header how-header">
           <h2>Up & Running in <span class="gradient-text">60 Seconds</span></h2>
           <p>Create a free account and start receiving OTPs immediately.</p>
         </div>
@@ -213,7 +214,7 @@
       <h2>Simple, <span class="gradient-text">Transparent Pricing</span></h2>
       <p>Pay only for what you use. Start with as little as ₹84.</p>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:900px;margin:0 auto">
+    <div class="pricing-grid">
       <div class="price-card">
         <div>
           <div style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2);margin-bottom:8px">Starter</div>
@@ -307,7 +308,7 @@
 <!-- ── CTA ── -->
 <section class="section">
   <div class="container">
-    <div style="text-align:center;padding:72px 32px;background:var(--surface);border:1px solid var(--border);border-radius:32px;position:relative;overflow:hidden">
+    <div class="cta-box">
       <h2>Ready to Get Your OTP?</h2>
       <p style="color:var(--text-2);font-size:18px;margin:16px auto 36px;max-width:480px">Join thousands of users who get their verifications done in seconds.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
@@ -457,13 +458,18 @@
 
   // Nav state
   const navAuth = document.getElementById('nav-auth');
+  const navAuthMobile = document.getElementById('nav-auth-mobile');
   const ctaBtn  = document.getElementById('cta-start');
   if (isLoggedIn()) {
-    navAuth.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
+    const dashboardHtml = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
+    navAuth.innerHTML = dashboardHtml;
+    navAuthMobile.innerHTML = dashboardHtml;
     ctaBtn.textContent = '→ Go to Dashboard';
     ctaBtn.onclick = () => window.location.href = '/dashboard';
   } else {
-    navAuth.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>&nbsp;<button class="btn btn-primary btn-sm" onclick="openAuthModal(\'register\')">Register</button>';
+    const authButtonsHtml = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>&nbsp;<button class="btn btn-primary btn-sm" onclick="openAuthModal(\'register\')">Register</button>';
+    navAuth.innerHTML = authButtonsHtml;
+    navAuthMobile.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>';
     ctaBtn.onclick = () => openAuthModal('register');
   }
 

@@ -195,7 +195,13 @@ router.get("/orders", async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const filter = { user_id: req.userId };
-    if (status && status !== "all") filter.status = status;
+    if (status && status !== "all") {
+      if (status === "cancelled") {
+        filter.status = { $in: ["cancelled", "expired"] };
+      } else {
+        filter.status = status;
+      }
+    }
 
     const total  = await Order.countDocuments(filter);
     const orders = await Order.find(filter)

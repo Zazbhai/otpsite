@@ -1,9 +1,9 @@
 {
   "bharatpe": {
-    "enabled": false,
+    "enabled": true,
     "merchant_id": "60987133",
     "access_token": "e628bb89dd6e41c8a7ae51a3314dd34e",
     "upi_id": "BHARATPE.8S0O1D0J6I92795@fbpe",
-    "upi_name": "Anurag Sing"
+    "upi_name": "Anurag Singh"
   }
 }

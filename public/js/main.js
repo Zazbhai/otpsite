@@ -497,7 +497,6 @@ document.addEventListener("DOMContentLoaded", () => {
   applySiteSettings();
 
   // C. Lightweight init
-  insertThemeToggle();
   if (isLoggedIn()) updateBalanceDisplay();
 });
 
@@ -517,22 +516,6 @@ function adjustColor(hex, amt) {
   let g = (num & 0x0000FF) + amt;
   if (g > 255) g = 255; else if (g < 0) g = 0;
   return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
-}
-
-async function insertThemeToggle() {
-  const navLinks = document.getElementById("nav-links");
-  if (!navLinks) return;
-
-  await applySiteSettings();
-
-  if (document.getElementById("theme-toggle-btn")) return;
-  const btn = document.createElement("button");
-  btn.id = "theme-toggle-btn";
-  btn.type = "button";
-  btn.className = "btn btn-secondary btn-sm theme-toggle";
-  btn.onclick = toggleTheme;
-  navLinks.appendChild(btn);
-  applyTheme(getThemePreference());
 }
 
 window.logout = function() {
@@ -586,7 +569,9 @@ window.fmtDateShort = function(d)   { return new Date(d).toLocaleDateString(); }
 
 window.statusBadge = function(s) {
   const map = { active: "badge-active", completed: "badge-completed", refunded: "badge-refunded", expired: "badge-expired", cancelled: "badge-expired" };
-  return `<span class="badge ${map[s] || ''}">${s}</span>`;
+  const labelMap = { expired: "cancelled" };
+  const label = labelMap[s] || s;
+  return `<span class="badge ${map[s] || ''}">${label}</span>`;
 };
 window.txBadge = function(type) {
   const map = { deposit: "badge-deposit", purchase: "badge-purchase", refund: "badge-active", bonus: "badge-deposit", deduction: "badge-purchase" };
@@ -779,14 +764,33 @@ function initNavBurger() {
   if (burger && navLinks) {
     const newBurger = burger.cloneNode(true);
     burger.parentNode.replaceChild(newBurger, burger);
-    newBurger.addEventListener("click", () => navLinks.classList.toggle("mobile-open"));
+    const setOpenState = (isOpen) => {
+      navLinks.classList.toggle("mobile-open", isOpen);
+      newBurger.classList.toggle("is-open", isOpen);
+      newBurger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    };
+    newBurger.setAttribute("aria-expanded", "false");
+    newBurger.addEventListener("click", () => setOpenState(!navLinks.classList.contains("mobile-open")));
+    document.addEventListener("click", (e) => {
+      if (!navLinks.classList.contains("mobile-open")) return;
+      if (newBurger.contains(e.target) || navLinks.contains(e.target)) return;
+      setOpenState(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setOpenState(false);
+    });
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 768) setOpenState(false);
+    });
+    navLinks.querySelectorAll("a, button").forEach((el) => {
+      el.addEventListener("click", () => setOpenState(false));
+    });
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   initNavBurger();
   applyTheme(getThemePreference());
-  insertThemeToggle();
 });
 
 // ── SPA Engine (Disabled) ─────────────────────────────────────────
@@ -1016,16 +1020,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!path.startsWith("/dashboard") && path !== "/api-docs") return;
   
   const container = document.querySelector(".navbar .container");
+  const navbar = document.querySelector(".navbar");
   const burger = document.getElementById("nav-burger");
   if (!container) return;
+  const isUserUi = path.startsWith("/dashboard");
+  if (isUserUi && navbar) {
+    navbar.classList.add("user-ui-navbar");
+  }
 
   // Inject responsive layout rules for the navbar global wrapper
   const style = document.createElement("style");
   style.textContent = `
     @media (max-width: 768px) {
-      #global-bal-wrap { margin-left: auto; margin-right: 4px; height: 26px; border-radius: 6px; }
-      .gl-bal-left { font-size: 12px; padding: 0 8px; font-weight: 700; gap: 4px; }
-      .gl-add-btn { font-size: 12px; padding: 0 8px; }
+      #global-bal-wrap { margin-left: auto; margin-right: 4px; height: 24px; border-radius: 6px; }
+      .gl-bal-left { font-size: 11px; padding: 0 7px; font-weight: 700; gap: 4px; }
+      .gl-add-btn { font-size: 11px; padding: 0 7px; }
+      .gl-logout-btn { width: 24px; height: 24px; font-size: 12px; }
+      .user-ui-navbar .nav-burger { display: none !important; }
+      .user-ui-navbar #nav-links { display: none !important; }
+      .user-ui-navbar #global-bal-wrap { margin-right: 0; }
     }
     @media (min-width: 769px) {
       #nav-links { margin-left: auto; margin-right: 16px; }
@@ -1035,20 +1048,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       background: rgba(59, 130, 246, 0.1);
       border: 1px solid rgba(59, 130, 246, 0.3);
       border-radius: var(--r-md);
-      overflow: hidden; height: 32px;
+      overflow: hidden; height: 30px;
     }
     .gl-bal-left {
-      display: flex; align-items: center; padding: 0 12px;
-      color: var(--accent); font-weight: 800; text-decoration: none; font-size: 13px;
+      display: flex; align-items: center; padding: 0 10px;
+      color: var(--accent); font-weight: 800; text-decoration: none; font-size: 12px;
       gap: 6px;
     }
     .gl-add-btn {
-      display: flex; align-items: center; padding: 0 10px;
+      display: flex; align-items: center; padding: 0 8px;
       background: rgba(59, 130, 246, 0.15); border-left: 1px solid rgba(59, 130, 246, 0.2);
-      color: var(--accent); font-weight: 800; font-size: 14px; text-decoration: none; 
+      color: var(--accent); font-weight: 800; font-size: 12px; text-decoration: none; 
       transition: background 0.2s;
     }
     .gl-add-btn:hover { background: rgba(59, 130, 246, 0.3); }
+    .gl-logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      margin-left: 6px;
+      border-radius: var(--r-md);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .gl-logout-btn:hover {
+      background: rgba(239, 68, 68, 0.22);
+      transform: translateY(-1px);
+    }
     @keyframes shimmer-pulse {
       0% { opacity: 0.5; }
       50% { opacity: 1; }
@@ -1078,11 +1110,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   wrap.appendChild(balArea);
   wrap.appendChild(addBtn);
 
+  let logoutBtn = null;
+  if (isUserUi && isLoggedIn()) {
+    logoutBtn = document.createElement("button");
+    logoutBtn.type = "button";
+    logoutBtn.className = "gl-logout-btn";
+    logoutBtn.title = "Logout";
+    logoutBtn.setAttribute("aria-label", "Logout");
+    logoutBtn.innerHTML = `↩`;
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("otp_token");
+      localStorage.removeItem("otp_user");
+      window.location.href = "/";
+    });
+  }
+
   // Insert before nav-burger
   if (burger) {
     container.insertBefore(wrap, burger);
+    if (logoutBtn) {
+      container.insertBefore(logoutBtn, burger);
+    }
   } else {
     container.appendChild(wrap);
+    if (logoutBtn) {
+      container.appendChild(logoutBtn);
+    }
   }
 
   if (isLoggedIn()) {

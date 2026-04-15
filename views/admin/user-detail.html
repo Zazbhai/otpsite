@@ -167,7 +167,7 @@
   function orderBadge(status) {
     if (status === "completed") return '<span class="badge badge-active">Completed</span>';
     if (status === "active") return '<span class="badge badge-pending">Active</span>';
-    if (status === "expired") return '<span class="badge badge-expired">Expired</span>';
+    if (status === "expired") return '<span class="badge badge-expired">Cancelled</span>';
     if (status === "cancelled") return '<span class="badge badge-expired">Cancelled</span>';
     if (status === "refunded") return '<span class="badge badge-expired">Refunded</span>';
     return `<span class="badge">${status}</span>`;

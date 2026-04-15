@@ -45,7 +45,7 @@
       <button class="btn btn-secondary btn-sm" onclick="setFilter('active',this)">⚡ Active</button>
       <button class="btn btn-secondary btn-sm" onclick="setFilter('completed',this)">✅ Completed</button>
       <button class="btn btn-secondary btn-sm" onclick="setFilter('refunded',this)">💰 Refunded</button>
-      <button class="btn btn-secondary btn-sm" onclick="setFilter('expired',this)">⌛ Expired</button>
+      <button class="btn btn-secondary btn-sm" onclick="setFilter('cancelled',this)">⌛ Cancelled</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <div class="table-wrap">
@@ -73,7 +73,6 @@
           <option value="active">Active</option>
           <option value="completed">Completed</option>
           <option value="refunded">Refunded (auto-refunds balance)</option>
-          <option value="expired">Expired</option>
           <option value="cancelled">Cancelled</option>
         </select>
       </div>
@@ -131,7 +130,7 @@
   }
   window.openEdit = function(o) {
     document.getElementById("o-id").value = o.order_id;
-    document.getElementById("o-status").value = o.status;
+    document.getElementById("o-status").value = o.status === "expired" ? "cancelled" : o.status;
     document.getElementById("o-otp").value = o.otp || "";
     openModal("order-modal");
   }

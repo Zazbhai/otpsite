@@ -126,9 +126,16 @@ router.get("/analytics", async (req, res) => {
     const completedOrders = orderStats[0]?.completed || 0;
     const successRate = totalAttempts > 0 ? (completedOrders / totalAttempts) : 0;
 
-    // Group orders by status for Pie Chart
+    // Group orders by status for Pie Chart (treat expired as cancelled)
     const osDist = await Order.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } }
+      {
+        $project: {
+          normalizedStatus: {
+            $cond: [{ $eq: ["$status", "expired"] }, "cancelled", "$status"]
+          }
+        }
+      },
+      { $group: { _id: "$normalizedStatus", count: { $sum: 1 } } }
     ]);
 
     res.json({
@@ -219,7 +226,13 @@ router.get("/orders", async (req, res) => {
   try {
     const { status, page = 1, limit = 30, user_id } = req.query;
     const filter = {};
-    if (status && status !== "all") filter.status = status;
+    if (status && status !== "all") {
+      if (status === "cancelled") {
+        filter.status = { $in: ["cancelled", "expired"] };
+      } else {
+        filter.status = status;
+      }
+    }
     if (user_id) filter.user_id = user_id;
 
     const total  = await Order.countDocuments(filter);

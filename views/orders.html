@@ -200,7 +200,6 @@
         <button class="filter-tab active" onclick="setFilter('all')">All</button>
         <button class="filter-tab" onclick="setFilter('active')">Active</button>
         <button class="filter-tab" onclick="setFilter('completed')">Completed</button>
-        <button class="filter-tab" onclick="setFilter('expired')">Expired</button>
         <button class="filter-tab" onclick="setFilter('cancelled')">Cancelled</button>
       </div>
       
@@ -265,7 +264,7 @@
           </div>
           <div class="order-right">
             <div class="order-price">${fmtMoney(o.cost)}</div>
-            <div class="status-dot ${o.status}">${o.status.charAt(0).toUpperCase() + o.status.slice(1)}</div>
+            <div class="status-dot ${o.status}">${(o.status === 'expired' ? 'Cancelled' : (o.status.charAt(0).toUpperCase() + o.status.slice(1)))}</div>
           </div>
         </div>
       `).join('');
