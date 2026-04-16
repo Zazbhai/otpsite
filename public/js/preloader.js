@@ -59,44 +59,19 @@
     setTimeout(() => { if (preloader.parentNode) preloader.remove(); }, 600);
   }
 
-  // Trigger: Window fully loaded
-  window.addEventListener('load', () => setTimeout(dismiss, 100));
+  // Trigger: Window ready
+  if (document.readyState === 'complete') {
+    dismiss();
+  } else {
+    window.addEventListener('load', dismiss);
+    document.addEventListener('DOMContentLoaded', dismiss);
+  }
   
-  // Trigger: DOM ready (usually faster)
-  document.addEventListener('DOMContentLoaded', () => setTimeout(dismiss, 1000));
-  
-  // Trigger: Immediate failsafe (3 seconds)
-  setTimeout(dismiss, 3000);
+  // High-speed failsafe (1.5s)
+  setTimeout(dismiss, 1500);
 
-  // Trigger: If tab becomes visible (handles some mobile backgrounding issues)
+  // Trigger: If tab becomes visible 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') dismiss();
   });
-
-  // 5. Minimal Navigation Interceptor (Safer for mobile)
-  document.addEventListener('click', function(e) {
-    let a = e.target;
-    while (a && a.tagName !== 'A') a = a.parentNode;
-    
-    if (a && a.href && a.target !== '_blank' && 
-        a.href.indexOf(window.location.origin) === 0 && 
-        a.href.indexOf('#') === -1 && !e.metaKey && !e.ctrlKey) {
-      
-      if (a.getAttribute('onclick') || a.href.indexOf('javascript:') !== -1) return;
-
-      // Only intercept if the user has been on the page for at least 500ms
-      // (Prevents mis-clicks during initial load)
-      
-      const exitLoader = preloader.cloneNode(true);
-      exitLoader.style.opacity = '1';
-      document.body.appendChild(exitLoader);
-      
-      // Delay navigation slightly to let the loader show
-      e.preventDefault();
-      setTimeout(() => { window.location.href = a.href; }, 100);
-      
-      // Failsafe for exit loader
-      setTimeout(() => { if (exitLoader.parentNode) exitLoader.remove(); }, 2500);
-    }
-  }, true);
 })();

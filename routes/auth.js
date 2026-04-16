@@ -134,12 +134,22 @@ router.get("/settings", async (req, res) => {
     const keys = [
       "default_theme", "site_name", "site_logo", "site_favicon", "primary_color",
       "seo_title", "seo_description", "seo_keywords", "seo_og_image",
-      "custom_css", "head_scripts", "foot_scripts", "exchange_rates"
+      "custom_css", "head_scripts", "foot_scripts", "exchange_rates",
+      "maintenance_mode"
     ];
     const settings = await Setting.find({ key: { $in: keys } });
     const obj = {};
     settings.forEach(s => obj[s.key] = s.value);
     res.json(obj);
+  } catch (err) { res.status(500).json({ error: "Server error" }); }
+});
+
+// ── GET /api/auth/status ─────────────────────────────────────────
+router.get("/status", async (req, res) => {
+  try {
+    const Setting = require("../models/Setting");
+    const m = await Setting.findOne({ key: "maintenance_mode" });
+    res.json({ maintenance: m ? (m.value === "true" || m.value === true) : false });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
 

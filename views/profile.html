@@ -4,7 +4,7 @@
   <script src="/js/preloader.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Profile — Rapid OTP</title>
+  <title>Your Profile — {{SITE_NAME}}</title>
   <link rel="stylesheet" href="/css/main.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -294,7 +294,7 @@
 
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
     <div class="nav-links" id="nav-links">
       <a href="/dashboard">Dashboard</a>
       <a href="/dashboard/buy">Buy</a>
@@ -316,27 +316,27 @@
         </div>
       </div>
       <div class="profile-info-header">
-        <div class="profile-name" id="profile-name">Loading...</div>
-        <div class="profile-username" id="profile-user">@username</div>
+        <div class="profile-name" id="profile-name"><div class="skeleton skeleton-title" style="width:240px"></div></div>
+        <div class="profile-username" id="profile-user"><div class="skeleton skeleton-text" style="width:120px;height:14px;margin:0"></div></div>
       </div>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">Total Balance</div>
-        <div class="stat-value success" id="p-balance">₹0.00</div>
+        <div class="stat-value success" id="p-balance"><div class="skeleton skeleton-text" style="width:80px"></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Total Orders</div>
-        <div class="stat-value" id="p-orders">0</div>
+        <div class="stat-value" id="p-orders"><div class="skeleton skeleton-text" style="width:40px"></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Total Spent</div>
-        <div class="stat-value accent" id="p-spent">₹0.00</div>
+        <div class="stat-value accent" id="p-spent"><div class="skeleton skeleton-text" style="width:80px"></div></div>
       </div>
       <div class="stat-card" onclick="copyUID()" style="cursor:pointer" title="Click to copy UID">
         <div class="stat-label">User ID <span style="font-size:10px; opacity:0.5; margin-left:4px">📋</span></div>
-        <div class="stat-value" style="font-size: 16px; font-family: monospace;" id="p-tid">#000000</div>
+        <div class="stat-value" style="font-size: 16px; font-family: monospace;" id="p-tid"><div class="skeleton skeleton-text" style="width:100px"></div></div>
       </div>
     </div>
 
@@ -347,7 +347,7 @@
           API Access
         </div>
         <p style="color: var(--text-3); font-size: 14px; line-height: 1.6;">
-          Your unique API key allows you to integrate Rapid OTP services directly into your own applications. 
+          Your unique API key allows you to integrate {{SITE_NAME}} services directly into your own applications. 
           Keep this safe!
         </p>
         

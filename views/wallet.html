@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wallet — Rapid OTP</title>
+  <title>Wallet — {{SITE_NAME}}</title>
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
   <style>
     .hidden { display: none !important; }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 10000; padding: 20px; }
+    .modal-backdrop { position: fixed; inset: 0; background: #000000; backdrop-filter: blur(16px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 10000; padding: 20px; }
     .modal-backdrop.visible { opacity: 1; pointer-events: all; }
-    .modal { background: var(--bg-2); border: 1px solid var(--border); border-radius: 24px; width: 100%; max-width: 440px; padding: 32px; transform: scale(0.9); transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto; }
+    .modal { background: #0a0a0a; border: 1px solid var(--border); border-radius: 24px; width: 100%; max-width: 440px; padding: 32px; transform: scale(0.9); transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto; overflow-x: hidden; position: relative; }
     .modal-backdrop.visible .modal { transform: scale(1); }
     
     @media (max-width: 480px) {
@@ -30,7 +30,7 @@
 <body>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
     <div class="nav-links" id="nav-links">
       <a href="/dashboard">Dashboard</a>
       <a href="/dashboard/wallet" class="active">Wallet</a>
@@ -58,15 +58,15 @@
     <div class="wallet-grid">
       <div class="card" style="text-align:center;padding:36px;background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(99,102,241,0.1));border-color:rgba(59,130,246,0.3)">
         <div style="font-size:13px;margin-bottom:8px;color:var(--text-2)">Available Balance</div>
-        <div style="font-size:42px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="wallet-balance">—</div>
+        <div style="font-size:42px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="wallet-balance"><div class="skeleton skeleton-text" style="width:140px;height:42px;margin:0 auto"></div></div>
         <button class="btn btn-primary mt-8 w-full" onclick="openModal('deposit-modal')">+ Add Funds</button>
       </div>
       <div class="card" style="padding:28px">
         <h3 style="margin-bottom:16px">Wallet Summary</h3>
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Deposited</span><span id="total-deposited" class="text-success">—</span></div>
-          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Spent</span><span id="total-spent" class="text-danger">—</span></div>
-          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Refunds</span><span id="total-refunds" class="text-success">—</span></div>
+          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Deposited</span><span id="total-deposited" class="text-success"><div class="skeleton skeleton-text" style="width:60px"></div></span></div>
+          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Spent</span><span id="total-spent" class="text-danger"><div class="skeleton skeleton-text" style="width:60px"></div></span></div>
+          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Refunds</span><span id="total-refunds" class="text-success"><div class="skeleton skeleton-text" style="width:60px"></div></span></div>
         </div>
       </div>
     </div>
@@ -98,7 +98,11 @@
             <tr><th>Type</th><th>Description</th><th>Amount</th><th>Balance After</th><th>Date</th></tr>
           </thead>
           <tbody id="tx-body">
-            <script>document.currentScript.outerHTML = skeletonTable(5, 8);</script>
+            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -351,7 +355,7 @@
   function generateUPIQR() {
     const qrContainer = document.getElementById('upi-qr');
     const upiId = paymentConfig.bharatpe?.upi_id;
-    const upiName = paymentConfig.bharatpe?.upi_name || 'Rapid OTP';
+    const upiName = paymentConfig.bharatpe?.upi_name || '{{SITE_NAME}}';
     if (!paymentConfig.bharatpe?.enabled || !upiId) {
       qrContainer.innerHTML = '<div class="text-danger text-xs">UPI Unavailable</div>';
       return;

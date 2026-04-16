@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Under Maintenance — {{SITE_NAME}}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --bg-deep: #020305;
+            --core-error: #ff2a2a;
+            --laser-cyan: #00e5ff;
+            --drone-dark: #11151c;
+            --drone-accent: #ffae00;
+            
+            /* Responsive 3D Math Variables */
+            --core-w: 16vmin;
+            --core-h: 40vmin;
+            --orbit-r: 35vmin;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle at 50% 50%, #0a1018 0%, var(--bg-deep) 80%);
+            font-family: 'Share Tech Mono', monospace;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            perspective: 1500px;
+        }
+
+        /* Mobile specific 3D tuning */
+        @media (max-width: 768px) {
+            body {
+                perspective: 900px; /* Stronger 3D depth on smaller screens */
+            }
+            :root {
+                --core-w: 22vmin; /* Make core slightly more prominent on mobile */
+                --core-h: 55vmin;
+                --orbit-r: 42vmin;
+            }
+        }
+
+        /* 3D Scene Wrapper with Camera Shake */
+        .scene-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-style: preserve-3d;
+            animation: cameraShake 0.1s infinite alternate;
+        }
+
+        @keyframes cameraShake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            100% { transform: translate(-1px, -1px) rotate(0.1deg); }
+        }
+
+        /* Isometric Camera Angle & Slow Pan */
+        .scene {
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(65deg) rotateZ(30deg);
+            animation: sceneRotate 25s infinite linear;
+        }
+
+        @keyframes sceneRotate {
+            0% { transform: rotateX(65deg) rotateZ(0deg); }
+            100% { transform: rotateX(65deg) rotateZ(360deg); }
+        }
+
+        /* Glowing Floor Grid */
+        .cyber-floor {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 150vw; height: 150vw;
+            transform: translate(-50%, -50%);
+            background-image: 
+                linear-gradient(rgba(0, 229, 255, 0.05) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.05) 2px, transparent 2px);
+            background-size: 8vmin 8vmin;
+            background-position: center center;
+            border-radius: 50%;
+            box-shadow: inset 0 0 60vmin var(--bg-deep);
+        }
+
+        /* Central Broken Core (Monolith) */
+        .core-monolith {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: var(--core-w);
+            height: var(--core-w);
+            transform-style: preserve-3d;
+            /* Elevate it so it stands on the floor */
+            transform: translate(-50%, -50%) translateZ(calc(var(--core-h) / 2));
+        }
+
+        .core-face {
+            position: absolute;
+            background: rgba(20, 0, 0, 0.8);
+            border: 2px solid var(--core-error);
+            box-shadow: inset 0 0 30px rgba(255, 42, 42, 0.4), 0 0 20px rgba(255, 42, 42, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Glitch patterns on the core */
+        .core-face::before {
+            content: '';
+            position: absolute;
+            width: 100%; height: 200%;
+            background: repeating-linear-gradient(
+                transparent, transparent 10px,
+                rgba(255, 42, 42, 0.2) 10px, rgba(255, 42, 42, 0.2) 20px
+            );
+            animation: scanline 2s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-50%); }
+            100% { transform: translateY(0%); }
+        }
+
+        .face-front, .face-back, .face-left, .face-right {
+            width: var(--core-w);
+            height: var(--core-h);
+        }
+        
+        .face-top, .face-bottom {
+            width: var(--core-w);
+            height: var(--core-w);
+        }
+
+        /* Monolith 3D Positioning */
+        .face-front  { transform: rotateX(-90deg) translateZ(calc(var(--core-w) / 2)); }
+        .face-back   { transform: rotateX(-90deg) rotateY(180deg) translateZ(calc(var(--core-w) / 2)); }
+        .face-left   { transform: rotateX(-90deg) rotateY(-90deg) translateZ(calc(var(--core-w) / 2)); }
+        .face-right  { transform: rotateX(-90deg) rotateY(90deg) translateZ(calc(var(--core-w) / 2)); }
+        .face-top    { transform: translateZ(calc(var(--core-h) / 2)); background: rgba(255, 42, 42, 0.2); }
+        .face-bottom { transform: rotateX(180deg) translateZ(calc(var(--core-h) / 2)); }
+
+        /* Robotic Repair Drones Orbit */
+        .orbit {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            transform-style: preserve-3d;
+        }
+
+        /* 3 Drones at different heights and speeds */
+        .orbit-1 { animation: orbitAnim 6s linear infinite; }
+        .orbit-2 { animation: orbitAnim 8s linear infinite reverse; }
+        .orbit-3 { animation: orbitAnim 10s linear infinite; }
+
+        @keyframes orbitAnim {
+            100% { transform: rotateZ(360deg); }
+        }
+
+        /* Drone Positioning */
+        .drone-wrapper {
+            position: absolute;
+            transform-style: preserve-3d;
+            /* Push to orbit radius and elevate Z */
+        }
+        
+        .orbit-1 .drone-wrapper { transform: translateX(var(--orbit-r)) translateZ(25vmin); }
+        .orbit-2 .drone-wrapper { transform: translateX(var(--orbit-r)) translateZ(15vmin); }
+        .orbit-3 .drone-wrapper { transform: translateX(var(--orbit-r)) translateZ(30vmin); }
+
+        /* The Drone Body */
+        .drone {
+            position: absolute;
+            top: -3vmin; left: -4vmin;
+            width: 8vmin; height: 6vmin;
+            background: var(--drone-dark);
+            border: 2px solid var(--laser-cyan);
+            border-radius: 1vmin;
+            transform-style: preserve-3d;
+            transform: rotateX(90deg) rotateY(90deg); /* Face the core */
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .drone::after {
+            content: '';
+            width: 4vmin; height: 1.5vmin;
+            background: var(--drone-accent);
+            border-radius: 2px;
+            box-shadow: 0 0 10px var(--drone-accent);
+            animation: pulseWarning 0.5s infinite alternate;
+        }
+
+        @keyframes pulseWarning {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; box-shadow: 0 0 20px var(--drone-accent); }
+        }
+
+        /* Intense Repair Lasers */
+        .laser {
+            position: absolute;
+            top: 50%; left: 0;
+            width: calc(var(--orbit-r) - (var(--core-w) / 2));
+            height: 4px;
+            background: #fff;
+            box-shadow: 0 0 10px var(--laser-cyan), 0 0 20px var(--laser-cyan), 0 0 40px var(--laser-cyan);
+            transform-origin: left center;
+            /* Shoot backward from the drone towards the center (negative X) */
+            transform: translateY(-50%) translateX(calc(-100%));
+            animation: laserFlicker 0.1s infinite;
+        }
+
+        @keyframes laserFlicker {
+            0% { opacity: 0.8; height: 3px; }
+            50% { opacity: 1; height: 5px; }
+            100% { opacity: 0.9; height: 4px; }
+        }
+
+        /* Spark Origins (where the laser hits the core) */
+        .spark-node {
+            position: absolute;
+            top: 50%; left: calc(-1 * (var(--orbit-r) - (var(--core-w) / 2)));
+            transform-style: preserve-3d;
+        }
+
+        /* 3D Physics Sparks (JS) */
+        .spark {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--drone-accent), 0 0 15px var(--drone-accent);
+            transform-style: preserve-3d;
+            animation: sparkPhysics var(--duration) cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+        }
+
+        @keyframes sparkPhysics {
+            0% { 
+                transform: translate3d(0, 0, 0) scale(1); 
+                opacity: 1; 
+            }
+            100% { 
+                /* X, Y are velocity. Z includes a severe gravity drop */
+                transform: translate3d(var(--vx), var(--vy), var(--vz)) scale(0); 
+                opacity: 0; 
+            }
+        }
+
+        /* Minimalist UI Panel */
+        .ui-panel {
+            position: absolute;
+            bottom: max(5vh, 30px);
+            width: 90%; /* Ensure it doesn't touch screen edges on mobile */
+            max-width: 450px; /* Keep it constrained on desktop */
+            padding: clamp(20px, 4vw, 30px) clamp(20px, 5vw, 40px);
+            background: rgba(2, 3, 5, 0.85);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 4px solid var(--laser-cyan);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(0, 229, 255, 0.1);
+            text-align: center;
+            z-index: 100;
+        }
+
+        /* Danger stripes on panel */
+        .ui-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--drone-accent),
+                var(--drone-accent) 10px,
+                #000 10px,
+                #000 20px
+            );
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.4);
+        }
+
+        p {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            color: #8c9bb0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            background-color: var(--core-error);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--core-error);
+            animation: blinkFast 0.5s infinite alternate;
+        }
+
+        @keyframes blinkFast {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; box-shadow: 0 0 20px var(--core-error); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="scene-container">
+        <div class="scene">
+            <div class="cyber-floor"></div>
+
+            <!-- Central Broken Server Monolith -->
+            <div class="core-monolith">
+                <div class="core-face face-front"></div>
+                <div class="core-face face-back"></div>
+                <div class="core-face face-left"></div>
+                <div class="core-face face-right"></div>
+                <div class="core-face face-top"></div>
+                <div class="core-face face-bottom"></div>
+            </div>
+
+            <!-- Robotic Repair Drone 1 -->
+            <div class="orbit orbit-1">
+                <div class="drone-wrapper">
+                    <div class="laser"></div>
+                    <div class="spark-node" id="sn-1"></div>
+                    <div class="drone"></div>
+                </div>
+            </div>
+
+            <!-- Robotic Repair Drone 2 -->
+            <div class="orbit orbit-2">
+                <div class="drone-wrapper">
+                    <div class="laser"></div>
+                    <div class="spark-node" id="sn-2"></div>
+                    <div class="drone"></div>
+                </div>
+            </div>
+
+            <!-- Robotic Repair Drone 3 -->
+            <div class="orbit orbit-3">
+                <div class="drone-wrapper">
+                    <div class="laser"></div>
+                    <div class="spark-node" id="sn-3"></div>
+                    <div class="drone"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimalist UI Panel -->
+    <div class="ui-panel">
+        <h1>Under Maintenance</h1>
+        <p><span class="status-dot"></span>We will be back soon.</p>
+    </div>
+
+    <script>
+        const nodes = [
+            document.getElementById('sn-1'),
+            document.getElementById('sn-2'),
+            document.getElementById('sn-3')
+        ];
+
+        function createSpark(container) {
+            const spark = document.createElement('div');
+            spark.className = 'spark';
+
+            const velocityX = (Math.random() * 15 + 5) + 'vmin'; // Blast outwards
+            const velocityY = (Math.random() - 0.5) * 20 + 'vmin'; // Spread sideways
+            const velocityZ = (Math.random() * -30 - 10) + 'vmin'; // Severe gravity drop
+
+            spark.style.setProperty('--vx', velocityX);
+            spark.style.setProperty('--vy', velocityY);
+            spark.style.setProperty('--vz', velocityZ);
+            
+            const colors = ['#ffffff', '#00e5ff', '#ffae00'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            spark.style.background = color;
+            spark.style.boxShadow = `0 0 10px ${color}`;
+
+            const duration = (Math.random() * 0.4 + 0.3) + 's';
+            spark.style.setProperty('--duration', duration);
+
+            container.appendChild(spark);
+
+            setTimeout(() => {
+                if (spark.parentNode) {
+                    spark.remove();
+                }
+            }, parseFloat(duration) * 1000);
+        }
+
+        setInterval(() => {
+            nodes.forEach(node => {
+                const count = Math.floor(Math.random() * 5) + 4;
+                for(let i = 0; i < count; i++) {
+                    createSpark(node);
+                }
+            });
+        }, 30);
+
+        // REAL-TIME STATUS CHECK (Auto-Restoration)
+        async function checkStatus() {
+            try {
+                const res = await fetch('/api/auth/status');
+                const data = await res.json();
+                if (data.maintenance === false) {
+                    window.location.href = "/";
+                }
+            } catch (e) { console.warn("Status check failed", e); }
+        }
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

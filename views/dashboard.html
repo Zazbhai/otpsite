@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — Rapid OTP</title>
+  <title>Dashboard — {{SITE_NAME}}</title>
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
 
@@ -120,7 +120,7 @@
 <body>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
     <div class="nav-links" id="nav-links">
       <a href="/dashboard" class="active">Dashboard</a>
       <a href="/dashboard/buy">Buy Number</a>
@@ -166,22 +166,22 @@
       <div class="glass-card stat-item">
         <div class="stat-icon">💰</div>
         <div class="stat-label">Total Credits</div>
-        <div class="stat-value success" id="stat-balance">—</div>
+        <div class="stat-value success" id="stat-balance"><div class="skeleton skeleton-text" style="width:80px;height:28px"></div></div>
       </div>
       <div class="glass-card stat-item">
         <div class="stat-icon">📦</div>
         <div class="stat-label">Orders Placed</div>
-        <div class="stat-value" id="stat-orders">—</div>
+        <div class="stat-value" id="stat-orders"><div class="skeleton skeleton-text" style="width:60px;height:28px"></div></div>
       </div>
       <div class="glass-card stat-item">
         <div class="stat-icon">🔥</div>
         <div class="stat-label">Currently Active</div>
-        <div class="stat-value accent" id="stat-active">—</div>
+        <div class="stat-value accent" id="stat-active"><div class="skeleton skeleton-text" style="width:40px;height:28px"></div></div>
       </div>
       <div class="glass-card stat-item">
         <div class="stat-icon">📈</div>
         <div class="stat-label">Lifetime Spend</div>
-        <div class="stat-value" id="stat-spent">—</div>
+        <div class="stat-value" id="stat-spent"><div class="skeleton skeleton-text" style="width:80px;height:28px"></div></div>
       </div>
     </div>
 
@@ -215,7 +215,7 @@
             </tr>
           </thead>
           <tbody id="recent-orders-body">
-            <tr><td colspan="6" style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:40px;opacity:0.5">Initializing secure link...</td></tr>
           </tbody>
         </table>
       </div>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Settings — Admin — Rapid OTP</title>
+  <title>Settings — Admin — {{SITE_NAME}}</title>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     .settings-grid {
@@ -82,45 +82,78 @@
 
     .footer-save {
       position: fixed;
-      bottom: 16px; left: 280px; right: 20px;
-      background: rgba(15, 23, 42, 0.9);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px 24px;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%) translateY(150px);
+      width: calc(100% - 40px);
+      max-width: 650px;
+      background: rgba(13, 13, 13, 0.95);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid var(--accent);
+      border-radius: 24px;
+      padding: 16px 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 1000000;
-      transform: translateY(200%);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      z-index: 10000;
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+      pointer-events: none;
+      opacity: 0;
     }
-    .footer-save.visible { transform: translateY(0); }
+    .footer-save.visible { 
+      transform: translateX(-50%) translateY(0); 
+      pointer-events: all;
+      opacity: 1;
+    }
+
+    .save-indicator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .save-glow {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 15px var(--accent);
+      animation: pulse-save 2s infinite;
+    }
+    @keyframes pulse-save {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
 
     @media (max-width: 1200px) {
       .settings-grid { grid-template-columns: 240px 1fr; }
       .preview-card { display: none; }
-      .footer-save { left: 20px; }
     }
+
     @media (max-width: 768px) {
       .settings-grid { grid-template-columns: 1fr; }
       .settings-nav { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
       .nav-btn { white-space: nowrap; }
       .footer-save {
-        bottom: 80px; /* Clear mobile bottom nav */
-        left: 12px;
-        right: 12px;
-        padding: 12px 16px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
+        width: calc(100% - 24px);
+        padding: 12px 20px;
+        flex-direction: row;
+        gap: 12px;
+        text-align: left;
       }
-      .btn { width: 100%; justify-content: center; }
+      .footer-save .save-indicator {
+        font-size: 11px;
+      }
+      .btn { padding: 8px 16px; font-size: 13px; }
     }
   </style>
 </head>
 <body>
 <nav class="navbar">
   <div class="container" id="nav-container">
-    <a href="/" class="nav-logo">⚡ Rapid OTP <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a><a href="/admin/settings" class="active">Settings</a>
       <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
@@ -180,7 +213,7 @@
             <div style="display:flex;flex-direction:column;gap:20px">
               <div class="form-group">
                 <label class="form-label">Website Name</label>
-                <input type="text" id="s-site-name" placeholder="Rapid OTP" oninput="updatePreview()" />
+                <input type="text" id="s-site-name" placeholder="{{SITE_NAME}}" oninput="updatePreview()" />
               </div>
               <div class="form-group">
                 <label class="form-label">Logo Image URL</label>
@@ -232,7 +265,7 @@
             <div style="display:flex;flex-direction:column;gap:20px">
               <div class="form-group">
                 <label class="form-label">Default Page Title</label>
-                <input type="text" id="s-seo-title" placeholder="Rapid OTP — Fast Virtual Numbers" />
+                <input type="text" id="s-seo-title" placeholder="{{SITE_NAME}} — Fast Virtual Numbers" />
               </div>
               <div class="form-group">
                 <label class="form-label">Meta Description</label>
@@ -388,7 +421,7 @@
           <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">Navigation Mockup</div>
           <div class="mock-navbar" id="mock-nav">
              <div class="mock-logo" id="mock-logo">
-               <span id="mock-icon">⚡</span> <span id="mock-name">Rapid OTP</span>
+               <span id="mock-icon">⚡</span> <span id="mock-name">{{SITE_NAME}}</span>
              </div>
              <div class="mock-links">
                <div class="mock-dot" style="background:var(--accent);opacity:1"></div>
@@ -409,7 +442,7 @@
 
           <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:16px">
             <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">Google Search Snippet</div>
-            <div style="color:#1a0dab;font-size:16px;margin-bottom:2px;font-family:arial,sans-serif" id="mock-seo-title">Rapid OTP — ...</div>
+            <div style="color:#1a0dab;font-size:16px;margin-bottom:2px;font-family:arial,sans-serif" id="mock-seo-title">{{SITE_NAME}} — ...</div>
             <div style="color:#006621;font-size:13px;margin-bottom:4px;font-family:arial,sans-serif">https://yourdomain.com</div>
             <div style="color:#545454;font-size:13px;line-height:1.4;font-family:arial,sans-serif" id="mock-seo-desc">Your meta description will appear here in search results...</div>
           </div>
@@ -419,13 +452,16 @@
 
     <!-- Floating Save Footer -->
     <div class="footer-save" id="save-bar">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:10px;height:10px;background:var(--warning);border-radius:50%;box-shadow:0 0 10px var(--warning)"></div>
-        <span style="font-size:14px;color:var(--text);font-weight:700">Modified Settings</span>
+      <div class="save-indicator">
+        <div class="save-glow"></div>
+        <div style="font-size:13px">
+          <div style="color:#fff; font-weight:700">Unsaved Changes</div>
+          <div style="color:var(--text-3); font-size:11px">Review and persist your updates</div>
+        </div>
       </div>
       <div style="display:flex;gap:12px">
-        <button class="btn btn-secondary btn-sm" onclick="loadSettings()" style="border-radius:10px">Discard</button>
-        <button class="btn btn-primary btn-sm" onclick="saveSettings()" style="border-radius:10px;padding:8px 32px">Save All Changes</button>
+        <button class="btn btn-secondary btn-sm" onclick="discardChanges()" style="border-radius:12px; padding: 10px 20px">Discard</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings(event)" style="border-radius:12px; padding:10px 32px">Save Changes</button>
       </div>
     </div>
 
@@ -561,9 +597,7 @@
     }
   }
 
-  function checkChanges() {
-    document.getElementById("save-bar").classList.add("visible");
-  }
+
 
   async function selectTheme(theme) {
     currentTheme = theme;
@@ -572,21 +606,11 @@
     });
     // Apply for preview
     applyTheme(theme, true);
-    
-    // Auto-save to DB for persistence
-    try {
-      await API.post("/api/admin/settings", { default_theme: theme });
-      // Clear overrides to show the theme's colors
-      document.documentElement.style.removeProperty('--accent');
-      document.documentElement.style.removeProperty('--grad-primary');
-      toast(`Theme "${theme}" applied globally!`, "success");
-    } catch (e) { console.error("Theme auto-save failed", e); }
-    
     checkChanges();
   }
 
   function updatePreview() {
-    const name = document.getElementById("s-site-name").value || "Rapid OTP";
+    const name = document.getElementById("s-site-name").value || "{{SITE_NAME}}";
     const logo = document.getElementById("s-site-logo").value;
     const color = document.getElementById("s-primary-color").value;
 
@@ -646,7 +670,7 @@
       document.getElementById("s-color-hex").value = color.toUpperCase();
 
       const maint = document.getElementById("s-maintenance");
-      if (maint) maint.checked = s.maintenance === true || s.maintenance === "true";
+      if (maint) maint.checked = s.maintenance_mode === true || s.maintenance_mode === "true";
 
       if (s.default_theme) selectTheme(s.default_theme);
       
@@ -661,11 +685,90 @@
       }
       
       updatePreview();
+      // Snapshot the DOM state for precise comparison
+      originalSettings = getFormState();
       document.getElementById("save-bar").classList.remove("visible");
     } catch (e) { toast(e.message, "error"); }
   }
 
-  async function saveSettings() {
+  function getFormState() {
+    const exchangeRates = {
+        USD: document.getElementById("s-rate-usd").value,
+        RUB: document.getElementById("s-rate-rub").value,
+        EUR: document.getElementById("s-rate-eur").value,
+        USDT: document.getElementById("s-rate-usdt").value,
+    };
+
+    return {
+      site_name: document.getElementById("s-site-name").value,
+      site_logo: document.getElementById("s-site-logo").value,
+      site_favicon: document.getElementById("s-site-favicon").value,
+      primary_color: document.getElementById("s-primary-color").value,
+      welcome_message: document.getElementById("s-welcome").value,
+      order_expiry: document.getElementById("s-expiry").value,
+      referral_bonus: document.getElementById("s-ref-bonus").value,
+      referral_pct: document.getElementById("s-ref-pct").value,
+      maintenance_mode: document.getElementById("s-maintenance").checked,
+      support_contact: document.getElementById("s-support").value,
+      min_deposit: document.getElementById("s-min-dep").value,
+      seo_title: document.getElementById("s-seo-title").value,
+      seo_description: document.getElementById("s-seo-desc").value,
+      seo_keywords: document.getElementById("s-seo-keys").value,
+      custom_css: document.getElementById("s-custom-css").value,
+      exchange_rates: JSON.stringify(exchangeRates),
+      theme: currentTheme
+    };
+  }
+
+  function checkChanges() {
+    if (!originalSettings) return;
+    const current = getFormState();
+    const original = originalSettings;
+    
+    // Deep comparison helper (for basic objects)
+    const keys = Object.keys(current);
+    const hasChanged = keys.some(key => {
+        // Handle special cases like exchange_rates (JSON strings)
+        if (key === 'exchange_rates') {
+            try {
+                const cExp = JSON.parse(current[key]);
+                const oExp = JSON.parse(original[key]);
+                return Object.keys(cExp).some(k => cExp[k] != oExp[k]);
+            } catch(e) { return current[key] !== original[key]; }
+        }
+        return String(current[key]) !== String(original[key]);
+    });
+    
+    const saveBar = document.getElementById("save-bar");
+    if (hasChanged) {
+      saveBar.classList.add("visible");
+    } else {
+      saveBar.classList.remove("visible");
+    }
+  }
+
+
+
+  async function discardChanges() {
+    if (!await uiConfirm("Discard all unsaved changes?")) return;
+    loadSettings();
+    toast("Changes discarded", "info");
+  }
+
+  // Attach listeners to all inputs in the settings form
+  ['input', 'change', 'focusin'].forEach(evt => {
+    document.addEventListener(evt, (e) => {
+      const target = e.target;
+      // Track any input inside the settings form container
+      if (document.getElementById('settings-form')?.contains(target)) {
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+           if (originalSettings) checkChanges();
+        }
+      }
+    });
+  });
+
+  async function saveSettings(event) {
     const exchangeRates = {
       INR: 1,
       USD: parseFloat(document.getElementById("s-rate-usd").value || 0.012),
@@ -683,7 +786,7 @@
       order_expiry: parseInt(document.getElementById("s-expiry").value),
       referral_bonus: parseFloat(document.getElementById("s-ref-bonus").value || 0),
       referral_pct: parseFloat(document.getElementById("s-ref-pct").value || 0),
-      maintenance: document.getElementById("s-maintenance").checked,
+      maintenance_mode: document.getElementById("s-maintenance").checked,
       default_theme: currentTheme,
       support_contact: document.getElementById("s-support").value,
       min_deposit: parseFloat(document.getElementById("s-min-dep").value || 0),
@@ -705,7 +808,11 @@
       if(btn) btn.disabled = true;
       await API.post("/api/admin/settings", body);
       toast("Configuration updated successfully!", "success");
+      
+      // Update the snapshot so the save bar knows we are at "even" again
+      originalSettings = getFormState();
       document.getElementById("save-bar").classList.remove("visible");
+      
       if(btn) btn.disabled = false;
       // Propagate branding
       if (typeof applySiteSettings === 'function') applySiteSettings(true);

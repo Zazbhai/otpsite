@@ -13,6 +13,7 @@ const multer      = require("multer");
 const path        = require("path");
 const fs          = require("fs");
 const { DB_TYPE } = require("../utils/db");
+const { clearSettingsCache } = require("../utils/settingsCache");
 
 // Multer Config
 const storage = multer.diskStorage({
@@ -675,6 +676,7 @@ router.post("/settings", async (req, res) => {
       updateOne: { filter: { key }, update: { $set: { key, value } }, upsert: true },
     }));
     await Setting.bulkWrite(ops);
+    clearSettingsCache(); // Invalidate cache so changes show immediately
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });

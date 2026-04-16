@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Buy Number — Rapid OTP</title>
+  <title>Buy Number — {{SITE_NAME}}</title>
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
   <style>
@@ -482,45 +482,39 @@
     }
 
     /* Updated Modal & Server Options Style */
+    /* Unifed Genie Modal Style */
     .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      position: fixed; inset: 0;
       background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(100px) saturate(250%);
-      -webkit-backdrop-filter: blur(100px) saturate(250%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      transition: all 0.5s ease;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; transition: opacity 0.4s;
     }
     .modal-card {
-      background: rgba(28, 28, 30, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(30px) saturate(160%);
-      -webkit-backdrop-filter: blur(30px) saturate(160%);
+      background: #0a0a0a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 24px;
-      width: 100%;
-      max-width: 460px;
-      box-shadow: 0 50px 100px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.05);
-      position: relative;
+      width: 100%; max-width: 460px;
+      box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+      position: relative; overflow: hidden;
       transform-origin: bottom center;
-      animation: macMaximize 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: genieMaximize 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     .modal-card.closing {
-      animation: macMinimize 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+      animation: genieMinimize 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards;
     }
-    @keyframes macMaximize { 
+    @keyframes genieMaximize { 
       0% { transform: scale(0.3, 0.5) translateY(200px); opacity: 0; filter: blur(10px); }
-      40% { transform: scale(1.15, 0.85) translateY(-20px); opacity: 1; filter: blur(0); }
-      60% { transform: scale(0.95, 1.05) translateY(5px); }
-      80% { transform: scale(1.05, 0.95) translateY(-2px); }
+      40% { transform: scale(1.1, 0.9) translateY(-20px); opacity: 1; filter: blur(0); }
+      70% { transform: scale(0.98, 1.02) translateY(5px); }
       100% { transform: scale(1, 1) translateY(0); opacity: 1; }
     }
-    @keyframes macMinimize {
+    @keyframes genieMinimize {
       0% { transform: scale(1, 1) translateY(0); opacity: 1; filter: blur(0); }
-      100% { transform: scale(0.1, 0.5) translateY(400px); opacity: 0; filter: blur(20px); }
+      30% { transform: scale(1.1, 0.8) translateY(-10px); }
+      100% { transform: scale(0.1, 0.4) translateY(500px); opacity: 0; filter: blur(20px); }
     }
     .modal-header {
       padding: 20px;
@@ -566,13 +560,116 @@
       .buy-container { width: 100%; padding: 0 10px; }
       .service-grid { grid-template-columns: 1fr; gap: 12px; }
     }
+
+    /* ── Secure OTP Extraction 3D Rig (EXACT) ── */
+    #allocation-overlay {
+        position: fixed; inset: 0; background: #000;
+        background-image: radial-gradient(circle at 50% 50%, #0a1118 0%, #000 80%);
+        z-index: 1000000; display: none; justify-content: center; align-items: center;
+        overflow: hidden; perspective: 1200px; font-family: 'Courier New', monospace;
+    }
+    .camera-rig {
+        transform-style: preserve-3d;
+        transform: translateZ(0px) rotateX(60deg) rotateZ(-20deg);
+        transition: transform 0.1s linear; 
+    }
+    .scene { position: relative; transform-style: preserve-3d; }
+    .phone {
+        width: clamp(240px, 45vmin, 340px); height: clamp(480px, 90vmin, 680px);
+        position: relative; transform-style: preserve-3d;
+        animation: floatPhone 4s ease-in-out infinite; 
+    }
+    @keyframes floatPhone {
+        0%, 100% { transform: translateY(0px) translateZ(0px); }
+        50% { transform: translateY(-10px) translateZ(10px); }
+    }
+    .phone-layer {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: clamp(30px, 6vmin, 50px); background: #080808;
+        border: 2px solid #222; transform-style: preserve-3d;
+    }
+    .phone-layer.shadow-layer { 
+        transform: translateZ(-25px); background: #020202;
+        box-shadow: -30px 40px 60px rgba(0, 0, 0, 0.9), -10px 20px 40px rgba(0, 255, 204, 0.1);
+    }
+    .phone-layer:nth-child(2) { transform: translateZ(-20px); }
+    .phone-layer:nth-child(3) { transform: translateZ(-15px); }
+    .phone-layer:nth-child(4) { transform: translateZ(-10px); }
+    .phone-layer:nth-child(5) { transform: translateZ(-5px); }
+    .phone-layer.front {
+        transform: translateZ(0px); background: #0a0a0a;
+        padding: clamp(8px, 2vmin, 15px);
+        box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.05);
+    }
+    .screen {
+        width: 100%; height: 100%; border-radius: clamp(20px, 4vmin, 35px);
+        position: relative; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; transform-style: preserve-3d;
+        border: 1px solid #1a2b27; box-shadow: inset 0 0 30px rgba(0, 255, 204, 0.1);
+    }
+    .screen-bg {
+        position: absolute; inset: 0; border-radius: inherit;
+        background: repeating-linear-gradient(0deg,#000,#000 2px,#050a08 2px,#050a08 4px);
+        overflow: hidden; z-index: 0;
+    }
+    .screen-bg::after {
+        content: ''; position: absolute; inset: 0;
+        box-shadow: inset 0 0 20px rgba(0, 255, 204, 0.2); border-radius: inherit;
+    }
+    .notch {
+        position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+        width: clamp(60px, 15vmin, 100px); height: clamp(15px, 4vmin, 25px);
+        background: #000; border-radius: 20px; z-index: 10;
+        box-shadow: inset 0 -2px 5px rgba(255,255,255,0.1);
+    }
+    .loading-ui {
+        text-align: center; z-index: 5; transform: translateZ(40px);
+        background: rgba(0, 10, 5, 0.85); padding: clamp(15px, 4vmin, 30px);
+        border-radius: 20px; backdrop-filter: blur(8px);
+        border: 1px solid rgba(0, 255, 204, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 204, 0.2);
+        width: 85%;
+    }
+    .percentage {
+        font-size: clamp(2rem, 8vmin, 3.5rem); font-weight: bold;
+        color: #00ffcc; text-shadow: 0 0 15px #00ffcc;
+        margin-bottom: 5px; font-family: monospace;
+    }
+    .status {
+        font-size: clamp(0.7rem, 2vmin, 1rem); color: #fff;
+        letter-spacing: 2px; opacity: 0.8; animation: glitchText 3s infinite;
+    }
+    @keyframes glitchText {
+        0%, 96%, 100% { opacity: 0.8; transform: skewX(0deg); }
+        97% { opacity: 1; transform: skewX(-10deg); text-shadow: -2px 0 red, 2px 0 cyan; }
+        98% { opacity: 0.5; transform: skewX(10deg); text-shadow: none; }
+        99% { opacity: 1; transform: skewX(0deg); text-shadow: 2px 0 red, -2px 0 cyan; }
+    }
+    .particles { position: absolute; top: 50%; left: 50%; width: 0; height: 0; transform-style: preserve-3d; z-index: 20; }
+    .sms-bubble {
+        position: absolute; background: rgba(0, 25, 15, 0.85); color: #00ffcc;
+        padding: 10px 18px; border-radius: 8px; border-bottom-left-radius: 0;
+        font-size: clamp(12px, 2vmin, 16px); backdrop-filter: blur(4px);
+        white-space: nowrap; left: 50%; top: 50%; border: 1px solid #00ffcc;
+        animation: blastOut var(--duration) ease-out forwards;
+    }
+    .number-particle {
+        position: absolute; font-weight: bold; font-size: clamp(18px, 4vmin, 28px);
+        color: #fff; text-shadow: 0 0 10px #fff; left: 50%; top: 50%;
+        animation: blastOut var(--duration) ease-out forwards;
+    }
+    @keyframes blastOut {
+        0% { transform: translate3d(-50%, -50%, 0) scale(0.1) rotateX(0deg); opacity: 0; }
+        10% { opacity: 1; }
+        100% { transform: translate3d(calc(-50% + var(--tx)), calc(-50% + var(--ty)), var(--tz)) scale(var(--read-scale)) rotateX(var(--rx)); opacity: 0; }
+    }
   </style>
   <script>document.body.style.overflowX = 'hidden';</script>
 </head>
 <body>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
     <div class="nav-links" id="nav-links">
       <a href="/dashboard">Dashboard</a>
       <a href="/dashboard/buy" class="active">Buy Number</a>
@@ -614,7 +711,9 @@
                 <input type="text" class="search-input" style="margin:0; padding-left:36px" placeholder="Search countries..." id="search-country" oninput="filterOptions('country')" />
                 <span class="search-icon" style="left:20px">🔍</span>
               </div>
-              <div id="options-country" style="max-height: 300px; overflow-y: auto"></div>
+              <div id="options-country" style="max-height: 300px; overflow-y: auto">
+                <div style="padding:20px; text-align:center; opacity:0.5">Fetching countries...</div>
+              </div>
             </div>
           </div>
         </div>
@@ -631,14 +730,52 @@
              </div>
           </div>
 
-          <!-- Services Scroll Box -->
           <div class="services-box" id="options-service">
-             <div style="text-align: center; padding: 40px; color: var(--text-3);">
-                Select a country to view available services
+             <div class="service-grid">
+              <div class="service-card" style="pointer-events:none">
+                <div class="service-icon-box skeleton"></div>
+                <div class="service-info">
+                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
+                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
+                </div>
+              </div>
+              <div class="service-card" style="pointer-events:none">
+                <div class="service-icon-box skeleton"></div>
+                <div class="service-info">
+                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
+                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
+                </div>
+              </div>
+              <div class="service-card" style="pointer-events:none">
+                <div class="service-icon-box skeleton"></div>
+                <div class="service-info">
+                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
+                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
+                </div>
+              </div>
+              <div class="service-card" style="pointer-events:none">
+                <div class="service-icon-box skeleton"></div>
+                <div class="service-info">
+                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
+                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
+                </div>
+              </div>
+              <div class="service-card" style="pointer-events:none">
+                <div class="service-icon-box skeleton"></div>
+                <div class="service-info">
+                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
+                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
+                </div>
+              </div>
+              <div class="service-card" style="pointer-events:none">
+                <div class="service-icon-box skeleton"></div>
+                <div class="service-info">
+                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
+                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
+                </div>
+              </div>
              </div>
           </div>
-          
-          <div id="group-service" style="display: none;"></div><!-- Legacy compatibility -->
         </div>
 
         <!-- Summary Footer (Optional/Hidden until selected) -->
@@ -863,8 +1000,6 @@
     selectedService = service;
     window.closeServiceModal();
     
-    // Initiate purchase with premium loader
-    window.showLoader("ALLOCATING", "Waiting for server...");
     await window.placeOrder();
   };
 
@@ -944,39 +1079,219 @@
     }
   };
 
+  /* ── 3D Allocation Logic (EXACT AS PROVIDED) ── */
+  let allocInterval;
+  let particleInterval;
+  let audioCtx;
+
+  function initAudio() {
+      if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playSuccessSound() {
+      if (!audioCtx) return;
+      const playTone = (freq, type, time, duration, vol) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + time);
+          gain.gain.setValueAtTime(vol, audioCtx.currentTime + time);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + time + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + time);
+          osc.stop(audioCtx.currentTime + time + duration);
+      };
+      playTone(523.25, 'sine', 0, 0.2, 0.2); 
+      playTone(659.25, 'sine', 0.1, 0.2, 0.2);
+      playTone(1046.50, 'sine', 0.2, 0.6, 0.2);
+  }
+
+  function generateOTPMessage() {
+      const otp4 = Math.floor(1000 + Math.random() * 9000);
+      const otp6 = Math.floor(100000 + Math.random() * 900000);
+      const types = [
+          () => `Your Blinkit OTP: ${otp4}`,
+          () => `Login With ${otp4}`,
+          () => `Your Swiggy code is ${otp6}`,
+          () => `Amazon pay OTP: ${otp6}`,
+          () => `Zomato verification: ${otp4}`
+      ];
+      return types[Math.floor(Math.random() * types.length)]();
+  }
+
+  function createParticle() {
+      const container = document.getElementById('alloc-particles');
+      const el = document.createElement('div');
+      const isOTP = Math.random() > 0.88; 
+
+      if (isOTP) {
+          el.className = 'sms-bubble';
+          el.innerText = generateOTPMessage();
+          el.style.setProperty('--rx', (Math.random() - 0.5) * 15 + 'deg');
+          el.style.setProperty('--ry', (Math.random() - 0.5) * 15 + 'deg');
+          el.style.setProperty('--rz', (Math.random() - 0.5) * 15 + 'deg'); 
+          el.style.setProperty('--read-scale', Math.random() * 1.5 + 1.8);
+      } else {
+          el.className = 'number-particle';
+          const chars = '0123456789';
+          el.innerText = chars[Math.floor(Math.random() * chars.length)]; 
+          el.style.opacity = Math.random() * 0.7 + 0.3;
+          el.style.setProperty('--rx', (Math.random() - 0.5) * 720 + 'deg');
+          el.style.setProperty('--ry', (Math.random() - 0.5) * 720 + 'deg');
+          el.style.setProperty('--rz', (Math.random() - 0.5) * 360 + 'deg');
+          el.style.setProperty('--read-scale', Math.random() * 3 + 2);
+      }
+
+      el.style.setProperty('--tx', (Math.random() - 0.5) * 100 + 'vw'); 
+      el.style.setProperty('--ty', (Math.random() - 0.5) * 100 + 'vh'); 
+      el.style.setProperty('--tz', (Math.random() * 800 + 400) + 'px'); 
+      const duration = (Math.random() * 2.0 + 2.0) + 's'; 
+      el.style.setProperty('--duration', duration);
+
+      container.appendChild(el);
+      setTimeout(() => el.remove(), parseFloat(duration) * 1000);
+  }
+
+  window.startAllocation = function() {
+    initAudio();
+    const overlay = document.getElementById('allocation-overlay');
+    const pct = document.getElementById('alloc-pct');
+    const status = document.getElementById('alloc-status');
+    const camera = document.getElementById('alloc-camera');
+    
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    let progress = 0;
+    status.innerText = "ALLOCATING_";
+    pct.innerText = "0%";
+    pct.style.fontSize = "clamp(2rem, 8vmin, 3.5rem)";
+    pct.style.color = "#00ffcc";
+    
+    camera.style.transform = `translateZ(0px) rotateX(60deg) rotateZ(-20deg)`;
+    
+    particleInterval = setInterval(() => {
+        const burstCount = Math.floor(Math.random() * 3) + 2;
+        for(let i=0; i<burstCount; i++) createParticle();
+    }, 80);
+
+    return new Promise((resolve) => {
+      allocInterval = setInterval(() => {
+        if (progress < 95) {
+          progress += Math.random() * 0.8 + 0.2;
+          if (progress > 95) progress = 95;
+          pct.innerText = Math.floor(progress) + "%";
+          
+          const eased = Math.pow(progress / 100, 2.5);
+          const isMobile = window.innerWidth < 600;
+          const maxZ = isMobile ? 250 : 500;
+          const currentRotX = 60 - (eased * 60);
+          const currentRotZ = -20 - (eased * -20);
+          const currentZ = eased * maxZ;
+          camera.style.transform = `translateZ(${currentZ}px) rotateX(${currentRotX}deg) rotateZ(${currentRotZ}deg)`;
+        }
+      }, 60);
+      resolve();
+    });
+  };
+
+  window.finishAllocation = function(number) {
+    clearInterval(allocInterval);
+    playSuccessSound();
+    const pct = document.getElementById('alloc-pct');
+    const status = document.getElementById('alloc-status');
+    
+    pct.innerText = "100%";
+    setTimeout(() => {
+      pct.innerText = number;
+      pct.style.fontSize = "clamp(1.5rem, 5vmin, 2.5rem)";
+      pct.style.color = "#fff";
+      pct.style.textShadow = "0 0 20px #fff, 0 0 40px #00ffcc";
+      status.innerText = "ALLOCATION_SUCCESS";
+    }, 500);
+  };
+
+  window.failAllocation = function() {
+    clearInterval(allocInterval);
+    clearInterval(particleInterval);
+    const pct = document.getElementById('alloc-pct');
+    const status = document.getElementById('alloc-status');
+    
+    pct.innerText = "FAIL";
+    pct.style.color = "var(--danger)";
+    status.innerText = "NUMBER_ALLOCATION_FAILED";
+    
+    setTimeout(() => {
+      document.getElementById('allocation-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+    }, 2500);
+  };
+
   window.placeOrder = async function() {
     if (!selectedService || !selectedCountry) {
       toast('Please select service and country', 'error');
-      window.hideLoader();
       return;
     }
     
     const btn = document.getElementById('buy-btn');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner"></div><span>Processing...</span>';
-    }
+    if (btn) btn.disabled = true;
+
+    // Start 3D Animation
+    window.startAllocation();
     
     try {
       const res = await API.post('/api/user/orders', {
         service_id: selectedService._id
       });
-      toast('Order placed successfully!', 'success');
-      // Update loader text for better UX
-      window.showLoader("REDIRECTING", "Loading your order detail...");
-      setTimeout(() => SPA.navigate(`/dashboard/orders/${res.order.order_id}`), 1000);
+      
+      // Complete animation with number
+      window.finishAllocation(res.order.number);
+      
+      setTimeout(() => {
+        SPA.navigate(`/dashboard/orders/${res.order.order_id}`);
+      }, 2500);
+      
     } catch (e) {
       toast(e.message, 'error');
-      window.hideLoader();
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<span>🚀</span><span>Buy Now</span>';
-      }
+      window.failAllocation();
+      if (btn) btn.disabled = false;
     }
   };
 
   window.initBuy();
 }
 </script>
+
+<!-- 3D Allocation Loader -->
+<div id="allocation-overlay">
+    <div class="camera-rig" id="alloc-camera">
+        <div class="scene">
+            <div class="phone">
+                <!-- 3D Phone Thickness Layers -->
+                <div class="phone-layer shadow-layer"></div>
+                <div class="phone-layer"></div>
+                <div class="phone-layer"></div>
+                <div class="phone-layer"></div>
+                <div class="phone-layer"></div>
+                <div class="phone-layer front">
+                    <div class="screen">
+                        <div class="screen-bg"></div>
+                        <div class="notch"></div>
+                        <div class="loading-ui">
+                            <div class="percentage" id="alloc-pct">0%</div>
+                            <div class="status" id="alloc-status">ALLOCATING_</div>
+                        </div>
+                        <div class="particles" id="alloc-particles"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

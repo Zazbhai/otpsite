@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Orders — Rapid OTP</title>
+  <title>My Orders — {{SITE_NAME}}</title>
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
   <style>
@@ -174,7 +174,7 @@
 <body>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ Rapid OTP</a>
+    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
     <div class="nav-links" id="nav-links">
       <a href="/dashboard">Dashboard</a>
       <a href="/dashboard/buy">Buy</a>
@@ -204,9 +204,7 @@
       </div>
       
       <div id="orders-list" style="margin-top: 24px;">
-        <div class="empty-state">
-          <div class="spinner" style="margin: 0 auto"></div>
-        </div>
+        <div style="padding:40px;text-align:center;opacity:0.5">Syncing with blockchain...</div>
       </div>
       
       <div id="pagination"></div>
@@ -226,7 +224,19 @@
     const list = document.getElementById('orders-list');
     if (!list) return;
     if (!isBackground) {
-       list.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>`;
+       list.innerHTML = Array(5).fill(0).map(() => `
+          <div class="order-card" style="pointer-events:none">
+            <div class="skeleton skeleton-circle" style="width:40px;height:40px;flex-shrink:0"></div>
+            <div class="order-main">
+              <div class="skeleton skeleton-text" style="width:140px;height:16px;margin-bottom:8px"></div>
+              <div class="skeleton skeleton-text short" style="width:100px;height:12px"></div>
+            </div>
+            <div class="order-right">
+              <div class="skeleton skeleton-text" style="width:60px;height:18px"></div>
+              <div class="skeleton skeleton-text" style="width:80px;height:24px;border-radius:20px"></div>
+            </div>
+          </div>
+        `).join('');
     }
     
     try {

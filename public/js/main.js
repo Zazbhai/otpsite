@@ -1,13 +1,52 @@
 /* ── Shared JS helpers ── */
 
+/**
+ * Generates skeleton table rows
+ * @param {number} rows 
+ * @param {number} cols 
+ */
+function skeletonTable(rows = 5, cols = 4) {
+  let html = '';
+  for (let i = 0; i < rows; i++) {
+    html += '<tr>' + Array(cols).fill('<td><div class="skeleton skeleton-text"></div></td>').join('') + '</tr>';
+  }
+  return html;
+}
+
+/**
+ * Generates skeleton grid items
+ * @param {number} count 
+ * @param {string} className 
+ */
+function skeletonGrid(count = 4, className = 'card') {
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    html += `<div class="${className}"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text short"></div></div>`;
+  }
+  return html;
+}
+
 const API = {
-  get:   (url, options = {}) => fetch(url, { headers: authHeaders(), ...options }).then(handleRes),
-  post:  (url, body, options = {}) => fetch(url, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
-  patch: (url, body, options = {}) => fetch(url, { method: "PATCH", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
-  put:   (url, body, options = {}) => fetch(url, { method: "PUT", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
-  del:   (url, options = {}) => fetch(url, { method: "DELETE", headers: authHeaders(), ...options }).then(handleRes),
+  fetchWithTimeout: async (url, options = {}) => {
+    const { timeout = 10000 } = options;
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(id);
+      return response;
+    } catch (e) {
+      clearTimeout(id);
+      throw e;
+    }
+  },
+  get:   (url, options = {}) => API.fetchWithTimeout(url, { headers: authHeaders(), ...options }).then(handleRes),
+  post:  (url, body, options = {}) => API.fetchWithTimeout(url, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
+  patch: (url, body, options = {}) => API.fetchWithTimeout(url, { method: "PATCH", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
+  put:   (url, body, options = {}) => API.fetchWithTimeout(url, { method: "PUT", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
+  del:   (url, options = {}) => API.fetchWithTimeout(url, { method: "DELETE", headers: authHeaders(), ...options }).then(handleRes),
   delete: (url, options = {}) => API.del(url, options),
-  upload: (url, formData, method = "POST", options = {}) => fetch(url, { method: method, headers: authHeaders(), body: formData, ...options }).then(handleRes),
+  upload: (url, formData, method = "POST", options = {}) => API.fetchWithTimeout(url, { method: method, headers: authHeaders(), body: formData, ...options }).then(handleRes),
 };
 
 function authHeaders() {
@@ -25,7 +64,100 @@ async function handleRes(res) {
   return data;
 }
 
-// Global Page Loader Logic (Cyber Orbital & Numbers Escaping Phone)
+
+// Global Branding & Themes
+window.THEMES = [
+  { id: 'dark', label: 'Eclipse Dark', icon: '🌑', accent: '#3b82f6', grad: 'linear-gradient(135deg, #3b82f6, #6366f1)' },
+  { id: 'midnight', label: 'Midnight', icon: '🌌', accent: '#8b5cf6', grad: 'linear-gradient(135deg, #8b5cf6, #d946ef)' },
+  { id: 'emerald', label: 'Emerald', icon: '🌲', accent: '#10b981', grad: 'linear-gradient(135deg, #10b981, #3b82f6)' },
+  { id: 'crimson', label: 'Crimson', icon: '🔥', accent: '#ef4444', grad: 'linear-gradient(135deg, #ef4444, #f59e0b)' },
+  { id: 'gold', label: 'Prestige Gold', icon: '👑', accent: '#f59e0b', grad: 'linear-gradient(135deg, #f59e0b, #ef4444)' }
+];
+
+window.applyTheme = function(themeId, isPreview = false) {
+  const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+  document.documentElement.setAttribute('data-theme', theme.id);
+  
+  if (isPreview) {
+    document.documentElement.style.setProperty('--accent', theme.accent);
+    document.documentElement.style.setProperty('--grad-primary', theme.grad);
+  }
+};
+
+let siteSettings = {
+  site_name: "Website Name",
+  primary_color: "#3b82f6",
+  site_logo: null
+};
+
+
+window.applyBranding = async function(force = false) {
+  try {
+    const s = await API.get("/api/auth/settings");
+    siteSettings = { ...siteSettings, ...s };
+    localStorage.setItem('site_settings', JSON.stringify(siteSettings));
+    
+    const name = siteSettings.site_name || "Website Name";
+    const oldNames = ["Rapid OTP", "Zaz", "{{SITE_NAME}}"];
+    
+    // 1. Update Document Title
+    oldNames.forEach(old => {
+      if (document.title.includes(old)) {
+        document.title = document.title.replace(new RegExp(old, 'g'), name);
+      }
+    });
+
+    // 2. Comprehensive DOM Replacement
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    while(node = walker.nextNode()) {
+      if (node.parentElement && (node.parentElement.tagName === "SCRIPT" || node.parentElement.tagName === "STYLE")) continue;
+      oldNames.forEach(old => {
+        if (node.nodeValue.includes(old)) {
+          node.nodeValue = node.nodeValue.replace(new RegExp(old, 'g'), name);
+        }
+      });
+    }
+
+    // 3. Update Favicon
+    if (siteSettings.site_favicon) {
+      let fav = document.querySelector("link[rel*='icon']");
+      if (!fav) {
+        fav = document.createElement('link');
+        fav.rel = 'shortcut icon';
+        document.head.appendChild(fav);
+      }
+      fav.href = siteSettings.site_favicon;
+    }
+
+    if (siteSettings.default_theme) {
+      applyTheme(siteSettings.default_theme);
+    }
+
+    // 4. Custom Colors & CSS
+    if (siteSettings.primary_color) {
+      document.documentElement.style.setProperty('--accent', siteSettings.primary_color);
+    }
+    if (siteSettings.custom_css) {
+       const styleId = "custom-branding-css";
+       let style = document.getElementById(styleId);
+       if (!style) {
+         style = document.createElement("style");
+         style.id = styleId;
+         document.head.appendChild(style);
+       }
+       style.textContent = siteSettings.custom_css;
+    }
+  } catch (e) {
+    console.warn("Branding failed to load", e);
+    // Fallback to local
+    const local = JSON.parse(localStorage.getItem('site_settings') || '{}');
+    if (local.site_name) {
+       // Minimal apply if offline
+       document.title = document.title.replace(/{{SITE_NAME}}/g, local.site_name);
+    }
+  }
+};
 (function() {
   if (document.getElementById("pl-style")) return;
   
@@ -329,6 +461,10 @@ function applyTheme(theme, isPreview = false) {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   }
   
+  // Enforce consistent black base even if dynamic overrides are active
+  document.documentElement.style.setProperty('--bg-1', '#000000');
+  document.documentElement.style.setProperty('--bg-2', '#050505');
+  
   // If we are applying a colorful/specialized theme, remove the global brand overrides
   // so the CSS variables in main.css can take effect.
   if (theme !== 'dark' && theme !== 'light') {
@@ -346,12 +482,15 @@ function toggleTheme() {
 }
 
 let _settingsCache = null;
-let _settingsPromise = null;
+let _settingsCacheTime = 0;
 
 async function getSiteSettings(force = false) {
-  if (!force && _settingsCache) return _settingsCache;
-  _settingsPromise = API.get("/api/auth/settings").then(s => {
+  const now = Date.now();
+  if (!force && _settingsCache && (now - _settingsCacheTime < 60000)) return _settingsCache;
+  
+  return API.get("/api/auth/settings").then(s => {
     _settingsCache = s;
+    _settingsCacheTime = Date.now();
     if (s.exchange_rates) {
       try {
         window.exchangeRates = typeof s.exchange_rates === 'string' ? JSON.parse(s.exchange_rates) : s.exchange_rates;
@@ -421,6 +560,22 @@ async function applySiteSettings(forceRefresh = false) {
   try {
     const settings = await getSiteSettings(forceRefresh);
     if (!settings) return;
+
+    // 0. Maintenance Mode Check
+    const path = window.location.pathname;
+    const isMaint = (settings.maintenance_mode === "true" || settings.maintenance_mode === true);
+    const isMaintPage = path === "/maintenance" || path === "/maintenance.html";
+    const isAdminArea = path.startsWith("/admin");
+
+    if (isMaint && !isAdminArea && !isMaintPage) {
+      window.location.href = "/maintenance";
+      return;
+    }
+    // Auto-exit maintenance page if mode is OFF
+    if (!isMaint && isMaintPage) {
+      window.location.href = "/";
+      return;
+    }
 
     // 1. Apply Theme
     const userTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -696,6 +851,7 @@ window.userAvatar = function(user, size = 36) {
 window.openModal = function(id)  { 
   const el = document.getElementById(id);
   if (el) {
+    el.style.display = "flex";
     el.classList.remove("closing");
     el.classList.add("open");
   }
@@ -706,19 +862,20 @@ window.closeModal = function(id) {
   if (el) {
     el.classList.add("closing");
     setTimeout(() => {
+      el.style.display = "none";
       el.classList.remove("open");
       el.classList.remove("closing");
-    }, 400);
+    }, 450);
   }
 };
 
 window.uiAlert = function(message) {
   return new Promise(resolve => {
     let m = document.createElement("div");
-    m.className = "modal-backdrop open glass-modal-overlay";
+    m.className = "glass-modal-overlay";
     m.style.zIndex = "99999";
     m.innerHTML = `
-      <div class="modal glass-modal-box">
+      <div class="glass-modal-box">
         <h3 style="margin-bottom:16px;text-align:center;font-size:20px;color:var(--text)">Notice</h3>
         <p style="color:var(--text-2);text-align:center;margin-bottom:24px;font-size:15px;line-height:1.5">${message}</p>
         <button class="btn btn-primary w-full" id="gl-ok-btn">OK</button>
@@ -726,7 +883,7 @@ window.uiAlert = function(message) {
     document.body.appendChild(m);
     document.getElementById("gl-ok-btn").onclick = () => {
       m.classList.add("closing");
-      setTimeout(() => { m.remove(); resolve(); }, 400);
+      setTimeout(() => { m.remove(); resolve(); }, 450);
     };
   });
 };
@@ -734,10 +891,10 @@ window.uiAlert = function(message) {
 window.uiConfirm = function(message) {
   return new Promise(resolve => {
     let m = document.createElement("div");
-    m.className = "modal-backdrop open glass-modal-overlay";
+    m.className = "glass-modal-overlay";
     m.style.zIndex = "99999";
     m.innerHTML = `
-      <div class="modal glass-modal-box">
+      <div class="glass-modal-box">
         <h3 style="margin-bottom:16px;text-align:center;font-size:20px;color:var(--text)">Action Required</h3>
         <p style="color:var(--text-2);text-align:center;margin-bottom:24px;font-size:15px;line-height:1.5">${message}</p>
         <div style="display:flex;gap:12px">
@@ -748,11 +905,11 @@ window.uiConfirm = function(message) {
     document.body.appendChild(m);
     document.getElementById("gl-yes-btn").onclick = () => {
       m.classList.add("closing");
-      setTimeout(() => { m.remove(); resolve(true); }, 400);
+      setTimeout(() => { m.remove(); resolve(true); }, 450);
     };
     document.getElementById("gl-no-btn").onclick = () => {
       m.classList.add("closing");
-      setTimeout(() => { m.remove(); resolve(false); }, 400);
+      setTimeout(() => { m.remove(); resolve(false); }, 450);
     };
   });
 };
@@ -1246,29 +1403,58 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+// Final initialization (Site-wide)
+document.addEventListener("DOMContentLoaded", () => {
+  applyBranding();
+});
+
+
+
+
 // Inject Glassmorphism CSS for modals
 (function(){
   const s = document.createElement("style");
   s.textContent = `
     .glass-modal-overlay {
-      background: rgba(15, 23, 42, 0.4) !important;
+      background: rgba(0, 0, 0, 0.8) !important;
       backdrop-filter: blur(12px) !important;
       -webkit-backdrop-filter: blur(12px) !important;
-      animation: fadeInModal 0.2s ease-out;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      position: fixed; inset: 0;
       z-index: 10000 !important;
+      animation: genieFadeIn 0.3s forwards;
     }
     .glass-modal-box {
       background: #0D0D0D;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      box-shadow: 0 24px 50px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05) !important;
-      border-radius: 20px !important;
-      transform: translateY(0) scale(1) !important;
-      animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 50px 100px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05);
+      border-radius: 24px !important;
+      padding: 24px;
+      width: 95%; max-width: 420px;
+      transform-origin: bottom center;
+      animation: genieMaximize 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
-    @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes bounceIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .glass-modal-overlay.closing { animation: genieFadeOut 0.4s forwards; }
+    .glass-modal-overlay.closing .glass-modal-box { animation: genieMinimize 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards; }
+    
+    @keyframes genieFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes genieFadeOut { from { opacity: 1; } to { opacity: 0; } }
+    
+    @keyframes genieMaximize { 
+      0% { transform: scale(0.3, 0.5) translateY(200px); opacity: 0; filter: blur(10px); }
+      40% { transform: scale(1.1, 0.9) translateY(-20px); opacity: 1; filter: blur(0); }
+      70% { transform: scale(0.98, 1.02) translateY(5px); }
+      100% { transform: scale(1, 1) translateY(0); opacity: 1; }
+    }
+    @keyframes genieMinimize {
+      0% { transform: scale(1, 1) translateY(0); opacity: 1; filter: blur(0); }
+      30% { transform: scale(1.1, 0.8) translateY(-10px); }
+      100% { transform: scale(0.1, 0.4) translateY(500px); opacity: 0; filter: blur(20px); }
+    }
   `;
   document.head.appendChild(s);
 })();

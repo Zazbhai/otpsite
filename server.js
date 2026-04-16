@@ -5,6 +5,8 @@ const cors     = require("cors");
 const morgan   = require("morgan");
 const path     = require("path");
 const rateLimit = require("express-rate-limit");
+const fs = require("fs");
+const { getCachedSettings } = require("./utils/settingsCache");
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -55,39 +57,63 @@ app.use("/stubs/handler_api.php", require("./routes/apiGateway"));
 /* ─── HTML Page Routes ───────────────────────────────────────── */
 const views = path.join(__dirname, "views");
 
+async function renderPage(res, filename) {
+  try {
+    const settings = await getCachedSettings();
+    let html = fs.readFileSync(path.join(views, filename), "utf8");
+    
+    // Core replacements
+    const name = settings.site_name || "Rapid OTP";
+    const logo = settings.site_logo || "";
+    
+    html = html.replace(/{{SITE_NAME}}/g, name);
+    html = html.replace(/{{SITE_LOGO}}/g, logo);
+    
+    // SEO replacements
+    if (settings.seo_title)       html = html.replace(/{{SEO_TITLE}}/g, settings.seo_title);
+    if (settings.seo_description) html = html.replace(/{{SEO_DESC}}/g, settings.seo_description);
+
+    res.send(html);
+  } catch (err) {
+    console.error("Render error:", err);
+    res.sendFile(path.join(views, filename)); // Fallback to raw file
+  }
+}
+
 // Public
-app.get("/",             (_, res) => res.sendFile(path.join(views, "index.html")));
-app.get("/pricing",      (_, res) => res.sendFile(path.join(views, "pricing.html")));
-app.get("/api-docs",     (_, res) => res.sendFile(path.join(views, "api-docs.html")));
-app.get("/how-it-works", (_, res) => res.sendFile(path.join(views, "how-it-works.html")));
-app.get("/terms",        (_, res) => res.sendFile(path.join(views, "terms.html")));
-app.get("/support",      (_, res) => res.sendFile(path.join(views, "support.html")));
+app.get("/",             (_, res) => renderPage(res, "index.html"));
+app.get("/pricing",      (_, res) => renderPage(res, "pricing.html"));
+app.get("/api-docs",     (_, res) => renderPage(res, "api-docs.html"));
+app.get("/how-it-works", (_, res) => renderPage(res, "how-it-works.html"));
+app.get("/terms",        (_, res) => renderPage(res, "terms.html"));
+app.get("/support",      (_, res) => renderPage(res, "support.html"));
+app.get("/maintenance",  (_, res) => renderPage(res, "maintenance.html"));
 
 // User portal
-app.get("/dashboard",             (_, res) => res.sendFile(path.join(views, "dashboard.html")));
-app.get("/dashboard/buy",         (_, res) => res.sendFile(path.join(views, "buy.html")));
-app.get("/dashboard/orders",      (_, res) => res.sendFile(path.join(views, "orders.html")));
-app.get("/dashboard/orders/:id",  (_, res) => res.sendFile(path.join(views, "order-detail.html")));
-app.get("/dashboard/wallet",      (_, res) => res.sendFile(path.join(views, "wallet.html")));
-app.get("/dashboard/profile",     (_, res) => res.sendFile(path.join(views, "profile.html")));
-app.get("/dashboard/accounts",    (_, res) => res.sendFile(path.join(views, "accounts.html")));
+app.get("/dashboard",             (_, res) => renderPage(res, "dashboard.html"));
+app.get("/dashboard/buy",         (_, res) => renderPage(res, "buy.html"));
+app.get("/dashboard/orders",      (_, res) => renderPage(res, "orders.html"));
+app.get("/dashboard/orders/:id",  (_, res) => renderPage(res, "order-detail.html"));
+app.get("/dashboard/wallet",      (_, res) => renderPage(res, "wallet.html"));
+app.get("/dashboard/profile",     (_, res) => renderPage(res, "profile.html"));
+app.get("/dashboard/accounts",    (_, res) => renderPage(res, "accounts.html"));
 
 // Admin panel
-app.get("/admin",               (_, res) => res.sendFile(path.join(views, "admin", "index.html")));
-app.get("/admin/users",         (_, res) => res.sendFile(path.join(views, "admin", "users.html")));
-app.get("/admin/users/:id",     (_, res) => res.sendFile(path.join(views, "admin", "user-detail.html")));
-app.get("/admin/orders",        (_, res) => res.sendFile(path.join(views, "admin", "orders.html")));
-app.get("/admin/orders/:id",    (_, res) => res.sendFile(path.join(views, "admin", "order-detail.html")));
-app.get("/admin/services",      (_, res) => res.sendFile(path.join(views, "admin", "services.html")));
-app.get("/admin/countries",     (_, res) => res.sendFile(path.join(views, "admin", "countries.html")));
-app.get("/admin/servers",       (_, res) => res.sendFile(path.join(views, "admin", "servers.html")));
-app.get("/admin/payments",      (_, res) => res.sendFile(path.join(views, "admin", "payments.html")));
-app.get("/admin/transactions",  (_, res) => res.sendFile(path.join(views, "admin", "transactions.html")));
-app.get("/admin/broadcast",     (_, res) => res.sendFile(path.join(views, "admin", "broadcast.html")));
-app.get("/admin/settings",      (_, res) => res.sendFile(path.join(views, "admin", "settings.html")));
-app.get("/admin/analytics",     (_, res) => res.sendFile(path.join(views, "admin", "analytics.html")));
-app.get("/admin/readymade",     (_, res) => res.sendFile(path.join(views, "admin", "readymade.html")));
-app.get("/admin/promo-codes",   (_, res) => res.sendFile(path.join(views, "admin", "promo-codes.html")));
+app.get("/admin",               (_, res) => renderPage(res, "admin/index.html"));
+app.get("/admin/users",         (_, res) => renderPage(res, "admin/users.html"));
+app.get("/admin/users/:id",     (_, res) => renderPage(res, "admin/user-detail.html"));
+app.get("/admin/orders",        (_, res) => renderPage(res, "admin/orders.html"));
+app.get("/admin/orders/:id",    (_, res) => renderPage(res, "admin/order-detail.html"));
+app.get("/admin/services",      (_, res) => renderPage(res, "admin/services.html"));
+app.get("/admin/countries",     (_, res) => renderPage(res, "admin/countries.html"));
+app.get("/admin/servers",       (_, res) => renderPage(res, "admin/servers.html"));
+app.get("/admin/payments",      (_, res) => renderPage(res, "admin/payments.html"));
+app.get("/admin/transactions",  (_, res) => renderPage(res, "admin/transactions.html"));
+app.get("/admin/broadcast",     (_, res) => renderPage(res, "admin/broadcast.html"));
+app.get("/admin/settings",      (_, res) => renderPage(res, "admin/settings.html"));
+app.get("/admin/analytics",     (_, res) => renderPage(res, "admin/analytics.html"));
+app.get("/admin/readymade",     (_, res) => renderPage(res, "admin/readymade.html"));
+app.get("/admin/promo-codes",   (_, res) => renderPage(res, "admin/promo-codes.html"));
 
 // 404
 app.use((_, res) => res.status(404).sendFile(path.join(views, "404.html")));
