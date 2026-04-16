@@ -113,6 +113,7 @@
         right: 12px;
         padding: 12px 16px;
       }
+      .btn { width: 100%; justify-content: center; }
     }
   </style>
 </head>
@@ -166,6 +167,7 @@
         <button class="nav-btn" data-target="sec-social"><span>📱</span> Social & Support</button>
         <button class="nav-btn" data-target="sec-logic"><span>⚙️</span> Platform Logic</button>
         <button class="nav-btn" data-target="sec-maint"><span>🚧</span> Maintenance</button>
+        <button class="nav-btn" data-target="sec-currency"><span>💱</span> Currency Rates</button>
       </div>
 
       <!-- Main Form Container -->
@@ -334,6 +336,39 @@
               <div>
                 <strong style="display:block;font-size:16px">Enable Global Maintenance</strong>
                 <p class="text-xs text-muted">Prevent users from purchasing new numbers. Existing active numbers continue to work.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Currency Rates -->
+        <div class="settings-section" id="sec-currency">
+          <div class="card">
+            <h3 style="margin-bottom:24px">Currency Exchange Rates</h3>
+            <p class="text-xs text-muted" style="margin-bottom:24px">
+              Set the multiplier relative to your base currency (<b>INR</b>).<br>
+              Formula: <i>Price in INR × Rate = Display Price</i>
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+              <div class="form-group">
+                <label class="form-label">USD Rate ($)</label>
+                <input type="number" id="s-rate-usd" step="0.00001" value="0.012" />
+                <small class="text-muted">Typical: 0.012 (1/83)</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">RUB Rate (₽)</label>
+                <input type="number" id="s-rate-rub" step="0.00001" value="1.1" />
+                <small class="text-muted">Typical: 1.1</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">EUR Rate (€)</label>
+                <input type="number" id="s-rate-eur" step="0.00001" value="0.011" />
+                <small class="text-muted">Typical: 0.011</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">USDT Rate (₮)</label>
+                <input type="number" id="s-rate-usdt" step="0.00001" value="0.012" />
+                <small class="text-muted">Stablecoin crypto rate</small>
               </div>
             </div>
           </div>
@@ -615,12 +650,30 @@
 
       if (s.default_theme) selectTheme(s.default_theme);
       
+      if (s.exchange_rates) {
+        try {
+          const r = typeof s.exchange_rates === 'string' ? JSON.parse(s.exchange_rates) : s.exchange_rates;
+          if (r.USD) document.getElementById("s-rate-usd").value = r.USD;
+          if (r.RUB) document.getElementById("s-rate-rub").value = r.RUB;
+          if (r.EUR) document.getElementById("s-rate-eur").value = r.EUR;
+          if (r.USDT) document.getElementById("s-rate-usdt").value = r.USDT;
+        } catch (e) {}
+      }
+      
       updatePreview();
       document.getElementById("save-bar").classList.remove("visible");
     } catch (e) { toast(e.message, "error"); }
   }
 
   async function saveSettings() {
+    const exchangeRates = {
+      INR: 1,
+      USD: parseFloat(document.getElementById("s-rate-usd").value || 0.012),
+      RUB: parseFloat(document.getElementById("s-rate-rub").value || 1),
+      EUR: parseFloat(document.getElementById("s-rate-eur").value || 0.011),
+      USDT: parseFloat(document.getElementById("s-rate-usdt").value || 0.012),
+    };
+
     const body = {
       site_name: document.getElementById("s-site-name").value,
       site_logo: document.getElementById("s-site-logo").value,
@@ -644,6 +697,7 @@
       custom_css: document.getElementById("s-custom-css").value,
       head_scripts: document.getElementById("s-head-scripts").value,
       foot_scripts: document.getElementById("s-foot-scripts").value,
+      exchange_rates: JSON.stringify(exchangeRates)
     };
     
     try {

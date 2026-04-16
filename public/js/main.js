@@ -352,10 +352,17 @@ async function getSiteSettings(force = false) {
   if (!force && _settingsCache) return _settingsCache;
   _settingsPromise = API.get("/api/auth/settings").then(s => {
     _settingsCache = s;
+    if (s.exchange_rates) {
+      try {
+        window.exchangeRates = typeof s.exchange_rates === 'string' ? JSON.parse(s.exchange_rates) : s.exchange_rates;
+      } catch (e) { console.error("Failed to parse exchange rates", e); }
+    }
     return s;
   }).catch(() => ({}));
   return _settingsPromise;
 }
+
+window.exchangeRates = { "INR": 1, "USD": 0.012, "RUB": 1, "EUR": 0.011 }; // Fallback defaults
 
 // Start proactive fetch
 getSiteSettings();
@@ -563,7 +570,54 @@ window.toast = function(msg, type = "success", duration = 3500) {
 };
 
 // ── Formatting ────────────────────────────────────────────────────
-window.fmtMoney = function(n)     { return "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+window.fmtMoney = function(n) {
+  const user = getUser();
+  const currency = user?.currency || localStorage.getItem("guest_currency") || "INR";
+  const rates = window.exchangeRates || { "INR": 1 };
+  const rate = rates[currency] || 1;
+  const symbols = { "INR": "₹", "USD": "$", "RUB": "₽", "EUR": "€", "USDT": "₮" };
+  const symbol = symbols[currency] || (currency + " ");
+  
+  const converted = Number(n || 0) * rate;
+  
+  // Format based on currency type
+  let locale = "en-IN";
+  if (currency === "USD" || currency === "EUR") locale = "en-US";
+  if (currency === "RUB") locale = "ru-RU";
+  
+  // Format the number and return
+  // Prevent returning 'NaN' if properties are not fully initialized
+  return symbol + (!isNaN(converted) ? converted.toLocaleString(locale, { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  }) : "0.00");
+};
+
+window.changeCurrency = async function(newCurrency) {
+  try {
+    if (isLoggedIn()) {
+      const res = await API.patch('/api/user/currency', { currency: newCurrency });
+      if (res.success) {
+        const user = getUser();
+        if (user) {
+          user.currency = newCurrency;
+          localStorage.setItem("otp_user", JSON.stringify(user));
+        }
+      }
+    } else {
+      localStorage.setItem("guest_currency", newCurrency);
+    }
+    
+    // Update active dropdowns if any
+    document.querySelectorAll('.nav-currency-select').forEach(el => el.value = newCurrency);
+    
+    if (typeof window.updateBalanceDisplay === 'function') window.updateBalanceDisplay();
+    toast(`Currency changed to ${newCurrency}`, "success");
+    setTimeout(() => window.location.reload(), 800);
+  } catch (e) {
+    toast(e.message, "error");
+  }
+};
 window.fmtDate = function(d)        { return new Date(d).toLocaleString(); };
 window.fmtDateShort = function(d)   { return new Date(d).toLocaleDateString(); };
 
@@ -792,6 +846,51 @@ document.addEventListener("DOMContentLoaded", () => {
   initNavBurger();
   applyTheme(getThemePreference());
 });
+
+// ── Currency Navbar Injection ─────────────────────────────────────
+function injectCurrencySelector() {
+  const container = document.querySelector('.navbar .container');
+  if (!container || document.getElementById('global-currency-selector')) return;
+  
+  const user = getUser();
+  const current = user?.currency || localStorage.getItem("guest_currency") || "INR";
+  
+  const wrapper = document.createElement('div');
+  wrapper.id = 'global-currency-selector';
+  wrapper.style.display = 'flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.marginLeft = 'auto'; 
+  wrapper.style.marginRight = '12px';
+  
+  wrapper.innerHTML = `
+    <select class="nav-currency-select" onchange="changeCurrency(this.value)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;outline:none;font-weight:600;">
+      <option value="INR" ${current === 'INR' ? 'selected' : ''}>INR (₹)</option>
+      <option value="USD" ${current === 'USD' ? 'selected' : ''}>USD ($)</option>
+      <option value="RUB" ${current === 'RUB' ? 'selected' : ''}>RUB (₽)</option>
+      <option value="EUR" ${current === 'EUR' ? 'selected' : ''}>EUR (€)</option>
+      <option value="USDT" ${current === 'USDT' ? 'selected' : ''}>USDT (₮)</option>
+    </select>
+  `;
+  
+  const rightGrp = container.querySelector('div[style*="margin-left:auto"], div[style*="margin-left: auto"]');
+  const burger = document.getElementById('nav-burger');
+  const navLinks = document.getElementById('nav-links');
+
+  if (rightGrp) {
+    rightGrp.insertBefore(wrapper, rightGrp.firstChild);
+    wrapper.style.marginLeft = '0';
+  } else if (navLinks) {
+    if (burger) {
+      container.insertBefore(wrapper, burger);
+    } else {
+      container.appendChild(wrapper);
+    }
+  } else {
+    container.appendChild(wrapper);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", injectCurrencySelector);
 
 // ── SPA Engine (Disabled) ─────────────────────────────────────────
 const SPA = {

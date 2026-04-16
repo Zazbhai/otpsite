@@ -1201,6 +1201,40 @@ textarea { resize: vertical; min-height: 80px; }
     font-size: 12px;
     border-radius: 8px;
   }
+  
+  /* Compact right actions group on mobile */
+  .navbar .container > div[style*="margin-left:auto"],
+  .navbar .container > div[style*="margin-left: auto"] {
+    gap: 6px !important;
+  }
+  .nav-currency-select {
+    padding: 2px 4px !important;
+    font-size: 11px !important;
+    border-radius: 6px !important;
+    height: 24px !important;
+  }
+  .navbar .btn-sm {
+    padding: 4px 6px !important;
+    font-size: 11px !important;
+    height: 24px !important;
+    gap: 4px !important;
+  }
+  .navbar .btn-sm span {
+    font-size: 12px !important;
+  }
+  #nav-global-wallet-bal {
+    font-size: 11px !important;
+    min-width: 30px !important;
+  }
+  .nav-burger {
+    padding: 4px 6px !important;
+    font-size: 14px !important;
+    height: 24px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
   .layout { padding-top: 46px; }
   .nav-links {
     display: flex;
@@ -1328,6 +1362,120 @@ textarea { resize: vertical; min-height: 80px; }
 .stat-label { font-size: 12px; color: var(--text-3); font-weight: 500; }
 
 /* ── Tables ──────────────────────────────────────────────────── */
+/* ── Global Modal System ─────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal {
+  background: var(--bg-1);
+  border: 1px solid var(--border-2);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  background: var(--bg-1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.modal-close:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.modal-content-wrap {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.modal-content-wrap::-webkit-scrollbar { width: 6px; }
+.modal-content-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+@media (max-width: 600px) {
+  .modal-backdrop { padding: 10px; }
+  .modal {
+    margin: 0;
+    width: 100%;
+    max-height: 95vh;
+    border-radius: 20px;
+  }
+  .modal-header { padding: 14px 20px; }
+  .modal-content-wrap { padding: 20px; }
+  
+  /* Auto-stack grids inside modals */
+  .modal [style*="grid-template-columns: 1fr 1fr"],
+  .modal [style*="grid-template-columns:1fr 1fr"],
+  .modal .form-row,
+  .modal .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  .modal .modal-actions {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .modal .modal-actions .btn,
+  .modal .modal-actions button { 
+    width: 100% !important; 
+    height: 48px; 
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+  }
+}
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th {
@@ -2266,3 +2414,6 @@ footer { border-top: 1px solid var(--border); padding: 60px 0 32px; }
   opacity: 0;
   cursor: pointer;
 }
+\ n . t a b l e - w r a p   {   o v e r f l o w - x :   a u t o ;   } \ n 
+ 
+ 

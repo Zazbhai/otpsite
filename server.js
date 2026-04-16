@@ -105,6 +105,10 @@ const server = app.listen(PORT, "0.0.0.0", () => {
   try {
     const { startWatcher } = require("./utils/orderWatcher");
     startWatcher();
+
+    // Start daily currency rate updater
+    const { startCurrencyUpdater } = require("./utils/currencyUpdater");
+    startCurrencyUpdater();
   } catch (err) {
     console.error("❌ Failed to start Order Watcher:", err.message);
   }

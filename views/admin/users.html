@@ -71,20 +71,22 @@
 <div class="modal-backdrop" id="edit-modal">
   <div class="modal">
     <div class="modal-header"><h3>Edit User</h3><button class="modal-close" onclick="closeModal('edit-modal')">✕</button></div>
-    <input type="hidden" id="edit-uid" />
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="form-group">
-        <label class="form-label">Balance ($)</label>
-        <input type="number" id="edit-balance" step="0.01" min="0" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Notes</label>
-        <textarea id="edit-notes" rows="3" placeholder="Admin notes…"></textarea>
-      </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-primary" onclick="saveUser()">Save</button>
-        <button class="btn btn-danger" id="ban-btn" onclick="toggleBan()">Ban</button>
-        <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
+    <div class="modal-content-wrap">
+      <input type="hidden" id="edit-uid" />
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group">
+          <label class="form-label">Balance ($)</label>
+          <input type="number" id="edit-balance" step="0.01" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea id="edit-notes" rows="3" placeholder="Admin notes…"></textarea>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveUser()">Save</button>
+          <button class="btn btn-danger" id="ban-btn" onclick="toggleBan()">Ban</button>
+          <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
@@ -94,13 +96,15 @@
 <div class="modal-backdrop" id="deposit-modal">
   <div class="modal">
     <div class="modal-header"><h3>Add Balance</h3><button class="modal-close" onclick="closeModal('deposit-modal')">✕</button></div>
-    <input type="hidden" id="dep-uid" />
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" id="dep-amount" step="0.01" min="0.01" /></div>
-      <div class="form-group"><label class="form-label">Note</label><input type="text" id="dep-note" placeholder="Reason…" /></div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-success" onclick="doDeposit()">Add Funds</button>
-        <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
+    <div class="modal-content-wrap">
+      <input type="hidden" id="dep-uid" />
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" id="dep-amount" step="0.01" min="0.01" /></div>
+        <div class="form-group"><label class="form-label">Note</label><input type="text" id="dep-note" placeholder="Reason…" /></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-success" onclick="doDeposit()">Add Funds</button>
+          <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
+        </div>
       </div>
     </div>
   </div>

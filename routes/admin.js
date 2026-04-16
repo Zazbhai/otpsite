@@ -266,7 +266,45 @@ router.patch("/orders/:id", async (req, res) => {
 });
 
 /* ─── SERVICES ─────────────────────────────────────────────────── */
-router.get("/services", async (_, res) => res.json(await Service.find().sort({ name: 1 })));
+router.get("/services", async (req, res) => {
+  try {
+    const { server_id, min_price, max_price, auto_added, name } = req.query;
+    
+    if (DB_TYPE === "mysql") {
+      const { Op } = require("sequelize");
+      const where = {};
+      
+      if (name) where.name = { [Op.like]: `%${name}%` };
+      if (server_id) where.server_id = server_id;
+      if (min_price || max_price) {
+        where.price = {};
+        if (min_price) where.price[Op.gte] = parseFloat(min_price);
+        if (max_price) where.price[Op.lte] = parseFloat(max_price);
+      }
+      if (auto_added === "true") where.is_auto = true;
+      else if (auto_added === "false") where.is_auto = { [Op.not]: true };
+      
+      const services = await Service.findAll({ where, order: [["name", "ASC"]] });
+      return res.json(services);
+    } else {
+      const filter = {};
+      if (name) filter.name = { $regex: name, $options: "i" };
+      if (server_id) filter.server_id = server_id;
+      if (min_price || max_price) {
+        filter.price = {};
+        if (min_price) filter.price.$gte = parseFloat(min_price);
+        if (max_price) filter.price.$lte = parseFloat(max_price);
+      }
+      if (auto_added === "true") filter.is_auto = true;
+      else if (auto_added === "false") filter.is_auto = false;
+      
+      const services = await Service.find(filter).sort({ name: 1 });
+      return res.json(services);
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 router.post("/services", upload.single("logo"), async (req, res) => {
   try {
@@ -287,6 +325,18 @@ router.post("/services", upload.single("logo"), async (req, res) => {
 
     if (!server) return res.status(404).json({ error: "Server not found" });
     
+    // Check for existing service on this server with same code or name
+    const existing = await Service.findOne({
+      server_id,
+      $or: [
+        { service_code: service_code },
+        { name: { $regex: new RegExp(`^${name}$`, "i") } }
+      ]
+    });
+    if (existing) {
+       return res.status(400).json({ error: `Service already exists on this server (Code/Name match)` });
+    }
+
     let logo_url = "";
     if (req.file) logo_url = "/uploads/" + req.file.filename;
 
@@ -299,7 +349,8 @@ router.post("/services", upload.single("logo"), async (req, res) => {
       is_active: String(is_active) === "true",
       image_url: logo_url,
       icon_color: icon_color || "#3b82f6",
-      check_interval: parseInt(req.body.check_interval) || 3
+      check_interval: parseInt(req.body.check_interval) || 3,
+      is_auto: false
     };
 
     const service = await Service.create(serviceData);
@@ -315,6 +366,23 @@ router.put("/services/:id", upload.single("logo"), async (req, res) => {
     const { server_id, name, service_code, price, is_active, icon_color } = req.body;
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ error: "Service not found" });
+
+    // Duplicate check for updates
+    const checkServer = server_id || service.server_id;
+    const checkName = name || service.name;
+    const checkCode = service_code || service.service_code;
+
+    const existing = await Service.findOne({
+      _id: { $ne: req.params.id },
+      server_id: checkServer,
+      $or: [
+        { service_code: checkCode },
+        { name: { $regex: new RegExp(`^${checkName}$`, "i") } }
+      ]
+    });
+    if (existing) {
+      return res.status(400).json({ error: "Another service with same Name/Code exists on this server" });
+    }
 
     if (server_id) {
        let server;
@@ -337,6 +405,9 @@ router.put("/services/:id", upload.single("logo"), async (req, res) => {
     if (is_active !== undefined) service.is_active = String(is_active) === "true";
     if (icon_color !== undefined) service.icon_color = icon_color;
     if (req.body.check_interval !== undefined) service.check_interval = parseInt(req.body.check_interval) || 3;
+    
+    // Once manually edited, it's no longer 'auto'
+    service.is_auto = false;
 
     if (req.file) {
       console.log("[Admin/Services] New logo for", service.name, ":", req.file.filename);
@@ -359,6 +430,42 @@ router.put("/services/:id", upload.single("logo"), async (req, res) => {
 router.delete("/services/:id", async (req, res) => {
   await Service.findByIdAndDelete(req.params.id);
   res.json({ ok: true });
+});
+
+router.delete("/services/bulk/:server_id", async (req, res) => {
+  try {
+    const { server_id } = req.params;
+    const { min, max, is_auto, auto_only } = req.query;
+    let deletedCount = 0;
+    
+    if (DB_TYPE === "mysql") {
+      const { Op } = require("sequelize");
+      const where = { server_id };
+      if (min || max) {
+        where.price = {};
+        if (min) where.price[Op.gte] = parseFloat(min);
+        if (max) where.price[Op.lte] = parseFloat(max);
+      }
+      if (is_auto === "true" || auto_only === "true") where.is_auto = true;
+      else if (is_auto === "false") where.is_auto = false;
+      deletedCount = await Service.destroy({ where });
+    } else {
+      const filter = { server_id };
+      if (min || max) {
+        filter.price = {};
+        if (min) filter.price.$gte = parseFloat(min);
+        if (max) filter.price.$lte = parseFloat(max);
+      }
+      if (is_auto === "true" || auto_only === "true") filter.is_auto = true;
+      else if (is_auto === "false") filter.is_auto = false;
+      const result = await Service.deleteMany(filter);
+      deletedCount = result.deletedCount;
+    }
+    res.json({ ok: true, deletedCount });
+  } catch (err) {
+    console.error("[Admin/Services] Bulk Delete Error:", err.message);
+    res.status(500).json({ error: "Failed to bulk delete services: " + err.message });
+  }
 });
 
 /* ─── COUNTRIES ────────────────────────────────────────────────── */
@@ -403,7 +510,53 @@ router.get("/servers", async (_, res) => res.json(await Server.find().sort({ nam
 router.post("/servers", async (req, res) => {
   try { 
     console.log("[DEBUG] Create Server Body:", req.body);
-    res.status(201).json(await Server.create(req.body)); 
+    const server = await Server.create(req.body); 
+    
+    if (req.body.auto_add_services) {
+      const fs = require('fs');
+      const path = require('path');
+      const servicesPath = path.join(__dirname, "../services.json");
+      
+      if (fs.existsSync(servicesPath)) {
+        const servicesData = JSON.parse(fs.readFileSync(servicesPath, 'utf-8'));
+        
+        let countryCode = "IN";
+        const Country = require("../models/Country");
+        const Service = require("../models/Service");
+        
+        if (server.country_id) {
+           const country = await Country.findById(server.country_id);
+           if (country) countryCode = country.code;
+        }
+
+        const existingServices = await Service.find({ server_id: server._id });
+        const existingCodes = new Set(existingServices.map(s => s.service_code));
+        const existingNames = new Set(existingServices.map(s => s.name.toLowerCase()));
+
+        const servicesToCreate = [];
+        const extraProfit = parseFloat(req.body.extra_profit || 0);
+        for (const item of servicesData) {
+           if (existingCodes.has(item.code) || existingNames.has(item.name.toLowerCase())) continue;
+           
+           servicesToCreate.push({
+             name: item.name,
+             server_id: server._id,
+             service_code: item.code,
+             country_code: countryCode,
+             price: (item.price || 5.0) + extraProfit,
+             is_active: true,
+             icon_color: item.color,
+             is_auto: true
+           });
+        }
+        if (servicesToCreate.length > 0) {
+           await Service.insertMany(servicesToCreate);
+           console.log(`[Admin/Servers] Auto-added ${servicesToCreate.length} NEW services to server`);
+        }
+      }
+    }
+
+    res.status(201).json(server); 
   }
   catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -411,7 +564,53 @@ router.post("/servers", async (req, res) => {
 router.put("/servers/:id", async (req, res) => {
   try { 
     console.log("[DEBUG] Update Server Body:", req.body);
-    res.json(await Server.findByIdAndUpdate(req.params.id, req.body, { new: true })); 
+    const server = await Server.findByIdAndUpdate(req.params.id, req.body, { new: true }); 
+    
+    if (req.body.auto_add_services) {
+      const fs = require('fs');
+      const path = require('path');
+      const servicesPath = path.join(__dirname, "../services.json");
+      
+      if (fs.existsSync(servicesPath)) {
+        const servicesData = JSON.parse(fs.readFileSync(servicesPath, 'utf-8'));
+        
+        let countryCode = "IN";
+        const Country = require("../models/Country");
+        const Service = require("../models/Service");
+        
+        if (server.country_id) {
+           const country = await Country.findById(server.country_id);
+           if (country) countryCode = country.code;
+        }
+
+        const existingServices = await Service.find({ server_id: server._id });
+        const existingCodes = new Set(existingServices.map(s => s.service_code));
+        const existingNames = new Set(existingServices.map(s => s.name.toLowerCase()));
+
+        const servicesToCreate = [];
+        const extraProfit = parseFloat(req.body.extra_profit || 0);
+        for (const item of servicesData) {
+           if (existingCodes.has(item.code) || existingNames.has(item.name.toLowerCase())) continue;
+
+           servicesToCreate.push({
+             name: item.name,
+             server_id: server._id,
+             service_code: item.code,
+             country_code: countryCode,
+             price: (item.price || 5.0) + extraProfit,
+             is_active: true,
+             icon_color: item.color,
+             is_auto: true
+           });
+        }
+        if (servicesToCreate.length > 0) {
+           await Service.insertMany(servicesToCreate);
+           console.log(`[Admin/Servers] Auto-added ${servicesToCreate.length} NEW services to existing server`);
+        }
+      }
+    }
+
+    res.json(server); 
   }
   catch (err) { res.status(400).json({ error: err.message }); }
 });

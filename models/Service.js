@@ -17,6 +17,7 @@ if (DB_TYPE === "mysql") {
     avg_time: { type: DataTypes.STRING, defaultValue: "2m" },
     check_interval: { type: DataTypes.INTEGER, defaultValue: 3 },
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+    is_auto: { type: DataTypes.BOOLEAN, defaultValue: false },
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return this.id; }
@@ -37,7 +38,8 @@ if (DB_TYPE === "mysql") {
       success_rate: { type: String, default: "95%" },
       avg_time: { type: String, default: "2m" },
       check_interval: { type: Number, default: 3 },
-      is_active: { type: Boolean, default: true }
+      is_active: { type: Boolean, default: true },
+      is_auto: { type: Boolean, default: false }
     },
     { timestamps: true }
   );

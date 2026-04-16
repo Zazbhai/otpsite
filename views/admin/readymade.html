@@ -137,37 +137,39 @@
       <h3 id="cat-modal-title">New Category</h3>
       <button class="modal-close" onclick="closeModal('cat-modal')">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="form-group">
-        <label class="form-label">Category Name *</label>
-        <input type="text" id="cat-name" placeholder="e.g. Netflix Premium" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Description</label>
-        <input type="text" id="cat-desc" placeholder="Shown to users under the category name" />
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="modal-content-wrap">
+      <div style="display:flex;flex-direction:column;gap:16px">
         <div class="form-group">
-          <label class="form-label">Icon (emoji)</label>
-          <input type="text" id="cat-icon" placeholder="🎬" maxlength="8" />
+          <label class="form-label">Category Name *</label>
+          <input type="text" id="cat-name" placeholder="e.g. Netflix Premium" />
         </div>
         <div class="form-group">
-          <label class="form-label">Price per account (₹) *</label>
-          <input type="number" id="cat-price" placeholder="199" step="0.01" min="0" />
+          <label class="form-label">Description</label>
+          <input type="text" id="cat-desc" placeholder="Shown to users under the category name" />
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Sort Order (lower = shown first)</label>
-        <input type="number" id="cat-sort" placeholder="0" />
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <input type="checkbox" id="cat-active" checked style="width:18px;height:18px;accent-color:var(--accent)" />
-        <label for="cat-active" class="form-label" style="margin:0;cursor:pointer">Active (visible to users)</label>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
-        <button id="delete-cat-btn" class="btn btn-danger" style="display:none" onclick="deleteCategory()">Delete Category</button>
-        <button class="btn btn-secondary" onclick="closeModal('cat-modal')">Cancel</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Icon (emoji)</label>
+            <input type="text" id="cat-icon" placeholder="🎬" maxlength="8" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Price per account (₹) *</label>
+            <input type="number" id="cat-price" placeholder="199" step="0.01" min="0" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sort Order (lower = shown first)</label>
+          <input type="number" id="cat-sort" placeholder="0" />
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="cat-active" checked style="width:18px;height:18px;accent-color:var(--accent)" />
+          <label for="cat-active" class="form-label" style="margin:0;cursor:pointer">Active (visible to users)</label>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
+          <button id="delete-cat-btn" class="btn btn-danger" style="display:none" onclick="deleteCategory()">Delete Category</button>
+          <button class="btn btn-secondary" onclick="closeModal('cat-modal')">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
@@ -180,13 +182,15 @@
       <h3>Bulk Add Accounts</h3>
       <button class="modal-close" onclick="closeModal('bulk-modal')">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <p class="text-muted text-sm">Paste credentials — one account per line. Each line becomes a separate account in stock.</p>
-      <textarea id="bulk-creds" rows="12" placeholder="email1@example.com:password1&#10;email2@example.com:password2&#10;user3:pass3" style="font-family:monospace;font-size:13px;line-height:1.6"></textarea>
-      <div id="bulk-preview" class="text-sm" style="color:var(--accent);font-weight:600"></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" onclick="doBulkAdd()">✅ Add Accounts</button>
-        <button class="btn btn-secondary" onclick="closeModal('bulk-modal')">Cancel</button>
+    <div class="modal-content-wrap">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <p class="text-muted text-sm">Paste credentials — one account per line. Each line becomes a separate account in stock.</p>
+        <textarea id="bulk-creds" rows="12" placeholder="email1@example.com:password1&#10;email2@example.com:password2&#10;user3:pass3" style="font-family:monospace;font-size:13px;line-height:1.6"></textarea>
+        <div id="bulk-preview" class="text-sm" style="color:var(--accent);font-weight:600"></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" onclick="doBulkAdd()">✅ Add Accounts</button>
+          <button class="btn btn-secondary" onclick="closeModal('bulk-modal')">Cancel</button>
+        </div>
       </div>
     </div>
   </div>

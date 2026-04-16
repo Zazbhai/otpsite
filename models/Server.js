@@ -20,6 +20,8 @@ if (DB_TYPE === "mysql") {
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     multi_otp_supported: { type: DataTypes.BOOLEAN, defaultValue: false },
     check_interval: { type: DataTypes.INTEGER, defaultValue: 3 },
+    auto_add_services: { type: DataTypes.BOOLEAN, defaultValue: false },
+    extra_profit: { type: DataTypes.FLOAT, defaultValue: 0 },
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return this.id; }
@@ -51,7 +53,9 @@ if (DB_TYPE === "mysql") {
       min_cancel_minutes: { type: Number, default: 0 },
       is_active: { type: Boolean, default: true },
       multi_otp_supported: { type: Boolean, default: false },
-      check_interval: { type: Number, default: 3 }
+      check_interval: { type: Number, default: 3 },
+      auto_add_services: { type: Boolean, default: false },
+      extra_profit: { type: Number, default: 0 }
     },
     { timestamps: true }
   );

@@ -21,6 +21,7 @@ function publicUser(u) {
     total_spent:  u.total_spent,
     total_orders: u.total_orders,
     created_at:   u.createdAt,
+    currency:     u.currency || "INR",
   };
 }
 
@@ -133,7 +134,7 @@ router.get("/settings", async (req, res) => {
     const keys = [
       "default_theme", "site_name", "site_logo", "site_favicon", "primary_color",
       "seo_title", "seo_description", "seo_keywords", "seo_og_image",
-      "custom_css", "head_scripts", "foot_scripts"
+      "custom_css", "head_scripts", "foot_scripts", "exchange_rates"
     ];
     const settings = await Setting.find({ key: { $in: keys } });
     const obj = {};

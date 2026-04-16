@@ -36,6 +36,25 @@ router.get("/profile", async (req, res) => {
   }
 });
 
+// ── PATCH /api/user/currency ─────────────────────────────────────
+router.patch("/currency", async (req, res) => {
+  try {
+    const { currency } = req.body;
+    if (!currency) return res.status(400).json({ error: "Currency is required" });
+    
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.currency = currency;
+    await user.save();
+    
+    res.json({ success: true, currency: user.currency });
+  } catch (err) {
+    console.error("[/api/user/currency]", err.message);
+    res.status(500).json({ error: "Failed to update currency" });
+  }
+});
+
 // ──  POST /api/user/profile/key ──────────────────────────────────
 router.post("/profile/key", async (req, res) => {
   try {
@@ -85,6 +104,7 @@ router.get("/dashboard", async (req, res) => {
 router.get("/services", async (req, res) => {
   try {
     const services = await Service.find({ is_active: true })
+      .sort({ name: 1 })
       .populate({
         path: "server_id",
         select: "name country_id"

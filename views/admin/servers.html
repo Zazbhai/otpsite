@@ -271,15 +271,16 @@
   </main>
 </div>
 
-<!-- Server Modal -->
+ <!-- Server Modal -->
 <div class="modal-backdrop" id="srv-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:500px">
     <div class="modal-header">
       <h3 id="srv-title">Add Server</h3>
       <button class="modal-close" type="button" onclick="closeModal('srv-modal')">✕</button>
     </div>
     <form class="modal-form" onsubmit="event.preventDefault(); saveServer()">
-      <input type="hidden" id="srv-id" />
+      <div class="modal-content-wrap">
+        <input type="hidden" id="srv-id" />
       
       <div class="form-group">
         <label class="form-label">Server Name</label>
@@ -340,16 +341,29 @@
         </div>
       </div>
 
-      <div class="form-group" style="flex-direction:row; align-items:center; gap:10px; background:rgba(59,130,246,0.05); padding:12px; border-radius:12px">
+      <div class="form-group" style="flex-direction:row; align-items:center; gap:10px; background:rgba(59,130,246,0.05); padding:12px; border-radius:12px; margin-bottom: 8px">
         <input type="checkbox" id="srv-multi-otp" style="width:18px; height:18px; cursor:pointer" />
         <label for="srv-multi-otp" style="font-size:14px; font-weight:700; color:var(--accent); cursor:pointer">Support Multiple OTPs</label>
       </div>
-      
-      <div class="modal-actions">
-        <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
-        <button type="button" class="btn btn-secondary" onclick="closeModal('srv-modal')">Cancel</button>
+
+      <div class="form-group" id="auto-add-services-wrap" style="align-items:center; gap:10px; background:rgba(16,185,129,0.05); padding:16px; border-radius:16px; margin-bottom: 8px">
+        <div style="display:flex; align-items:center; gap:10px; width:100%">
+           <input type="checkbox" id="srv-auto-add" style="width:18px; height:18px; cursor:pointer" onchange="toggleExtraPrice()" />
+           <label for="srv-auto-add" style="font-size:14px; font-weight:700; color:var(--success); cursor:pointer">Auto Add Services (from JSON)</label>
+        </div>
+        <div id="srv-extra-wrap" style="display:none; margin-top:12px; border-top:1px solid rgba(16,185,129,0.1); padding-top:12px; width:100%">
+           <label class="form-label" style="color:var(--success)">💰 Extra Profit (Add to each service price)</label>
+           <input type="number" id="srv-extra" class="form-input" placeholder="e.g. 5" step="0.5" value="0" style="margin-top:4px" />
+           <p style="font-size:11px; opacity:0.6; margin-top:4px">This amount will be added to the base price in services.json</p>
+        </div>
       </div>
-      <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteServer()" style="display:none;margin-top:8px">Delete Server</button>
+      
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
+          <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteServer()" style="display:none">Delete Server</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('srv-modal')">Cancel</button>
+        </div>
+      </div>
     </form>
   </div>
 </div>
@@ -363,6 +377,12 @@
   
   let editingId = null;
   let allCountries = [];
+
+  function toggleExtraPrice() {
+     const el = document.getElementById("srv-auto-add");
+     const wrap = document.getElementById("srv-extra-wrap");
+     if (el && wrap) wrap.style.display = el.checked ? "block" : "none";
+  }
   
   async function loadData() {
     try {
@@ -447,6 +467,11 @@
     const multiOtp = document.getElementById("srv-multi-otp");
     if (multiOtp) multiOtp.checked = false;
 
+    const autoAddWrap = document.getElementById("auto-add-services-wrap");
+    if (autoAddWrap) autoAddWrap.style.display = "flex";
+    const autoAdd = document.getElementById("srv-auto-add");
+    if (autoAdd) autoAdd.checked = false;
+
     const delBtn = document.getElementById("delete-btn");
     if (delBtn) delBtn.style.display = "none";
     openModal("srv-modal");
@@ -479,6 +504,16 @@
       const multiOtp = document.getElementById("srv-multi-otp");
       if (multiOtp) multiOtp.checked = !!s.multi_otp_supported;
 
+      const autoAddWrap = document.getElementById("auto-add-services-wrap");
+      if (autoAddWrap) {
+        autoAddWrap.style.display = "flex";
+        const autoAddObj = document.getElementById("srv-auto-add");
+        if (autoAddObj) autoAddObj.checked = false; // default unchecked
+      }
+      const autoAdd = document.getElementById("srv-auto-add");
+      if (autoAdd) autoAdd.checked = !!s.auto_add_services;
+      toggleExtraPrice();
+
       const delBtn = document.getElementById("delete-btn");
       if (delBtn) delBtn.style.display = "block";
       
@@ -501,7 +536,9 @@
       min_cancel_minutes: parseInt(document.getElementById("srv-min-cancel").value) || 0,
       retry_count: parseInt(document.getElementById("srv-retry-count").value) || 0,
       check_interval: parseInt(document.getElementById("srv-poll").value) || 3,
-      multi_otp_supported: document.getElementById("srv-multi-otp").checked
+      multi_otp_supported: document.getElementById("srv-multi-otp").checked,
+      auto_add_services: document.getElementById("srv-auto-add").checked,
+      extra_profit: parseFloat(document.getElementById("srv-extra").value) || 0
     };
     
     if (!body.name) {

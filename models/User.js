@@ -18,6 +18,7 @@ if (DB_TYPE === "mysql") {
     total_orders: { type: DataTypes.INTEGER, defaultValue: 0 },
     notes: { type: DataTypes.TEXT, defaultValue: "" },
     api_key: { type: DataTypes.STRING, defaultValue: "" },
+    currency: { type: DataTypes.STRING, defaultValue: "INR" },
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return this.id; }
@@ -40,6 +41,7 @@ if (DB_TYPE === "mysql") {
       total_orders:  { type: Number, default: 0 },
       notes:         { type: String, default: "" },
       api_key:       { type: String, default: "" },
+      currency:      { type: String, default: "INR" },
     },
     { timestamps: true }
   );
