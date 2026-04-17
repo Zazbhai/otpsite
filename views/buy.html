@@ -63,11 +63,9 @@
       border-radius: 16px;
       margin-top: 16px;
       max-height: 440px;
+      min-height: 100px;
       overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      padding: 12px;
     }
     
     /* Custom Scrollbar for Services Box */
@@ -76,22 +74,7 @@
     .services-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
     .services-box::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
-    .service-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
     
-    .services-box {
-      background: var(--bg-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      margin-top: 16px;
-      max-height: 380px; /* Max height to show ~3 rows of 3, but shrinks if less */
-      min-height: 100px;
-      overflow-y: auto;
-      padding: 16px;
-    }
     .buy-steps {
       display: flex;
       justify-content: center;
@@ -363,14 +346,15 @@
     .service-card {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 8px;
+      padding: 6px 8px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 6px;
       cursor: pointer;
       transition: all 0.2s;
       position: relative;
+      min-width: 0;
     }
     .service-card:hover {
       background: rgba(255, 255, 255, 0.06);
@@ -378,8 +362,8 @@
       transform: translateY(-2px);
     }
     .service-icon-box {
-      width: 40px;
-      height: 40px;
+      width: 26px;
+      height: 26px;
       background: var(--bg-2);
       border-radius: 8px;
       display: flex;
@@ -399,14 +383,14 @@
       min-width: 0;
     }
     .service-name {
-      font-size: 14px;
+      font-size: 11.5px;
       font-weight: 600;
       color: #fff;
       margin-bottom: 2px;
       line-height: 1.2;
     }
     .service-price {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 700;
       color: #f59e0b; /* Gold/Orange */
     }
@@ -570,7 +554,11 @@
 
     @media (max-width: 640px) {
       .buy-container { width: 100%; padding: 0 10px; }
-      .service-grid { grid-template-columns: 1fr; gap: 12px; }
+      .service-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .service-card { padding: 6px 8px; gap: 6px; border-radius: 8px; }
+      .service-icon-box { width: 24px; height: 24px; font-size: 14px; }
+      .service-name { font-size: 10.5px; }
+      .service-price { font-size: 10px; }
     }
 
     /* ── Secure OTP Extraction 3D Rig (UPGRADED) ── */
