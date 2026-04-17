@@ -158,7 +158,7 @@ router.post("/orders", async (req, res) => {
       console.error("ERROR TYPE:", providerRes.error);
       console.error("DETAILS:", providerRes.details);
       console.error("====================================\n");
-      return res.status(502).json({ error: `Provider API Rejected Request.\n\nTARGET URL: ${providerRes.url || 'Unknown'}\n\nREASON: ${providerRes.error}\nDETAILS: ${JSON.stringify(providerRes.details||{})}` });
+      return res.status(502).json({ error: "Number Not Available" });
     }
 
     user.balance      = newBalance;
@@ -358,7 +358,7 @@ router.post("/orders/:id/retry", async (req, res) => {
       const serverConf = await Server.findOne({ name: order.server_name });
       if (serverConf) {
         const retryRes = await providerApi.retryOrder(serverConf, order.external_order_id);
-        if (retryRes.error) return res.status(400).json({ error: retryRes.error });
+        if (retryRes.error) return res.status(400).json({ error: "Number Not Available" });
       }
     }
 

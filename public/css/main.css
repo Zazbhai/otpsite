@@ -1521,7 +1521,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 99999;
+  z-index: 2000000;
   pointer-events: none;
   max-width: calc(100vw - 40px);
 }
@@ -1680,11 +1680,8 @@ textarea {
     gap: 6px !important;
   }
 
-  .nav-currency-select {
-    padding: 2px 4px !important;
-    font-size: 11px !important;
-    border-radius: 6px !important;
-    height: 24px !important;
+  .navbar .nav-currency-select {
+    display: none !important;
   }
 
   .navbar .btn-sm {

@@ -46,6 +46,21 @@
     .settings-section.active { display: block; }
     @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+    .theme-swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .theme-swatch-grid::-webkit-scrollbar { width: 6px; }
+    .theme-swatch-grid::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 10px; }
+    .theme-swatch-grid::-webkit-scrollbar-track { background: transparent; }
+
     .preview-card {
       position: sticky;
       top: 100px;
@@ -81,46 +96,97 @@
     .color-preview { width: 32px; height: 32px; border-radius: 8px; border: 2px solid #fff; cursor: pointer; }
 
     .footer-save {
-      position: fixed;
-      left: 50%;
-      bottom: 30px;
-      transform: translateX(-50%) translateY(150px);
+      position: fixed !important;
+      left: 0;
+      right: 0;
+      bottom: 28px;
+      margin: 0 auto;
       width: calc(100% - 40px);
-      max-width: 650px;
-      background: rgba(13, 13, 13, 0.95);
+      max-width: 540px;
+      background: rgba(13, 13, 13, 0.98);
       backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px);
       border: 1px solid var(--accent);
-      border-radius: 24px;
-      padding: 16px 28px;
+      border-radius: 20px;
+      padding: 14px 22px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 10000;
-      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+      z-index: 2147483647 !important;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
       pointer-events: none;
       opacity: 0;
+      visibility: hidden;
+      box-sizing: border-box;
+      /* Animation transition */
+      transition: opacity 0.4s ease, visibility 0.4s ease;
     }
-    .footer-save.visible { 
-      transform: translateX(-50%) translateY(0); 
-      pointer-events: all;
+
+    .footer-save.visible {
+      pointer-events: all !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      animation: bar-jiggle 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    /* Genie Styling */
+    .genie-container {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .jar-icon { z-index: 2; position: relative; }
+    .genie-icon {
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px) scale(0);
+      opacity: 0;
+      z-index: 1;
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      filter: drop-shadow(0 0 10px #a855f7);
+    }
+    .footer-save.visible .genie-icon {
+      transform: translateX(-50%) translateY(-25px) scale(1.2);
       opacity: 1;
     }
 
     .save-indicator {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 15px;
     }
-    .save-glow {
-      width: 8px;
-      height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-      box-shadow: 0 0 15px var(--accent);
-      animation: pulse-save 2s infinite;
+
+    /* Magical Effects */
+    .save-indicator::after {
+      content: '';
+      position: absolute;
+      left: 30px;
+      width: 20px;
+      height: 20px;
+      background: radial-gradient(circle, #a855f7 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.5s;
     }
+    .footer-save.visible .save-indicator::after { opacity: 0.6; animation: magic-smoke 2s infinite ease-in-out; }
+
+    @keyframes bar-jiggle {
+      0% { transform: scale(0.8) translateY(50px); }
+      40% { transform: scale(1.05) translateY(-5px); }
+      60% { transform: scale(0.98) translateY(2px); }
+      80% { transform: scale(1.01) translateY(-1px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+
+    @keyframes magic-smoke {
+      0%, 100% { transform: scale(1) opacity(0.4); filter: blur(5px); }
+      50% { transform: scale(1.5) opacity(0.8); filter: blur(8px); }
+    }
+
     @keyframes pulse-save {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(0.8); }
@@ -136,16 +202,17 @@
       .settings-nav { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 8px; }
       .nav-btn { white-space: nowrap; }
       .footer-save {
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
+        /* Clear mobile-bottom-nav: ~60px tall at bottom:14px + 16px gap = 90px */
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 90px) !important;
         width: calc(100% - 24px);
-        padding: 12px 20px;
-        flex-direction: row;
-        gap: 12px;
-        text-align: left;
+        max-width: calc(100% - 24px);
+        padding: 11px 14px;
+        border-radius: 16px;
+        gap: 8px;
       }
-      .footer-save .save-indicator {
-        font-size: 11px;
-      }
+      .footer-save .save-indicator { gap: 8px; }
+      /* Hide subtitle on mobile to save horizontal space */
+      .footer-save .save-subtitle { display: none; }
       .btn { padding: 8px 16px; font-size: 13px; }
     }
   </style>
@@ -216,20 +283,17 @@
                 <input type="text" id="s-site-name" placeholder="{{SITE_NAME}}" oninput="updatePreview()" />
               </div>
               <div class="form-group">
-                <label class="form-label">Logo Image URL</label>
-                <input type="text" id="s-site-logo" placeholder="https://..." oninput="updatePreview()" />
+                <label class="form-label">Site Logo</label>
+                <div style="display:flex;gap:12px">
+                  <input type="text" id="s-site-logo" placeholder="https://..." oninput="updatePreview()" style="flex:1" />
+                  <input type="file" id="logo-upload" style="display:none" accept="image/*" onchange="handleLogoUpload(this)" />
+                  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('logo-upload').click()">Upload Logo</button>
+                </div>
+                <p class="text-xs text-muted mt-2">Uploading a logo will also automatically update your Favicon.</p>
               </div>
               <div class="form-group">
                 <label class="form-label">Favicon URL (.ico or .png)</label>
                 <input type="text" id="s-site-favicon" placeholder="https://..." />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Primary Accent Color</label>
-                <div class="color-input-wrapper">
-                  <input type="color" id="s-primary-color" style="opacity:0;position:absolute;width:0" oninput="document.getElementById('c-preview').style.backgroundColor = this.value; updatePreview();" />
-                  <div class="color-preview" id="c-preview" onclick="document.getElementById('s-primary-color').click()"></div>
-                  <input type="text" id="s-color-hex" value="#3b82f6" style="width:100px;border:none;background:transparent" oninput="document.getElementById('s-primary-color').value = this.value; document.getElementById('c-preview').style.backgroundColor = this.value; updatePreview();" />
-                </div>
               </div>
             </div>
           </div>
@@ -239,8 +303,21 @@
         <div class="settings-section" id="sec-theme">
           <div class="card">
             <div style="margin-bottom:24px">
-              <h3>Theme Library</h3>
-              <p class="text-xs text-muted">Select the default experience for new visitors.</p>
+              <h3>Theme & Appearance</h3>
+              <p class="text-xs text-muted">Configure your platform's visual identity.</p>
+            </div>
+            
+            <div class="form-group" style="margin-bottom:24px">
+              <label class="form-label">Primary Accent Color</label>
+              <div class="color-input-wrapper">
+                <input type="color" id="s-primary-color" style="opacity:0;position:absolute;width:0" oninput="document.getElementById('c-preview').style.backgroundColor = this.value; document.getElementById('s-color-hex').value = this.value.toUpperCase(); updatePreview();" />
+                <div class="color-preview" id="c-preview" onclick="document.getElementById('s-primary-color').click()"></div>
+                <input type="text" id="s-color-hex" value="#3b82f6" style="width:100px;border:none;background:transparent" oninput="document.getElementById('s-primary-color').value = this.value; document.getElementById('c-preview').style.backgroundColor = this.value; updatePreview();" />
+              </div>
+            </div>
+
+            <div style="margin-bottom:12px">
+              <label class="form-label">Default Theme Library</label>
             </div>
             <div class="theme-swatch-grid" id="theme-grid"></div>
           </div>
@@ -450,22 +527,12 @@
       </div>
     </div>
 
-    <!-- Floating Save Footer -->
-    <div class="footer-save" id="save-bar">
-      <div class="save-indicator">
-        <div class="save-glow"></div>
-        <div style="font-size:13px">
-          <div style="color:#fff; font-weight:700">Unsaved Changes</div>
-          <div style="color:var(--text-3); font-size:11px">Review and persist your updates</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:12px">
-        <button class="btn btn-secondary btn-sm" onclick="discardChanges()" style="border-radius:12px; padding: 10px 20px">Discard</button>
-        <button class="btn btn-primary btn-sm" onclick="saveSettings(event)" style="border-radius:12px; padding:10px 32px">Save Changes</button>
-      </div>
-    </div>
-
   </main>
+</div>
+
+<!-- Floating Save Footer (Moved to Body Root for True Stickiness) -->
+<div class="footer-save" id="save-bar" style="justify-content: center;">
+  <button class="btn btn-primary btn-sm" onclick="saveSettings(event)" style="border-radius:12px; padding:12px 48px; white-space:nowrap; flex-shrink:0">Save Changes</button>
 </div>
 
 <script src="/js/main.js"></script>
@@ -689,6 +756,30 @@
       originalSettings = getFormState();
       document.getElementById("save-bar").classList.remove("visible");
     } catch (e) { toast(e.message, "error"); }
+  }
+
+  async function handleLogoUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    // Only image files
+    if (!file.type.startsWith('image/')) return toast("Please select an image file", "error");
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      toast("Uploading logo...", "info");
+      const data = await API.upload('/api/admin/upload', formData);
+      
+      document.getElementById('s-site-logo').value = data.url;
+      document.getElementById('s-site-favicon').value = data.url;
+      updatePreview();
+      toast("Logo and Favicon updated!", "success");
+      checkChanges();
+    } catch (err) {
+      toast("Upload failed: " + err.message, "error");
+    }
   }
 
   function getFormState() {

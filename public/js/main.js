@@ -67,18 +67,42 @@ async function handleRes(res) {
 
 // Global Branding & Themes
 window.THEMES = [
-  { id: 'dark', label: 'Eclipse Dark', icon: '🌑', accent: '#3b82f6', grad: 'linear-gradient(135deg, #3b82f6, #6366f1)' },
-  { id: 'midnight', label: 'Midnight', icon: '🌌', accent: '#8b5cf6', grad: 'linear-gradient(135deg, #8b5cf6, #d946ef)' },
-  { id: 'emerald', label: 'Emerald', icon: '🌲', accent: '#10b981', grad: 'linear-gradient(135deg, #10b981, #3b82f6)' },
-  { id: 'crimson', label: 'Crimson', icon: '🔥', accent: '#ef4444', grad: 'linear-gradient(135deg, #ef4444, #f59e0b)' },
-  { id: 'gold', label: 'Prestige Gold', icon: '👑', accent: '#f59e0b', grad: 'linear-gradient(135deg, #f59e0b, #ef4444)' }
+  { id: 'dark',      label: 'Eclipse Dark',   icon: '🌑', accent: '#3b82f6', grad: 'linear-gradient(135deg, #3b82f6, #6366f1)' },
+  { id: 'midnight',  label: 'Midnight',        icon: '🌌', accent: '#818cf8', grad: 'linear-gradient(135deg, #818cf8, #a78bfa)' },
+  { id: 'ocean',     label: 'Ocean',           icon: '🌊', accent: '#38bdf8', grad: 'linear-gradient(135deg, #38bdf8, #06b6d4)' },
+  { id: 'sunset',    label: 'Sunset',          icon: '🌅', accent: '#fb923c', grad: 'linear-gradient(135deg, #fb923c, #f97316)' },
+  { id: 'forest',    label: 'Forest',          icon: '🌲', accent: '#22c55e', grad: 'linear-gradient(135deg, #22c55e, #15803d)' },
+  { id: 'lavender',  label: 'Lavender',        icon: '💜', accent: '#8b5cf6', grad: 'linear-gradient(135deg, #8b5cf6, #a78bfa)' },
+  { id: 'aurora',    label: 'Aurora',          icon: '🌠', accent: '#22d3ee', grad: 'linear-gradient(135deg, #22d3ee, #8b5cf6)' },
+  { id: 'ember',     label: 'Ember',           icon: '🔥', accent: '#f97316', grad: 'linear-gradient(135deg, #f97316, #ef4444)' },
+  { id: 'citrus',    label: 'Citrus',          icon: '🍋', accent: '#a3e635', grad: 'linear-gradient(135deg, #a3e635, #84cc16)' },
+  { id: 'neon',      label: 'Neon Cyber',      icon: '🤖', accent: '#06b6d4', grad: 'linear-gradient(135deg, #06b6d4, #c026d3)' },
+  { id: 'coral',     label: 'Coral',           icon: '🪸', accent: '#fb7185', grad: 'linear-gradient(135deg, #fb7185, #f97316)' },
+  { id: 'rose',      label: 'Rose',            icon: '🌹', accent: '#fb7185', grad: 'linear-gradient(135deg, #fb7185, #f43f5e)' },
+  { id: 'violet',    label: 'Violet',          icon: '🔮', accent: '#a78bfa', grad: 'linear-gradient(135deg, #a78bfa, #8b5cf6)' },
+  { id: 'mint',      label: 'Mint',            icon: '🌿', accent: '#34d399', grad: 'linear-gradient(135deg, #34d399, #10b981)' },
+  { id: 'cherry',    label: 'Cherry',          icon: '🍒', accent: '#ef4444', grad: 'linear-gradient(135deg, #ef4444, #dc2626)' },
+  { id: 'sky',       label: 'Sky Blue',        icon: '☁️', accent: '#0ea5e9', grad: 'linear-gradient(135deg, #0ea5e9, #0284c7)' },
+  { id: 'berry',     label: 'Berry',           icon: '🫐', accent: '#8b5cf6', grad: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
+  { id: 'peach',     label: 'Peach',           icon: '🍑', accent: '#fb923c', grad: 'linear-gradient(135deg, #fb923c, #f97316)' },
+  { id: 'teal',      label: 'Teal',            icon: '🫧', accent: '#14b8a6', grad: 'linear-gradient(135deg, #14b8a6, #0d9488)' },
+  { id: 'copper',    label: 'Copper',          icon: '🟤', accent: '#d97706', grad: 'linear-gradient(135deg, #d97706, #b45309)' },
+  { id: 'maroon',    label: 'Maroon',          icon: '🍷', accent: '#dc2626', grad: 'linear-gradient(135deg, #dc2626, #b91c1c)' },
+  { id: 'gold',      label: 'Prestige Gold',   icon: '👑', accent: '#eab308', grad: 'linear-gradient(135deg, #eab308, #ca8a04)' },
+  { id: 'sage',      label: 'Sage',            icon: '🌾', accent: '#6ee7b7', grad: 'linear-gradient(135deg, #6ee7b7, #34d399)' },
+  { id: 'dawn',      label: 'Dawn',            icon: '🌸', accent: '#ec4899', grad: 'linear-gradient(135deg, #ec4899, #f43f5e)' },
+  { id: 'stone',     label: 'Stone',           icon: '🪨', accent: '#64748b', grad: 'linear-gradient(135deg, #64748b, #475569)' },
+  { id: 'slate',     label: 'Slate',           icon: '🩶', accent: '#64748b', grad: 'linear-gradient(135deg, #64748b, #475569)' },
 ];
 
 window.applyTheme = function(themeId, isPreview = false) {
   const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
   document.documentElement.setAttribute('data-theme', theme.id);
   
-  if (isPreview) {
+  // Persist preference unless it's just a temporary preview
+  if (!isPreview) {
+    localStorage.setItem('theme_pref', theme.id);
+  } else {
     document.documentElement.style.setProperty('--accent', theme.accent);
     document.documentElement.style.setProperty('--grad-primary', theme.grad);
   }
@@ -130,7 +154,7 @@ window.applyBranding = async function(force = false) {
       fav.href = siteSettings.site_favicon;
     }
 
-    if (siteSettings.default_theme) {
+    if (siteSettings.default_theme && !localStorage.getItem('theme_pref')) {
       applyTheme(siteSettings.default_theme);
     }
 
@@ -1006,44 +1030,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ── Currency Navbar Injection ─────────────────────────────────────
 function injectCurrencySelector() {
-  const container = document.querySelector('.navbar .container');
-  if (!container || document.getElementById('global-currency-selector')) return;
-  
   const user = getUser();
   const current = user?.currency || localStorage.getItem("guest_currency") || "INR";
   
-  const wrapper = document.createElement('div');
-  wrapper.id = 'global-currency-selector';
-  wrapper.style.display = 'flex';
-  wrapper.style.alignItems = 'center';
-  wrapper.style.marginLeft = 'auto'; 
-  wrapper.style.marginRight = '12px';
-  
-  wrapper.innerHTML = `
-    <select class="nav-currency-select" onchange="changeCurrency(this.value)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;outline:none;font-weight:600;">
-      <option value="INR" ${current === 'INR' ? 'selected' : ''}>INR (₹)</option>
-      <option value="USD" ${current === 'USD' ? 'selected' : ''}>USD ($)</option>
-      <option value="RUB" ${current === 'RUB' ? 'selected' : ''}>RUB (₽)</option>
-      <option value="EUR" ${current === 'EUR' ? 'selected' : ''}>EUR (€)</option>
-      <option value="USDT" ${current === 'USDT' ? 'selected' : ''}>USDT (₮)</option>
-    </select>
+  const optionsHtml = `
+    <option value="INR" ${current === 'INR' ? 'selected' : ''}>INR (₹)</option>
+    <option value="USD" ${current === 'USD' ? 'selected' : ''}>USD ($)</option>
+    <option value="RUB" ${current === 'RUB' ? 'selected' : ''}>RUB (₽)</option>
+    <option value="EUR" ${current === 'EUR' ? 'selected' : ''}>EUR (€)</option>
+    <option value="USDT" ${current === 'USDT' ? 'selected' : ''}>USDT (₮)</option>
   `;
-  
-  const rightGrp = container.querySelector('div[style*="margin-left:auto"], div[style*="margin-left: auto"]');
-  const burger = document.getElementById('nav-burger');
-  const navLinks = document.getElementById('nav-links');
 
-  if (rightGrp) {
-    rightGrp.insertBefore(wrapper, rightGrp.firstChild);
-    wrapper.style.marginLeft = '0';
-  } else if (navLinks) {
-    if (burger) {
-      container.insertBefore(wrapper, burger);
+  // 1. Inject into Navbar
+  const container = document.querySelector('.navbar .container');
+  if (container && !document.getElementById('global-currency-selector')) {
+    const wrapper = document.createElement('div');
+    wrapper.id = 'global-currency-selector';
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.marginLeft = 'auto'; 
+    wrapper.style.marginRight = '12px';
+    
+    wrapper.innerHTML = `
+      <select class="nav-currency-select" onchange="changeCurrency(this.value)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;outline:none;font-weight:600;">
+        ${optionsHtml}
+      </select>
+    `;
+    
+    const rightGrp = container.querySelector('div[style*="margin-left:auto"], div[style*="margin-left: auto"]');
+    if (rightGrp) {
+      rightGrp.insertBefore(wrapper, rightGrp.firstChild);
+      wrapper.style.marginLeft = '0';
     } else {
-      container.appendChild(wrapper);
+      const burger = document.getElementById('nav-burger');
+      if (burger) container.insertBefore(wrapper, burger);
+      else container.appendChild(wrapper);
     }
-  } else {
-    container.appendChild(wrapper);
+  }
+
+  // 2. Inject into Dashboard/Content Section if target exists
+  const homeTarget = document.getElementById('home-currency-selector');
+  if (homeTarget && !homeTarget.querySelector('.nav-currency-select')) {
+    homeTarget.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:6px 14px;box-shadow:var(--shadow)">
+        <span style="font-size:16px">💱</span>
+        <select class="nav-currency-select" onchange="changeCurrency(this.value)" style="background:transparent;border:none;color:var(--text);font-size:14px;cursor:pointer;outline:none;font-weight:700;">
+          ${optionsHtml}
+        </select>
+      </div>
+    `;
   }
 }
 

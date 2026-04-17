@@ -82,7 +82,7 @@ async function getNumber(server, serviceCode, countryCode) {
     }
 
     // Error responses: NO_NUMBERS, NO_BALANCE
-    if (text === "NO_NUMBERS") return { error: "Numbers out of stock" };
+    if (text === "NO_NUMBERS") return { error: "Number Not Available" };
     if (text === "NO_BALANCE") return { error: "Provider account out of balance" };
 
     lastError = text || "Invalid response from provider";
