@@ -78,6 +78,7 @@ async function renderPage(res, filename) {
       "{{SITE_NAME}}": siteName,
       "{{SITE_LOGO}}": siteLogo,
       "{{SITE_FAVICON}}": siteFavicon,
+      "{{SITE_URL}}": settings.site_url || process.env.SITE_URL || process.env.WEBSITE_URL || "https://your-site.com",
       "{{SEO_TITLE}}": seoTitle,
       "{{SEO_DESC}}": seoDesc,
       "{{SEO_KEYWORDS}}": seoKeys,

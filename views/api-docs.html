@@ -1,106 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API Documentation — {{SITE_NAME}}</title>
-  <link rel="stylesheet" href="/css/main.css" />
-  <style>
-    .endpoint-box {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      padding: 12px 16px;
-      font-family: monospace;
-      font-size: 14px;
-      color: var(--text-1);
-      margin: 16px 0;
-      word-break: break-all;
-    }
-    .method-badge {
-      background: rgba(16, 185, 129, 0.2);
-      color: var(--success);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 12px;
-      margin-right: 8px;
-    }
-    .docs-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 24px;
-      background: var(--surface-2);
-      border-radius: var(--r-md);
-      overflow: hidden;
-    }
-    .docs-table th, .docs-table td {
-      padding: 12px 16px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      font-size: 14px;
-    }
-    .docs-table th {
-      background: var(--surface-3);
-      color: var(--text-2);
-      font-weight: 600;
-    }
-    .docs-table tr:last-child td { border-bottom: none; }
-    
-    code.inline {
-      background: var(--surface-3);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 13px;
-      color: var(--accent);
-    }
-    
-    pre.code-block {
-      background: #111827;
-      color: #e5e7eb;
-      padding: 16px;
-      border-radius: var(--r-md);
-      overflow-x: auto;
-      font-family: monospace;
-      font-size: 13px;
-      line-height: 1.5;
-      border: 1px solid var(--border);
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Documentation — {{SITE_NAME}}</title>
+    <link rel="stylesheet" href="/css/main.css" />
+    <style>
+        /* ── Advanced API Docs Styling ── */
+        /* ── Minimalist List-to-Card Style ── */
+        .endpoint-card {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            border-radius: 0;
+            margin-bottom: 0;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .endpoint-card.active {
+            background: var(--surface-2);
+            border-radius: 16px;
+            margin: 12px 0;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+        .endpoint-card:last-child { border-bottom: none; }
 
-    /* Sub-nav inside content */
-    .docs-nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 24px;
-    }
-    .docs-nav a {
-      background: var(--surface-2);
-      padding: 8px 16px;
-      border-radius: var(--r-full);
-      font-size: 13px;
-      color: var(--text-2);
-      text-decoration: none;
-      border: 1px solid var(--border);
-      transition: all 0.2s;
-    }
-    .docs-nav a:hover {
-      background: var(--surface-3);
-      color: var(--text-1);
-    }
-  </style>
+        .endpoint-header {
+            padding: 20px 0;
+            cursor: pointer;
+            display: grid;
+            grid-template-columns: 80px 1fr 40px;
+            align-items: center;
+        }
+        .endpoint-card.active .endpoint-header { padding: 20px; }
+
+        .method-badge {
+            font-size: 10px;
+            font-weight: 900;
+            width: fit-content;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            text-align: center;
+        }
+        
+        .endpoint-title-box { display: flex; align-items: center; gap: 12px; }
+        .endpoint-icon { font-size: 18px; opacity: 0.7; transition: opacity 0.3s; }
+        .endpoint-card.active .endpoint-icon { opacity: 1; color: var(--accent); }
+        .endpoint-name { font-size: 15px; font-weight: 600; color: var(--text-1); }
+
+        .chevron-box {
+            justify-self: end;
+            color: var(--text-3);
+            transition: transform 0.4s;
+            font-size: 10px;
+        }
+        .endpoint-card.active .chevron-box { transform: rotate(90deg); color: var(--accent); }
+
+        .card-body { 
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s ease;
+        }
+        .endpoint-card.active .card-body { 
+            padding: 0 20px 24px; 
+            max-height: 3000px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-tag {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-3);
+            margin: 25px 0 10px;
+            padding-left: 4px;
+            border-left: 2px solid var(--accent);
+        }
+        
+        .method-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .method-badge {
+            background: var(--success);
+            color: #000;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .endpoint-desc { font-size: 14px; color: var(--text-2); margin-top: 8px; }
+        
+        .url-box {
+            background: var(--bg-1);
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--accent);
+            word-break: break-all;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-body { padding: 24px; }
+        
+        /* Tables */
+        .table-wrapper {
+            margin: 20px 0;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .doc-table {
+            width: 100%;
+            min-width: 600px;
+            border-collapse: collapse;
+        }
+        .doc-table th {
+            text-align: left;
+            background: var(--surface-2);
+            padding: 12px 16px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-3);
+            border-bottom: 1px solid var(--border);
+        }
+        .doc-table td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+            line-height: 1.5;
+        }
+        .doc-table tr:last-child td { border-bottom: none; }
+        
+        .code-pill { background: rgba(59, 130, 246, 0.1); color: var(--accent); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+        
+        /* Code Blocks */
+        .code-example {
+            margin-top: 24px;
+            background: #0d1117;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            position: relative;
+        }
+        .code-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #d1d5db;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-3);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .alert-box {
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .alert-info { background: rgba(59,130,246,0.1); color: #93c5fd; border: 1px solid rgba(59,130,246,0.2); }
+        .alert-warning { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 999;
+                transition: left 0.3s ease;
+                background: var(--surface);
+                box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            }
+            .sidebar.active { left: 0; }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 100px 16px 120px;
+                width: 100%;
+            }
+            .hero-card { padding: 24px !important; border-radius: 16px !important; }
+            .hero-card h1 { font-size: 24px; }
+            .hero-card p { font-size: 14px; max-width: 100%; }
+            
+            .url-box { font-size: 11px; padding: 10px; }
+            .endpoint-header { padding: 16px; }
+            .card-body { padding: 16px !important; }
+
+            .doc-table th, .doc-table td { padding: 10px 12px; font-size: 12px; }
+        }
+        
+        /* Mobile Navbar Toggle for Sidebar on this page */
+        #docs-sidebar-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background: var(--grad-primary);
+            color: #fff;
+            border: none;
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        @media (max-width: 1024px) {
+            #docs-sidebar-toggle { display: flex; }
+        }
+    </style>
 </head>
-<body>
+<body class="dashboard-body">
+
 <nav class="navbar">
   <div class="container">
     <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
     <div class="nav-links" id="nav-links">
       <a href="/dashboard">Dashboard</a>
-      <a href="/dashboard/buy">Buy Number</a>
-      <a href="/dashboard/orders">Orders</a>
-      <a href="/dashboard/wallet">Wallet</a>
-      <a href="/dashboard/profile" class="active">Profile</a>
+      <a href="/api-docs" class="active">API</a>
       <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
     </div>
     <button class="nav-burger" id="nav-burger">☰</button>
@@ -108,336 +264,513 @@
 </nav>
 
 <div class="layout">
-  <!-- Same dashboard sidebar -->
   <aside class="sidebar">
     <div id="user-info" style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--surface);border-radius:var(--r-lg);margin-bottom:8px">
       <div id="avatar-wrap"></div>
       <div style="min-width:0">
         <div id="user-name" class="font-bold truncate" style="font-size:14px">Loading...</div>
+        <div id="user-balance" class="text-xs text-muted">₹0.00</div>
       </div>
     </div>
     <div class="sidebar-label">Navigation</div>
-    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
-    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
-    <a href="/dashboard/accounts" class="sidebar-item">🗂️ Readymade Accounts</a>
-    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
-    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
-    <a href="/dashboard/profile" class="sidebar-item active">👤 Profile</a>
-    <div class="sidebar-divider"></div>
-    <a href="https://t.me/RapidOTPbot" target="_blank" class="sidebar-item">🤖 Telegram Bot</a>
-    <a href="/support" class="sidebar-item">💬 Support</a>
-    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+    <a href="#intro" class="sidebar-item active">🏠 Introduction</a>
+    <a href="#auth" class="sidebar-item">🔑 Authentication</a>
+    <a href="#getBalance" class="sidebar-item">💰 Get Balance</a>
+    <a href="#getOperators" class="sidebar-item">📡 Get Operators</a>
+    <a href="#getNumber" class="sidebar-item">📱 Request Number</a>
+    <a href="#getStatus" class="sidebar-item">✉️ Get SMS</a>
+    <a href="#setStatus" class="sidebar-item">🔄 Change Status</a>
+    <a href="#getCountries" class="sidebar-item">🌍 Get Countries</a>
+    <a href="#getServices" class="sidebar-item">🛠️ Get Services</a>
   </aside>
 
   <main class="main-content">
     
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px;">
-      <div>
-        <h1 style="font-size:24px;">REST API Documentation</h1>
-        <p class="text-muted" style="margin-top:4px;">Automate SMS verifications via our Activate API protocol.</p>
-      </div>
-      <div>
-        <a href="/dashboard/profile" class="btn btn-primary">Get API Key</a>
-      </div>
+    <div id="intro" class="hero-card" style="margin-bottom: 40px; padding: 40px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 24px; position: relative;">
+        <h1 style="font-size: 32px; font-weight: 900; margin-bottom: 15px;">API 2.0 (Current)</h1>
+        <p style="color:var(--text-2); font-size: 16px; line-height: 1.6; max-width: 800px;">
+            Our API is a protocol for interaction between your software and our activation server. The API automates the process of receiving SMS messages on your side.
+        </p>
     </div>
 
-    <!-- Quick Jumps -->
-    <div class="docs-nav">
-      <a href="#intro">Introduction</a>
-      <a href="#getBalance">Balance</a>
-      <a href="#getNumber">Get Number</a>
-      <a href="#getStatus">Get Status</a>
-      <a href="#setStatus">Change Status</a>
-      <a href="#meta">Metadata (Prices/Countries)</a>
-      <a href="#errors">Errors</a>
-    </div>
-
-    <!-- Intro Card -->
-    <div class="card" id="intro">
-      <h3 style="margin-bottom:12px">Introduction & Authentication</h3>
-      <p style="color:var(--text-2); font-size:15px; margin-bottom:16px;">
-        Our API uses the widely adopted <code>stubs/handler_api.php</code> format. It is fully compatible with major SMS verification bot software. 
-      </p>
-      <div style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); padding:16px; border-radius:var(--r-md); margin-bottom:16px;">
-        <strong style="color:var(--text-1)">Authentication:</strong> All endpoints require your unique <code>api_key</code> to be passed as a query parameter.
-      </div>
-      <p style="color:var(--warning); font-size:14px; font-weight:600;">Keep your API key absolutely secret. Do not expose it on the frontend.</p>
-    </div>
-
-    <!-- Get Balance -->
-    <div class="card" id="getBalance">
-      <h3 style="margin-bottom:8px">Get Balance</h3>
-      <p style="color:var(--text-2); font-size:14px;">Retrieve your current account balance.</p>
-      
-      <div class="endpoint-box">
-        <span class="method-badge">GET</span> /stubs/handler_api.php?api_key=$api_key&amp;action=getBalance
-      </div>
-
-      <h4 style="margin-bottom:8px; font-size:14px;">Parameters</h4>
-      <table class="docs-table">
-        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><code class="inline">action</code></td><td>String</td><td>Must be <code>getBalance</code></td></tr>
-          <tr><td><code class="inline">api_key</code></td><td>String</td><td>Your API Key</td></tr>
-        </tbody>
-      </table>
-
-      <h4 style="margin-bottom:8px; font-size:14px;">Response</h4>
-      <pre class="code-block">ACCESS_BALANCE:100.20</pre>
-    </div>
-
-    <!-- Get Number -->
-    <div class="card" id="getNumber">
-      <h3 style="margin-bottom:8px">Request a Number</h3>
-      <p style="color:var(--text-2); font-size:14px;">Purchases a virtual phone number for a specific service and country.</p>
-      
-      <div class="endpoint-box">
-        <span class="method-badge">GET</span> /stubs/handler_api.php?api_key=$api_key&amp;action=getNumber&amp;service=$service&amp;country=$country
-      </div>
-
-      <h4 style="margin-bottom:8px; font-size:14px;">Parameters</h4>
-      <table class="docs-table">
-        <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><code class="inline">action</code></td><td>Yes</td><td>Must be <code>getNumber</code></td></tr>
-          <tr><td><code class="inline">service</code></td><td>Yes</td><td>Service identifier (e.g. <code>wa</code>). If you cannot send an operator param, prefix it here (e.g. <code>6-wa</code>).</td></tr>
-          <tr><td><code class="inline">country</code></td><td>Yes</td><td>Numeric country ID (e.g. <code>21</code> for USA).</td></tr>
-          <tr><td><code class="inline">operator</code></td><td>No</td><td>Provider routing filter (e.g. <code>any</code> or <code>6</code>).</td></tr>
-          <tr><td><code class="inline">maxPrice</code></td><td>No</td><td>Maximum allowed price you consent to. Recommended to prevent overcharging.</td></tr>
-        </tbody>
-      </table>
-
-      <h4 style="margin-bottom:8px; font-size:14px;">Responses</h4>
-      <table class="docs-table">
-        <thead><tr><th>Code</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><code class="inline" style="color:var(--success)">ACCESS_NUMBER:ORD-5K8H:125550198</code></td><td>Success! Returns Order ID and the Phone number (digits only).</td></tr>
-          <tr><td><code class="inline" style="color:var(--danger)">NO_NUMBERS</code></td><td>No numbers available for requested parameters.</td></tr>
-          <tr><td><code class="inline" style="color:var(--danger)">NO_BALANCE</code></td><td>Insufficient wallet balance.</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Get Status -->
-    <div class="card" id="getStatus">
-      <h3 style="margin-bottom:8px">Get SMS Status</h3>
-      <p style="color:var(--text-2); font-size:14px;">Poll this endpoint to check if the SMS code has arrived for an active order.</p>
-      
-      <div class="endpoint-box">
-        <span class="method-badge">GET</span> /stubs/handler_api.php?api_key=$api_key&amp;action=getStatus&amp;id=$id
-      </div>
-
-      <h4 style="margin-bottom:8px; font-size:14px;">Parameters</h4>
-      <table class="docs-table">
-        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><code class="inline">action</code></td><td>String</td><td>Must be <code>getStatus</code></td></tr>
-          <tr><td><code class="inline">id</code></td><td>String</td><td>Order ID returned by getNumber.</td></tr>
-        </tbody>
-      </table>
-
-      <h4 style="margin-bottom:8px; font-size:14px;">Responsess</h4>
-      <table class="docs-table">
-        <thead><tr><th>Code</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><code class="inline" style="color:var(--success)">STATUS_OK:883190</code></td><td>SMS received! Contains the verification code.</td></tr>
-          <tr><td><code class="inline">STATUS_WAIT_CODE</code></td><td>Number active, waiting for SMS delivery.</td></tr>
-          <tr><td><code class="inline" style="color:var(--danger)">STATUS_CANCEL</code></td><td>Order was cancelled or timed out.</td></tr>
-        </tbody>
-      </table>
-      
-      <div style="margin-top:16px;">
-        <h4 style="margin-bottom:8px; font-size:14px;">Batch Status Check (V2)</h4>
-        <p style="font-size:13px; color:var(--text-2)">Check multiple IDs at once: <code>action=getStatusV2&amp;id=123,124</code></p>
-        <pre class="code-block">{ "123": "STATUS_WAIT_CODE", "124": "STATUS_OK:5489" }</pre>
-      </div>
-    </div>
-
-
-    <!-- Change Status -->
-    <div class="card" id="setStatus">
-      <h3 style="margin-bottom:8px">Change Request Status</h3>
-      <p style="color:var(--text-2); font-size:14px;">Action an active order (Cancel for refund, or request secondary SMS).</p>
-      
-      <div class="endpoint-box">
-        <span class="method-badge">GET</span> /stubs/handler_api.php?api_key=$api_key&amp;action=setStatus&amp;status=$status&amp;id=$id
-      </div>
-
-      <h4 style="margin-bottom:8px; font-size:14px;">Parameters</h4>
-      <table class="docs-table">
-        <thead><tr><th>Field</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><code class="inline">status</code></td><td><strong>8:</strong> Cancel Order. &nbsp;&nbsp; <strong>3:</strong> Request another SMS.</td></tr>
-          <tr><td><code class="inline">id</code></td><td>Order ID.</td></tr>
-        </tbody>
-      </table>
-
-      <h4 style="margin-bottom:8px; font-size:14px;">Responses</h4>
-      <table class="docs-table">
-        <tbody>
-          <tr><td><code class="inline" style="color:var(--success)">ACCESS_CANCEL</code></td><td>Successfully cancelled and remaining balance was refunded.</td></tr>
-          <tr><td><code class="inline" style="color:var(--warning)">ACCESS_CANCEL_ALREADY</code></td><td>The order was already cancelled previously.</td></tr>
-          <tr><td><code class="inline">ACCESS_RETRY_GET</code></td><td>Waiting for next SMS (if status=3).</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Meta / Prices -->
-    <div class="card" id="meta">
-      <h3 style="margin-bottom:8px">Metadata Endpoints</h3>
-      <p style="color:var(--text-2); font-size:14px; margin-bottom: 24px;">Use these to configure your software menus dynamically.</p>
-      
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
-        <div style="background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--border)">
-          <div style="font-weight:bold; margin-bottom:4px; font-size:14px;">Get Prices</div>
-          <code class="inline">action=getPrices</code>
-          <pre class="code-block" style="margin-top:8px;">{
-  "21": { // Country ID
-    "wa": { // Service Slug
-      "1.50": "460" // Price : Qty
-    }
-  }
-}</pre>
+    <!-- Base URL -->
+    <section class="api-section" style="margin-bottom: 60px;">
+        <h2 style="font-size: 20px; margin-bottom: 12px;">Endpoint URL</h2>
+        <p class="text-muted" style="margin-bottom: 15px;">All API requests should be sent via POST or GET methods to:</p>
+        <div class="url-box" style="font-size: 16px; background: var(--surface-3); border-color: var(--accent);">
+            <span>{{SITE_URL}}/stubs/handler_api.php</span>
+            <button class="copy-btn" onclick="copyText('{{SITE_URL}}/stubs/handler_api.php', this)">Copy</button>
         </div>
+    </section>
+
+    <!-- Authentication -->
+    <section id="auth" class="api-section" style="margin-bottom: 60px;">
+        <h2>🔑 Authentication</h2>
+        <p>All requests to the API must include your API key as the <code>api_key</code> parameter.</p>
         
-        <div style="background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--border)">
-          <div style="font-weight:bold; margin-bottom:4px; font-size:14px;">Get Countries</div>
-          <code class="inline">action=getCountries</code>
-          <pre class="code-block" style="margin-top:8px;">{
+        <div class="card" style="margin-top: 24px; padding: 24px; border: 1px solid var(--border);">
+            <div style="font-size: 12px; text-transform: uppercase; color: var(--text-3); font-weight: 800; margin-bottom: 10px;">Your API Key</div>
+            <div style="display:flex; flex-direction: column; gap: 12px;">
+                <div id="api-key-display" style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--accent); background: var(--bg-1); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); width: 100%; word-break: break-all; line-height: 1.4; box-sizing: border-box;">
+                    ••••••••••••••••••••••••••••••••
+                </div>
+                <div style="display:flex; gap: 8px;">
+                    <button class="btn btn-primary" style="flex:1" onclick="copyText(currentApiKey, this)">Copy Key</button>
+                    <button class="btn btn-secondary" style="flex:1" onclick="resetApiKey()">Reset API</button>
+                </div>
+            </div>
+            <div class="alert-warning" style="margin-top: 20px;">
+                <strong>Security Notice:</strong> Keep your API key secure. Do not share it in client-side code or public repositories.
+            </div>
+        </div>
+    </section>
+
+    <!-- getBalance -->
+    <div id="getBalance" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box">
+                <span class="endpoint-icon">💰</span>
+                <span class="endpoint-name">Get Balance</span>
+            </div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">Retrieve your current account balance</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&action=getBalance</div>
+            
+            <div class="section-tag">Parameters</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Field</th><th>Type</th><th>Req</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>action</td><td>String</td><td>Yes</td><td>Must be <code>getBalance</code></td></tr>
+                        <tr><td>api_key</td><td>String</td><td>Yes</td><td>Your unique API key</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-tag">Success Response</div>
+            <div class="table-wrapper">
+                <table class="doc-table" style="background: rgba(16,185,129,0.02)">
+                    <thead><tr><th>Code</th><th>Value / Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code class="code-pill">ACCESS_BALANCE:100.20</code></td><td>Current account balance.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-tag">Error Responses</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Code</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>BAD_KEY</code></td><td>Invalid API key.</td></tr>
+                        <tr><td><code>ERROR</code></td><td>General server error.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-example">
+                <div class="code-label">Node.js example</div>
+                <pre>const axios = require('axios');
+
+async function getBalance() {
+  try {
+    const response = await axios.get('{{SITE_URL}}/stubs/handler_api.php', {
+      params: {
+        api_key: 'YOUR_API_KEY',
+        action: 'getBalance'
+      }
+    });
+    console.log(response.data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+getBalance();</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- getOperators -->
+    <div id="getOperators" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box">
+                <span class="endpoint-icon">📡</span>
+                <span class="endpoint-name">Get Operators</span>
+            </div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">Retrieve all available network operators</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&action=getOperators</div>
+            
+            <div class="section-tag">Success Response</div>
+            <pre class="code-sample">{
+  "Operator 1": "1",
+  "Operator 2": "2",
+  "Any": "any"
+}</pre>
+
+            <div class="section-tag">Error Responses</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Code</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>BAD_ACTION</code></td><td>Invalid action.</td></tr>
+                        <tr><td><code>TOO_MANY_REQUESTS</code></td><td>Rate limit exceeded.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- getNumber -->
+    <div id="getNumber" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box">
+                <span class="endpoint-icon">📱</span>
+                <span class="endpoint-name">Request a Number</span>
+            </div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">Get a virtual phone number for SMS verification</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&action=getNumber&service=$service&country=$country&operator=$operator</div>
+            
+            <div class="section-tag">Parameters</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>service</td><td>Yes</td><td>Service ID (e.g. <code>wa</code>).</td></tr>
+                        <tr><td>country</td><td>Yes</td><td>Country ID (e.g. <code>91</code>).</td></tr>
+                        <tr><td>operator</td><td>No</td><td>Network operator ID.</td></tr>
+                        <tr><td>maxPrice</td><td>No</td><td>Mandatory for operator 6 & 9.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-tag">Success Response</div>
+            <pre class="code-sample">ACCESS_NUMBER:3423423432:914738485900</pre>
+
+            <div class="section-tag">Error Responses</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Code</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>NO_NUMBERS</code></td><td>No inventory available.</td></tr>
+                        <tr><td><code>NO_BALANCE</code></td><td>Insufficient balance.</td></tr>
+                        <tr><td><code>BAD_SERVICE</code></td><td>Invalid service code.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- getStatus -->
+    <div id="getStatus" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box">
+                <span class="endpoint-icon">✉️</span>
+                <span class="endpoint-name">Get SMS Status</span>
+            </div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">Retrieve SMS code from the virtual number</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&action=getStatus&id=$id</div>
+            
+            <div class="section-tag">Success Responses</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Code</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code class="code-pill">STATUS_OK:12343</code></td><td>SMS received. Code is 12343.</td></tr>
+                        <tr><td><code class="code-pill">STATUS_WAIT_CODE</code></td><td>Pending delivery.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-tag">Error Responses</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Code</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>NO_ACTIVATION</code></td><td>Invalid Order ID.</td></tr>
+                        <tr><td><code>STATUS_CANCEL</code></td><td>Order timed out/cancelled.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- setStatus -->
+    <div id="setStatus" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box">
+                <span class="endpoint-icon">🔄</span>
+                <span class="endpoint-name">Change Status</span>
+            </div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">Update the status of a phone number request (Cancel or Retry)</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&action=setStatus&status=$status&id=$id</div>
+            
+            <div class="section-tag">Parameters</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>status</td><td>Yes</td><td>3 = Request another SMS, 8 = Cancel</td></tr>
+                        <tr><td>id</td><td>Yes</td><td>Activation Order ID</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-tag">Success Responses</div>
+            <div class="table-wrapper">
+                <table class="doc-table">
+                    <thead><tr><th>Code</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code class="code-pill">ACCESS_CANCEL</code></td><td>Cancellation successful.</td></tr>
+                        <tr><td><code class="code-pill">ACCESS_RETRY_GET</code></td><td>Waiting for next SMS.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- getCountries -->
+    <div id="getCountries" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box">
+                <span class="endpoint-icon">🌍</span>
+                <span class="endpoint-name">Get Countries</span>
+            </div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">Retrieve all available countries</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&action=getCountries</div>
+            <div class="section-tag">Success Response</div>
+            <pre class="code-sample">{
   "1": "Ukraine",
-  "21": "USA",
-  "22": "Canada"
+  "91": "India",
+  "21": "USA"
 }</pre>
         </div>
+    </div>
 
-        <div style="background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--border)">
-          <div style="font-weight:bold; margin-bottom:4px; font-size:14px;">Get Services</div>
-          <code class="inline">action=getServices</code>
-          <pre class="code-block" style="margin-top:8px;">{
+    <!-- getServices -->
+    <div id="getServices" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box">
+                <span class="endpoint-icon">🛠️</span>
+                <span class="endpoint-name">Get Services</span>
+            </div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">Retrieve all available services</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&action=getServices</div>
+            <div class="section-tag">Success Response</div>
+            <pre class="code-sample">{
   "wa": "WhatsApp",
   "tg": "Telegram",
   "ig": "Instagram"
 }</pre>
         </div>
-        
-        <div style="background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--border)">
-          <div style="font-weight:bold; margin-bottom:4px; font-size:14px;">Get Operators</div>
-          <code class="inline">action=getOperators</code>
-          <pre class="code-block" style="margin-top:8px;">{
-  "Any": "any",
-  "Server 1": "server_slug"
-}</pre>
-        </div>
-      </div>
     </div>
-    
-    <!-- Live Platform Lookup Tables -->
-    <div class="card" id="lookup">
-      <h3 style="margin-bottom:8px">Lookup Tables</h3>
-      <p style="color:var(--text-2); font-size:14px; margin-bottom: 24px;">The exact service codes and operator slugs currently active on the platform. Use these values in your API calls.</p>
-      
-      <div style="display:flex; flex-wrap:wrap; gap:24px;">
-        <!-- Services Table -->
-        <div style="flex: 1; min-width:300px;">
-          <h4 style="margin-bottom:12px; font-size:14px;">Available Services</h4>
-          <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--r-md);">
-            <table class="docs-table" style="margin:0;">
-              <thead style="position:sticky; top:0; z-index:10;">
-                <tr><th>Code (service)</th><th>Service Name</th></tr>
-              </thead>
-              <tbody id="live-services-tbl">
-                <tr><td colspan="2" class="text-center text-muted">Loading live data...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
 
-        <!-- Operators Table -->
-        <div style="flex: 1; min-width:300px;">
-          <h4 style="margin-bottom:12px; font-size:14px;">Available Operators</h4>
-          <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--r-md);">
-            <table class="docs-table" style="margin:0;">
-              <thead style="position:sticky; top:0; z-index:10;">
-                <tr><th>Code (operator)</th><th>Server Network</th></tr>
-              </thead>
-              <tbody id="live-operators-tbl">
-                <tr><td colspan="2" class="text-center text-muted">Loading live data...</td></tr>
-              </tbody>
-            </table>
-          </div>
+
+    <!-- API Data Explorer Trigger Area -->
+    <section class="api-section" style="margin-top: 60px; padding: 40px; background: var(--surface-2); border-radius: 24px; border: 1px solid var(--border);">
+        <h2 style="font-size: 24px; margin-bottom: 15px;">🔍 API Data Explorer</h2>
+        <p style="color:var(--text-3); margin-bottom: 30px; font-size: 15px;">Instantly lookup live codes, names and prices required for your API requests.</p>
+        
+        <div style="display:flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn btn-primary" style="flex:1; min-width: 200px;" onclick="exploreData('services')">📋 View Services</button>
+            <button class="btn btn-primary" style="flex:1; min-width: 200px;" onclick="exploreData('countries')">🌍 View Countries</button>
+            <button class="btn btn-primary" style="flex:1; min-width: 200px;" onclick="exploreData('operators')">📡 View Operators</button>
         </div>
-      </div>
-    </div>
-    
-    <!-- Errors -->
-    <div class="card" id="errors">
-      <h3 style="margin-bottom:12px; color:var(--danger)">Error Responses</h3>
-      <table class="docs-table" style="margin:0;">
-        <thead><tr><th>Code</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><code class="inline">BAD_KEY</code></td><td>Invalid or missing API key.</td></tr>
-          <tr><td><code class="inline">BAD_ACTION</code></td><td>Invalid action requested.</td></tr>
-          <tr><td><code class="inline">USER_BANNED</code></td><td>Your account has been banned.</td></tr>
-          <tr><td><code class="inline">BAD_SERVICE</code></td><td>Requested service is unavailable or invalid.</td></tr>
-          <tr><td><code class="inline">BAD_COUNTRY</code></td><td>Invalid or unsupported country code.</td></tr>
-          <tr><td><code class="inline">NO_ACTIVATION</code></td><td>Activation ID is missing or invalid.</td></tr>
-          <tr><td><code class="inline">BAD_STATUS</code></td><td>The requested status is invalid or cannot be processed.</td></tr>
-          <tr><td><code class="inline">ERROR</code></td><td>A generic server error occurred.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    </section>
 
   </main>
 </div>
 
 <script src="/js/main.js"></script>
 <script>
-  if (!requireLogin()) {}
-  
-  async function init() {
-    try {
-      const data = await API.get("/api/user/profile");
-      document.getElementById("user-name").textContent = `${data.first_name || ''} ${data.last_name || ''}`.trim() || data.username || "User";
-      
-      const avatarHTML = userAvatar(data, 32);
-      document.getElementById("avatar-wrap").innerHTML = avatarHTML;
+    if (!requireLogin()) {}
+    let currentApiKey = "";
 
-      // Fetch live data if API key exists
-      if (data.api_key) {
-        populateLiveTables(data.api_key);
-      } else {
-        const msg = `<tr><td colspan="2" class="text-center" style="color:var(--warning)">Generate an API Key first to view live data.</td></tr>`;
-        document.getElementById("live-services-tbl").innerHTML = msg;
-        document.getElementById("live-operators-tbl").innerHTML = msg;
-      }
-    } catch(e) {
-      console.error(e);
+    async function init() {
+        try {
+            const data = await API.get("/api/user/profile");
+            currentApiKey = data.api_key || "";
+            
+            document.getElementById("user-name").textContent = data.username || "User";
+            document.getElementById("user-balance").textContent = `₹${parseFloat(data.balance||0).toFixed(2)}`;
+            document.getElementById("avatar-wrap").innerHTML = userAvatar(data, 32);
+            
+            if (currentApiKey) {
+                document.getElementById("api-key-display").textContent = currentApiKey;
+                
+                // Inject real API key into all documentation URLs
+                document.querySelectorAll(".url-box span, .url-box").forEach(el => {
+                    if (el.childNodes.length === 1 || el.classList.contains('url-box')) {
+                        el.innerHTML = el.innerHTML.replace(/\$api_key/g, currentApiKey);
+                    }
+                });
+            }
+
+            if (window.renderMobileBottomNav) renderMobileBottomNav("/api-docs");
+
+            // Handle anchor links to open the correct section
+            const hash = window.location.hash;
+            if (hash) {
+                const target = document.querySelector(hash);
+                if (target && target.classList.contains('endpoint-card')) {
+                    target.classList.add('active');
+                }
+            } else {
+                // Open first section by default
+                document.querySelector('.endpoint-card')?.classList.add('active');
+            }
+        } catch(e) { console.error(e); }
     }
-  }
 
-  async function populateLiveTables(apiKey) {
-    try {
-      // Fetch Services
-      const svcRes = await fetch(`/stubs/handler_api.php?api_key=${apiKey}&action=getServices`);
-      const svcData = await svcRes.json();
-      const svcHtml = Object.entries(svcData).map(([slug, name]) => 
-        `<tr><td><code class="inline">${slug}</code></td><td>${name}</td></tr>`
-      ).join("");
-      document.getElementById("live-services-tbl").innerHTML = svcHtml || `<tr><td colspan="2">No services active</td></tr>`;
+    window.toggleEndpoint = function(header) {
+        const card = header.closest('.endpoint-card');
+        const isActive = card.classList.contains('active');
+        card.classList.toggle('active', !isActive);
+    };
 
-      // Fetch Operators
-      const opRes = await fetch(`/stubs/handler_api.php?api_key=${apiKey}&action=getOperators`);
-      const opData = await opRes.json();
-      const opHtml = Object.entries(opData).map(([name, slug]) => 
-        `<tr><td><code class="inline">${slug}</code></td><td>${name}</td></tr>`
-      ).join("");
-      document.getElementById("live-operators-tbl").innerHTML = opHtml || `<tr><td colspan="2">No operators active</td></tr>`;
-    } catch(e) {
-      console.error("Failed to load live tables:", e);
+    // Close sidebar on mobile when a link is clicked
+    document.querySelectorAll('.sidebar-item').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 1024) {
+                document.querySelector('.sidebar').classList.remove('active');
+                document.getElementById('docs-sidebar-toggle').textContent = '☰';
+            }
+            
+            // Open the target card if it exists
+            const targetId = link.getAttribute('href').substring(1);
+            const targetCard = document.getElementById(targetId);
+            if (targetCard && targetCard.classList.contains('endpoint-card')) {
+                targetCard.classList.add('active');
+            }
+        });
+    });
+
+    async function resetApiKey() {
+        if (!confirm("Are you sure? Your old API key will stop working immediately.")) return;
+        try {
+            const res = await API.post("/api/user/profile/key");
+            if (res.api_key) {
+                currentApiKey = res.api_key;
+                document.getElementById("api-key-display").textContent = currentApiKey;
+                toast("API Key has been reset!", "success");
+                init(); // Refresh URLs with new key
+            }
+        } catch(e) { toast(e.message||"Failed to reset", "error"); }
     }
-  }
-  
-  init();
+
+    async function exploreData(type) {
+        const modalEl = document.getElementById('explorer-modal');
+        const titleEl = document.getElementById('explorer-title');
+        const tableEl = document.getElementById('explorer-table');
+        
+        modalEl.style.display = 'flex';
+        titleEl.textContent = `Loading ${type}...`;
+        tableEl.innerHTML = '';
+
+        try {
+            let data;
+            let html = '';
+            
+            if (type === 'services') {
+                data = await API.get('/api/user/services'); // Returns array of service objects
+                titleEl.textContent = 'All Available Services';
+                html = `<thead><tr><th>Service Code</th><th>Name</th><th>Price</th></tr></thead><tbody>`;
+                data.forEach(s => {
+                    html += `<tr><td><code>${s.service_code||s.slug}</code></td><td>${s.name}</td><td>₹${s.price}</td></tr>`;
+                });
+            } else if (type === 'countries') {
+                data = await API.get('/api/user/countries'); // Returns array of country objects
+                titleEl.textContent = 'All Registered Countries';
+                html = `<thead><tr><th>Country Code</th><th>Name</th></tr></thead><tbody>`;
+                data.forEach(c => {
+                    html += `<tr><td><code>${c.code}</code></td><td>${c.name}</td></tr>`;
+                });
+            } else if (type === 'operators') {
+                const res = await fetch(`/stubs/handler_api.php?api_key=${currentApiKey}&action=getOperators`);
+                data = await res.json();
+                titleEl.textContent = 'Active Operators';
+                html = `<thead><tr><th>Name</th><th>Operator Slug</th></tr></thead><tbody>`;
+                Object.entries(data).forEach(([name, slug]) => {
+                    html += `<tr><td>${name}</td><td><code>${slug}</code></td></tr>`;
+                });
+            }
+            
+            tableEl.innerHTML = html + '</tbody>';
+        } catch (e) {
+            console.error(e);
+            titleEl.textContent = 'Error loading data';
+            tableEl.innerHTML = `<tr><td style="color:var(--danger); padding:20px;">Failed to fetch ${type}. Make sure you are logged in.</td></tr>`;
+        }
+    }
+
+    function copyText(text, btn) {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        const old = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = old, 2000);
+    }
+
+    init();
 </script>
+
+<!-- API Data Explorer Modal (Global Level) -->
+<div id="explorer-modal" style="display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); padding: 10px; align-items:center; justify-content:center; box-sizing: border-box;">
+    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px; width: 95%; max-width: 900px; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 50px 100px rgba(0,0,0,0.8); animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-sizing: border-box;">
+        <div style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); box-sizing: border-box;">
+            <div style="flex:1; min-width:0;">
+                <h4 id="explorer-title" style="margin:0; font-size: 18px; font-weight:700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Results</h4>
+                <p id="explorer-subtitle" style="margin:2px 0 0; font-size: 12px; color: var(--text-3);">Live data lookup</p>
+            </div>
+            <button class="btn btn-sm" onclick="document.getElementById('explorer-modal').style.display='none'" style="background: var(--bg-1); border: 1px solid var(--border); color: var(--text-1); min-width: 36px; height: 36px; border-radius: 50%; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;">✕</button>
+        </div>
+        
+        <div style="flex: 1; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0;">
+            <table class="doc-table" id="explorer-table" style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 0;">
+                <!-- Dynamic Content -->
+            </table>
+        </div>
+
+        <div style="padding: 12px 16px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); box-sizing: border-box;">
+            <button class="btn btn-secondary" style="width: 100%; margin: 0;" onclick="document.getElementById('explorer-modal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

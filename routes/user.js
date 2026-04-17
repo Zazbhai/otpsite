@@ -333,6 +333,12 @@ router.post("/orders/:id/cancel", async (req, res) => {
       return res.status(400).json({ error: "Order cannot be cancelled" });
     }
 
+    // Enforce min_cancel_at (allow cancel after 2 mins only)
+    if (order.min_cancel_at && Date.now() < new Date(order.min_cancel_at).getTime()) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: "Numbers can only be cancelled after 2 minutes of purchase." });
+    }
+
     // Call provider cancel API (fire-and-forget, don't block on error)
     if (order.external_order_id) {
       const serverConf = await Server.findOne({ name: order.server_name }).session(session);

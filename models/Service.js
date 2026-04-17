@@ -43,6 +43,8 @@ if (DB_TYPE === "mysql") {
     },
     { timestamps: true }
   );
+  serviceSchema.index({ service_code: 1, country_code: 1, is_active: 1 });
+  serviceSchema.index({ server_id: 1 });
   Service = mongoose.model("Service", serviceSchema);
 }
 

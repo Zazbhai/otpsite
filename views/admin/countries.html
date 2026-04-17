@@ -173,11 +173,6 @@
         </div>
         
         <div class="form-group">
-          <label class="form-label">Sort Order</label>
-          <input type="number" id="country-sort" class="form-input" placeholder="0" value="0" />
-        </div>
-        
-        <div class="form-group">
           <label class="form-label">Status</label>
           <select id="country-active" class="form-input">
             <option value="true">Active</option>
@@ -242,7 +237,6 @@
     document.getElementById("country-code").value = "";
     document.getElementById("country-flag").value = "";
     document.getElementById("country-name").value = "";
-    document.getElementById("country-sort").value = "0";
     document.getElementById("country-active").value = "true";
     document.getElementById("delete-btn").style.display = "none";
     document.getElementById("country-modal").classList.add("open");
@@ -260,7 +254,6 @@
       document.getElementById("country-code").value = c.code;
       document.getElementById("country-flag").value = c.flag || "";
       document.getElementById("country-name").value = c.name;
-      document.getElementById("country-sort").value = c.sort_order || 0;
       document.getElementById("country-active").value = String(c.is_active);
       document.getElementById("delete-btn").style.display = "block";
       document.getElementById("country-modal").classList.add("open");
@@ -278,7 +271,6 @@
       code: document.getElementById("country-code").value.trim(),
       name: document.getElementById("country-name").value.trim(),
       flag: document.getElementById("country-flag").value.trim() || "🌍",
-      sort_order: parseInt(document.getElementById("country-sort").value) || 0,
       is_active: document.getElementById("country-active").value === "true"
     };
     

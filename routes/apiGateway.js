@@ -5,6 +5,7 @@ const Service = require("../models/Service");
 const Server = require("../models/Server");
 const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
+const Country = require("../models/Country");
 const providerApi = require("../utils/providerApi");
 const { nanoid } = require("nanoid");
 
@@ -35,20 +36,10 @@ router.all("/", async (req, res) => {
       }
 
       case "getCountries": {
-        // Return a static mapping of country code to country name
-        // (You could also dynamically build this from Service.countries)
-        // A generic sample based on normal usage:
-        const countriesMap = {
-          "1": "Ukraine", "21": "USA", "22": "Canada", "2": "Kazakhstan", "3": "China",
-          "4": "Philippines", "5": "Myanmar", "6": "Indonesia", "7": "Malaysia", "8": "Kenya",
-          "10": "Russia", "44": "UK", "91": "India"
-        };
-        // Let's populate from active services to be safe
-        const services = await Service.find({ is_active: true });
-        services.forEach(s => {
-          s.countries.forEach(c => {
-             if (!countriesMap[c.country]) countriesMap[c.country] = "Country " + c.country;
-          });
+        const countries = await Country.find({ is_active: true }).sort({ name: 1 });
+        const countriesMap = {};
+        countries.forEach(c => {
+          countriesMap[c.code] = c.name;
         });
         return res.json(countriesMap);
       }
@@ -56,42 +47,29 @@ router.all("/", async (req, res) => {
       case "getServices": {
         const services = await Service.find({ is_active: true });
         const sMap = {};
-        services.forEach(s => sMap[s.slug] = s.name);
+        services.forEach(s => {
+          // Use service_code as the primary key for the API
+          sMap[s.service_code] = s.name;
+        });
         return res.json(sMap);
       }
 
       case "getPrices": {
-        // { "country": { "service": { "price": "count" } } }
-        const { country, operator } = query;
-        const targetCountry = country;
-        const targetOperator = operator && operator !== "any" ? operator : null;
-
+        const { country } = query;
         const services = await Service.find({ is_active: true });
         const prices = {};
 
-        for (const svc of services) {
-           for (const c of svc.countries) {
-              if (targetCountry && c.country !== targetCountry) continue;
-              
-              if (!prices[c.country]) prices[c.country] = {};
-              if (!prices[c.country][svc.slug]) prices[c.country][svc.slug] = {};
-
-              // Find options for the operator
-              for (const opt of c.options) {
-                 if (!opt.is_active) continue;
-                 
-                 // If specific operator requested, we check against server slug or id
-                 // To do this we might need server objects. Let's just combine all active option prices
-                 // The "count" is fake since we don't know provider inventory without querying.
-                 const priceKey = opt.price.toFixed(2);
-                 prices[c.country][svc.slug][priceKey] = (prices[c.country][svc.slug][priceKey] || 0) + 100; // Fake count 100
-              }
-              // If none added, remove
-              if (Object.keys(prices[c.country][svc.slug]).length === 0) {
-                 delete prices[c.country][svc.slug];
-              }
-           }
-        }
+        services.forEach(svc => {
+          if (country && svc.country_code !== country) return;
+          
+          if (!prices[svc.country_code]) prices[svc.country_code] = {};
+          if (!prices[svc.country_code][svc.service_code]) prices[svc.country_code][svc.service_code] = {};
+          
+          const priceKey = svc.price.toFixed(2);
+          // Standard stub format: { "PRICE": "COUNT" }
+          prices[svc.country_code][svc.service_code][priceKey] = 100;
+        });
+        
         return res.json(prices);
       }
 
@@ -100,92 +78,66 @@ router.all("/", async (req, res) => {
         if (!service) return res.send("BAD_SERVICE");
         if (!country) return res.send("BAD_COUNTRY");
 
-        // Parse operator from service if dashed
-        if (service.includes("-")) {
-          const parts = service.split("-");
-          operator = parts[0];
-          service = parts.slice(1).join("-");
-        }
-
-        const svc = await Service.findOne({ slug: service, is_active: true });
-        if (!svc) return res.send("BAD_SERVICE");
-
-        const cData = svc.countries.find(c => c.country == country);
-        if (!cData) return res.send("BAD_COUNTRY");
-
-        let activeOptions = cData.options.filter(o => o.is_active);
+        const filter = { service_code: service, country_code: country, is_active: true };
         
-        // Filter by maxPrice
-        if (maxPrice) {
-          const maxP = parseFloat(maxPrice);
-          activeOptions = activeOptions.filter(o => o.price <= maxP);
-        }
-
-        if (activeOptions.length === 0) return res.send("NO_NUMBERS");
-
-        // If specific operator passed, find Server by slug
+        // Filter by operator (Server slug) if provided
         if (operator && operator !== "any") {
-           const targetServer = await Server.findOne({ slug: operator });
-           if (targetServer) {
-              activeOptions = activeOptions.filter(o => o.server_id.toString() === targetServer._id.toString());
-           } else {
-              // fallback: maybe they passed Server ID directly
-              activeOptions = activeOptions.filter(o => o.server_id.toString() === operator);
-           }
+          const targetServer = await Server.findOne({ slug: operator });
+          if (targetServer) {
+            filter.server_id = targetServer._id;
+          }
         }
 
-        if (activeOptions.length === 0) return res.send("BAD_OPERATOR");
+        // Find matching services and pick the cheapest one
+        const services = await Service.find(filter).sort({ price: 1 });
+        if (!services || services.length === 0) return res.send("BAD_SERVICE");
 
-        // Just pick the cheapest valid option
-        activeOptions.sort((a,b) => a.price - b.price);
-        const option = activeOptions[0];
+        // Pick cheapest (fist in sorted array)
+        const svc = services[0];
 
-        if (user.balance < option.price) return res.send("NO_BALANCE");
+        if (user.balance < svc.price) return res.send("NO_BALANCE");
+        if (maxPrice && svc.price > parseFloat(maxPrice)) return res.send("NO_NUMBERS");
 
-        const serverConf = await Server.findById(option.server_id);
+        const serverConf = await Server.findById(svc.server_id);
         if (!serverConf || !serverConf.is_active) return res.send("NO_NUMBERS");
 
-        const serviceCode = option.code || svc.slug;
-        const providerRes = await providerApi.getNumber(serverConf, serviceCode, country);
-        
+        const providerRes = await providerApi.getNumber(serverConf, svc.service_code, country);
         if (providerRes.error) {
            return res.send("NO_NUMBERS");
         }
 
         // Deduct Balance
-        user.balance = parseFloat((user.balance - option.price).toFixed(4));
-        user.total_spent = parseFloat((user.total_spent + option.price).toFixed(4));
+        user.balance = parseFloat((user.balance - svc.price).toFixed(4));
+        user.total_spent = parseFloat((user.total_spent + svc.price).toFixed(4));
         user.total_orders += 1;
         await user.save();
 
         const orderId = "ORD-" + nanoid(10).toUpperCase();
-        const minCancelAt = new Date(Date.now() + (serverConf.min_cancel_minutes || 0) * 60 * 1000);
 
         const order = await Order.create({
           order_id: orderId,
           user_id: user._id,
           service_name: svc.name,
-          server_name: option.server_name,
+          server_name: serverConf.name,
           country,
           phone: providerRes.phone,
           external_order_id: providerRes.api_order_id,
-          cost: option.price,
+          cost: svc.price,
           status: "active",
           expires_at: new Date(Date.now() + (serverConf.auto_cancel_minutes || 20) * 60 * 1000),
-          min_cancel_at: minCancelAt,
+          min_cancel_at: new Date(Date.now() + (serverConf.min_cancel_minutes || 2) * 60 * 1000),
         });
 
         await Transaction.create({
           user_id: user._id,
           type: "purchase",
-          amount: -option.price,
+          amount: -svc.price,
           balance_after: user.balance,
           description: `API: Purchased ${svc.name} (${country})`,
           order_id: orderId,
         });
 
-        // Some SMS sites return ACCESS_NUMBER:API_ORDER_ID:PHONE
-        return res.send(`ACCESS_NUMBER:${orderId}:${providerRes.phone.replace(/\\D/g, '')}`);
+        return res.send(`ACCESS_NUMBER:${orderId}:${providerRes.phone.replace(/\D/g, '')}`);
       }
 
       case "getStatus": {
@@ -202,30 +154,19 @@ router.all("/", async (req, res) => {
            return res.send("STATUS_CANCEL");
         }
 
-        // If active, check provider
-        const service = await Service.findOne({ name: order.service_name });
-        let serverId = null;
-        if (service) {
-           for (const c of service.countries) {
-              for (const opt of c.options) {
-                 if (opt.server_name === order.server_name) serverId = opt.server_id;
+        // Check provider status
+        const serverConf = await Server.findOne({ name: order.server_name });
+        if (serverConf && serverConf.api_check_status_url && order.external_order_id) {
+           const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
+           if (!checkRes.error && checkRes.status !== "waiting") {
+              order.status = checkRes.status;
+              if (checkRes.otp) {
+                 order.otp = checkRes.otp;
+                 if (!order.all_otps.includes(checkRes.otp)) order.all_otps.push(checkRes.otp);
               }
-           }
-        }
-        if (serverId && order.external_order_id) {
-           const serverConf = await Server.findById(serverId);
-           if (serverConf && serverConf.api_check_status_url) {
-              const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
-              if (!checkRes.error && checkRes.status !== "waiting") {
-                 order.status = checkRes.status;
-                 if (checkRes.otp) {
-                    order.otp = checkRes.otp;
-                    if (!order.all_otps.includes(checkRes.otp)) order.all_otps.push(checkRes.otp);
-                 }
-                 await order.save();
-                 if (order.otp) {
-                    return res.send(`STATUS_OK:${order.otp}`);
-                 }
+              await order.save();
+              if (order.otp) {
+                 return res.send(`STATUS_OK:${order.otp}`);
               }
            }
         }
@@ -236,6 +177,7 @@ router.all("/", async (req, res) => {
         const { id } = query;
         if (!id) return res.send("BAD_REQUEST");
         const ids = id.split(",").map(i => i.trim());
+        // For performance, we only return the DB state in V2 bulk checks
         const orders = await Order.find({ order_id: { $in: ids }, user_id: user._id });
         
         const result = {};
@@ -246,8 +188,6 @@ router.all("/", async (req, res) => {
               result[order.order_id] = "STATUS_CANCEL";
            } else {
               result[order.order_id] = "STATUS_WAIT_CODE";
-              // (In v2 we don't poll provider synchronously to avoid hanging on 100 orders,
-              // we just return DB state. Typically users call getStatus for active polling)
            }
         }
         return res.json(result);
@@ -262,29 +202,24 @@ router.all("/", async (req, res) => {
 
         // status=8 -> Cancel
         const API_STATUS_CANCEL = process.env.API_STATUS_CANCEL || "8";
-        if (status === API_STATUS_CANCEL) {
+        if (String(status) === API_STATUS_CANCEL) {
            if (order.status !== "active") {
               return res.send(order.status === "cancelled" ? "ACCESS_CANCEL_ALREADY" : "ACCESS_CANCEL");
            }
            
-           // find server and cancel
-           const service = await Service.findOne({ name: order.service_name });
-           let serverId = null;
-           if (service) {
-              for (const c of service.countries) {
-                for (const opt of c.options) {
-                  if (opt.server_name === order.server_name) serverId = opt.server_id;
-                }
-              }
-           }
-           if (serverId && order.external_order_id) {
-             const serverConf = await Server.findById(serverId);
-             if (serverConf && serverConf.api_cancel_url) {
-                await providerApi.cancelOrder(serverConf, order.external_order_id);
-             }
+           // Enforce min_cancel_at (allow cancel after 2 mins only)
+           if (order.min_cancel_at && Date.now() < new Date(order.min_cancel_at).getTime()) {
+              const secondsLeft = Math.ceil((new Date(order.min_cancel_at).getTime() - Date.now()) / 1000);
+              return res.send(`BAD_STATUS`); // Standard response for "not allowed now"
            }
 
-           // Refund
+           // find server directly by name stored on order
+           const serverConf = await Server.findOne({ name: order.server_name });
+           if (serverConf && serverConf.api_cancel_url && order.external_order_id) {
+              await providerApi.cancelOrder(serverConf, order.external_order_id);
+           }
+
+           // Fully Refund
            user.balance = parseFloat((user.balance + order.cost).toFixed(4));
            await user.save();
 
@@ -302,7 +237,6 @@ router.all("/", async (req, res) => {
         if (status == "3") {
            if (order.status !== "completed") return res.send("BAD_STATUS");
            
-           // Let's simplified retry state
            order.status = "active";
            order.otp = null;
            order.expires_at = new Date(Date.now() + 20 * 60 * 1000);
