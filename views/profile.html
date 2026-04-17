@@ -298,6 +298,7 @@
     <div class="nav-links" id="nav-links">
       <a href="/dashboard">Dashboard</a>
       <a href="/dashboard/buy">Buy</a>
+      <a href="/dashboard/referrals">Referrals</a>
       <a href="/dashboard/orders">Orders</a>
       <a href="/dashboard/wallet">Wallet</a>
     </div>
@@ -306,6 +307,16 @@
 </nav>
 
 <div class="layout">
+  <aside class="sidebar">
+    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
+    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
+    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
+    <a href="/dashboard/referrals" class="sidebar-item">🤝 Referrals</a>
+    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
+    <a href="/dashboard/profile" class="sidebar-item active">👤 Profile</a>
+    <div class="sidebar-divider"></div>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
   <main class="main-content">
     
     <div class="profile-hero">

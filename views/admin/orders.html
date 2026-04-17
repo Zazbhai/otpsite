@@ -118,7 +118,7 @@
           <td class="text-muted text-sm">${fmtDateShort(o.createdAt)}</td>
           <td><button class="btn btn-secondary btn-sm" onclick='openEdit(${JSON.stringify(o).replace(/'/g,"&#39;")})'>Edit</button></td>
         </tr>`).join("") || `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-3)">No orders</td></tr>`;
-      renderPagination("pagination", data.page, data.pages, window.loadOrders);
+      renderPagination("pagination", data.page, data.pages, "window.loadOrders");
     } catch (e) { toast(e.message, "error"); }
   }
 

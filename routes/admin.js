@@ -1,6 +1,7 @@
 const express  = require("express");
 const router   = express.Router();
 const bcrypt   = require("bcryptjs");
+const mongoose = require("mongoose");
 const { adminRequired } = require("../middleware/auth");
 const User        = require("../models/User");
 const Order       = require("../models/Order");
@@ -14,6 +15,7 @@ const path        = require("path");
 const fs          = require("fs");
 const { DB_TYPE } = require("../utils/db");
 const { clearSettingsCache } = require("../utils/settingsCache");
+const { emitToAll, emitToUser } = require("../utils/realtimeEmitter");
 
 // Multer Config
 const storage = multer.diskStorage({
@@ -163,11 +165,20 @@ router.get("/users", async (req, res) => {
   try {
     const { q, page = 1, limit = 30, banned } = req.query;
     const filter = {};
-    if (q) filter.$or = [
-      { username:     new RegExp(q, "i") },
-      { email:        new RegExp(q, "i") },
-      { display_name: new RegExp(q, "i") },
-    ];
+    if (q) {
+      const orClauses = [
+        { username:     new RegExp(q, "i") },
+        { email:        new RegExp(q, "i") },
+        { display_name: new RegExp(q, "i") },
+      ];
+      
+      // If q looks like a MongoDB ID, add it to the search
+      if (mongoose.Types.ObjectId.isValid(q)) {
+        orClauses.push({ _id: new mongoose.Types.ObjectId(q) });
+      }
+      
+      filter.$or = orClauses;
+    }
     if (banned !== undefined) filter.is_banned = banned === "true";
 
     const total = await User.countDocuments(filter);
@@ -262,6 +273,7 @@ router.patch("/orders/:id", async (req, res) => {
     if (status) order.status = status;
     if (otp)    { order.otp = otp; order.all_otps.push(otp); }
     await order.save();
+    emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
     res.json({ order });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -658,6 +670,7 @@ router.post("/transactions/deposit", async (req, res) => {
       balance_after: user.balance,
       description: description || "Manual deposit by admin",
     });
+    emitToUser(String(user_id), "balance", { balance: user.balance }); // Real-time balance push
     res.json({ balance: user.balance });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -676,7 +689,8 @@ router.post("/settings", async (req, res) => {
       updateOne: { filter: { key }, update: { $set: { key, value } }, upsert: true },
     }));
     await Setting.bulkWrite(ops);
-    clearSettingsCache(); // Invalidate cache so changes show immediately
+    clearSettingsCache();
+    emitToAll("settings", {}); // Push to all connected browsers
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -691,6 +705,7 @@ router.post("/broadcast", async (req, res) => {
       { $set: { value: JSON.stringify(entry) } },
       { upsert: true }
     );
+    emitToAll("broadcast", entry); // Push broadcast message to all users instantly
     res.json({ success: true, message: "Broadcast saved!" });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -725,6 +740,38 @@ router.delete("/promo-codes/:id", async (req, res) => {
     await PromoCode.findByIdAndDelete(req.params.id);
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
+});
+
+/* ─── REFERRALS ────────────────────────────────────────────────── */
+router.get("/referrals-stats", async (req, res) => {
+  try {
+    const totalReferrals = await User.countDocuments({ referred_by: { $ne: null } });
+    const totalEarnings = await User.aggregate([
+      { $group: { _id: null, total: { $sum: "$referral_earnings" } } }
+    ]);
+    
+    const topReferrers = await User.find({ referral_count: { $gt: 0 } })
+      .sort({ referral_count: -1 })
+      .limit(10)
+      .select("username referral_count referral_earnings email");
+
+    const recentCommissions = await Transaction.find({ type: "bonus", description: /Referral bonus/ })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate("user_id", "username");
+
+    res.json({
+      metrics: {
+        total_referrals: totalReferrals,
+        total_earnings:  totalEarnings[0]?.total || 0,
+      },
+      top_referrers: topReferrers,
+      recent_commissions: recentCommissions
+    });
+  } catch (err) {
+    console.error("Admin referral stats error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 /* ─── PAYMENT CONFIG ────────────────────────────────────────── */

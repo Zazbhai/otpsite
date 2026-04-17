@@ -81,8 +81,8 @@ async function getNumber(server, serviceCode, countryCode) {
        return { api_order_id: response.data.id.toString(), phone: response.data.phone.toString() };
     }
 
-    // Error responses: NO_NUMBERS, NO_BALANCE
-    if (text === "NO_NUMBERS") return { error: "Number Not Available" };
+    // Error responses: NO_NUMBERS, NO_BALANCE, BAD_SERVICE
+    if (text === "NO_NUMBERS" || text === "BAD_SERVICE" || text === "BANNED") return { error: "Number Not Available" };
     if (text === "NO_BALANCE") return { error: "Provider account out of balance" };
 
     lastError = text || "Invalid response from provider";

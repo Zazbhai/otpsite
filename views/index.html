@@ -3,25 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{SITE_NAME}} — Instant Virtual Numbers for SMS Verification</title>
-   <meta name="description" content="Get instant virtual phone numbers for any SMS verification. 500+ services, 50+ countries, lightning-fast OTP delivery." />
-   <link rel="stylesheet" href="/css/main.css" />
-   <script src="/js/preloader.js"></script>
+  <title>{{SEO_TITLE}}</title>
+  <meta name="description" content="{{SEO_DESC}}" />
+  <meta name="keywords" content="{{SEO_KEYWORDS}}" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
+  <link rel="shortcut icon" href="{{SITE_FAVICON}}">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{SEO_TITLE}}">
+  <meta property="og:description" content="{{SEO_DESC}}">
+  <meta property="og:image" content="{{SEO_OG_IMAGE}}">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:title" content="{{SEO_TITLE}}">
+  <meta property="twitter:description" content="{{SEO_DESC}}">
+  <meta property="twitter:image" content="{{SEO_OG_IMAGE}}">
+
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+   <script>
+     // Redirect logged-in users to the buy page immediately
+     if (localStorage.getItem("otp_token")) {
+       window.location.href = "/dashboard/buy";
+     }
+   </script>
  </head>
 <body>
 
 <!-- ── Navbar ── -->
 <nav class="navbar">
-  <div class="container">
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between">
     <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-    <span id="nav-auth-mobile" class="nav-auth-mobile"></span>
+    
     <div class="nav-links" id="nav-links">
       <a href="/pricing">Pricing</a>
       <a href="/how-it-works">How It Works</a>
       <a href="/support">Support</a>
-      <span id="nav-auth"></span>
     </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
+      <span id="nav-auth-mobile" class="nav-auth-mobile"></span>
+      <span id="nav-auth"></span>
+      <button class="nav-burger" id="nav-burger">☰</button>
+    </div>
   </div>
 </nav>
 
@@ -34,7 +62,7 @@
         <h1>Instant <span class="gradient-text">Virtual Numbers</span> for Any Service</h1>
         <p class="hero-desc">Get real SMS verifications for WhatsApp, Telegram, Instagram, and 500+ more services. Delivered in seconds, starting from ₹4.</p>
         <div class="hero-btns">
-          <button class="btn btn-primary btn-lg" onclick="openLoginModal()" id="cta-start">
+          <button class="btn btn-primary btn-lg" onclick="openAuthModal('register')" id="cta-start">
             🚀 Get Started Free
           </button>
           <a href="/how-it-works" class="btn btn-secondary btn-lg">See How It Works →</a>
@@ -179,7 +207,7 @@
           </div>
         </div>
         <div class="mt-8">
-          <button class="btn btn-primary" onclick="openLoginModal()">Start Now — It's Free →</button>
+          <button class="btn btn-primary" onclick="openAuthModal('register')">Start Now — It's Free →</button>
         </div>
       </div>
       <div>
@@ -207,72 +235,7 @@
   </div>
 </section>
 
-<!-- ── Pricing ── -->
-<section class="section">
-  <div class="container">
-    <div class="section-header">
-      <h2>Simple, <span class="gradient-text">Transparent Pricing</span></h2>
-      <p>Pay only for what you use. Start with as little as ₹84.</p>
-    </div>
-    <div class="pricing-grid">
-      <div class="price-card">
-        <div>
-          <div style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2);margin-bottom:8px">Starter</div>
-          <div class="flex items-center gap-2">
-            <div class="price-amount">₹84</div>
-            <div class="price-period">min deposit</div>
-          </div>
-        </div>
-        <div style="height:1px;background:var(--border)"></div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="price-feature"><span class="check">✓</span> All services</div>
-          <div class="price-feature"><span class="check">✓</span> All countries</div>
-          <div class="price-feature"><span class="check">✓</span> Auto refunds</div>
-          <div class="price-feature"><span class="check">✓</span> From ₹4/number</div>
-        </div>
-        <button class="btn btn-secondary w-full" onclick="openLoginModal()">Get Started</button>
-      </div>
-      <div class="price-card popular">
-        <div style="position:absolute;top:-1px;left:50%;transform:translateX(-50%)">
-          <div style="background:var(--grad-primary);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:0 0 8px 8px;letter-spacing:.04em">MOST POPULAR</div>
-        </div>
-        <div>
-          <div style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:8px">Pro</div>
-          <div class="flex items-center gap-2">
-            <div class="price-amount gradient-text">₹840</div>
-            <div class="price-period">saves 5%</div>
-          </div>
-        </div>
-        <div style="height:1px;background:var(--border)"></div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="price-feature"><span class="check">✓</span> 5% bonus credit</div>
-          <div class="price-feature"><span class="check">✓</span> Priority support</div>
-          <div class="price-feature"><span class="check">✓</span> All starter features</div>
-          <div class="price-feature"><span class="check">✓</span> Multi-OTP orders</div>
-        </div>
-        <button class="btn btn-primary w-full" onclick="openAuthModal('register')">Top Up ₹840</button>
-      </div>
-      <div class="price-card">
-        <div>
-          <div style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2);margin-bottom:8px">Business</div>
-          <div class="flex items-center gap-2">
-            <div class="price-amount">₹4,200+</div>
-            <div class="price-period">saves 12%</div>
-          </div>
-        </div>
-        <div style="height:1px;background:var(--border)"></div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="price-feature"><span class="check">✓</span> 12% bonus credit</div>
-          <div class="price-feature"><span class="check">✓</span> API access</div>
-          <div class="price-feature"><span class="check">✓</span> Dedicated manager</div>
-          <div class="price-feature"><span class="check">✓</span> Bulk discounts</div>
-        </div>
-        <a href="/support" class="btn btn-secondary w-full" style="text-align:center">Contact Us</a>
-      </div>
-    </div>
-    <p style="text-align:center;margin-top:24px;font-size:13px;color:var(--text-3)">All prices in INR (₹). See full service pricing at <a href="/pricing" style="color:var(--accent)">/pricing</a></p>
-  </div>
-</section>
+
 
 <!-- ── FAQ ── -->
 <section class="section" style="background:var(--bg-1)">
@@ -415,13 +378,17 @@
     try {
       const data = await doLogin(document.getElementById('l-email').value, document.getElementById('l-pass').value);
       saveAuth(data.token, data.user);
-      window.location.href = data.user.is_admin ? '/admin' : '/dashboard';
+      window.location.href = data.user.is_admin ? '/admin' : '/dashboard/buy';
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
       btn.disabled = false; btn.textContent = 'Sign In →';
       window.hidePageLoader();
     }
   }
+
+  // Handle URL parameters (referral, login, register)
+  const params = new URLSearchParams(window.location.search);
+  const urlReferralCode = params.get('ref') || params.get('referral');
 
   async function submitRegister() {
     const btn = document.getElementById('r-btn');
@@ -433,10 +400,11 @@
       const data = await doRegister(
         document.getElementById('r-user').value,
         document.getElementById('r-email').value,
-        document.getElementById('r-pass').value
+        document.getElementById('r-pass').value,
+        urlReferralCode
       );
       saveAuth(data.token, data.user);
-      window.location.href = '/dashboard';
+      window.location.href = '/dashboard/buy';
     } catch(e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
       btn.disabled = false; btn.textContent = 'Create Account →';
@@ -452,26 +420,39 @@
     }
   });
 
-  // On load
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('login') === '1' || params.get('register') === '1') openAuthModal(params.get('register') ? 'register' : 'login');
+  // On Load Actions
+  window.addEventListener('DOMContentLoaded', async () => {
+    // 1. Handle auto-opening modals from URL
+    if (params.get('login') === '1' || params.get('register') === '1') {
+      openAuthModal(params.get('register') ? 'register' : 'login');
+    } else if (urlReferralCode) {
+       try {
+         const settings = await API.get("/api/auth/settings");
+         if (settings.referral_system_enabled !== false && settings.referral_system_enabled !== 'false') {
+            openAuthModal('register');
+         }
+       } catch(e) {}
+    }
 
-  // Nav state
-  const navAuth = document.getElementById('nav-auth');
-  const navAuthMobile = document.getElementById('nav-auth-mobile');
-  const ctaBtn  = document.getElementById('cta-start');
-  if (isLoggedIn()) {
-    const dashboardHtml = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
-    navAuth.innerHTML = dashboardHtml;
-    navAuthMobile.innerHTML = dashboardHtml;
-    ctaBtn.textContent = '→ Go to Dashboard';
-    ctaBtn.onclick = () => window.location.href = '/dashboard';
-  } else {
-    const authButtonsHtml = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>&nbsp;<button class="btn btn-primary btn-sm" onclick="openAuthModal(\'register\')">Register</button>';
-    navAuth.innerHTML = authButtonsHtml;
-    navAuthMobile.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>';
-    ctaBtn.onclick = () => openAuthModal('register');
-  }
+    // 2. Nav state
+    const navAuth = document.getElementById('nav-auth');
+    const navAuthMobile = document.getElementById('nav-auth-mobile');
+    const ctaBtn  = document.getElementById('cta-start');
+    if (isLoggedIn()) {
+      const buyHtml = '<a href="/dashboard/buy" class="btn btn-primary btn-sm">Buy Number →</a>';
+      if (navAuth) navAuth.innerHTML = buyHtml;
+      if (navAuthMobile) navAuthMobile.innerHTML = buyHtml;
+      if (ctaBtn) {
+        ctaBtn.textContent = '🛒 Buy New Number';
+        ctaBtn.onclick = () => window.location.href = '/dashboard/buy';
+      }
+    } else {
+      const authButtonsHtml = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>&nbsp;<button class="btn btn-primary btn-sm" onclick="openAuthModal(\'register\')">Register</button>';
+      if (navAuth) navAuth.innerHTML = authButtonsHtml;
+      if (navAuthMobile) navAuthMobile.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>';
+      if (ctaBtn) ctaBtn.onclick = () => openAuthModal('register');
+    }
+  });
 
   function toggleFaq(el) {
     const item = el.parentElement;

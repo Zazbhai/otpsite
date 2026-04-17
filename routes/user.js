@@ -14,6 +14,37 @@ const { paymentChecker } = require("../utils/bharatpe");
 const providerApi = require("../utils/providerApi");
 const { nanoid }  = require("nanoid");
 
+// ── GET /api/user/services (public for pricing page) ─────────────
+router.get("/services", async (req, res) => {
+  console.log(">> HIT PUBLIC SERVICES ROUTE");
+  try {
+    const { country_id } = req.query;
+    const filter = { is_active: true };
+    
+    // If country_id provided, we need to filter by server's country_id
+    if (country_id) {
+      const serversInCountry = await Country.findById(country_id);
+      if(!serversInCountry) return res.json([]);
+      
+      const servers = await Server.find({ country_id: serversInCountry._id }).select("_id");
+      const serverIds = servers.map(s => s._id);
+      filter.server_id = { $in: serverIds };
+    }
+
+    const services = await Service.find(filter)
+      .sort({ name: 1 })
+      .populate({
+        path: "server_id",
+        select: "name country_id",
+        populate: { path: "country_id" }
+      });
+    res.json(services);
+  } catch (err) { 
+    console.error("[/api/user/services]", err.message);
+    res.status(500).json({ error: "Server error" }); 
+  }
+});
+
 // ── GET /api/user/countries (public for buy page) ─────────────────
 router.get("/countries", async (req, res) => {
   try {
@@ -100,19 +131,42 @@ router.get("/dashboard", async (req, res) => {
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
 
-// ── GET /api/user/services ───────────────────────────────────────
-router.get("/services", async (req, res) => {
+// ── GET /api/user/referrals ──────────────────────────────────────
+router.get("/referrals", async (req, res) => {
   try {
-    const services = await Service.find({ is_active: true })
-      .sort({ name: 1 })
-      .populate({
-        path: "server_id",
-        select: "name country_id"
-      })
-      .select("-__v");
-    res.json(services);
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+    const user = await User.findById(req.userId).select("referral_code referral_count referral_earnings");
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Always use User ID for the referral identifier as requested
+    const effectiveCode = user._id.toString();
+
+    const Setting = require("../models/Setting");
+    const bonusSetting = await Setting.findOne({ key: "referral_bonus_percent" });
+    const bonusPercent = parseFloat(bonusSetting?.value || 0);
+    const sFixed = await Setting.findOne({ key: "referral_bonus_fixed_amount" });
+    const bonusFixed   = parseFloat(sFixed?.value || 0);
+
+    // Get list of referred users (limit to 50 for performance)
+    const referredUsers = await User.find({ referred_by: req.userId })
+      .select("username createdAt")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.json({
+      referral_code:     effectiveCode,
+      referral_count:    user.referral_count,
+      referral_earnings: user.referral_earnings,
+      bonus_percent:      bonusPercent,
+      bonus_fixed:        bonusFixed,
+      referred_users:    referredUsers
+    });
+  } catch (err) {
+    console.error("[/api/user/referrals]", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
 });
+
+// -- GET /api/user/services moved above loginRequired --
 
 // ── POST /api/user/orders  (buy) ─────────────────────────────────
 router.post("/orders", async (req, res) => {
@@ -243,54 +297,21 @@ router.get("/orders/:id", async (req, res) => {
     
     // Polling OTP logic if order is active with throttling (min 3s between checks)
     if (order.status === "active" && order.external_order_id) {
-      const now = new Date();
-      const lastCheck = order.last_check_at || new Date(0);
-      
-      if (now - lastCheck >= 3000) {
-        if (serverConf && serverConf.api_check_status_url) {
-          order.last_check_at = now;
-          const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
-          if (!checkRes.error && checkRes.status !== "waiting") {
-            if (order.multi_otp_enabled && checkRes.status === "completed") {
-              // Stay active for multi-OTP
-              order.status = "active";
-              if (checkRes.otp && !order.all_otps.includes(checkRes.otp)) {
-                order.otp = checkRes.otp;
-                order.all_otps.push(checkRes.otp);
-                // Auto-calling next OTP if newly received (background)
-                providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
-              }
-            } else {
-              order.status = checkRes.status;
-              if (checkRes.otp) {
-                order.otp = checkRes.otp;
-                if (!order.all_otps.includes(checkRes.otp)) order.all_otps.push(checkRes.otp);
-              }
-            }
-            await order.save();
-          }
+      const { syncOrder } = require("../utils/orderStatusManager");
+      setImmediate(async () => {
+        try {
+          await syncOrder(order);
+        } catch (err) {
+          console.error("Background sync error:", err.message);
         }
-      }
+      });
     }
 
-    // Auto cancel if expired and still active
-    if (order.status === "active" && order.expires_at && order.expires_at < new Date()) {
-      order.status = "expired";
-      const user = await User.findById(req.userId);
-      if (user) {
-        user.balance = parseFloat((user.balance + order.cost).toFixed(4));
-        await user.save();
-        await Transaction.create({
-          user_id: user._id, type: "refund", amount: order.cost,
-          balance_after: user.balance, description: `Refund expired order ${order.order_id}`, order_id: order.order_id
-        });
-      }
-      await order.save();
-    }
-
+    // Always immediately fulfillment request with current DB state
     const finalOrder = order.toObject();
     finalOrder.server_country = serverConf?.country_id?.name || order.country;
     res.json(finalOrder);
+
   } catch (err) { 
     console.error("Order fetch error:", err);
     res.status(500).json({ error: "Server error" }); 
@@ -312,13 +333,30 @@ router.post("/orders/:id/cancel", async (req, res) => {
       return res.status(400).json({ error: "Order cannot be cancelled" });
     }
 
+    // Call provider cancel API (fire-and-forget, don't block on error)
     if (order.external_order_id) {
       const serverConf = await Server.findOne({ name: order.server_name }).session(session);
       if (serverConf && serverConf.api_cancel_url) {
-        await providerApi.cancelOrder(serverConf, order.external_order_id);
+        await providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
       }
     }
 
+    // ── Key business rule: OTP already received = order is COMPLETE ──
+    // If at least one OTP was delivered, the service was rendered.
+    // No refund is issued; the order is marked as completed.
+    const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
+
+    if (hasOtp) {
+      // Service was rendered — just mark complete, no refund
+      order.status = "completed";
+      await order.save({ session });
+      await session.commitTransaction();
+      const { emitToUser } = require("../utils/realtimeEmitter");
+      emitToUser(String(req.userId), "order", { orderId: order.order_id, status: "completed", otp: order.otp, all_otps: order.all_otps });
+      return res.json({ success: true, order, refunded: false });
+    }
+
+    // No OTP received — full refund and cancel
     const user = await User.findById(req.userId).session(session);
     if (!user) {
       await session.abortTransaction();
@@ -330,14 +368,17 @@ router.post("/orders/:id/cancel", async (req, res) => {
 
     await Transaction.create([{
         user_id: user._id, type: "refund", amount: order.cost,
-        balance_after: user.balance, description: `User cancelled order ${order.order_id}`, order_id: order.order_id
+        balance_after: user.balance, description: `User cancelled order ${order.order_id} (no OTP)`, order_id: order.order_id
     }], { session });
 
     order.status = "cancelled";
     await order.save({ session });
 
     await session.commitTransaction();
-    res.json({ success: true, order });
+    const { emitToUser } = require("../utils/realtimeEmitter");
+    emitToUser(String(req.userId), "balance", { balance: user.balance });
+    emitToUser(String(req.userId), "order", { orderId: order.order_id, status: "cancelled" });
+    res.json({ success: true, order, refunded: true });
   } catch (err) {
     await session.abortTransaction();
     res.status(500).json({ error: "Server error" });
@@ -384,13 +425,38 @@ router.post("/orders/:id/retry", async (req, res) => {
 // ── GET /api/user/wallet ─────────────────────────────────────────
 router.get("/wallet", async (req, res) => {
   try {
-    const { page = 1, limit = 30 } = req.query;
+    const { page = 1, limit = 30, type = 'all' } = req.query;
+    const filter = { user_id: req.userId };
+    
+    if (type && type !== 'all') {
+      if (type === 'deposit') {
+        filter.type = { $in: ['deposit', 'bonus'] };
+      } else if (type === 'purchase') {
+        filter.type = { $in: ['purchase', 'deduction'] };
+      } else {
+        filter.type = type;
+      }
+    }
+
     const user  = await User.findById(req.userId);
-    const total = await Transaction.countDocuments({ user_id: req.userId });
-    const transactions = await Transaction.find({ user_id: req.userId })
+    const total = await Transaction.countDocuments(filter);
+    const transactions = await Transaction.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
+
+    // Calculate Summary Stats (Total Deposited, Spent, Refunded)
+    const stats = await Transaction.aggregate([
+      { $match: { user_id: req.userId.toString() } },
+      { $group: {
+          _id: null,
+          total_deposited: { $sum: { $cond: [{ $in: ["$type", ["deposit", "bonus"]] }, "$amount", 0] } },
+          total_spent: { $sum: { $cond: [{ $eq: ["$type", "purchase"] }, { $abs: "$amount" }, 0] } },
+          total_refunded: { $sum: { $cond: [{ $eq: ["$type", "refund"] }, "$amount", 0] } }
+      }}
+    ]);
+
+    const summary = stats[0] || { total_deposited: 0, total_spent: 0, total_refunded: 0 };
 
     res.json({
       balance:      user?.balance || 0,
@@ -398,8 +464,12 @@ router.get("/wallet", async (req, res) => {
       total,
       page:  parseInt(page),
       pages: Math.ceil(total / limit),
+      summary
     });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("Wallet error:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 
@@ -465,7 +535,8 @@ router.get("/wallet/payment-config", (req, res) => {
         enabled: !!b.enabled,
         upi_id:  b.upi_id || "",
         upi_name: b.upi_name || "Rapid OTP",
-        qr_image: b.qr_image || ""
+        qr_image: b.qr_image || "",
+        min_deposit: b.min_deposit || 1
       }
     });
   } catch (err) { res.status(500).json({ error: "Failed to load config" }); }
@@ -506,6 +577,61 @@ router.post("/wallet/verify-bharatpe", async (req, res) => {
       reference: utr,
       status: "completed"
     });
+
+    // ── Referral Bonus Logic ──
+    if (user.referred_by) {
+      try {
+        const Setting = require("../models/Setting");
+        const Transaction = require("../models/Transaction");
+        const sPercent = await Setting.findOne({ key: "referral_bonus_percent" });
+        const sFixed   = await Setting.findOne({ key: "referral_bonus_fixed_amount" });
+        
+        const percent = parseFloat(sPercent?.value || 0);
+        const fixedAmt = parseFloat(sFixed?.value || 0);
+        
+        let totalBonus = 0;
+        let bonusDesc = [];
+
+        // 1. Percentage Bonus (recurring)
+        if (percent > 0) {
+          const pBonus = parseFloat(((amount * percent) / 100).toFixed(4));
+          if (pBonus > 0) {
+            totalBonus += pBonus;
+            bonusDesc.push(`${percent}% commission`);
+          }
+        }
+
+        // 2. Fixed Bonus (one-time on first deposit)
+        if (fixedAmt > 0 && !user.has_deposited) {
+           totalBonus += fixedAmt;
+           bonusDesc.push(`₹${fixedAmt} invite reward`);
+        }
+
+        if (totalBonus > 0) {
+          const referrer = await User.findById(user.referred_by);
+          if (referrer) {
+            referrer.balance = parseFloat((referrer.balance + totalBonus).toFixed(4));
+            referrer.referral_earnings = parseFloat((referrer.referral_earnings + totalBonus).toFixed(4));
+            await referrer.save();
+            
+            await Transaction.create({
+              user_id: referrer._id,
+              type: "bonus",
+              amount: totalBonus,
+              balance_after: referrer.balance,
+              description: `Referral bonus from ${user.username} (${bonusDesc.join(" + ")})`,
+              reference: `REF-${user._id}-${Date.now()}`
+            });
+          }
+        }
+      } catch (err) { console.error("Referral bonus error:", err); }
+    }
+
+    // Mark user as deposited
+    if (!user.has_deposited) {
+      user.has_deposited = true;
+      await user.save();
+    }
 
     res.json({ success: true, amount });
   } catch (err) {

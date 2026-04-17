@@ -81,7 +81,7 @@
         <td class="mono text-xs">${t.order_id || "—"}</td>
         <td class="text-muted text-sm">${fmtDate(t.createdAt)}</td>
       </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No transactions</td></tr>`;
-    renderPagination("pagination", data.page, data.pages, window.loadTx);
+    renderPagination("pagination", data.page, data.pages, "loadTx");
   }
 
   function setFilter(type, btn) {

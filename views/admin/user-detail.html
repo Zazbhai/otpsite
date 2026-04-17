@@ -5,6 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>User Detail — Admin — {{SITE_NAME}}</title>
   <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 900px) {
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 480px) {
+      .info-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .card {
+        padding: 20px !important;
+      }
+    }
+    .main-content { padding-bottom: 60px; }
+    .resp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 600px) {
+      .resp-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .resp-header > div { width: 100%; }
+      #u-badge { margin-left: 0 !important; margin-top: 8px; }
+    }
+  </style>
 </head>
 <body>
 <nav class="navbar">
@@ -40,9 +77,12 @@
   </aside>
 
   <main class="main-content">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-      <button class="btn btn-secondary btn-sm" onclick="history.back()">← Back</button>
-      <h1 style="font-size:24px;margin:0">User Details <span id="u-badge"></span></h1>
+    <div class="resp-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-secondary btn-sm" onclick="history.back()">← Back</button>
+        <h1 style="font-size:24px;margin:0">User Details</h1>
+      </div>
+      <div id="u-badge" style="margin-left:auto; display:flex; align-items:center"></div>
     </div>
 
     <!-- Spinner -->
@@ -77,7 +117,7 @@
       <div style="display:flex;flex-direction:column;gap:16px">
         
         <!-- Info Grid -->
-        <div class="card" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">
+        <div class="card info-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">
           <div>
             <div class="text-sm text-muted">Email</div>
             <div class="font-bold text-sm" id="u-email" style="word-break:break-all">—</div>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How It Works — {{SITE_NAME}}</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="bg-dark">
+  <nav class="navbar">
+    <div class="container">
+      <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
+        <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
+        <div class="nav-links">
+          <a href="/pricing">Pricing</a>
+          <a href="/how-it-works" class="active">How It Works</a>
+          <a href="/support">Support</a>
+        </div>
+        <div id="nav-auth"></div>
+        <button class="nav-burger" id="nav-burger">☰</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="layout">
+    <main class="main-content" style="padding-top:40px">
+      <section class="section">
+        <div class="container container-sm">
+          <div class="section-header">
+            <h1>How it <span class="gradient-text">Works</span></h1>
+            <p>Get your SMS verification done in 3 simple steps. Total process takes less than 2 minutes.</p>
+          </div>
+
+          <div class="steps-container">
+            <!-- Step 1 -->
+            <div class="step-card card card-glow">
+              <div class="step-badge">1</div>
+              <div class="step-content">
+                <h3>Deposit Funds</h3>
+                <p>Top up your wallet using your preferred payment method. We support multiple payment gateways for fast and secure transactions.</p>
+                <div class="step-visual">💰 💳 🪙</div>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-card card card-glow">
+              <div class="step-badge">2</div>
+              <div class="step-content">
+                <h3>Select Service & Country</h3>
+                <p>Choose the service you want to verify (WhatsApp, Telegram, etc.) and select the country for the phone number.</p>
+                <div class="step-visual">📱 🌍 📍</div>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-card card card-glow">
+              <div class="step-badge">3</div>
+              <div class="step-content">
+                <h3>Receive SMS & Verify</h3>
+                <p>Click "Buy" to get your instant number. Use it on the app/website, wait for the SMS to appear in your dashboard, and you're done!</p>
+                <div class="step-visual">📨 ✅ 🚀</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-8" style="border-left: 4px solid var(--accent)">
+            <h3 style="margin-bottom:12px">Why Choose {{SITE_NAME}}?</h3>
+            <ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:12px">
+              <li>💎 <b>Instant Delivery:</b> No waiting, numbers are allocated immediately.</li>
+              <li>🛡️ <b>Privacy Focused:</b> Keep your personal number private from services.</li>
+              <li>📉 <b>Affordable Pricing:</b> High quality numbers at the lowest market rates.</li>
+              <li>🔁 <b>Auto Refunds:</b> If you don't receive an OTP, you don't pay.</li>
+            </ul>
+          </div>
+
+          <div style="text-align:center; margin-top:48px">
+            <a href="/?login=1" class="btn btn-primary btn-lg">Get Started Now</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="footer-simple">
+    <div class="container">
+      <p>© 2025 {{SITE_NAME}}. Professional SMS Verification.</p>
+      <div style="margin-top:12px">
+        <a href="/terms" style="opacity:0.6; color:#fff; text-decoration:none">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <style>
+    .steps-container { display: flex; flex-direction: column; gap: 24px; margin-top: 40px; }
+    .step-card { display: flex; gap: 24px; padding: 32px; position: relative; overflow: hidden; }
+    .step-badge {
+      width: 48px; height: 48px; border-radius: 50%; background: var(--accent);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 20px; flex-shrink: 0;
+      box-shadow: 0 0 20px var(--accent-alpha);
+    }
+    .step-content h3 { margin-bottom: 12px; font-size: 20px; }
+    .step-content p { color: var(--text-2); line-height: 1.6; }
+    .step-visual { margin-top: 20px; font-size: 24px; letter-spacing: 12px; opacity: 0.8; }
+    .footer-simple { padding: 60px 0 120px; text-align: center; opacity: 0.6; font-size: 13px; }
+
+    @media (max-width: 768px) {
+      .step-card { flex-direction: column; text-align: center; align-items: center; padding: 24px; }
+      .main-content { padding-bottom: 100px !important; }
+    }
+  </style>
+
+  <script src="/js/main.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const navAuth = document.getElementById("nav-auth");
+      if (isLoggedIn()) navAuth.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
+      else navAuth.innerHTML = '<a href="/?login=1" class="btn btn-primary btn-sm">Login</a>';
+      
+      if (typeof renderMobileBottomNav === 'function') renderMobileBottomNav('/how-it-works');
+    });
+  </script>
+</body>
+</html>

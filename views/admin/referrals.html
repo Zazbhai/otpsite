@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Referral Analytics — Admin</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+  <style>
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stat-label { font-size: 11px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 22px; font-weight: 800; color: #fff; }
+    .stat-value.success { color: var(--success); }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) { 
+        .admin-grid { grid-template-columns: 1fr; } 
+        .main-content { padding-bottom: 100px !important; } /* Solve navbar overlap */
+        .layout { padding-bottom: 20px; }
+        .resp-header h1 { font-size: 24px !important; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 20px;
+      height: 100%;
+    }
+    .card-header { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
+    .card-title { font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 10px; color: var(--text-3); font-size: 11px; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+    td { padding: 12px 10px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .tr-hover:hover { background: rgba(59,130,246,0.05); }
+
+    .user-pill { display: flex; align-items: center; gap: 8px; }
+    .avatar-mini { width: 28px; height: 28px; border-radius: 50%; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+    
+    .compact-card { padding: 16px !important; height: auto !important; }
+    .compact-card .form-label { font-size: 12px; margin-bottom: 4px; }
+    
+    .config-grid {
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+      gap: 16px; 
+      align-items: center;
+    }
+    @media (max-width: 640px) {
+        .admin-stats-grid { grid-template-columns: 1fr; }
+        .config-grid { grid-template-columns: 1fr; gap: 20px; }
+    }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-item" style="opacity:0.6; pointer-events:none">ADMIN PANEL</div>
+    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/services" class="sidebar-item">🛡️ Services</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/referrals" class="sidebar-item active">🤝 Referrals</a>
+    <a href="/admin/payments" class="sidebar-item">💳 Payments</a>
+    <a href="/admin/promo-codes" class="sidebar-item">🎁 Promo Codes</a>
+    <a href="/admin/settings" class="sidebar-item">⚙️ Settings</a>
+    <div class="sidebar-divider"></div>
+    <a href="/dashboard" class="sidebar-item">🏠 Exit Admin</a>
+  </aside>
+
+  <main class="main-content">
+    <header style="margin-bottom:32px">
+      <h1 style="font-size:28px; font-weight:800; color:#fff">Referral Analytics 🤝</h1>
+      <p class="text-muted">Monitor global referral growth and commission dividends.</p>
+    </header>
+
+    <div class="admin-stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Referrals</div>
+        <div class="stat-value" id="m-total-refs">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Dividends Paid</div>
+        <div class="stat-value success" id="m-total-paid">₹0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Program Status</div>
+        <div class="stat-value" id="m-status">Active</div>
+      </div>
+    </div>
+
+    <!-- Referral Configuration -->
+    <div class="card compact-card" style="margin-bottom:24px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px">
+        <h3 class="card-title" style="margin:0">⚙️ Program Configuration</h3>
+        <button class="btn btn-primary btn-sm" onclick="saveReferralSettings()" style="height:32px; padding:0 20px">💾 Save</button>
+      </div>
+      <div class="config-grid">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Enable Referral System</label>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:4px">
+            <input type="checkbox" id="s-referral-enabled" style="width:20px; height:20px; cursor:pointer" />
+            <span id="s-referral-status-text" style="font-weight:700; font-size:13px">Enabled</span>
+          </div>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Bonus Percentage (%)</label>
+          <input type="number" id="s-referral-percent" class="form-input" style="width:100%; height:36px; font-size:13px" placeholder="5" step="0.1" />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Fixed Bonus (₹)</label>
+          <input type="number" id="s-referral-fixed" class="form-input" style="width:100%; height:36px; font-size:13px" placeholder="2" step="0.01" />
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <!-- Top Referrers -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">🏆 Top Referrers</h3>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr><th>Influencer</th><th>Invites</th><th>Earnings</th></tr>
+            </thead>
+            <tbody id="top-referrers-list">
+              <!-- Loading -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Commissions -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">💸 Recent Commissions</h3>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr><th>Beneficiary</th><th>Amount</th><th>Time</th></tr>
+            </thead>
+            <tbody id="recent-commissions-list">
+              <!-- Loading -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+{
+  if (!requireAdmin()) {}
+
+  async function loadReferralStats() {
+    try {
+      const data = await API.get("/api/admin/referrals-stats");
+      const settings = await API.get("/api/admin/settings");
+
+      // Stats
+      document.getElementById("m-total-refs").textContent = data.metrics.total_referrals;
+      document.getElementById("m-total-paid").textContent = fmtMoney(data.metrics.total_earnings);
+      
+      const isEnabled = settings.referral_system_enabled === true || settings.referral_system_enabled === 'true';
+      document.getElementById("m-status").textContent = isEnabled ? "Active" : "Disabled";
+      document.getElementById("m-status").style.color = isEnabled ? "var(--success)" : "var(--danger)";
+
+      // Config
+      document.getElementById("s-referral-enabled").checked = isEnabled;
+      document.getElementById("s-referral-status-text").textContent = isEnabled ? "Enabled" : "Disabled";
+      document.getElementById("s-referral-status-text").style.color = isEnabled ? "var(--success)" : "var(--danger)";
+      document.getElementById("s-referral-percent").value = settings.referral_bonus_percent || 5;
+      document.getElementById("s-referral-fixed").value = settings.referral_bonus_fixed_amount || 0;
+
+      // Event listener for toggle
+      document.getElementById("s-referral-enabled").onchange = (e) => {
+          const txt = document.getElementById("s-referral-status-text");
+          txt.textContent = e.target.checked ? "Enabled" : "Disabled";
+          txt.style.color = e.target.checked ? "var(--success)" : "var(--danger)";
+      };
+
+      // Top Referrers
+      const topList = document.getElementById("top-referrers-list");
+      if (data.top_referrers.length > 0) {
+        topList.innerHTML = data.top_referrers.map(u => `
+          <tr class="tr-hover">
+            <td>
+              <div class="user-pill">
+                <div class="avatar-mini" style="background:${u.avatar_color || '#3b82f6'}">${u.username[0].toUpperCase()}</div>
+                <div>
+                  <div style="font-weight:700">${u.username}</div>
+                  <div class="text-xs text-muted">${u.email}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-weight:Bold">${u.referral_count}</td>
+            <td style="color:var(--success); font-weight:Bold">${fmtMoney(u.referral_earnings)}</td>
+          </tr>
+        `).join("");
+      } else {
+        topList.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:40px;opacity:0.5">No referrals yet.</td></tr>';
+      }
+
+      // Recent Commissions
+      const recentList = document.getElementById("recent-commissions-list");
+      if (data.recent_commissions.length > 0) {
+        recentList.innerHTML = data.recent_commissions.map(t => `
+          <tr class="tr-hover">
+            <td>
+              <div style="font-weight:700">${t.user_id?.username || 'System'}</div>
+              <div class="text-xs text-muted">${t.description}</div>
+            </td>
+            <td style="color:var(--success); font-weight:Bold">+${fmtMoney(t.amount)}</td>
+            <td class="text-xs text-muted">${fmtDateShort(t.createdAt)}</td>
+          </tr>
+        `).join("");
+      } else {
+        recentList.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:40px;opacity:0.5">No commissions yet.</td></tr>';
+      }
+
+    } catch (err) { toast(err.message, "error"); }
+  }
+
+  window.saveReferralSettings = async function() {
+    try {
+      const config = {
+        referral_system_enabled: document.getElementById("s-referral-enabled").checked,
+        referral_bonus_percent: parseFloat(document.getElementById("s-referral-percent").value || 0),
+        referral_bonus_fixed_amount: parseFloat(document.getElementById("s-referral-fixed").value || 0)
+      };
+      
+      await API.post("/api/admin/settings", config);
+      toast("Referral settings saved successfully!", "success");
+      loadReferralStats();
+    } catch (err) { toast(err.message, "error"); }
+  }
+
+  loadReferralStats();
+}
+</script>
+</body>
+</html>

@@ -2,8 +2,13 @@
 (function() {
   // 0. Immediate Theme Apply to prevent flicker
   try {
-    const savedTheme = localStorage.getItem('theme_pref') || 'dark';
+    // Use canonical key 'otp_theme'; migrate old 'theme_pref' if present
+    const savedTheme = localStorage.getItem('otp_theme') || localStorage.getItem('theme_pref') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
+    // Migrate old key if needed
+    if (!localStorage.getItem('otp_theme') && localStorage.getItem('theme_pref')) {
+      localStorage.setItem('otp_theme', localStorage.getItem('theme_pref'));
+    }
   } catch(e) {}
 
   // 1. Inject CSS immediately. Use !important to override everything.

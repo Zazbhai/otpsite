@@ -62,21 +62,36 @@ async function renderPage(res, filename) {
     const settings = await getCachedSettings();
     let html = fs.readFileSync(path.join(views, filename), "utf8");
     
-    // Core replacements
-    const name = settings.site_name || "Rapid OTP";
-    const logo = settings.site_logo || "";
+    // Core Branding
+    const siteName = settings.site_name || "Zaz";
+    const siteLogo = settings.site_logo || "/img/logo.png";
+    const siteFavicon = settings.site_favicon || "/favicon.ico";
     
-    html = html.replace(/{{SITE_NAME}}/g, name);
-    html = html.replace(/{{SITE_LOGO}}/g, logo);
-    
-    // SEO replacements
-    if (settings.seo_title)       html = html.replace(/{{SEO_TITLE}}/g, settings.seo_title);
-    if (settings.seo_description) html = html.replace(/{{SEO_DESC}}/g, settings.seo_description);
+    // SEO & Meta
+    const seoTitle = settings.seo_title || `${siteName} — Instant Virtual Numbers for SMS Verification`;
+    const seoDesc  = settings.seo_description || `Get instant virtual phone numbers for ${siteName}. Receive OTP online for WhatsApp, Telegram, and 500+ services. Reliable, fast, and secure virtual numbers globally.`;
+    const seoKeys  = settings.seo_keywords || `otp, sms verification, virtual numbers, ${siteName}, receive sms online, burner number, private phone numbers, bypass otp`;
+    const seoOg    = settings.seo_og_image || "/img/og-preview.png";
 
+    // Perform replacements
+    const replacements = {
+      "{{SITE_NAME}}": siteName,
+      "{{SITE_LOGO}}": siteLogo,
+      "{{SITE_FAVICON}}": siteFavicon,
+      "{{SEO_TITLE}}": seoTitle,
+      "{{SEO_DESC}}": seoDesc,
+      "{{SEO_KEYWORDS}}": seoKeys,
+      "{{SEO_OG_IMAGE}}": seoOg
+    };
+
+    for (const [key, value] of Object.entries(replacements)) {
+      html = html.replace(new RegExp(key, "g"), value);
+    }
+    
     res.send(html);
   } catch (err) {
     console.error("Render error:", err);
-    res.sendFile(path.join(views, filename)); // Fallback to raw file
+    res.sendFile(path.join(views, filename));
   }
 }
 
@@ -96,6 +111,7 @@ app.get("/dashboard/orders",      (_, res) => renderPage(res, "orders.html"));
 app.get("/dashboard/orders/:id",  (_, res) => renderPage(res, "order-detail.html"));
 app.get("/dashboard/wallet",      (_, res) => renderPage(res, "wallet.html"));
 app.get("/dashboard/profile",     (_, res) => renderPage(res, "profile.html"));
+app.get("/dashboard/referrals",   (_, res) => renderPage(res, "referrals.html"));
 app.get("/dashboard/accounts",    (_, res) => renderPage(res, "accounts.html"));
 
 // Admin panel
@@ -114,6 +130,7 @@ app.get("/admin/settings",      (_, res) => renderPage(res, "admin/settings.html
 app.get("/admin/analytics",     (_, res) => renderPage(res, "admin/analytics.html"));
 app.get("/admin/readymade",     (_, res) => renderPage(res, "admin/readymade.html"));
 app.get("/admin/promo-codes",   (_, res) => renderPage(res, "admin/promo-codes.html"));
+app.get("/admin/referrals",     (_, res) => renderPage(res, "admin/referrals.html"));
 
 // 404
 app.use((_, res) => res.status(404).sendFile(path.join(views, "404.html")));

@@ -28,7 +28,7 @@ function skeletonGrid(count = 4, className = 'card') {
 
 const API = {
   fetchWithTimeout: async (url, options = {}) => {
-    const { timeout = 10000 } = options;
+    const { timeout = 45000 } = options;
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     try {
@@ -65,7 +65,9 @@ async function handleRes(res) {
 }
 
 
-// Global Branding & Themes
+// ── Unified Theme System ─────────────────────────────────────────────────
+// Single canonical THEMES list used everywhere (settings preview + runtime)
+const THEME_STORAGE_KEY = "otp_theme";
 window.THEMES = [
   { id: 'dark',      label: 'Eclipse Dark',   icon: '🌑', accent: '#3b82f6', grad: 'linear-gradient(135deg, #3b82f6, #6366f1)' },
   { id: 'midnight',  label: 'Midnight',        icon: '🌌', accent: '#818cf8', grad: 'linear-gradient(135deg, #818cf8, #a78bfa)' },
@@ -93,20 +95,50 @@ window.THEMES = [
   { id: 'dawn',      label: 'Dawn',            icon: '🌸', accent: '#ec4899', grad: 'linear-gradient(135deg, #ec4899, #f43f5e)' },
   { id: 'stone',     label: 'Stone',           icon: '🪨', accent: '#64748b', grad: 'linear-gradient(135deg, #64748b, #475569)' },
   { id: 'slate',     label: 'Slate',           icon: '🩶', accent: '#64748b', grad: 'linear-gradient(135deg, #64748b, #475569)' },
+  { id: 'silver',    label: 'Silver',          icon: '🥈', accent: '#9ca3af', grad: 'linear-gradient(135deg, #9ca3af, #6b7280)' },
+  { id: 'bronze',    label: 'Bronze',          icon: '🥉', accent: '#b45309', grad: 'linear-gradient(135deg, #b45309, #92400e)' },
+  { id: 'cyber',     label: 'Cyber',           icon: '💻', accent: '#06b6d4', grad: 'linear-gradient(135deg, #06b6d4, #22d3ee)' },
+  { id: 'retro',     label: 'Retro',           icon: '📺', accent: '#fbc02d', grad: 'linear-gradient(135deg, #fbc02d, #f9a825)' },
+  { id: 'matrix',    label: 'Matrix',          icon: '🖥️', accent: '#22c55e', grad: 'linear-gradient(135deg, #22c55e, #16a34a)' },
+  { id: 'pastel',    label: 'Pastel',          icon: '🎨', accent: '#ec4899', grad: 'linear-gradient(135deg, #ec4899, #db2777)' },
 ];
 
+/**
+ * Apply a theme by ID.
+ * @param {string} themeId  - must match a THEMES[n].id
+ * @param {boolean} isPreview - if true, does NOT write to localStorage
+ */
 window.applyTheme = function(themeId, isPreview = false) {
-  const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
-  document.documentElement.setAttribute('data-theme', theme.id);
-  
-  // Persist preference unless it's just a temporary preview
+  const theme = window.THEMES.find(t => t.id === themeId) || window.THEMES[0];
+  const root = document.documentElement;
+
+  // Always set the data-theme attribute so CSS [data-theme="x"] rules fire
+  root.setAttribute('data-theme', theme.id);
+
+  // Clear any previous inline accent/grad overrides so CSS variables take over
+  root.style.removeProperty('--accent');
+  root.style.removeProperty('--accent-rgb');
+  root.style.removeProperty('--grad-primary');
+
   if (!isPreview) {
-    localStorage.setItem('theme_pref', theme.id);
-  } else {
-    document.documentElement.style.setProperty('--accent', theme.accent);
-    document.documentElement.style.setProperty('--grad-primary', theme.grad);
+    // Persist for page loads
+    localStorage.setItem(THEME_STORAGE_KEY, theme.id);
   }
+  // For preview-only we still want the native CSS variables to show (via data-theme),
+  // no need to set inline styles — the CSS ruleset does it.
 };
+
+window.getThemePreference = function() {
+  const saved = localStorage.getItem(THEME_STORAGE_KEY);
+  return (window.THEMES.find(t => t.id === saved) ? saved : 'dark');
+};
+
+function getThemePreference() { return window.getThemePreference(); }
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'light' ? 'dark' : 'light');
+}
 
 let siteSettings = {
   site_name: "Website Name",
@@ -430,80 +462,7 @@ function saveAuth(token, user) {
   localStorage.setItem("otp_user", JSON.stringify(user));
 }
 
-const THEME_STORAGE_KEY = "otp_theme";
-const THEMES = [
-  { id: "dark", label: "Dark", icon: "🌙" },
-  { id: "light", label: "Light", icon: "☀️" },
-  { id: "midnight", label: "Midnight", icon: "🌌" },
-  { id: "ocean", label: "Ocean", icon: "🌊" },
-  { id: "sunset", label: "Sunset", icon: "🌅" },
-  { id: "forest", label: "Forest", icon: "🌲" },
-  { id: "lavender", label: "Lavender", icon: "💜" },
-  { id: "aurora", label: "Aurora", icon: "🌀" },
-  { id: "ember", label: "Ember", icon: "🔥" },
-  { id: "citrus", label: "Citrus", icon: "🍋" },
-  { id: "stone", label: "Stone", icon: "🪨" },
-  { id: "sage", label: "Sage", icon: "🌿" },
-  { id: "dawn", label: "Dawn", icon: "🌄" },
-  { id: "neon", label: "Neon", icon: "🌐" },
-  { id: "coral", label: "Coral", icon: "🐚" },
-  { id: "rose", label: "Rose", icon: "🌹" },
-  { id: "violet", label: "Violet", icon: "💎" },
-  { id: "mint", label: "Mint", icon: "🍃" },
-  { id: "cherry", label: "Cherry", icon: "🍒" },
-  { id: "sky", label: "Sky", icon: "🎈" },
-  { id: "berry", label: "Berry", icon: "🫐" },
-  { id: "peach", label: "Peach", icon: "🍑" },
-  { id: "slate", label: "Slate", icon: "🌑" },
-  { id: "copper", label: "Copper", icon: "🥉" },
-  { id: "teal", label: "Teal", icon: "🐚" },
-  { id: "maroon", label: "Maroon", icon: "🎗️" },
-  { id: "gold", label: "Gold", icon: "✨" },
-  { id: "silver", label: "Silver", icon: "🥈" },
-  { id: "bronze", label: "Bronze", icon: "🥉" },
-  { id: "cyber", label: "Cyber", icon: "🤖" },
-  { id: "retro", label: "Retro", icon: "📺" },
-  { id: "matrix", label: "Matrix", icon: "💻" },
-  { id: "pastel", label: "Pastel", icon: "🎨" },
-  { id: "mono-minimal", label: "Mono Minimal", icon: "🌑" },
-  { id: "neon-highlights", label: "Neon High", icon: "⚡" },
-  { id: "warm-tones", label: "Warm Tones", icon: "🧶" },
-  { id: "muted-pastels", label: "Muted Pastels", icon: "🍬" },
-  { id: "jewel-tones", label: "Jewel Tones", icon: "💎" },
-  { id: "vibrant-contrast", label: "Vibrant", icon: "💥" }
-];
-
-function getThemePreference() {
-  const saved = localStorage.getItem(THEME_STORAGE_KEY);
-  const validTheme = THEMES.find(t => t.id === saved);
-  return validTheme ? saved : "dark";
-}
-
-function applyTheme(theme, isPreview = false) {
-  document.documentElement.setAttribute("data-theme", theme);
-  if (!isPreview) {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }
-  
-  // Enforce consistent black base even if dynamic overrides are active
-  document.documentElement.style.setProperty('--bg-1', '#000000');
-  document.documentElement.style.setProperty('--bg-2', '#050505');
-  
-  // If we are applying a colorful/specialized theme, remove the global brand overrides
-  // so the CSS variables in main.css can take effect.
-  if (theme !== 'dark' && theme !== 'light') {
-    document.documentElement.style.removeProperty('--accent');
-    document.documentElement.style.removeProperty('--accent-rgb');
-    document.documentElement.style.removeProperty('--grad-primary');
-  }
-}
-
-function toggleTheme() {
-  const current = document.documentElement.getAttribute("data-theme");
-  // If we're in a specialized theme, toggle to light. If in light, toggle to dark.
-  const next = current === "light" ? "dark" : "light";
-  applyTheme(next);
-}
+// applyTheme and getThemePreference are defined above (unified implementation)
 
 let _settingsCache = null;
 let _settingsCacheTime = 0;
@@ -601,24 +560,27 @@ async function applySiteSettings(forceRefresh = false) {
       return;
     }
 
-    // 1. Apply Theme
-    const userTheme = localStorage.getItem(THEME_STORAGE_KEY);
-    if (settings.default_theme && (!userTheme || forceRefresh)) {
+    // 1. Apply Theme — admin default_theme wins only if user has no preference saved
+    const userSavedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (settings.default_theme && (!userSavedTheme || forceRefresh)) {
       applyTheme(settings.default_theme);
+    } else if (!userSavedTheme) {
+      applyTheme('dark');
     }
     
-    // 2. Apply Brand Overrides (Global)
+    // 2. Apply Brand Color Overrides — only for dark/light base themes
     const root = document.documentElement;
-    const currentTheme = getThemePreference();
-    const isBasicTheme = currentTheme === 'dark' || currentTheme === 'light';
+    // Read the actual applied theme attribute (after applyTheme may have just changed it)
+    const activeTheme = root.getAttribute('data-theme') || 'dark';
+    const isBasicTheme = activeTheme === 'dark' || activeTheme === 'light';
 
     if (settings.primary_color && isBasicTheme) {
       root.style.setProperty('--accent', settings.primary_color);
       const rgb = hexToRgb(settings.primary_color);
       if (rgb) root.style.setProperty('--accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
       root.style.setProperty('--grad-primary', `linear-gradient(135deg, ${settings.primary_color}, ${adjustColor(settings.primary_color, -20)})`);
-    } else if (!isBasicTheme) {
-      // Ensure overrides are cleared for colorful themes
+    } else {
+      // Colored theme — ensure no inline overrides from previous dark-mode brand color bleed through
       root.style.removeProperty('--accent');
       root.style.removeProperty('--accent-rgb');
       root.style.removeProperty('--grad-primary');
@@ -740,12 +702,36 @@ function createToastContainer() {
 
 window.toast = function(msg, type = "success", duration = 3500) {
   createToastContainer();
+  const container = document.getElementById("toast-container");
   const t = document.createElement("div");
   t.className = `toast toast-${type}`;
-  const icon = type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️";
-  t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
-  document.getElementById("toast-container").appendChild(t);
-  setTimeout(() => t.remove(), duration);
+  
+  const icon = type === "success" ? "✓" : type === "error" ? "×" : "ℹ";
+  
+  t.innerHTML = `
+    <div class="toast-icon">${icon}</div>
+    <div class="toast-content">${msg}</div>
+    <div class="toast-progress"></div>
+  `;
+  
+  container.appendChild(t);
+
+  // Progress bar animation
+  const progress = t.querySelector('.toast-progress');
+  progress.style.transition = `transform ${duration}ms linear`;
+  requestAnimationFrame(() => {
+    progress.style.transform = 'scaleX(0)';
+  });
+
+  const remove = () => {
+    if (t.parentElement) {
+      t.classList.add('removing');
+      setTimeout(() => t.remove(), 400);
+    }
+  };
+
+  t.onclick = remove;
+  setTimeout(remove, duration);
 };
 
 // ── Formatting ────────────────────────────────────────────────────
@@ -946,13 +932,19 @@ document.addEventListener("click", (e) => {
 function renderPagination(containerId, currentPage, totalPages, onPageChange) {
   const c = document.getElementById(containerId);
   if (!c || totalPages <= 1) { if (c) c.innerHTML = ""; return; }
-  let fn;
+  let fnName = "";
   if (typeof onPageChange === 'string') {
-    fn = window[onPageChange] || new Function('return ' + onPageChange)();
-  } else {
-    fn = onPageChange;
+    fnName = onPageChange;
+  } else if (typeof onPageChange === 'function') {
+    fnName = onPageChange.name;
+    if (!fnName) {
+      for (let k in window) { if (window[k] === onPageChange) { fnName = k; break; } }
+    }
   }
-  const fnName = typeof fn === 'function' ? fn.name || onPageChange : onPageChange;
+  if (!fnName) {
+    console.error("renderPagination requires a globally accessible function name.", onPageChange);
+    return;
+  }
   let html = '<div class="pagination">';
   html += `<button class="page-btn" onclick="${fnName}(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>‹</button>`;
   for (let i = 1; i <= totalPages; i++) {
@@ -986,8 +978,8 @@ async function doLogin(email, password) {
   return data;
 }
 
-async function doRegister(username, email, password) {
-  const data = await API.post("/api/auth/register", { username, email, password });
+async function doRegister(username, email, password, referral_code = null) {
+  const data = await API.post("/api/auth/register", { username, email, password, referral_code });
   saveAuth(data.token, data.user);
   return data;
 }
@@ -1127,19 +1119,22 @@ let currentNavRole = null; // 'admin' or 'user'
 
 function closeMobileMoreMenu() {
   const menu = document.getElementById("mb-nav-more-menu");
+  const moreBtn = document.getElementById("mb-nav-more-btn");
   if (menu) menu.classList.add("hidden");
+  if (moreBtn) moreBtn.classList.remove("open");
 }
 
 window.renderMobileBottomNav = function(path = window.location.pathname) {
-  if (!path.startsWith("/dashboard") && !path.startsWith("/admin")) {
+  const allowedPublic = ["/support", "/how-it-works", "/terms"];
+  if (!path.startsWith("/dashboard") && !path.startsWith("/admin") && !allowedPublic.includes(path)) {
     const existing = document.getElementById("mb-bottom-nav-container");
     if (existing) existing.classList.remove("visible");
     closeMobileMoreMenu();
     return;
   }
 
-  const isAdmin = path.startsWith("/admin");
-  const role = isAdmin ? 'admin' : 'user';
+  const isCurrentPageAdmin = path.startsWith("/admin");
+  const role = isCurrentPageAdmin ? 'admin' : 'user';
   
   let container = document.getElementById("mb-bottom-nav-container");
   if (!container) {
@@ -1155,53 +1150,39 @@ window.renderMobileBottomNav = function(path = window.location.pathname) {
   if (currentNavRole !== role) {
     const inner = container.querySelector(".mobile-bottom-nav-inner");
     const adminLinks = [
-      { href: "/admin", icon: "📊", text: "Home" },
-      { href: "/admin/users", icon: "👥", text: "Users" },
-      { href: "/admin/orders", icon: "📋", text: "Orders" }
+      { href: "/admin", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`, text: "Home" },
+      { href: "/admin/users", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, text: "Users" },
+      { href: "/admin/orders", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`, text: "Orders" }
     ];
     const userLinks = [
-      { href: "/dashboard", icon: "🏠", text: "Home" },
-      { href: "/dashboard/orders", icon: "📋", text: "Orders" },
-      { href: "/dashboard/buy", icon: "⚡", text: "Buy", center: true },
-      { href: "/dashboard/wallet", icon: "💰", text: "Wallet" },
+      { href: "/dashboard", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`, text: "Home" },
+      { href: "/dashboard/orders", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`, text: "Orders" },
+      { href: "/dashboard/buy", icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`, text: "Buy", center: true },
+      { href: "/dashboard/wallet", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12z"/></svg>`, text: "Wallet" },
     ];
 
-    const links = isAdmin ? adminLinks : userLinks;
-    let html = "";
-    links.forEach(l => {
-      const isCenter = l.center;
-      html += `
-        <a href="${l.href}" class="mb-nav-item ${isCenter ? "mb-nav-buy" : ""}" data-href="${l.href}">
-          <span class="mb-nav-icon">${l.icon}</span>
-          <span>${l.text}</span>
-        </a>`;
-    });
-
-    html += `
-      <button type="button" class="mb-nav-item" id="mb-nav-more-btn" style="cursor:pointer">
-        <span class="mb-nav-icon">☰</span>
-        <span>More</span>
-      </button>
-    `;
-    inner.innerHTML = html;
-    currentNavRole = role;
-
-    // Setup More Menu
     const adminMore = [
-      { href: "/admin/analytics", icon: "📈", text: "Analytics" },
-      { href: "/admin/transactions", icon: "💳", text: "Txns" },
-      { href: "/admin/services", icon: "⚙️", text: "Services" },
-      { href: "/admin/servers", icon: "🖥️", text: "Servers" },
-      { href: "/admin/payments", icon: "💰", text: "Payments" },
-      { href: "/admin/broadcast", icon: "📢", text: "Broadcast" },
-      { href: "/admin/settings", icon: "🔧", text: "Settings" }
+      { href: "/admin/analytics", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, text: "Analytics" },
+      { href: "/admin/transactions", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>`, text: "Txns" },
+      { href: "/admin/referrals", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, text: "Referrals" },
+      { href: "/admin/services", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`, text: "Services" },
+      { href: "/admin/servers", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6" y2="6"/><line x1="6" y1="18" x2="6" y2="18"/></svg>`, text: "Servers" },
+      { href: "/admin/payments", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`, text: "Payments" },
+      { href: "/admin/broadcast", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`, text: "Broadcast" },
+      { href: "/admin/settings", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`, text: "Settings" }
     ];
     const userMore = [
-      { href: "/dashboard/accounts", icon: "🗂️", text: "Accounts" },
-      { href: "/dashboard/profile", icon: "👤", text: "Profile" },
-      { href: "/support", icon: "💬", text: "Support" },
+      { href: "/dashboard/accounts", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`, text: "Accounts" },
+      { href: "/dashboard/profile", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`, text: "Profile" },
+      { href: "/dashboard/referrals", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, text: "Referrals" },
+      { href: "/support", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`, text: "Support" },
     ];
-    const moreLinks = isAdmin ? adminMore : userMore;
+    
+    if (typeof isAdmin === 'function' && isAdmin()) {
+      userMore.push({ href: "/admin", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`, text: "Admin" });
+    }
+
+    const moreLinks = isCurrentPageAdmin ? adminMore : userMore;
     
     let moreMenu = document.getElementById("mb-nav-more-menu");
     if (moreMenu) moreMenu.remove();
@@ -1209,7 +1190,7 @@ window.renderMobileBottomNav = function(path = window.location.pathname) {
     moreMenu.id = "mb-nav-more-menu";
     moreMenu.className = "mb-more-menu hidden";
     moreMenu.innerHTML = `<div class="mb-more-menu-content">
-      ${moreLinks.map(l => `<a href="${l.href}" class="mb-more-item" data-href="${l.href}"><span class="mb-more-icon">${l.icon}</span><span>${l.text}</span></a>`).join("")}
+      ${moreLinks.map((l, i) => `<a href="${l.href}" class="mb-more-item" data-href="${l.href}" style="animation-delay: ${0.05 + (i * 0.04)}s"><span class="mb-more-icon">${l.icon}</span><span>${l.text}</span></a>`).join("")}
     </div>`;
     document.body.appendChild(moreMenu);
 
@@ -1225,12 +1206,12 @@ window.renderMobileBottomNav = function(path = window.location.pathname) {
   moreMenu = document.getElementById("mb-nav-more-menu");
   
   // Attach click handler to More button (runs every time)
-  const moreBtn = document.getElementById("mb-nav-more-btn");
   if (moreBtn) {
     moreBtn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      moreMenu.classList.toggle("hidden");
+      const isHidden = moreMenu.classList.toggle("hidden");
+      moreBtn.classList.toggle("open", !isHidden);
     };
   }
 
@@ -1261,9 +1242,12 @@ window.renderMobileBottomNav = function(path = window.location.pathname) {
 document.addEventListener("DOMContentLoaded", () => renderMobileBottomNav());
 document.addEventListener("click", (e) => {
   const menu = document.getElementById("mb-nav-more-menu");
+  const moreBtn = document.getElementById("mb-nav-more-btn");
   if (menu && !menu.classList.contains("hidden")) {
-     if (!e.target.closest("#mb-nav-more-btn") && !e.target.closest("#mb-nav-more-menu"))
+     if (!e.target.closest("#mb-nav-more-btn") && !e.target.closest("#mb-nav-more-menu")) {
        menu.classList.add("hidden");
+       if (moreBtn) moreBtn.classList.remove("open");
+     }
   }
 });
 
@@ -1492,4 +1476,114 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   `;
   document.head.appendChild(s);
+})();
+
+// ── Universal Real-time SSE Client ──────────────────────────────
+// Connects to /api/auth/stream and handles server-pushed events
+// for ALL pages - no page refreshes needed.
+(function initSSE() {
+  if (!window.EventSource) return; // No SSE support → fall back to heartbeat
+  if (!isLoggedIn()) return;       // Only connect when logged in
+
+  let retryDelay = 2000;
+  let retryTimer = null;
+
+  function connect() {
+    const token = localStorage.getItem("otp_token") || "";
+    const url = `/api/auth/stream?token=${encodeURIComponent(token)}`;
+    const es = new EventSource(url);
+
+    es.addEventListener("connected", () => {
+      retryDelay = 2000; // Reset backoff on successful connect
+    });
+
+    // ── Balance Update ──────────────────────────────────────────
+    es.addEventListener("balance", (e) => {
+      try {
+        const { balance } = JSON.parse(e.data);
+        const fmt = typeof fmtMoney === "function" ? fmtMoney(balance) : `$${(+balance).toFixed(2)}`;
+        [
+          document.getElementById("nav-global-wallet-bal"),
+          document.getElementById("stat-balance"),
+          document.getElementById("p-balance"),
+          document.getElementById("wallet-bal"),
+        ].forEach(el => { if (el) { el.classList.remove("loading-shimmer"); el.textContent = fmt; } });
+      } catch (_) {}
+    });
+
+    // ── Order/OTP Update ────────────────────────────────────────
+    es.addEventListener("order", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        const { orderId } = data;
+        const path = window.location.pathname;
+
+        // If currently on the order detail page for this order, refresh it
+        if (path.includes(orderId) && typeof window.handleRealtimeOrderUpdate === "function") {
+          window.handleRealtimeOrderUpdate(data);
+          return;
+        }
+        // Refresh dashboard or orders list silently
+        if (typeof window.initDashboard === "function" && (path === "/dashboard" || path === "/dashboard/")) {
+          window.initDashboard();
+        }
+        if (typeof window.initOrders === "function" && path.startsWith("/dashboard/orders")) {
+          window.initOrders();
+        }
+      } catch (_) {}
+    });
+
+    // ── Settings Update ─────────────────────────────────────────
+    es.addEventListener("settings", () => {
+      if (typeof window.applyBranding === "function") window.applyBranding(true);
+    });
+
+    // ── Broadcast Message ───────────────────────────────────────
+    es.addEventListener("broadcast", (e) => {
+      try {
+        const bc = JSON.parse(e.data);
+        if (!bc || !bc.text || !bc.id) return;
+        if (localStorage.getItem("ack_broadcast") === bc.id) return;
+        if (document.querySelector(".modal-backdrop[data-bc]")) return;
+
+        const m = document.createElement("div");
+        m.className = "modal-backdrop open";
+        m.setAttribute("data-bc", bc.id);
+        m.style.zIndex = "9999";
+        const cleanText = bc.text.replace(/\*(.*?)\*/g, "<strong>$1</strong>").replace(/_(.*?)_/g, "<em>$1</em>");
+        m.innerHTML = `
+          <div class="modal" style="text-align:center;max-width:400px;background:var(--bg-1);border:1px solid rgba(59,130,246,0.3);box-shadow:0 0 40px rgba(59,130,246,0.15)">
+            <div style="font-size:48px;margin-bottom:16px">📢</div>
+            <h3 style="font-size:22px;margin-bottom:16px;color:var(--text)">Important Update</h3>
+            <div style="font-size:15px;color:var(--text-2);line-height:1.6;margin-bottom:28px;white-space:pre-wrap;text-align:left;background:rgba(255,255,255,0.03);padding:16px;border-radius:var(--r-md)">${cleanText}</div>
+            <div style="display:flex;gap:12px;flex-direction:column">
+              ${bc.btn_url ? `<a href="${bc.btn_url}" class="btn btn-primary w-full" target="_blank" id="bc-rt-action">${bc.btn_text || "Check it out"}</a>` : ""}
+              <button class="btn btn-secondary w-full" id="bc-rt-dismiss">Got it, thanks</button>
+            </div>
+          </div>`;
+        document.body.appendChild(m);
+        const dismiss = () => { localStorage.setItem("ack_broadcast", bc.id); m.classList.remove("open"); setTimeout(() => m.remove(), 300); };
+        const db = document.getElementById("bc-rt-dismiss");
+        if (db) db.onclick = dismiss;
+        const ab = document.getElementById("bc-rt-action");
+        if (ab) ab.onclick = dismiss;
+      } catch (_) {}
+    });
+
+    // ── Auto-reconnect with exponential backoff ─────────────────
+    es.onerror = () => {
+      es.close();
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = setTimeout(() => {
+        retryDelay = Math.min(retryDelay * 1.5, 30000);
+        connect();
+      }, retryDelay);
+    };
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", connect);
+  } else {
+    connect();
+  }
 })();

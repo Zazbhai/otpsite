@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wallet — {{SITE_NAME}}</title>
+  <meta name="description" content="{{SEO_DESC}}" />
+  <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
   <style>
@@ -33,6 +35,7 @@
     <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
     <div class="nav-links" id="nav-links">
       <a href="/dashboard">Dashboard</a>
+      <a href="/dashboard/referrals">Referrals</a>
       <a href="/dashboard/wallet" class="active">Wallet</a>
       <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
     </div>
@@ -45,6 +48,7 @@
     <a href="/dashboard" class="sidebar-item">🏠 Home</a>
     <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
     <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
+    <a href="/dashboard/referrals" class="sidebar-item">🤝 Referrals</a>
     <a href="/dashboard/wallet" class="sidebar-item active">💰 Wallet</a>
     <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
     <div class="sidebar-divider"></div>
@@ -128,8 +132,10 @@
           <span style="position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:24px; font-weight:900; color:var(--accent)">₹</span>
           <input type="number" id="deposit-amount-input" class="form-input" 
                  style="font-size:32px; font-weight:900; text-align:center; padding: 20px; border-radius: 20px; background: rgba(255,255,255,0.03)" 
-                 placeholder="0.00" min="10" value="100" />
+                 placeholder="0.00" value="100" />
         </div>
+        <p class="text-xxs mt-2" id="min-dep-hint" style="color:var(--text-3)">Minimum deposit: ₹1</p>
+        <p class="text-xxs mt-1 hidden" id="min-dep-error" style="color:var(--danger); font-weight:700">Please enter at least ₹1</p>
       </div>
 
       <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:24px">
@@ -254,57 +260,59 @@
   let paymentConfig = {};
   let depositAmount = 0;
 
-  async function loadSummary() {
-    try {
-      const resp = await API.get('/api/user/wallet?page=1&limit=1000');
-      const txs = resp.transactions || [];
-      const stats = txs.reduce((acc, t) => {
-        if (t.type === 'deposit' || t.type === 'bonus') acc.dep += t.amount;
-        if (t.type === 'purchase') acc.spent += Math.abs(t.amount);
-        if (t.type === 'refund') acc.ref += t.amount;
-        return acc;
-      }, { dep:0, spent:0, ref:0 });
-      
-      const depEl = document.getElementById('total-deposited');
-      const spentEl = document.getElementById('total-spent');
-      const refEl = document.getElementById('total-refunds');
-      if (depEl) depEl.textContent = fmtMoney(stats.dep);
-      if (spentEl) spentEl.textContent = "-" + fmtMoney(stats.spent);
-      if (refEl) refEl.textContent = "+" + fmtMoney(stats.ref);
-    } catch(e) {}
-  }
-
   async function loadWallet(page = 1) {
-    walletData.page = page;
-    const tbody = document.getElementById('tx-body');
-    if (tbody) tbody.innerHTML = skeletonTable(5, 8);
-    
     try {
+      walletData.page = page;
+      const tbody = document.getElementById('tx-body');
+      if (tbody) tbody.innerHTML = skeletonTable(5, 8);
+      
       const resp = await API.get(`/api/user/wallet?page=${page}&limit=10&type=${currentFilter}`);
-      walletData = { ...walletData, ...resp };
+      if (resp.error) throw new Error(resp.error);
+
+      // Merge response into walletData
+      walletData.balance = resp.balance || 0;
+      walletData.transactions = resp.transactions || [];
+      walletData.pages = resp.pages || 1;
       
       const balEl = document.getElementById('wallet-balance');
       if (balEl) balEl.textContent = fmtMoney(walletData.balance);
 
+      if (resp.summary) {
+        const depEl = document.getElementById('total-deposited');
+        const spentEl = document.getElementById('total-spent');
+        const refEl = document.getElementById('total-refunds');
+        if (depEl) depEl.textContent = fmtMoney(resp.summary.total_deposited || 0);
+        if (spentEl) spentEl.textContent = "-" + fmtMoney(resp.summary.total_spent || 0);
+        if (refEl) refEl.textContent = "+" + fmtMoney(resp.summary.total_refunded || 0);
+      }
+
       if (!tbody) return;
-      if (!walletData.transactions || !walletData.transactions.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-3)">No transactions found.</td></tr>';
+      if (!walletData.transactions.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-3)">No ${currentFilter === 'all' ? '' : currentFilter} transactions found.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = walletData.transactions.map(tx => `
-        <tr>
-          <td><span class="badge badge-${tx.type}">${tx.type}</span></td>
-          <td class="text-sm"><div>${tx.description || '—'}</div></td>
-          <td class="font-bold ${tx.amount > 0 ? 'text-success' : 'text-danger'}">${tx.amount > 0 ? '+' : ''}${tx.amount.toFixed(2)}</td>
-          <td class="text-muted text-sm">₹${tx.balance_after.toFixed(2)}</td>
-          <td class="text-xxs text-muted">${new Date(tx.createdAt).toLocaleString()}</td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = walletData.transactions.map(tx => {
+        const amt = tx.amount || 0;
+        const bal = tx.balance_after || 0;
+        return `
+          <tr>
+            <td><span class="badge badge-${tx.type}">${tx.type}</span></td>
+            <td class="text-sm"><div>${tx.description || '—'}</div></td>
+            <td class="font-bold ${amt > 0 ? 'text-success' : 'text-danger'}">${amt > 0 ? '+' : ''}${amt.toFixed(2)}</td>
+            <td class="text-muted text-sm">₹${bal.toFixed(2)}</td>
+            <td class="text-xxs text-muted">${new Date(tx.createdAt || Date.now()).toLocaleString()}</td>
+          </tr>
+        `;
+      }).join('');
 
       renderPagination("pagination", walletData.page, walletData.pages, "loadWallet");
-      loadSummary();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      toast(e.message, 'error');
+      console.error(e);
+      const tbody = document.getElementById('tx-body');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--danger)">Failed to load: ${e.message}</td></tr>`;
+    }
   }
 
   window.setTxFilter = function(filter, btn) {
@@ -318,17 +326,48 @@
 
   async function loadPaymentConfig() {
     try {
-      paymentConfig = await API.get('/api/user/wallet/payment-config');
+      paymentConfig = await API.get(`/api/user/wallet/payment-config?t=${Date.now()}`);
       const upiCard = document.getElementById('method-upi');
       if (upiCard) {
         upiCard.style.display = paymentConfig.bharatpe?.enabled ? 'flex' : 'none';
       }
+      const minDep = paymentConfig.bharatpe?.min_deposit || 1;
+      const hint = document.getElementById('min-dep-hint');
+      if (hint) hint.textContent = `Minimum deposit: ₹${minDep}`;
+      const input = document.getElementById('deposit-amount-input');
+      if (input) {
+        input.min = minDep;
+        input.oninput = validateDepositAmount;
+      }
+      validateDepositAmount();
     } catch (e) { console.error('Failed to load payment config', e); }
+  }
+
+  function validateDepositAmount() {
+    const input = document.getElementById('deposit-amount-input');
+    const btn = document.querySelector('#deposit-amount-screen .btn-primary');
+    const error = document.getElementById('min-dep-error');
+    const minDep = paymentConfig.bharatpe?.min_deposit || 1;
+    const amt = parseFloat(input.value) || 0;
+
+    if (amt < minDep) {
+      if (btn) btn.disabled = true;
+      if (btn) btn.style.opacity = '0.5';
+      if (error) {
+        error.textContent = `Please enter at least ₹${minDep}`;
+        error.classList.remove('hidden');
+      }
+    } else {
+      if (btn) btn.disabled = false;
+      if (btn) btn.style.opacity = '1';
+      if (error) error.classList.add('hidden');
+    }
   }
 
   window.nextToSelection = function() {
     const amt = parseFloat(document.getElementById('deposit-amount-input').value);
-    if (!amt || amt < 1) return toast('Min deposit is ₹1', 'error');
+    const minDep = paymentConfig.bharatpe?.min_deposit || 1;
+    if (!amt || amt < minDep) return toast(`Minimum deposit is ₹${minDep}`, 'error');
     depositAmount = amt;
     document.getElementById('display-deposit-amount').textContent = `₹${amt}`;
     document.querySelectorAll('.target-amount-text').forEach(el => el.textContent = `₹${amt}`);

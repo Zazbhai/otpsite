@@ -401,7 +401,7 @@
   <main class="main-content">
     <div class="detail-page">
       <div class="detail-header">
-        <a href="/dashboard/orders" class="detail-back">← Back</a>
+        <a href="/dashboard/buy" class="detail-back">← Back</a>
         <div id="status-badge" class="status-badge active">
           <span>Loading...</span>
         </div>
@@ -513,9 +513,41 @@
   }
 
   window.clearAllIntervals = function() {
-    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+    if (pollInterval) { clearTimeout(pollInterval); pollInterval = null; }
     if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
     if (cancelLockInterval) { clearInterval(cancelLockInterval); cancelLockInterval = null; }
+  }
+
+  /* ── Audio Notification System ───────────────────────── */
+  let audioCtx;
+  function initAudio() {
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+    }
+  }
+
+  function playOtpSound() {
+    initAudio();
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+    osc.frequency.exponentialRampToValueAtTime(880.00, audioCtx.currentTime + 0.1); // A5
+    
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
   }
 
   window.updateUI = function(o) {
@@ -570,30 +602,34 @@
     const otpContent = document.getElementById('otp-content');
     if (otpContent) {
       if (o.otp || (o.all_otps && o.all_otps.length)) {
-        const otps = (o.all_otps && o.all_otps.length) ? o.all_otps : [o.otp];
-        const latestOTP = otps[otps.length - 1];
-        const prevOTPs = otps.slice(0, -1);
+        // Deduplicate and filter out empty strings
+        const all = [...new Set(((o.all_otps && o.all_otps.length) ? o.all_otps : [o.otp]).filter(x => !!x))];
+        const latestOTP = all[all.length - 1];
+        // Previous OTPs are all except the latest one
+        const prevOTPs = all.slice(0, -1);
         
         let html = `<div style="display:flex;flex-direction:column;gap:10px;align-items:center;width:100%;max-width:300px">
-          <div class="otp-card jiggle" onclick="copyOTP('${latestOTP}');this.classList.add('jiggling')" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:16px;padding:16px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;cursor:pointer;animation:otpReveal 0.5s cubic-bezier(0.34,1.56,0.64,1)">
+          <div class="otp-card jiggle" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:16px;padding:16px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;animation:otpReveal 0.5s cubic-bezier(0.34,1.56,0.64,1)">
             <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.15em">Latest OTP</div>
-            <div style="font-size:24px;letter-spacing:2px;font-weight:700">${latestOTP}</div>
-            <button class="action-btn primary btn-sm" onclick="event.stopPropagation();copyOTP('${latestOTP}')">📋 Copy</button>
+            <div style="font-size:16px;line-height:1.5;font-weight:600;text-align:center;user-select:text;cursor:text;word-break:break-word">${latestOTP}</div>
+            <button class="action-btn primary btn-sm w-full" onclick="copyOTP('${latestOTP.replace(/'/g, "\\'")}')">📋 Copy Full Message</button>
           </div>`;
         
         if (prevOTPs.length) {
-          html += `<div style="display:flex;flex-direction:column;gap:6px;width:100%">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 4px">Previous</div>`;
+          html += `<div style="display:flex;flex-direction:column;gap:8px;width:100%">
+            <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 4px">Previous Messages</div>`;
           prevOTPs.forEach((code, i) => {
-            html += `<div class="otp-card jiggle" onclick="copyOTP('${code}');this.classList.add('jiggling')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
-              <div style="font-size:16px;letter-spacing:1px">${code}</div>
-              <button onclick="event.stopPropagation();copyOTP('${code}')" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:14px">📋</button>
+            html += `<div class="otp-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:13px;line-height:1.4;user-select:text;cursor:text;word-break:break-word">${code}</div>
+              <div style="display:flex;justify-content:flex-end">
+                <button onclick="copyOTP('${code.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">📋 Copy</button>
+              </div>
             </div>`;
           });
           html += `</div>`;
         }
         
-        if ((o.status === 'active' && o.multi_otp_enabled) || o.status === 'completed') {
+        if (o.status === 'active' && o.multi_otp_enabled) {
           html += `<button class="action-btn secondary btn-sm" onclick="retrySMS()" style="width:100%;margin-top:4px">🔄 Get Next OTP</button>`;
         }
         html += `</div>`;
@@ -688,48 +724,90 @@
   }
 
   window.loadOrder = async function() {
-    showLoading();
+    // ONLY show loading overlay if we have absolutely NO data (first load)
+    const overlay = document.getElementById('loading-state');
+    const content = document.getElementById('content');
+    
+    if (!orderData && content.style.display === 'none') {
+      showLoading();
+    }
+    
     clearAllIntervals();
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
     try {
-      const data = await API.get(`/api/user/orders/${orderId}`, { signal: controller.signal });
-      clearTimeout(timeout);
+      const data = await API.get(`/api/user/orders/${orderId}`);
       orderData = data;
       showContent();
       updateUI(data);
 
-      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      if (pollInterval) { clearTimeout(pollInterval); pollInterval = null; }
 
       if (data.status === 'active' || data.status === 'completed') {
         const intervalMs = (data.check_interval || 3) * 1000;
-        pollInterval = setInterval(async () => {
+        const poll = async () => {
           try {
             const updated = await API.get(`/api/user/orders/${orderId}`);
-            // Simple comparison or exhaustive check
-            const changed = updated.status !== orderData.status || 
-                           updated.otp !== orderData.otp || 
-                           updated.phone !== orderData.phone ||
-                           (updated.all_otps && updated.all_otps.length !== (orderData.all_otps?.length || 0));
+            const newsCount = (updated.all_otps?.length || 0);
+            const oldsCount = (orderData?.all_otps?.length || 0);
+            const hasNewOtp = (updated.otp && updated.otp !== orderData?.otp) || (newsCount > oldsCount);
+
+            if (hasNewOtp) playOtpSound();
+
+            const changed = updated.status !== orderData?.status || 
+                           updated.otp !== orderData?.otp || 
+                           updated.phone !== orderData?.phone ||
+                           (newsCount !== oldsCount);
                            
             if (changed) {
               orderData = updated;
               updateUI(updated);
             }
-          } catch (e) { console.warn('Poll error:', e.message); }
-        }, intervalMs);
+          } catch (e) {
+            console.warn('Poll error:', e.message); 
+          } finally {
+            if (orderData && (orderData.status === 'active' || orderData.status === 'completed')) {
+              pollInterval = setTimeout(poll, intervalMs);
+            }
+          }
+        };
+        pollInterval = setTimeout(poll, intervalMs);
       }
     } catch (e) {
-      clearTimeout(timeout);
-      if (e.name === 'AbortError') {
-        showError('Request timed out. Please try again.');
-      } else {
-        showError(e.message || 'Failed to load order');
-      }
+      console.warn('Silent load retry:', e.message);
+      // Auto-retry after 5s without changing the visible UI state
+      setTimeout(loadOrder, 5000);
     }
   }
+
+  // Handle browser audio policy - init on first click
+  document.addEventListener('click', () => initAudio(), { once: true });
+
+  /**
+   * Called by the global SSE client in main.js whenever the server
+   * pushes a real-time 'order' event for this specific order.
+   * Updates the UI instantly without making an extra HTTP fetch.
+   */
+  window.handleRealtimeOrderUpdate = function(data) {
+    if (!data || data.orderId !== orderId) return;
+    const prev = orderData;
+
+    // Merge new SSE data into the current order snapshot
+    const merged = { ...orderData, ...{
+      status:   data.status   || orderData?.status,
+      otp:      data.otp      || orderData?.otp,
+      all_otps: data.all_otps || orderData?.all_otps,
+    }};
+
+    // Play sound if new OTP arrived
+    const prevCount = prev?.all_otps?.length || (prev?.otp ? 1 : 0);
+    const newCount  = merged.all_otps?.length || (merged.otp ? 1 : 0);
+    if (newCount > prevCount) playOtpSound();
+
+    // Show content if still in loading state
+    showContent();
+    orderData = merged;
+    updateUI(merged);
+  };
 
   window.copyPhone = async function() {
     if (!orderData?.phone) return;

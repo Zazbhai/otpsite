@@ -134,6 +134,7 @@
   <div class="modal" style="max-width:500px">
     <div class="modal-header"><h3 id="svc-modal-title">Add Service</h3><button class="modal-close" onclick="closeModal('svc-modal')">✕</button></div>
     <div class="modal-content-wrap">
+      <input type="hidden" id="svc-id" />
       <div style="display:flex;flex-direction:column;gap:20px">
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
@@ -232,10 +233,14 @@
 </style>
 <script src="/js/main.js"></script>
 <script>
-  if (!requireAdmin()) {}
+  (async () => {
+    if (!(await requireAdmin())) return;
+    loadInitialData();
+  })();
   let editingId = null;
   let allServers = [];
   let allCountries = [];
+  let currentServices = [];
 
   async function loadInitialData() {
     const [servers, countries] = await Promise.all([
@@ -286,6 +291,7 @@
     if(qAuto) params.append("auto_added", qAuto);
 
     const data = await API.get("/api/admin/services?" + params.toString());
+    currentServices = data;
     tbody.innerHTML = data.map(s => {
       const server = allServers.find(x => x._id === s.server_id);
       const country = server ? allCountries.find(c => c._id === server.country_id) : null;
@@ -308,7 +314,7 @@
         <td>₹${s.price || 0}</td>
         <td>${s.is_active ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-expired">Disabled</span>'}</td>
         <td style="text-align:right">
-          <button class="btn btn-secondary btn-sm" onclick='openEdit(${JSON.stringify(s).replace(/'/g,"&#39;")})'>Edit</button>
+          <button class="btn btn-secondary btn-sm" onclick="openEdit('${s._id}')">Edit</button>
         </td>
       </tr>`
     }).join("") || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No services yet. Add countries and servers first!</td></tr>`;
@@ -328,7 +334,9 @@
     openModal("svc-modal");
   }
 
-  function openEdit(s) {
+  function openEdit(id) {
+    const s = currentServices.find(x => x._id === id);
+    if (!s) return;
     editingId = s._id;
     document.getElementById("svc-modal-title").textContent = "Edit Service";
     document.getElementById("svc-id").value = s._id;
@@ -440,7 +448,7 @@
     } catch (e) { toast(e.message, "error"); }
   }
 
-  loadInitialData();
+  // loadInitialData is called via the auto-invoking async function above
 </script>
 </body>
 </html>

@@ -19,6 +19,11 @@ if (DB_TYPE === "mysql") {
     notes: { type: DataTypes.TEXT, defaultValue: "" },
     api_key: { type: DataTypes.STRING, defaultValue: "" },
     currency: { type: DataTypes.STRING, defaultValue: "INR" },
+    referral_code: { type: DataTypes.STRING, unique: true },
+    referred_by: { type: DataTypes.STRING, defaultValue: null },
+    referral_count: { type: DataTypes.INTEGER, defaultValue: 0 },
+    referral_earnings: { type: DataTypes.FLOAT, defaultValue: 0 },
+    has_deposited: { type: DataTypes.BOOLEAN, defaultValue: false },
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return this.id; }
@@ -42,6 +47,11 @@ if (DB_TYPE === "mysql") {
       notes:         { type: String, default: "" },
       api_key:       { type: String, default: "" },
       currency:      { type: String, default: "INR" },
+      referral_code: { type: String, unique: true, sparse: true },
+      referred_by:   { type: String, default: null, index: true },
+      referral_count: { type: Number, default: 0 },
+      referral_earnings: { type: Number, default: 0 },
+      has_deposited: { type: Boolean, default: false },
     },
     { timestamps: true }
   );

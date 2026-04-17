@@ -1,168 +1,300 @@
--- Rapid OTP MySQL Database Schema
--- Generated to match existing MongoDB models
+-- ============================================================
+--  Rapid OTP — MySQL Database Schema
+--  Mirrors the MongoDB/Mongoose model definitions exactly.
+--  All tables include `createdAt` and `updatedAt` timestamps
+--  to match Mongoose `{ timestamps: true }` option.
+-- ============================================================
 
-CREATE DATABASE IF NOT EXISTS rapid_otp;
-USE rapid_otp;
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
--- 1. Users Table
-CREATE TABLE IF NOT EXISTS Users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    display_name VARCHAR(255) DEFAULT '',
-    avatar_color VARCHAR(255) DEFAULT '#3b82f6',
-    balance DOUBLE DEFAULT 0,
-    is_banned TINYINT(1) DEFAULT 0,
-    is_admin TINYINT(1) DEFAULT 0,
-    total_spent DOUBLE DEFAULT 0,
-    total_orders INT DEFAULT 0,
-    notes TEXT,
-    api_key VARCHAR(255) DEFAULT '',
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL
-);
+CREATE DATABASE IF NOT EXISTS `zaz`
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 
--- 2. Countries Table
-CREATE TABLE IF NOT EXISTS Countries (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    flag VARCHAR(255) DEFAULT '🌍',
-    is_active TINYINT(1) DEFAULT 1,
-    sort_order INT DEFAULT 0,
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL,
-    INDEX idx_country_sort (sort_order, name)
-);
+USE `zaz`;
 
--- 3. Servers Table
-CREATE TABLE IF NOT EXISTS Servers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255),
-    country_id VARCHAR(255), -- Reference ID as string for compatibility
-    api_key VARCHAR(255) DEFAULT '',
-    api_get_number_url VARCHAR(255) DEFAULT '',
-    api_check_status_url VARCHAR(255) DEFAULT '',
-    api_cancel_url VARCHAR(255) DEFAULT '',
-    api_retry_url VARCHAR(255) DEFAULT '',
-    auto_cancel_minutes INT DEFAULT 20,
-    retry_count INT DEFAULT 0,
-    min_cancel_minutes INT DEFAULT 0,
-    is_active TINYINT(1) DEFAULT 1,
-    multi_otp_supported TINYINT(1) DEFAULT 0,
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL
-);
+-- -----------------------------------------------------------
+-- Table: Users
+-- Model:  models/User.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Users` (
+  `id`                INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+  `username`          VARCHAR(30)      NOT NULL,
+  `email`             VARCHAR(255)     NOT NULL,
+  `password_hash`     VARCHAR(255)     NOT NULL,
+  `display_name`      VARCHAR(100)     NOT NULL DEFAULT '',
+  `avatar_color`      VARCHAR(20)      NOT NULL DEFAULT '#3b82f6',
+  `balance`           DOUBLE           NOT NULL DEFAULT 0,
+  `is_banned`         TINYINT(1)       NOT NULL DEFAULT 0,
+  `is_admin`          TINYINT(1)       NOT NULL DEFAULT 0,
+  `total_spent`       DOUBLE           NOT NULL DEFAULT 0,
+  `total_orders`      INT UNSIGNED     NOT NULL DEFAULT 0,
+  `notes`             TEXT             NOT NULL DEFAULT '',
+  `api_key`           VARCHAR(255)     NOT NULL DEFAULT '',
+  `currency`          VARCHAR(10)      NOT NULL DEFAULT 'INR',
+  `referral_code`     VARCHAR(50)               DEFAULT NULL,
+  `referred_by`       VARCHAR(50)               DEFAULT NULL,
+  `referral_count`    INT UNSIGNED     NOT NULL DEFAULT 0,
+  `referral_earnings` DOUBLE           NOT NULL DEFAULT 0,
+  `has_deposited`     TINYINT(1)       NOT NULL DEFAULT 0,
+  `createdAt`         DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`         DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
--- 4. Services Table
-CREATE TABLE IF NOT EXISTS Services (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    server_id VARCHAR(255),
-    service_code VARCHAR(255) NOT NULL,
-    country_code VARCHAR(255) NOT NULL,
-    price DOUBLE NOT NULL,
-    image_url VARCHAR(255) DEFAULT '',
-    icon_color VARCHAR(255) DEFAULT '',
-    success_rate VARCHAR(255) DEFAULT '95%',
-    avg_time VARCHAR(255) DEFAULT '2m',
-    is_active TINYINT(1) DEFAULT 1,
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL
-);
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_users_username`     (`username`),
+  UNIQUE KEY `uq_users_email`        (`email`),
+  UNIQUE KEY `uq_users_referral_code`(`referral_code`),
+  KEY        `idx_users_referred_by` (`referred_by`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 5. Orders Table
-CREATE TABLE IF NOT EXISTS Orders (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id VARCHAR(255) UNIQUE NOT NULL,
-    user_id VARCHAR(255) NOT NULL,
-    service_name VARCHAR(255) NOT NULL,
-    server_name VARCHAR(255) DEFAULT '',
-    country VARCHAR(255) DEFAULT '',
-    phone VARCHAR(255) DEFAULT '',
-    otp VARCHAR(255) DEFAULT '',
-    all_otps JSON, -- Supported in MySQL 5.7.8+
-    status ENUM('active', 'completed', 'refunded', 'expired', 'cancelled') DEFAULT 'active',
-    cost DOUBLE NOT NULL,
-    expires_at DATETIME,
-    min_cancel_at DATETIME,
-    external_order_id VARCHAR(255) DEFAULT '',
-    multi_otp_enabled TINYINT(1) DEFAULT 0,
-    last_check_at DATETIME,
-    service_image VARCHAR(255) DEFAULT '',
-    service_color VARCHAR(255) DEFAULT '',
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL
-);
 
--- 6. Transactions Table
-CREATE TABLE IF NOT EXISTS Transactions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id VARCHAR(255) NOT NULL,
-    type ENUM('deposit', 'purchase', 'refund', 'bonus', 'deduction') NOT NULL,
-    amount DOUBLE NOT NULL,
-    balance_after DOUBLE DEFAULT 0,
-    description VARCHAR(255) DEFAULT '',
-    reference VARCHAR(255) DEFAULT '',
-    order_id VARCHAR(255) DEFAULT '',
-    status ENUM('pending', 'completed', 'failed') DEFAULT 'completed',
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL,
-    INDEX idx_tx_user (user_id)
-);
+-- -----------------------------------------------------------
+-- Table: Countries
+-- Model:  models/Country.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Countries` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code`       VARCHAR(10)  NOT NULL,
+  `name`       VARCHAR(100) NOT NULL,
+  `flag`       VARCHAR(10)  NOT NULL DEFAULT '🌍',
+  `is_active`  TINYINT(1)   NOT NULL DEFAULT 1,
+  `sort_order` INT          NOT NULL DEFAULT 0,
+  `createdAt`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
--- 7. Settings Table
-CREATE TABLE IF NOT EXISTS Settings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    `key` VARCHAR(255) UNIQUE NOT NULL,
-    `value` JSON, -- Store Mixed types as JSON
-    label VARCHAR(255) DEFAULT '',
-    `group` VARCHAR(255) DEFAULT 'general',
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL
-);
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_countries_code`       (`code`),
+  KEY        `idx_countries_sort_name` (`sort_order`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. PromoCodes Table
-CREATE TABLE IF NOT EXISTS PromoCodes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(255) UNIQUE NOT NULL,
-    amount DOUBLE NOT NULL,
-    is_active TINYINT(1) DEFAULT 1,
-    usage_limit INT DEFAULT 1,
-    used_count INT DEFAULT 0,
-    used_by JSON, -- Array of User IDs
-    expired_at DATETIME,
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL
-);
 
--- 9. AccountCategories Table
-CREATE TABLE IF NOT EXISTS AccountCategories (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    icon VARCHAR(255) DEFAULT '🗂️',
-    price DOUBLE NOT NULL,
-    is_active TINYINT(1) DEFAULT 1,
-    sort_order INT DEFAULT 0,
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL
-);
+-- -----------------------------------------------------------
+-- Table: Servers
+-- Model:  models/Server.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Servers` (
+  `id`                    INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `name`                  VARCHAR(100)  NOT NULL,
+  `slug`                  VARCHAR(120)            DEFAULT NULL,
+  `country_id`            INT UNSIGNED            DEFAULT NULL,   -- FK → Countries.id
+  `api_key`               VARCHAR(255)  NOT NULL DEFAULT '',
+  `api_get_number_url`    TEXT          NOT NULL,
+  `api_check_status_url`  TEXT          NOT NULL,
+  `api_cancel_url`        TEXT          NOT NULL,
+  `api_retry_url`         TEXT          NOT NULL,
+  `auto_cancel_minutes`   INT           NOT NULL DEFAULT 20,
+  `retry_count`           INT           NOT NULL DEFAULT 0,
+  `min_cancel_minutes`    INT           NOT NULL DEFAULT 0,
+  `is_active`             TINYINT(1)    NOT NULL DEFAULT 1,
+  `multi_otp_supported`   TINYINT(1)    NOT NULL DEFAULT 0,
+  `check_interval`        INT           NOT NULL DEFAULT 3,
+  `auto_add_services`     TINYINT(1)    NOT NULL DEFAULT 0,
+  `extra_profit`          DOUBLE        NOT NULL DEFAULT 0,
+  `createdAt`             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
--- 10. ReadymadeAccounts Table
-CREATE TABLE IF NOT EXISTS ReadymadeAccounts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    category_id VARCHAR(255) NOT NULL,
-    credentials TEXT NOT NULL,
-    notes TEXT,
-    status ENUM('available', 'sold', 'reserved') DEFAULT 'available',
-    sold_to VARCHAR(255) DEFAULT NULL,
-    sold_at DATETIME DEFAULT NULL,
-    price_at_sale DOUBLE DEFAULT NULL,
-    createdAt DATETIME NOT NULL,
-    updatedAt DATETIME NOT NULL,
-    INDEX idx_acc_cat (category_id),
-    INDEX idx_acc_status (status)
-);
+  PRIMARY KEY (`id`),
+  KEY `idx_servers_country_id` (`country_id`),
+  CONSTRAINT `fk_servers_country` FOREIGN KEY (`country_id`)
+    REFERENCES `Countries` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------
+-- Table: Services
+-- Model:  models/Service.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Services` (
+  `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `name`          VARCHAR(100)  NOT NULL,
+  `server_id`     INT UNSIGNED            DEFAULT NULL,   -- FK → Servers.id
+  `service_code`  VARCHAR(100)  NOT NULL,
+  `country_code`  VARCHAR(20)   NOT NULL,
+  `price`         DOUBLE        NOT NULL,
+  `image_url`     VARCHAR(500)  NOT NULL DEFAULT '',
+  `icon_color`    VARCHAR(20)   NOT NULL DEFAULT '',
+  `success_rate`  VARCHAR(20)   NOT NULL DEFAULT '95%',
+  `avg_time`      VARCHAR(20)   NOT NULL DEFAULT '2m',
+  `check_interval`INT           NOT NULL DEFAULT 3,
+  `is_active`     TINYINT(1)    NOT NULL DEFAULT 1,
+  `is_auto`       TINYINT(1)    NOT NULL DEFAULT 0,
+  `createdAt`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+  KEY `idx_services_server_id`    (`server_id`),
+  KEY `idx_services_country_code` (`country_code`),
+  KEY `idx_services_is_active`    (`is_active`),
+  CONSTRAINT `fk_services_server` FOREIGN KEY (`server_id`)
+    REFERENCES `Servers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------
+-- Table: Orders
+-- Model:  models/Order.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Orders` (
+  `id`                INT UNSIGNED   NOT NULL AUTO_INCREMENT,
+  `order_id`          VARCHAR(30)    NOT NULL,                          -- e.g. ORD-XXXXXXXXXX
+  `user_id`           VARCHAR(50)    NOT NULL,                          -- user's id (string for cross-db compat)
+  `service_name`      VARCHAR(100)   NOT NULL,
+  `server_name`       VARCHAR(100)   NOT NULL DEFAULT '',
+  `country`           VARCHAR(20)    NOT NULL DEFAULT '',
+  `phone`             VARCHAR(30)    NOT NULL DEFAULT '',
+  `otp`               VARCHAR(30)    NOT NULL DEFAULT '',
+  `all_otps`          JSON                    DEFAULT NULL,             -- array of OTP strings
+  `status`            ENUM('active','completed','refunded','expired','cancelled')
+                                     NOT NULL DEFAULT 'active',
+  `cost`              DOUBLE         NOT NULL,
+  `expires_at`        DATETIME                DEFAULT NULL,
+  `min_cancel_at`     DATETIME                DEFAULT NULL,
+  `external_order_id` VARCHAR(100)   NOT NULL DEFAULT '',
+  `multi_otp_enabled` TINYINT(1)     NOT NULL DEFAULT 0,
+  `last_check_at`     DATETIME                DEFAULT NULL,
+  `service_image`     VARCHAR(500)   NOT NULL DEFAULT '',
+  `service_color`     VARCHAR(20)    NOT NULL DEFAULT '',
+  `check_interval`    INT            NOT NULL DEFAULT 3,
+  `createdAt`         DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`         DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_orders_order_id`     (`order_id`),
+  KEY        `idx_orders_user_id`     (`user_id`),
+  KEY        `idx_orders_status`      (`status`),
+  KEY        `idx_orders_created_at`  (`createdAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------
+-- Table: Transactions
+-- Model:  models/Transaction.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Transactions` (
+  `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `user_id`       VARCHAR(50)   NOT NULL,
+  `type`          ENUM('deposit','purchase','refund','bonus','deduction')
+                                NOT NULL,
+  `amount`        DOUBLE        NOT NULL,
+  `balance_after` DOUBLE        NOT NULL DEFAULT 0,
+  `description`   VARCHAR(500)  NOT NULL DEFAULT '',
+  `reference`     VARCHAR(255)  NOT NULL DEFAULT '',
+  `order_id`      VARCHAR(30)   NOT NULL DEFAULT '',
+  `status`        ENUM('pending','completed','failed')
+                                NOT NULL DEFAULT 'completed',
+  `createdAt`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+  KEY `idx_transactions_user_id`    (`user_id`),
+  KEY `idx_transactions_type`       (`type`),
+  KEY `idx_transactions_order_id`   (`order_id`),
+  KEY `idx_transactions_created_at` (`createdAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------
+-- Table: Settings
+-- Model:  models/Setting.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Settings` (
+  `id`        INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `key`       VARCHAR(100) NOT NULL,
+  `value`     JSON                  DEFAULT NULL,   -- Mixed type → JSON
+  `label`     VARCHAR(255) NOT NULL DEFAULT '',
+  `group`     VARCHAR(100) NOT NULL DEFAULT 'general',
+  `createdAt` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_settings_key`   (`key`),
+  KEY        `idx_settings_group`(`group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------
+-- Table: PromoCodes
+-- Model:  models/PromoCode.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `PromoCodes` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code`        VARCHAR(100) NOT NULL,
+  `amount`      DOUBLE       NOT NULL,
+  `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
+  `usage_limit` INT          NOT NULL DEFAULT 1,
+  `used_count`  INT          NOT NULL DEFAULT 0,
+  `used_by`     JSON                  DEFAULT NULL,   -- array of user id strings
+  `createdAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_promocodes_code`      (`code`),
+  KEY        `idx_promocodes_is_active`(`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------
+-- Table: AccountCategories
+-- Model:  models/AccountCategory.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `AccountCategories` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(100) NOT NULL,
+  `description` TEXT         NOT NULL DEFAULT '',
+  `icon`        VARCHAR(20)  NOT NULL DEFAULT '🗂️',
+  `price`       DOUBLE       NOT NULL,
+  `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
+  `sort_order`  INT          NOT NULL DEFAULT 0,
+  `createdAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+  KEY `idx_accountcategories_is_active`  (`is_active`),
+  KEY `idx_accountcategories_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------
+-- Table: ReadymadeAccounts
+-- Model:  models/ReadymadeAccount.js
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ReadymadeAccounts` (
+  `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category_id`   INT UNSIGNED NOT NULL,               -- FK → AccountCategories.id
+  `credentials`   TEXT         NOT NULL,
+  `notes`         TEXT         NOT NULL DEFAULT '',
+  `status`        ENUM('available','sold','reserved')
+                               NOT NULL DEFAULT 'available',
+  `sold_to`       VARCHAR(50)           DEFAULT NULL,
+  `sold_at`       DATETIME              DEFAULT NULL,
+  `price_at_sale` DOUBLE                DEFAULT NULL,
+  `createdAt`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+  KEY `idx_readymadeaccounts_category_id` (`category_id`),
+  KEY `idx_readymadeaccounts_status`      (`status`),
+  CONSTRAINT `fk_readymade_category` FOREIGN KEY (`category_id`)
+    REFERENCES `AccountCategories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================
+--  Seed: Default Settings
+--  Mirrors the default values set by the admin panel.
+-- ============================================================
+INSERT IGNORE INTO `Settings` (`key`, `value`, `label`, `group`) VALUES
+  ('site_name',         '"Zaz"',         'Site Name',         'branding'),
+  ('site_logo',         'null',          'Site Logo URL',     'branding'),
+  ('site_favicon',      'null',          'Favicon URL',       'branding'),
+  ('primary_color',     '"#3b82f6"',     'Primary Color',     'branding'),
+  ('default_theme',     '"dark"',        'Default Theme',     'branding'),
+  ('maintenance_mode',  'false',         'Maintenance Mode',  'general'),
+  ('min_deposit',       '10',            'Min Deposit (INR)', 'general'),
+  ('referral_bonus',    '5',             'Referral Bonus %',  'general'),
+  ('custom_css',        '""',            'Custom CSS',        'advanced'),
+  ('head_scripts',      '""',            'Head Scripts',      'advanced'),
+  ('foot_scripts',      '""',            'Foot Scripts',      'advanced');

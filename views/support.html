@@ -7,66 +7,157 @@
 </head>
 <body>
 <nav class="navbar">
-  <div class="container">
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between">
     <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
     <div class="nav-links" id="nav-links">
-      <a href="/pricing">Pricing</a><a href="/how-it-works">How It Works</a>
-      <a href="/support" class="active">Support</a><span id="nav-auth"></span>
+      <a href="/pricing">Pricing</a>
+      <a href="/how-it-works">How It Works</a>
+      <a href="/support" class="active">Support</a>
     </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
+      <span id="nav-auth-mobile" class="nav-auth-mobile"></span>
+      <span id="nav-auth"></span>
+      <button class="nav-burger" id="nav-burger">☰</button>
+    </div>
   </div>
 </nav>
-<div style="padding-top:64px">
-  <section class="section">
-    <div class="container container-sm">
-      <div class="section-header"><h1>Support & <span class="gradient-text">Contact</span></h1><p>We're here to help. Average response time: under 2 hours.</p></div>
-      <div class="grid-2 mb-8">
-        <a href="https://t.me/RapidOTPSupport" target="_blank" class="card card-glow" style="text-align:center;padding:36px">
-          <div style="font-size:48px;margin-bottom:12px">💬</div>
-          <h3>Telegram Support</h3>
-          <p class="text-muted text-sm" style="margin-top:8px">Chat with our support team directly on Telegram. Fastest response.</p>
-          <div class="btn btn-primary mt-8" style="display:inline-flex">Open @RapidOTPSupport</div>
-        </a>
-        <a href="https://t.me/RapidOTPbot" target="_blank" class="card card-glow" style="text-align:center;padding:36px">
-          <div style="font-size:48px;margin-bottom:12px">🤖</div>
-          <h3>Telegram Bot</h3>
-          <p class="text-muted text-sm" style="margin-top:8px">Use /help inside the bot for quick answers to common questions.</p>
-          <div class="btn btn-secondary mt-8" style="display:inline-flex">Open @RapidOTPbot</div>
-        </a>
-      </div>
-      <div class="card">
-        <h3 style="margin-bottom:20px">Common Issues</h3>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div class="card" style="background:var(--surface-2);border-radius:var(--r-md)">
-            <strong>❓ I didn't receive my OTP</strong>
-            <p class="text-sm text-muted" style="margin-top:6px">Wait up to 3 minutes then contact support. If 20 minutes pass with no OTP, you'll be automatically refunded.</p>
-          </div>
-          <div class="card" style="background:var(--surface-2);border-radius:var(--r-md)">
-            <strong>💰 My deposit hasn't arrived</strong>
-            <p class="text-sm text-muted" style="margin-top:6px">Crypto deposits typically take 1–30 minutes. If it's been over an hour, contact support with your transaction hash.</p>
-          </div>
-          <div class="card" style="background:var(--surface-2);border-radius:var(--r-md)">
-            <strong>🔒 Login not working</strong>
-            <p class="text-sm text-muted" style="margin-top:6px">Make sure you're using Telegram login correctly. Clear your browser cache and try again. Contact support if the issue persists.</p>
+<div class="layout">
+  <main class="main-content" style="padding-top:20px">
+    <section class="section">
+      <div class="container container-sm">
+        <div class="section-header">
+          <h1>Support & <span class="gradient-text">Contact</span></h1>
+          <p>We're here to help. Average response time: under 2 hours.</p>
+        </div>
+
+        <!-- Dynamic Support Cards -->
+        <div class="grid-2 mb-8" id="support-grid">
+          <!-- Will be filled by JS -->
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:20px">Common Issues</h3>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="card" style="background:var(--surface-2);border-radius:var(--r-md);padding:16px">
+              <strong>❓ I didn't receive my OTP</strong>
+              <p class="text-sm text-muted" style="margin-top:6px">Wait up to 3 minutes then contact support. If 20 minutes pass with no OTP, you'll be automatically refunded.</p>
+            </div>
+            <div class="card" style="background:var(--surface-2);border-radius:var(--r-md);padding:16px">
+              <strong>💰 My deposit hasn't arrived</strong>
+              <p class="text-sm text-muted" style="margin-top:6px">Crypto deposits typically take 1–30 minutes. If it's been over an hour, contact support with your transaction hash.</p>
+            </div>
+            <div class="card" style="background:var(--surface-2);border-radius:var(--r-md);padding:16px">
+              <strong>🔒 Login not working</strong>
+              <p class="text-sm text-muted" style="margin-top:6px">Make sure you're using Telegram login correctly. Clear your browser cache and try again. Contact support if the issue persists.</p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 </div>
-<footer>
+
+<footer class="footer-simple">
   <div class="container">
-    <div class="footer-bottom">
-      <p>© 2025 {{SITE_NAME}}. All rights reserved.</p>
-      <div style="display:flex;gap:16px"><a href="/" style="color:var(--text-3)">Home</a><a href="/terms" style="color:var(--text-3)">Terms</a></div>
-    </div>
+    <p>© 2025 {{SITE_NAME}}. Professional SMS Verification.</p>
   </div>
 </footer>
+
+<style>
+  .support-card {
+    text-align: center;
+    padding: 36px;
+    height: 100%;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .support-card:hover { transform: translateY(-8px); }
+  .footer-simple { padding: 40px 0 100px; text-align: center; opacity: 0.5; font-size: 13px; }
+  
+  @media (max-width: 768px) {
+    .main-content { padding-bottom: 80px !important; }
+  }
+</style>
+
 <script src="/js/main.js"></script>
 <script>
-  const navAuth = document.getElementById("nav-auth");
-  if (isLoggedIn()) navAuth.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
-  else navAuth.innerHTML = '<a href="/?login=1" class="btn btn-primary btn-sm">Login</a>';
+  async function initSupport() {
+    // 1. Setup Auth Nav
+    const navAuth = document.getElementById("nav-auth");
+    if (navAuth) {
+      if (isLoggedIn()) navAuth.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
+      else navAuth.innerHTML = '<a href="/?login=1" class="btn btn-primary btn-sm">Login</a>';
+    }
+
+    // 2. Fetch Settings for Dynamic Support
+    try {
+      const response = await fetch("/api/auth/settings");
+      const settings = await response.json();
+      const grid = document.getElementById("support-grid");
+      if (!grid) return;
+
+      let html = "";
+      
+      // Support Telegram
+      if (settings.support_contact) {
+        const link = settings.support_contact.startsWith('http') ? settings.support_contact : `https://t.me/${settings.support_contact.replace('@','')}`;
+        const username = settings.support_contact.split('/').pop().replace('@','');
+        html += `
+          <a href="${link}" target="_blank" class="card card-glow support-card">
+            <div style="font-size:48px;margin-bottom:12px">💬</div>
+            <h3>Telegram Support</h3>
+            <p class="text-muted text-sm" style="margin-top:8px">Chat with our support team directly on Telegram. Fastest response.</p>
+            <div class="btn btn-primary mt-8" style="display:inline-flex">Open @${username}</div>
+          </a>`;
+      }
+
+      // Official Channel
+      if (settings.social_channel) {
+        const link = settings.social_channel.startsWith('http') ? settings.social_channel : `https://t.me/${settings.social_channel.replace('@','')}`;
+        html += `
+          <a href="${link}" target="_blank" class="card card-glow support-card">
+            <div style="font-size:48px;margin-bottom:12px">📢</div>
+            <h3>Official Channel</h3>
+            <p class="text-muted text-sm" style="margin-top:8px">Get's latest updates, service restocks, and exclusive promo codes.</p>
+            <div class="btn btn-secondary mt-8" style="display:inline-flex">Join Channel</div>
+          </a>`;
+      }
+
+      // Support Email
+      if (settings.support_email) {
+        html += `
+          <a href="mailto:${settings.support_email}" class="card card-glow support-card">
+            <div style="font-size:48px;margin-bottom:12px">📧</div>
+            <h3>Email Support</h3>
+            <p class="text-muted text-sm" style="margin-top:8px">Prefer email? Send us your queries and we'll get back to you soon.</p>
+            <div class="btn btn-secondary mt-8" style="display:inline-flex">${settings.support_email}</div>
+          </a>`;
+      }
+
+      // WhatsApp
+      if (settings.social_whatsapp) {
+        const waLink = `https://wa.me/${settings.social_whatsapp.replace('+','')}`;
+        html += `
+          <a href="${waLink}" target="_blank" class="card card-glow support-card">
+            <div style="font-size:48px;margin-bottom:12px">🟢</div>
+            <h3>WhatsApp</h3>
+            <p class="text-muted text-sm" style="margin-top:8px">Contact us via WhatsApp for quick assistance regarding any issue.</p>
+            <div class="btn btn-secondary mt-8" style="display:inline-flex">Message Us</div>
+          </a>`;
+      }
+
+      grid.innerHTML = html || '<div class="card" style="grid-column: 1/-1; text-align:center; padding:40px">Support channels are currently being updated. Please check back later.</div>';
+
+    } catch (e) {
+      console.error("Support init error:", e);
+    }
+    
+    // 3. Render Bottom Nav
+    if (typeof renderMobileBottomNav === 'function') {
+      renderMobileBottomNav('/support');
+    }
+  }
+
+  initSupport();
 </script>
 </body>
 </html>

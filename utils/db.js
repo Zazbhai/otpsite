@@ -9,7 +9,7 @@ let sequelize;
 const connectDB = async () => {
   if (DB_TYPE === "mysql") {
     sequelize = new Sequelize(
-      process.env.DB_NAME || "rapid_otp",
+      process.env.DB_NAME || "zaz",
       process.env.DB_USER || "root",
       process.env.DB_PASS || "",
       {
@@ -56,18 +56,59 @@ const connectDB = async () => {
 
 const applyMongooseShims = (model) => {
   if (DB_TYPE !== "mysql") return model;
-  
+
+  const translateQuery = (query) => {
+    if (!query) return {};
+    const where = query.where ? { ...query.where } : { ...query };
+    
+    // Simple translation of $in to Sequelize array format
+    for (const key in where) {
+      if (where[key] && typeof where[key] === 'object' && where[key].$in) {
+        where[key] = where[key].$in;
+      }
+      if (where[key] && typeof where[key] === 'object' && where[key].$gte) {
+        const { Op } = require("sequelize");
+        where[key] = { [Op.gte]: where[key].$gte };
+      }
+    }
+    return where;
+  };
+
+  const createQueryProxy = (promise, m, where) => {
+    promise.sort = (sort) => {
+      let order = [];
+      if (typeof sort === 'string') {
+        const parts = sort.split(' ');
+        order.push([parts[0].replace(/^-/, ''), parts[0].startsWith('-') ? 'DESC' : 'ASC']);
+      } else if (typeof sort === 'object') {
+        for (const k in sort) order.push([k, sort[k] === -1 ? 'DESC' : 'ASC']);
+      }
+      const newPromise = m.findAll({ where, order });
+      return createQueryProxy(newPromise, m, where);
+    };
+    promise.skip = (n) => {
+      const newPromise = m.findAll({ where, offset: parseInt(n) });
+      return createQueryProxy(newPromise, m, where);
+    };
+    promise.limit = (n) => {
+      const newPromise = m.findAll({ where, limit: parseInt(n) });
+      return createQueryProxy(newPromise, m, where);
+    };
+    return promise;
+  };
+
   model.findById = (id) => model.findByPk(id);
   model.findOne = (query) => {
-    const where = query.where ? query.where : query;
+    const where = translateQuery(query);
     return model.findOne({ where });
   };
   model.find = (query) => {
-    const where = query?.where ? query.where : query;
-    return model.findAll({ where });
+    const where = translateQuery(query);
+    const promise = model.findAll({ where });
+    return createQueryProxy(promise, model, where);
   };
   model.findOneAndUpdate = async (query, update, options) => {
-    const where = query.where ? query.where : query;
+    const where = translateQuery(query);
     const record = await model.findOne({ where });
     if (!record) {
       if (options?.upsert) return model.create({ ...where, ...update });
@@ -77,11 +118,11 @@ const applyMongooseShims = (model) => {
     return record;
   };
   model.deleteMany = (query) => {
-    const where = query.where ? query.where : query;
+    const where = translateQuery(query);
     return model.destroy({ where });
   };
   model.countDocuments = (query) => {
-    const where = query?.where ? query.where : query;
+    const where = translateQuery(query);
     return model.count({ where });
   };
   

@@ -4,6 +4,35 @@ const bcrypt   = require("bcryptjs");
 const { isAdminEmail, createToken } = require("../middleware/auth");
 const { loginRequired } = require("../middleware/auth");
 const User = require("../models/User");
+const { addClient, removeClient } = require("../utils/realtimeEmitter");
+
+// ── SSE Real-time Stream ──────────────────────────────────────────
+// GET /api/auth/stream
+router.get("/stream", (req, res) => {
+  const token = req.query.token || (req.headers.authorization || "").replace("Bearer ", "");
+  let userId = null;
+  try {
+    if (token) {
+      const { decodeToken } = require("../middleware/auth");
+      const payload = decodeToken(token);
+      userId = payload?.user_id ? String(payload.user_id) : null;
+    }
+  } catch (_) {}
+
+  // SSE headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  // Send initial connected event
+  res.write(`event: connected\ndata: ${JSON.stringify({ ok: true, userId })}\n\n`);
+
+  addClient(userId, res);
+
+  req.on("close", () => removeClient(userId, res));
+});
 
 // ── Helpers ──────────────────────────────────────────────────────
 const COLORS = ["#3b82f6","#6366f1","#8b5cf6","#ec4899","#10b981","#f59e0b","#06b6d4"];
@@ -48,6 +77,28 @@ router.post("/register", async (req, res) => {
     const password_hash = await bcrypt.hash(password, 12);
     const isAdmin = isAdminEmail(email);
 
+    // Generate unique referral code
+    const referral_code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    
+    // Check for referrer
+    let referrer_id = null;
+    const refInput = req.body.referral_code;
+    if (refInput) {
+      // 1. Try custom referral code
+      let referrer = await User.findOne({ referral_code: refInput });
+      
+      // 2. Try User ID as fallback (if refInput looks like a MongoDB ID)
+      if (!referrer && refInput.match(/^[0-9a-fA-F]{24}$/)) {
+        referrer = await User.findById(refInput);
+      }
+
+      if (referrer) {
+        referrer_id = referrer._id.toString();
+        // Increment referrer's count
+        await User.findByIdAndUpdate(referrer._id, { $inc: { referral_count: 1 } });
+      }
+    }
+
     const user = await User.create({
       username,
       email: email.toLowerCase(),
@@ -55,10 +106,12 @@ router.post("/register", async (req, res) => {
       display_name: username,
       avatar_color: randomColor(),
       is_admin: isAdmin,
+      referral_code,
+      referred_by: referrer_id
     });
 
     const token = createToken(user._id.toString(), isAdmin);
-    return res.status(201).json({ token, user: publicUser(user) });
+    return res.status(201).json({ token, user: { ...publicUser(user), referral_code } });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ error: "Server error" });
@@ -135,7 +188,8 @@ router.get("/settings", async (req, res) => {
       "default_theme", "site_name", "site_logo", "site_favicon", "primary_color",
       "seo_title", "seo_description", "seo_keywords", "seo_og_image",
       "custom_css", "head_scripts", "foot_scripts", "exchange_rates",
-      "maintenance_mode"
+      "maintenance_mode", "referral_bonus_percent", "referral_bonus_fixed_amount", "referral_system_enabled",
+      "social_channel", "support_email", "social_whatsapp", "support_contact", "support_telegram", "support_discord"
     ];
     const settings = await Setting.find({ key: { $in: keys } });
     const obj = {};

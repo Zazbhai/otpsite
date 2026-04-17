@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms & Privacy — {{SITE_NAME}}</title>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body class="bg-dark">
+  <nav class="navbar">
+    <div class="container">
+      <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
+        <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
+        <div class="nav-links">
+          <a href="/pricing">Pricing</a>
+          <a href="/how-it-works">How It Works</a>
+          <a href="/support">Support</a>
+        </div>
+        <div id="nav-auth"></div>
+        <button class="nav-burger" id="nav-burger">☰</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="layout">
+    <main class="main-content" style="padding-top:40px">
+      <section class="section">
+        <div class="container container-sm">
+          <div class="section-header">
+            <h1>Terms of <span class="gradient-text">Service</span></h1>
+            <p>Last updated: April 2025</p>
+          </div>
+
+          <div class="card p-8">
+            <div class="legal-section">
+              <h3>1. Acceptable Use</h3>
+              <p>By using our services, you agree not to use the provided virtual numbers for any illegal activities, including but not limited to fraud, harassment, or spreading malware. We provide numbers solely for legitimate SMS verification purposes.</p>
+            </div>
+
+            <div class="legal-section mt-8">
+              <h3>2. Refund Policy</h3>
+              <p>Our system operates on a "Success Only" policy. If a virtual number fails to receive a verification code within the allocation window (usually 20 minutes), the balance will be automatically credited back to your account. Manual refunds for successfully received OTPs are not provided.</p>
+            </div>
+
+            <div class="legal-section mt-8">
+              <h3>3. Account Security</h3>
+              <p>Users are responsible for maintaining the confidentiality of their account credentials. {{SITE_NAME}} is not liable for any unauthorized access resulting from user negligence.</p>
+            </div>
+
+            <div class="legal-section mt-8">
+              <h3>4. Privacy Policy</h3>
+              <p>We do not share your personal data with third parties. Verification logs are kept for a limited time for technical support and quality assurance, after which they are purged to ensure your privacy.</p>
+            </div>
+
+            <div class="legal-section mt-8">
+              <h3>5. Service Availability</h3>
+              <p>While we strive for 100% uptime, service availability may vary depending on provider stocks and global network conditions. We do not guarantee number availability for every specific service at all times.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="footer-simple">
+    <div class="container">
+      <p>© 2025 {{SITE_NAME}}. Professional SMS Verification.</p>
+    </div>
+  </footer>
+
+  <style>
+    .legal-section h3 { font-size: 18px; margin-bottom: 12px; color: #fff; font-weight: 700; }
+    .legal-section p { color: var(--text-2); line-height: 1.8; font-size: 15px; }
+    .footer-simple { padding: 60px 0 120px; text-align: center; opacity: 0.6; font-size: 13px; }
+    
+    @media (max-width: 768px) {
+      .main-content { padding-bottom: 100px !important; }
+    }
+  </style>
+
+  <script src="/js/main.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const navAuth = document.getElementById("nav-auth");
+      if (isLoggedIn()) navAuth.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
+      else navAuth.innerHTML = '<a href="/?login=1" class="btn btn-primary btn-sm">Login</a>';
+      
+      if (typeof renderMobileBottomNav === 'function') renderMobileBottomNav('/terms');
+    });
+  </script>
+</body>
+</html>
