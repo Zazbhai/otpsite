@@ -1,3 +1,7 @@
+[build]
+  publish = "dist"
+  command = "mkdir -p dist && cp -rv public/* dist/ && cp -rv views/* dist/ && cp -rv views/admin dist/admin"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
