@@ -21,6 +21,14 @@ if (DB_TYPE === "mysql") {
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
+    },
+    server_id: {
+      type: DataTypes.VIRTUAL,
+      get() { return this.server_id_attr; }
+    },
+    country_id: {
+      type: DataTypes.VIRTUAL,
+      get() { return this.country_id_attr; }
     }
   });
 
