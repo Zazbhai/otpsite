@@ -320,18 +320,20 @@ const applyMongooseShims = (model) => {
             }
         }
         
-        // Map _attr fields back to original names for the frontend
+        // 1. Map renamed associations back to legacy names if populated (High priority)
+        if (data.server) data.server_id = data.server;
+        if (data.country) data.country_id = data.country;
+        if (data.category) data.category_id = data.category;
+        
+        // 2. Map _attr fields back to original names for the frontend (Lower priority, doesn't overwrite objects)
         for (const key in data) {
             if (key.endsWith('_attr')) {
                 const originalKey = key.replace('_attr', '');
-                if (!data[originalKey]) data[originalKey] = data[key];
+                if (data[originalKey] === undefined || data[originalKey] === null) {
+                    data[originalKey] = data[key];
+                }
             }
         }
-        
-        // Map renamed associations back to legacy names if populated
-        if (data.server && !data.server_id) data.server_id = data.server;
-        if (data.country && !data.country_id) data.country_id = data.country;
-        if (data.category && !data.category_id) data.category_id = data.category;
 
         if (this.id && !data._id) data._id = String(this.id);
         
