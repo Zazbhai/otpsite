@@ -338,39 +338,27 @@ router.patch("/orders/:id", async (req, res) => {
 router.get("/services", async (req, res) => {
   try {
     const { server_id, min_price, max_price, auto_added, name } = req.query;
-    
-    if (DB_TYPE === "mysql") {
-      const { Op } = require("sequelize");
-      const where = {};
-      
-      if (name) where.name = { [Op.like]: `%${name}%` };
-      if (server_id) where.server_id = server_id;
-      if (min_price || max_price) {
-        where.price = {};
-        if (min_price) where.price[Op.gte] = parseFloat(min_price);
-        if (max_price) where.price[Op.lte] = parseFloat(max_price);
-      }
-      if (auto_added === "true") where.is_auto = true;
-      else if (auto_added === "false") where.is_auto = { [Op.not]: true };
-      
-      const services = await Service.findAll({ where, order: [["name", "ASC"]] });
-      return res.json(services);
-    } else {
-      const filter = {};
-      if (name) filter.name = { $regex: name, $options: "i" };
-      if (server_id) filter.server_id = server_id;
-      if (min_price || max_price) {
-        filter.price = {};
-        if (min_price) filter.price.$gte = parseFloat(min_price);
-        if (max_price) filter.price.$lte = parseFloat(max_price);
-      }
-      if (auto_added === "true") filter.is_auto = true;
-      else if (auto_added === "false") filter.is_auto = false;
-      
-      const services = await Service.find(filter).sort({ name: 1 });
-      return res.json(services);
+    const filter = {};
+    if (name) filter.name = { $regex: name, $options: "i" };
+    if (server_id) filter.server_id = server_id;
+    if (min_price || max_price) {
+      filter.price = {};
+      if (min_price) filter.price.$gte = parseFloat(min_price);
+      if (max_price) filter.price.$lte = parseFloat(max_price);
     }
+    if (auto_added === "true") filter.is_auto = true;
+    else if (auto_added === "false") filter.is_auto = false;
+
+    const services = await Service.find(filter)
+      .sort({ name: 1 })
+      .populate({
+        path: "server_id",
+        populate: { path: "country_id" }
+      });
+      
+    return res.json(services);
   } catch (err) {
+    console.error("[Admin/Services] Fetch Error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });

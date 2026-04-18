@@ -38,9 +38,15 @@ router.get("/services", async (req, res) => {
         select: "name country_id",
         populate: { path: "country_id" }
       });
+    
+    // Log first service server name for debugging
+    if (services.length > 0 && services[0].server_id) {
+       console.log("DEBUG: Service 0 Server Name:", services[0].server_id.name);
+    }
+
     res.json(services);
   } catch (err) { 
-    console.error("[/api/user/services]", err.message);
+    console.error("[/api/user/services] Error:", err.message);
     res.status(500).json({ error: "Server error" }); 
   }
 });

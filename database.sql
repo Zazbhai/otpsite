@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   `server_name`       VARCHAR(100)   NOT NULL DEFAULT '',
   `country`           VARCHAR(20)    NOT NULL DEFAULT '',
   `phone`             VARCHAR(30)    NOT NULL DEFAULT '',
-  `otp`               VARCHAR(30)    NOT NULL DEFAULT '',
+  `otp`               TEXT           NOT NULL,
   `all_otps`          LONGTEXT                DEFAULT NULL,             -- array of OTP strings
   `status`            ENUM('active','completed','refunded','expired','cancelled')
                                      NOT NULL DEFAULT 'active',

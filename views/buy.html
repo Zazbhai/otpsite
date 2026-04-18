@@ -1033,7 +1033,7 @@
       list.innerHTML = variants.map(v => `
         <div class="server-option" onclick="buyFromModal('${v._id}')">
           <div class="server-main">
-            <div class="server-name">${v.server_id?.name || 'Standard Server'}</div>
+            <div class="server-name">${(v.server_id && typeof v.server_id === 'object' && v.server_id.name) ? v.server_id.name : (v.server_name || 'Standard Server')}</div>
             <div class="server-stats">
               <span class="stat stat-success">✓ ${v.success_rate || '95%'} Success</span>
               <span class="stat stat-time">⏱ Avg ${v.avg_time || '2m'}</span>

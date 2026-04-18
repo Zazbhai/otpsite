@@ -12,7 +12,7 @@ if (DB_TYPE === "mysql") {
     server_name: { type: DataTypes.STRING, defaultValue: "" },
     country: { type: DataTypes.STRING, defaultValue: "" },
     phone: { type: DataTypes.STRING, defaultValue: "" },
-    otp: { type: DataTypes.STRING, defaultValue: "" },
+    otp: { type: DataTypes.TEXT, defaultValue: "" },
     all_otps: { 
       type: DataTypes.TEXT, 
       defaultValue: "[]",

@@ -27,6 +27,7 @@ if (DB_TYPE === "mysql") {
 }
 
 const connectDB = async () => {
+  log(`🔌 Attempting to connect to database (Type: ${DB_TYPE})...`);
   if (DB_TYPE === "mysql") {
 
     try {
@@ -49,6 +50,7 @@ const connectDB = async () => {
       log("✅ MySQL Models synchronized");
     } catch (err) {
       log("❌ MySQL connection error: " + err.message);
+      throw err; // Re-throw to prevent server from starting without DB
     }
   } else {
     const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/RapidOTP";
@@ -59,6 +61,7 @@ const connectDB = async () => {
       log("✅ MongoDB connected");
     } catch (err) {
       log("❌ MongoDB connection error: " + err.message);
+      throw err; // Re-throw
     }
   }
 };
@@ -89,8 +92,9 @@ const applyMongooseShims = (model) => {
       const newObj = {};
       for (let key in obj) {
         let val = obj[key];
-        // Map _id to id for MySQL compatibility
+        // Map _id to id for MySQL compatibility, including table-prefixed instances
         if (key === '_id') key = 'id';
+        if (key.endsWith('._id')) key = key.replace('._id', '.id');
         if (operatorMap[key]) {
           if (Array.isArray(val)) {
             newObj[operatorMap[key]] = val.map(v => processObject(v));
