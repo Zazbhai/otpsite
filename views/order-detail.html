@@ -192,8 +192,18 @@
       animation: otpReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     @keyframes otpReveal {
-      from { opacity: 0; transform: scale(1.2); letter-spacing: 10px; }
-      to { opacity: 1; transform: scale(1); letter-spacing: 6px; }
+      from { opacity: 0; transform: scale(1.1); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .jiggle {
+      animation: jiggle 0.5s ease;
+    }
+    @keyframes jiggle {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px) rotate(-1deg); }
+      50% { transform: translateX(4px) rotate(1deg); }
+      75% { transform: translateX(-2px) rotate(-0.5deg); }
     }
     
     .otp-waiting {
@@ -430,9 +440,8 @@
           <div id="cancel-btn-wrap" style="margin-top:8px"></div>
         </div>
         
-        <div class="otp-card">
-          <div class="otp-label">Verification Code</div>
-          <div id="otp-content">
+        <div class="otp-card-main">
+          <div id="otp-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
             <div class="otp-waiting">
               <div class="otp-waiting-text">Waiting for SMS...</div>
               <div class="otp-dots">
@@ -608,20 +617,20 @@
         // Previous OTPs are all except the latest one
         const prevOTPs = all.slice(0, -1);
         
-        let html = `<div style="display:flex;flex-direction:column;gap:10px;align-items:center;width:100%;max-width:300px">
-          <div class="otp-card jiggle" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:16px;padding:16px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;animation:otpReveal 0.5s cubic-bezier(0.34,1.56,0.64,1)">
-            <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.15em">Latest OTP</div>
-            <div style="font-size:16px;line-height:1.5;font-weight:600;text-align:center;user-select:text;cursor:text;word-break:break-word">${latestOTP}</div>
-            <button class="action-btn primary btn-sm w-full" onclick="copyOTP('${latestOTP.replace(/'/g, "\\'")}')">📋 Copy Full Message</button>
+        let html = `<div style="display:flex;flex-direction:column;gap:12px;align-items:center;width:100%;margin:0 auto">
+          <div class="otp-card jiggle" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.1)">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.15em">Verification Code</div>
+            <div style="font-size:32px;line-height:1;font-weight:800;letter-spacing:4px;color:var(--text);margin:8px 0">${latestOTP}</div>
+            <button class="action-btn primary btn-sm w-full" style="margin-top:8px" onclick="copyOTP('${latestOTP.replace(/'/g, "\\'")}')">📋 Copy Full Message</button>
           </div>`;
         
         if (prevOTPs.length) {
-          html += `<div style="display:flex;flex-direction:column;gap:8px;width:100%">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 4px">Previous Messages</div>`;
+          html += `<div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:320px">
+            <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.1em;margin:16px 0 4px;text-align:center">Previous Messages</div>`;
           prevOTPs.forEach((code, i) => {
-            html += `<div class="otp-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:8px">
-              <div style="font-size:13px;line-height:1.4;user-select:text;cursor:text;word-break:break-word">${code}</div>
-              <div style="display:flex;justify-content:flex-end">
+            html += `<div class="otp-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;animation:none;transform:scale(0.95);opacity:0.8">
+              <div style="font-size:13px;line-height:1.4;user-select:text;cursor:text;word-break:break-word;text-align:center">${code}</div>
+              <div style="display:flex;justify-content:center">
                 <button onclick="copyOTP('${code.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">📋 Copy</button>
               </div>
             </div>`;
@@ -630,7 +639,7 @@
         }
         
         if (o.status === 'active' && o.multi_otp_enabled) {
-          html += `<button class="action-btn secondary btn-sm" onclick="retrySMS()" style="width:100%;margin-top:4px">🔄 Get Next OTP</button>`;
+          html += `<button class="action-btn secondary btn-sm" onclick="retrySMS()" style="width:100%;max-width:320px;margin-top:8px">🔄 Get Next OTP</button>`;
         }
         html += `</div>`;
         otpContent.innerHTML = html;
