@@ -207,6 +207,7 @@ const applyMongooseShims = (model) => {
     
     async then(resolve, reject) {
       try {
+        if (this.options.forceNull) return resolve(null);
         const finalOptions = { where: { ...this.where }, transaction: this.options.transaction };
         if (this.options.attributes) finalOptions.attributes = this.options.attributes;
         if (this.options.order) finalOptions.order = this.options.order;
@@ -225,12 +226,19 @@ const applyMongooseShims = (model) => {
   }
 
   model.findById = (id, opts = {}) => {
+    if (id === undefined || id === null || id === "undefined" || id === "") {
+        return new Query(model, { id: null }, { ...opts, single: true, forceNull: true });
+    }
     const where = { [model.primaryKeyAttribute || 'id']: id };
     return new Query(model, where, { ...opts, single: true });
   };
   
   model.findOne = (query, opts = {}) => {
-    const where = translateQuery(query && query.where ? query.where : query);
+    const q = query && query.where ? query.where : query;
+    if (!q || (typeof q === 'object' && Object.values(q).every(v => v === undefined))) {
+       return new Query(model, { id: null }, { ...opts, single: true, forceNull: true });
+    }
+    const where = translateQuery(q);
     return new Query(model, where, { ...opts, single: true });
   };
 
