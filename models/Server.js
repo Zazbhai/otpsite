@@ -8,7 +8,7 @@ if (DB_TYPE === "mysql") {
   Server = sequelize.define("Server", {
     name: { type: DataTypes.STRING, allowNull: false },
     slug: { type: DataTypes.STRING },
-    country_id_attr: { type: DataTypes.STRING, field: 'country_id' }, // Store ID as string for compatibility
+    country_id_attr: { type: DataTypes.INTEGER, field: 'country_id' }, // Store ID for compatibility
     api_key: { type: DataTypes.STRING, defaultValue: "" },
     api_get_number_url: { type: DataTypes.STRING, defaultValue: "" },
     api_check_status_url: { type: DataTypes.STRING, defaultValue: "" },

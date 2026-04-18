@@ -7,7 +7,7 @@ let Service;
 if (DB_TYPE === "mysql") {
   Service = sequelize.define("Service", {
     name: { type: DataTypes.STRING, allowNull: false },
-    server_id_attr: { type: DataTypes.STRING, field: 'server_id' }, 
+    server_id_attr: { type: DataTypes.INTEGER, field: 'server_id' }, 
     service_code: { type: DataTypes.STRING, allowNull: false },
     country_code: { type: DataTypes.STRING, allowNull: false },
     price: { type: DataTypes.FLOAT, allowNull: false },
