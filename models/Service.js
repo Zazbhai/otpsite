@@ -30,6 +30,13 @@ if (DB_TYPE === "mysql") {
       type: DataTypes.VIRTUAL,
       get() { return this.country_id_attr; }
     }
+  }, {
+    indexes: [
+      { fields: ['service_code', 'country_code', 'is_active'] },
+      { fields: ['is_active'] },
+      { fields: ['server_id_attr'] },
+      { fields: ['name'] }
+    ]
   });
 
   applyMongooseShims(Service);

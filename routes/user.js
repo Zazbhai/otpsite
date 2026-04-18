@@ -14,21 +14,34 @@ const { paymentChecker } = require("../utils/bharatpe");
 const providerApi = require("../utils/providerApi");
 const { nanoid }  = require("nanoid");
 
+// --- SIMPLE CACHE SYSTEM ---
+const apiCache = new Map();
+const CACHE_TTL = 60 * 1000; // 1 minute
+
+function getFromCache(key) {
+  const cached = apiCache.get(key);
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) return cached.data;
+  return null;
+}
+
+function setToCache(key, data) {
+  apiCache.set(key, { data, timestamp: Date.now() });
+}
+
 // ── GET /api/user/services (public for pricing page) ─────────────
 router.get("/services", async (req, res) => {
-  console.log(">> HIT PUBLIC SERVICES ROUTE");
+  const { country_id } = req.query;
+  const cacheKey = `services_${country_id || 'all'}`;
+  
+  const cachedData = getFromCache(cacheKey);
+  if (cachedData) return res.json(cachedData);
+
   try {
-    const { country_id } = req.query;
     const filter = { is_active: true };
-    
-    // If country_id provided, we need to filter by server's country_id
     if (country_id) {
-      const serversInCountry = await Country.findById(country_id);
-      if(!serversInCountry) return res.json([]);
-      
-      const servers = await Server.find({ country_id: serversInCountry._id }).select("_id");
-      const serverIds = servers.map(s => s._id);
-      filter.server_id = { $in: serverIds };
+       // Only project _id for server lookup
+       const servers = await Server.find({ country_id }).select("_id");
+       filter.server_id = { $in: servers.map(s => s._id) };
     }
 
     const services = await Service.find(filter)
@@ -38,11 +51,7 @@ router.get("/services", async (req, res) => {
         populate: { path: "country_id" }
       });
     
-    // Log first service server name for debugging
-    if (services.length > 0 && services[0].server_id) {
-       console.log("DEBUG: Service 0 Server Object:", JSON.stringify(services[0].server_id, null, 2));
-    }
-
+    setToCache(cacheKey, services);
     res.json(services);
   } catch (err) { 
     console.error("[/api/user/services] Error:", err.message);
@@ -52,8 +61,12 @@ router.get("/services", async (req, res) => {
 
 // ── GET /api/user/countries (public for buy page) ─────────────────
 router.get("/countries", async (req, res) => {
+  const cachedData = getFromCache('countries');
+  if (cachedData) return res.json(cachedData);
+
   try {
     const countries = await Country.find({ is_active: true }).sort({ sort_order: 1, name: 1 });
+    setToCache('countries', countries);
     res.json(countries);
   } catch (err) { 
     console.error("ROUTE_ERROR:", err);

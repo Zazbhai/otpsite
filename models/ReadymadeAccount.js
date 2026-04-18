@@ -27,7 +27,8 @@ if (DB_TYPE === "mysql") {
   }, {
     indexes: [
       { fields: ["category_id"] },
-      { fields: ["status"] }
+      { fields: ["status"] },
+      { fields: ["sold_to"] }
     ]
   });
 

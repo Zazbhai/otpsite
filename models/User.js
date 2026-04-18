@@ -28,6 +28,14 @@ if (DB_TYPE === "mysql") {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
     }
+  }, {
+    indexes: [
+      { fields: ["email"], unique: true },
+      { fields: ["username"], unique: true },
+      { fields: ["referral_code"], unique: true },
+      { fields: ["referred_by"] },
+      { fields: ["createdAt"] }
+    ]
   });
 
   applyMongooseShims(User);

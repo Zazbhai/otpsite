@@ -16,29 +16,45 @@ function startWatcher() {
     isRunning = true;
 
     try {
-      // Find orders that are active
-      const activeOrders = await Order.find({ status: "active" });
-      if (activeOrders.length === 0) {
-        isRunning = false;
-        return;
-      }
-
-      // Check which orders are due for a sync based on their check_interval
       const now = new Date();
-      const dueOrders = activeOrders.filter(order => {
-        const lastCheck = order.last_check_at ? new Date(order.last_check_at) : new Date(0);
-        const intervalMs = (order.check_interval || 3) * 1000;
-        return (now.getTime() - lastCheck.getTime()) >= intervalMs;
-      });
+      const { Op } = require("sequelize");
+      const { DB_TYPE } = require("./db");
+
+      // Optimization: Fetch ONLY active orders that are due for a check
+      // This prevents loading thousands of orders into memory just to filter them
+      let dueOrders;
+      if (DB_TYPE === "mysql") {
+          // MySQL/Sequelize logic
+          dueOrders = await Order.findAll({
+              where: {
+                  status: "active",
+                  [Op.or]: [
+                      { last_check_at: null },
+                      { last_check_at: { [Op.lte]: new Date(now.getTime() - 3000) } } // Use small default if check_interval is missing
+                  ]
+              },
+              // Project only fields needed for syncOrder to save memory
+              attributes: ['id', 'order_id', 'user_id', 'status', 'external_order_id', 'server_name', 'check_interval', 'last_check_at', 'expires_at', 'min_cancel_at', 'cost', 'multi_otp_enabled', 'otp', 'all_otps']
+          });
+      } else {
+          // MongoDB logic
+          dueOrders = await Order.find({
+              status: "active",
+              $or: [
+                  { last_check_at: { $exists: false } },
+                  { last_check_at: { $lte: new Date(now.getTime() - 3000) } }
+              ]
+          });
+      }
 
       if (dueOrders.length === 0) {
         isRunning = false;
         return;
       }
 
-      console.log(`🕒 Order Monitor: Syncing ${dueOrders.length}/${activeOrders.length} due orders...`);
+      console.log(`🕒 Order Monitor: Syncing ${dueOrders.length} due orders...`);
 
-      // Process up to 10 orders in parallel to speed up the loop
+      // Process up to 10 orders in parallel to speed up the loop without crashing the API
       const CONCURRENCY = 10;
       for (let i = 0; i < dueOrders.length; i += CONCURRENCY) {
         const batch = dueOrders.slice(i, i + CONCURRENCY);

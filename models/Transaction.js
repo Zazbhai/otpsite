@@ -26,7 +26,8 @@ if (DB_TYPE === "mysql") {
     }
   }, {
     indexes: [
-      { fields: ["user_id"] }
+      { fields: ["user_id"] },
+      { fields: ["createdAt"] }
     ]
   });
 

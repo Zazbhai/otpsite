@@ -41,6 +41,14 @@ if (DB_TYPE === "mysql") {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
     }
+  }, {
+    indexes: [
+      { fields: ['status'] },
+      { fields: ['user_id'] },
+      { fields: ['last_check_at'] },
+      { fields: ['createdAt'] },
+      { fields: ['order_id'], unique: true }
+    ]
   });
 
   applyMongooseShims(Order);

@@ -288,6 +288,13 @@ const applyMongooseShims = (model) => {
     return originalCount({ where, transaction: options?.transaction });
   };
   
+  model.count = model.countDocuments;
+
+  model.updateOne = async (query, update, options) => {
+    const actualUpdate = update.$set ? update.$set : update;
+    return model.findOneAndUpdate(query, actualUpdate, options);
+  };
+  
   model.bulkWrite = async (operations) => {
     const results = [];
     for (const op of operations) {
