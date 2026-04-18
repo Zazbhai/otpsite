@@ -324,7 +324,7 @@ router.patch("/orders/:id", async (req, res) => {
       });
     }
     if (status) order.status = status;
-    if (otp)    { order.otp = otp; order.all_otps.push(otp); }
+    if (otp)    { order.otp = otp; order.all_otps = [...order.all_otps, otp]; }
     await order.save();
     emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
     res.json({ order });

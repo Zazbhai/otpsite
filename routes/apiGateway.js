@@ -162,7 +162,9 @@ router.all("/", async (req, res) => {
               order.status = checkRes.status;
               if (checkRes.otp) {
                  order.otp = checkRes.otp;
-                 if (!order.all_otps.includes(checkRes.otp)) order.all_otps.push(checkRes.otp);
+                  if (!order.all_otps.includes(checkRes.otp)) {
+                    order.all_otps = [...order.all_otps, checkRes.otp];
+                  }
               }
               await order.save();
               if (order.otp) {

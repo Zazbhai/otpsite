@@ -68,7 +68,7 @@ async function syncOrder(orderIdOrDoc) {
             const cleanOtp = checkRes.otp.trim();
             if (!order.all_otps.includes(cleanOtp)) {
               order.otp = cleanOtp;
-              order.all_otps.push(cleanOtp);
+              order.all_otps = [...order.all_otps, cleanOtp];
               // Request next OTP automatically
               providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
               await order.save();
@@ -83,7 +83,7 @@ async function syncOrder(orderIdOrDoc) {
             const cleanOtp = checkRes.otp.trim();
             order.otp = cleanOtp;
             if (!order.all_otps.includes(cleanOtp)) {
-              order.all_otps.push(cleanOtp);
+              order.all_otps = [...order.all_otps, cleanOtp];
             }
           }
            
