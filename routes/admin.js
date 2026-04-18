@@ -180,6 +180,41 @@ router.get("/users", async (req, res) => {
   }
 });
 
+router.post("/users", async (req, res) => {
+  try {
+    const { username, email, password, is_admin } = req.body;
+    if (!username || !email || !password) return res.status(400).json({ error: "Username, email and password are required" });
+
+    // Check if user exists
+    let existing;
+    if (DB_TYPE === "mysql") {
+      const { Op } = require("sequelize");
+      existing = await User.findOne({ where: { [Op.or]: [{ email }, { username }] } });
+    } else {
+      existing = await User.findOne({ $or: [{ email }, { username }] });
+    }
+    if (existing) return res.status(400).json({ error: "Email or username already in use" });
+
+    // Hash password
+    const password_hash = await bcrypt.hash(password, 10);
+    
+    const user = await User.create({
+      username,
+      email,
+      password_hash,
+      is_admin: is_admin === true,
+      balance: 0,
+      total_spent: 0,
+      avatar_color: '#' + Math.floor(Math.random()*16777215).toString(16)
+    });
+
+    res.status(201).json({ user: { id: user._id || user.id, username: user.username, email: user.email } });
+  } catch (err) {
+    console.error("ADMIN_USER_CREATE_ERROR:", err);
+    res.status(500).json({ error: "Failed to create user: " + err.message });
+  }
+});
+
 router.get("/users/:id", async (req, res) => {
   try {
     const user   = await User.findById(req.params.id).select("-password_hash");
@@ -198,6 +233,20 @@ router.patch("/users/:id", async (req, res) => {
     const { balance, is_banned, notes, is_admin } = req.body;
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Protect Super Admin from demotion/ban
+    const superAdminEmails = (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(e => e.trim());
+    const isSuperAdmin = superAdminEmails.includes(user.email.toLowerCase());
+
+    if (isSuperAdmin) {
+      if (is_admin === false) {
+        return res.status(403).json({ error: "Security Restriction: Super Admin privileges cannot be revoked." });
+      }
+      if (is_banned === true) {
+        return res.status(403).json({ error: "Security Restriction: Super Admin account cannot be banned." });
+      }
+    }
+
     if (balance   !== undefined) user.balance   = parseFloat(balance);
     if (is_banned !== undefined) user.is_banned = is_banned;
     if (is_admin  !== undefined) user.is_admin  = is_admin;

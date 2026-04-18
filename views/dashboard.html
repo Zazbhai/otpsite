@@ -274,11 +274,6 @@
   }
 
   initDashboard();
-  
-  const polling = setInterval(() => {
-    if (document.visibilityState === 'visible') initDashboard();
-  }, 10000);
-  window.addEventListener('popstate', () => clearInterval(polling), { once: true });
 }
 </script>
 </body>

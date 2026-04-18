@@ -157,23 +157,16 @@ window.applyBranding = async function(force = false) {
     const oldNames = ["Rapid OTP", "Zaz", "{{SITE_NAME}}"];
     
     // 1. Update Document Title
-    oldNames.forEach(old => {
-      if (document.title.includes(old)) {
-        document.title = document.title.replace(new RegExp(old, 'g'), name);
+    if (document.title.includes("{{SITE_NAME}}") || document.title.includes("Rapid OTP")) {
+      document.title = document.title.replace(/{{SITE_NAME}}|Rapid OTP/g, name);
+    }
+    
+    // 2. Targeted DOM Updates (Fast)
+    document.querySelectorAll(".nav-logo, .footer-logo, .site-name-text").forEach(el => {
+      if (el.textContent.includes("{{SITE_NAME}}") || el.textContent.includes("Rapid OTP")) {
+        el.innerHTML = el.innerHTML.replace(/{{SITE_NAME}}|Rapid OTP/g, name);
       }
     });
-
-    // 2. Comprehensive DOM Replacement
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-    let node;
-    while(node = walker.nextNode()) {
-      if (node.parentElement && (node.parentElement.tagName === "SCRIPT" || node.parentElement.tagName === "STYLE")) continue;
-      oldNames.forEach(old => {
-        if (node.nodeValue.includes(old)) {
-          node.nodeValue = node.nodeValue.replace(new RegExp(old, 'g'), name);
-        }
-      });
-    }
 
     // 3. Update Favicon
     if (siteSettings.site_favicon) {
@@ -431,15 +424,17 @@ function startBalanceHeartbeat() {
   
   setInterval(() => {
     // Only poll if tab is active to save resources
-    if (document.visibilityState === 'visible') {
+  if (document.visibilityState === 'visible') {
       window.updateBalanceDisplay();
-      // If on dashboard and initDashboard exists, refresh it for real-time order states
-      if (typeof window.initDashboard === 'function' && window.location.pathname === '/dashboard') {
-        window.initDashboard();
+      // Prevent overlapping dashboard refreshes
+      if (typeof window.initDashboard === 'function' && window.location.pathname === '/dashboard' && !window.dashboardLoading) {
+        window.dashboardLoading = true;
+        window.initDashboard().finally(() => window.dashboardLoading = false);
       }
       // If on orders list and initOrders exists, refresh it
-      if (typeof window.initOrders === 'function' && window.location.pathname === '/dashboard/orders') {
-        window.initOrders();
+      if (typeof window.initOrders === 'function' && window.location.pathname === '/dashboard/orders' && !window.ordersLoading) {
+        window.ordersLoading = true;
+        window.initOrders().finally(() => window.ordersLoading = false);
       }
     }
   }, interval);
@@ -853,12 +848,33 @@ window.skeletonList = (count = 5) => {
   return h;
 };
 
+window.renderSkeleton = function(type = 'list', rows = 5) {
+  let html = '';
+  if (type === 'list') {
+    for (let i = 0; i < rows; i++) {
+      html += `
+        <div class="skeleton-row" style="display:flex; gap:16px; align-items:center; padding: 12px 0; border-bottom: 1px solid var(--border)">
+          <div class="skeleton" style="width:40px; height:40px; border-radius:50%; flex-shrink:0"></div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:8px">
+            <div class="skeleton" style="width:140px; height:12px; border-radius:4px"></div>
+            <div class="skeleton" style="width:80px; height:8px; border-radius:4px"></div>
+          </div>
+          <div class="skeleton" style="width:100px; height:12px; border-radius:4px"></div>
+          <div class="skeleton" style="width:60px; height:24px; border-radius:12px"></div>
+        </div>`;
+    }
+  } else if (type === 'card') {
+    html = `<div class="skeleton" style="width:100%; height:180px; border-radius:20px"></div>`;
+  }
+  return html;
+};
+
 window.skeletonStats = () => {
-  return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
-    <div class="skeleton" style="height:80px;border-radius:16px"></div>
-    <div class="skeleton" style="height:80px;border-radius:16px"></div>
-    <div class="skeleton" style="height:80px;border-radius:16px"></div>
-    <div class="skeleton" style="height:80px;border-radius:16px"></div>
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+    <div class="skeleton" style="height:120px;border-radius:20px"></div>
+    <div class="skeleton" style="height:120px;border-radius:20px"></div>
+    <div class="skeleton" style="height:120px;border-radius:20px"></div>
+    <div class="skeleton" style="height:120px;border-radius:20px"></div>
   </div>`;
 };
 

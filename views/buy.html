@@ -866,9 +866,12 @@
   function startPolling() {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(() => {
-      refreshServicesSilent();
-      refreshBalanceSilent();
-    }, 10000); // 10 seconds
+      // Only poll if tab is active to save resources and prevent freezes
+      if (document.visibilityState === 'visible') {
+        refreshServicesSilent();
+        refreshBalanceSilent();
+      }
+    }, 10000);
   }
 
   window.initBuy = async function() {
@@ -1091,7 +1094,17 @@
     return '';
   }
 
+  let filterTimeout = null;
   window.filterOptions = function(type) {
+    if (type === 'service') {
+      clearTimeout(filterTimeout);
+      filterTimeout = setTimeout(() => _performFilter(type), 200);
+    } else {
+      _performFilter(type);
+    }
+  };
+
+  function _performFilter(type) {
     const searchTerm = document.getElementById(`search-${type}`).value.toLowerCase();
     const container = document.getElementById(`options-${type}`);
     if (!container) return;
@@ -1102,15 +1115,15 @@
     container.querySelectorAll(selector).forEach(opt => {
       const searchText = opt.dataset.search || opt.textContent.toLowerCase();
       const match = searchText.includes(searchTerm);
-      opt.style.display = match ? (type === 'service' ? 'flex' : 'flex') : 'none';
+      opt.style.display = match ? 'flex' : 'none';
       if (match) visibleCount++;
     });
 
     if (type === 'service') {
        const countEl = document.getElementById('service-count');
-       if (countEl) countEl.textContent = visibleCount;
+       if (countEl) countEl.textContent = visibleCount + " Available";
     }
-  };
+  }
 
   window.updateSummary = function() {
     const set = (id, val) => {

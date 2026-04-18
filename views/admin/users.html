@@ -41,6 +41,7 @@
   <main class="main-content">
     <div class="resp-header">
       <h1 style="font-size:24px">Users <span id="total-count" class="text-muted text-sm"></span></h1>
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-modal')">➕ Add User</button>
     </div>
     <div class="user-controls">
       <div class="search-bar">
@@ -70,7 +71,7 @@
             </tr>
           </thead>
           <tbody id="users-body">
-            <tr><td colspan="6" style="padding:40px;text-align:center">${renderSkeleton('list', 8)}</td></tr>
+            <tr><td colspan="6" style="padding:40px;text-align:center">${window.renderSkeleton ? renderSkeleton('list', 8) : 'Loading...'}</td></tr>
           </tbody>
         </table>
       </div>
@@ -230,6 +231,28 @@
   }
 </style>
 
+<!-- Add User Modal -->
+<div class="modal-backdrop" id="add-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Add New User</h3><button class="modal-close" onclick="closeModal('add-modal')">✕</button></div>
+    <div class="modal-content-wrap">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group"><label class="form-label">Username</label><input type="text" id="add-username" placeholder="Required" /></div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="add-email" placeholder="Required" /></div>
+        <div class="form-group"><label class="form-label">Password</label><input type="password" id="add-password" placeholder="Min 6 chars" /></div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+          <input type="checkbox" id="add-is-admin" style="width:18px;height:18px" />
+          <label for="add-is-admin" style="font-weight:700;cursor:pointer">Give Admin Privileges 🛡️</label>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-primary" onclick="addUser()">Create User</button>
+          <button class="btn btn-secondary" onclick="closeModal('add-modal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Edit User Modal -->
 <div class="modal-backdrop" id="edit-modal">
   <div class="modal">
@@ -280,7 +303,7 @@
     loadUsers();
   }
   
-  let editUser = null, searchTimeout = null;
+  let editUser = null, searchTimeout = null, currentUsers = [];
 
   function debounceSearch() { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => loadUsers(1), 400); }
 
@@ -296,6 +319,7 @@
     
     try {
       const data = await API.get(`/api/admin/users?${params}`);
+      currentUsers = data.users || [];
       const countEl = document.getElementById("total-count");
       if (countEl) countEl.textContent = `(${data.total.toLocaleString()})`;
       
@@ -344,8 +368,7 @@
 
   async function openEditById(id) {
     try {
-      const users = await API.get("/api/admin/users");
-      const u = (users.users || users).find(x => x._id.toString() === id);
+      const u = currentUsers.find(x => x._id.toString() == id);
       if (!u) return;
       
       editUser = u;
@@ -397,6 +420,28 @@
     try {
       await API.post("/api/admin/transactions/deposit", { user_id: uid, amount, description });
       toast(`Added $${amount.toFixed(2)} to user`, "success"); closeModal("deposit-modal"); loadUsers();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  async function addUser() {
+    const username = document.getElementById("add-username").value.trim();
+    const email = document.getElementById("add-email").value.trim();
+    const password = document.getElementById("add-password").value;
+    const is_admin = document.getElementById("add-is-admin").checked;
+
+    if (!username || !email || !password) return toast("All fields are required", "error");
+    if (password.length < 6) return toast("Password must be at least 6 chars", "error");
+
+    try {
+      await API.post("/api/admin/users", { username, email, password, is_admin });
+      toast("User created successfully!", "success");
+      closeModal("add-modal");
+      
+      // Clear inputs
+      ["add-username", "add-email", "add-password"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("add-is-admin").checked = false;
+      
+      loadUsers();
     } catch (e) { toast(e.message, "error"); }
   }
 
