@@ -34,13 +34,10 @@ if (DB_TYPE === "mysql") {
 
   applyMongooseShims(Service);
 
-  // Define Associations for MySQL mode
-  setTimeout(() => {
-    const Server = sequelize.models.Server;
-    if (Server) {
-        Service.belongsTo(Server, { foreignKey: 'server_id_attr', as: 'server_id' });
-    }
-  }, 0);
+  // Define Associations for MySQL mode immediately if possible, or via a safer method
+  Service.associate = (models) => {
+    Service.belongsTo(models.Server, { foreignKey: 'server_id_attr', as: 'server' });
+  };
 } else {
   const serviceSchema = new mongoose.Schema(
     {

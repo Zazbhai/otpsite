@@ -45,6 +45,13 @@ const connectDB = async () => {
       require("../models/PromoCode");
       require("../models/ReadymadeAccount");
       require("../models/AccountCategory");
+      
+      // Initialize Associations
+      Object.keys(sequelize.models).forEach(modelName => {
+        if (sequelize.models[modelName].associate) {
+          sequelize.models[modelName].associate(sequelize.models);
+        }
+      });
 
       await sequelize.sync({ alter: false });
       log("✅ MySQL Models synchronized");
@@ -183,7 +190,9 @@ const applyMongooseShims = (model) => {
       
       const processPopulate = (item) => {
         const p = typeof item === 'string' ? { path: item } : item;
-        const includeObj = { association: p.path };
+        const mappings = { 'server_id': 'server', 'country_id': 'country' };
+        const realPath = mappings[p.path] || p.path;
+        const includeObj = { association: realPath };
         if (p.select) {
           includeObj.attributes = p.select.split(' ').map(f => f === '_id' ? 'id' : f);
         }
@@ -301,6 +310,7 @@ const applyMongooseShims = (model) => {
     const originalToJSON = model.prototype.toJSON;
     const shimmedToJSON = function() {
         const obj = this.get({ plain: true });
+        
         // Map _attr fields back to original names for the frontend
         for (const key in obj) {
             if (key.endsWith('_attr')) {
@@ -308,6 +318,11 @@ const applyMongooseShims = (model) => {
                 if (!obj[originalKey]) obj[originalKey] = obj[key];
             }
         }
+        
+        // Map renamed associations back to legacy names if populated
+        if (obj.server && !obj.server_id) obj.server_id = obj.server;
+        if (obj.country && !obj.country_id) obj.country_id = obj.country;
+
         if (this._id && !obj._id) obj._id = String(this.id);
         return obj;
     };

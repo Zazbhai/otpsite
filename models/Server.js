@@ -42,13 +42,9 @@ if (DB_TYPE === "mysql") {
 
   applyMongooseShims(Server);
 
-  // Define Associations for MySQL mode
-  setTimeout(() => {
-    const Country = sequelize.models.Country;
-    if (Country) {
-        Server.belongsTo(Country, { foreignKey: 'country_id_attr', as: 'country_id' });
-    }
-  }, 0);
+  Server.associate = (models) => {
+    Server.belongsTo(models.Country, { foreignKey: 'country_id_attr', as: 'country' });
+  };
 } else {
   const serverSchema = new mongoose.Schema(
     {
