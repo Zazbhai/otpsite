@@ -293,8 +293,14 @@
     const data = await API.get("/api/admin/services?" + params.toString());
     currentServices = data;
     tbody.innerHTML = data.map(s => {
-      const server = allServers.find(x => x._id == s.server_id);
-      const country = server ? allCountries.find(c => c._id == server.country_id) : null;
+      // Logic: If s.server_id is an object (due to .populate), use it. Else find in allServers.
+      const server = (s.server_id && typeof s.server_id === 'object') ? s.server_id : allServers.find(x => x._id == s.server_id);
+      
+      // Similarly for country
+      const country = (server && server.country_id && typeof server.country_id === 'object') 
+          ? server.country_id 
+          : (server ? allCountries.find(c => (c._id == server.country_id || c._id == server.country_id_attr)) : null);
+
       return `
       <tr>
         <td>
@@ -341,7 +347,7 @@
     document.getElementById("svc-modal-title").textContent = "Edit Service";
     document.getElementById("svc-id").value = s._id;
     document.getElementById("svc-name").value = s.name;
-    document.getElementById("svc-server").value = s.server_id || "";
+    document.getElementById("svc-server").value = (s.server_id && typeof s.server_id === 'object') ? (s.server_id._id || s.server_id.id) : (s.server_id || "");
     document.getElementById("svc-code").value = s.service_code || "";
     document.getElementById("svc-price").value = s.price || 0;
     document.getElementById("svc-active").value = String(s.is_active);
