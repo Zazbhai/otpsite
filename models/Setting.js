@@ -14,7 +14,12 @@ if (DB_TYPE === "mysql") {
         try { return JSON.parse(val); } catch (e) { return val; }
       },
       set(val) {
-        this.setDataValue('value', typeof val === 'object' ? JSON.stringify(val) : val);
+        // Always stringify to ensure validity if the DB column is JSON
+        try {
+          this.setDataValue('value', JSON.stringify(val));
+        } catch (e) {
+          this.setDataValue('value', val);
+        }
       }
     },
     label: { type: DataTypes.STRING, defaultValue: "" },

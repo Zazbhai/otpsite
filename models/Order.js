@@ -13,7 +13,17 @@ if (DB_TYPE === "mysql") {
     country: { type: DataTypes.STRING, defaultValue: "" },
     phone: { type: DataTypes.STRING, defaultValue: "" },
     otp: { type: DataTypes.STRING, defaultValue: "" },
-    all_otps: { type: DataTypes.JSON, defaultValue: [] },
+    all_otps: { 
+      type: DataTypes.TEXT, 
+      defaultValue: "[]",
+      get() {
+        const val = this.getDataValue('all_otps');
+        try { return JSON.parse(val || "[]"); } catch (e) { return []; }
+      },
+      set(val) {
+        this.setDataValue('all_otps', JSON.stringify(val || []));
+      }
+    },
     status: {
       type: DataTypes.ENUM("active", "completed", "refunded", "expired", "cancelled"),
       defaultValue: "active",

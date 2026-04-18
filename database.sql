@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   `country`           VARCHAR(20)    NOT NULL DEFAULT '',
   `phone`             VARCHAR(30)    NOT NULL DEFAULT '',
   `otp`               VARCHAR(30)    NOT NULL DEFAULT '',
-  `all_otps`          JSON                    DEFAULT NULL,             -- array of OTP strings
+  `all_otps`          LONGTEXT                DEFAULT NULL,             -- array of OTP strings
   `status`            ENUM('active','completed','refunded','expired','cancelled')
                                      NOT NULL DEFAULT 'active',
   `cost`              DOUBLE         NOT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS `Transactions` (
 CREATE TABLE IF NOT EXISTS `Settings` (
   `id`        INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `key`       VARCHAR(100) NOT NULL,
-  `value`     JSON                  DEFAULT NULL,   -- Mixed type → JSON
+  `value`     LONGTEXT              DEFAULT NULL,   -- Mixed type → TEXT for compat
   `label`     VARCHAR(255) NOT NULL DEFAULT '',
   `group`     VARCHAR(100) NOT NULL DEFAULT 'general',
   `createdAt` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS `PromoCodes` (
   `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
   `usage_limit` INT          NOT NULL DEFAULT 1,
   `used_count`  INT          NOT NULL DEFAULT 0,
-  `used_by`     JSON                  DEFAULT NULL,   -- array of user id strings
+  `used_by`     LONGTEXT              DEFAULT NULL,   -- array of user id strings
   `createdAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -284,7 +284,7 @@ CREATE TABLE IF NOT EXISTS `ReadymadeAccounts` (
 --  Mirrors the default values set by the admin panel.
 -- ============================================================
 INSERT IGNORE INTO `Settings` (`key`, `value`, `label`, `group`) VALUES
-  ('site_name',         '"Zaz"',         'Site Name',         'branding'),
+  ('site_name',         'Zaz',         'Site Name',         'branding'),
   ('site_logo',         'null',          'Site Logo URL',     'branding'),
   ('site_favicon',      'null',          'Favicon URL',       'branding'),
   ('primary_color',     '"#3b82f6"',     'Primary Color',     'branding'),

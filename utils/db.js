@@ -264,6 +264,10 @@ const applyMongooseShims = (model) => {
     return results;
   };
   
+  model.insertMany = (docs, options) => {
+    return model.bulkCreate(docs, { transaction: options?.transaction });
+  };
+  
   return model;
 };
 

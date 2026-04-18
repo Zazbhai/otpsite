@@ -11,7 +11,17 @@ if (DB_TYPE === "mysql") {
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     usage_limit: { type: DataTypes.INTEGER, defaultValue: 1 },
     used_count: { type: DataTypes.INTEGER, defaultValue: 0 },
-    used_by: { type: DataTypes.JSON, defaultValue: [] },
+    used_by: { 
+      type: DataTypes.TEXT, 
+      defaultValue: "[]",
+      get() {
+        const val = this.getDataValue('used_by');
+        try { return JSON.parse(val || "[]"); } catch (e) { return []; }
+      },
+      set(val) {
+        this.setDataValue('used_by', JSON.stringify(val || []));
+      }
+    },
   });
 
   applyMongooseShims(PromoCode);
