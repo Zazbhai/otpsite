@@ -241,6 +241,17 @@ const applyMongooseShims = (model) => {
     return record;
   };
 
+  model.findByIdAndUpdate = (id, update, options) => {
+    return model.findOneAndUpdate({ [model.primaryKeyAttribute || 'id']: id }, update, options);
+  };
+
+  model.findByIdAndDelete = (id, options) => {
+    const where = { [model.primaryKeyAttribute || 'id']: id };
+    return originalDestroy({ where, transaction: options?.transaction });
+  };
+  
+  model.findByIdAndRemove = model.findByIdAndDelete;
+
   model.deleteMany = (query, options) => {
     const where = translateQuery(query);
     return originalDestroy({ where, transaction: options?.transaction });
@@ -267,6 +278,16 @@ const applyMongooseShims = (model) => {
   model.insertMany = (docs, options) => {
     return model.bulkCreate(docs, { transaction: options?.transaction });
   };
+  
+  // Instance method shims
+  if (model.prototype) {
+    model.prototype.toObject = function() { 
+        const obj = this.get({ plain: true });
+        // Handle virtuals manually if needed, but get({plain:true}) usually includes them if they are defined correctly
+        if (this._id && !obj._id) obj._id = String(this.id);
+        return obj;
+    };
+  }
   
   return model;
 };

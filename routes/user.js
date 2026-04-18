@@ -118,7 +118,7 @@ router.get("/dashboard", async (req, res) => {
     const servers = await Server.find({ name: { $in: serverNames } }).populate('country_id', 'name');
     const serverMap = new Map(servers.map(s => [s.name, s]));
     const enrichedRecentOrders = recentOrders.map(order => {
-      const orderObj = order.toObject();
+      const orderObj = typeof order.toObject === 'function' ? order.toObject() : order;
       const server = serverMap.get(order.server_name);
       orderObj.server_country = server?.country_id?.name || orderObj.country;
       return orderObj;
@@ -342,8 +342,8 @@ router.get("/orders/:id", async (req, res) => {
       });
     }
 
-    // Always immediately fulfillment request with current DB state
-    const finalOrder = order.toObject();
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    const finalOrder = typeof order.toObject === 'function' ? order.toObject() : order;
     finalOrder.server_country = serverConf?.country_id?.name || order.country;
     res.json(finalOrder);
 
