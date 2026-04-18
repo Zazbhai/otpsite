@@ -299,7 +299,7 @@
       // Similarly for country
       const country = (server && server.country_id && typeof server.country_id === 'object') 
           ? server.country_id 
-          : (server ? allCountries.find(c => (c._id == server.country_id || c._id == server.country_id_attr)) : null);
+          : (server ? allCountries.find(c => c._id == server.country_id) : null);
 
       return `
       <tr>

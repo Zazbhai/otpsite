@@ -18,7 +18,7 @@ router.get("/categories", async (req, res) => {
     const cats = await AccountCategory.find({ is_active: true }).sort({ sort_order: 1, name: 1 });
     const result = await Promise.all(cats.map(async c => {
       const stock = await ReadymadeAccount.countDocuments({ 
-        [process.env.DB_TYPE === "mysql" ? 'category_id_attr' : 'category_id']: c._id || c.id, 
+        category_id: c._id || c.id, 
         status: "available" 
       });
       return { ...c.toObject(), stock };
@@ -56,7 +56,7 @@ router.post("/buy/:categoryId", async (req, res) => {
       if (process.env.DB_TYPE === "mysql") {
         const { Op } = require("sequelize");
         account = await ReadymadeAccount.findOne({
-          where: { category_id_attr: cat.id, status: "available" },
+          where: { category_id: cat.id, status: "available" },
           order: [["createdAt", "ASC"]],
           ...queryOptions,
           lock: session.LOCK?.UPDATE || true
@@ -71,7 +71,7 @@ router.post("/buy/:categoryId", async (req, res) => {
         }
       } else {
         account = await ReadymadeAccount.findOneAndUpdate(
-          { category_id_attr: cat._id || cat.id, status: "available" },
+          { category_id: cat._id || cat.id, status: "available" },
           { $set: { status: "sold", sold_to: req.userId, sold_at: new Date(), price_at_sale: cat.price } },
           { sort: { createdAt: 1 }, new: true, session }
         );

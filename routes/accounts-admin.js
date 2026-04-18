@@ -11,8 +11,7 @@ router.use(adminRequired);
 // List all categories
 router.get("/categories", async (req, res) => {
   try {
-    const isMysql = process.env.DB_TYPE === "mysql";
-    const catIdField = isMysql ? 'category_id_attr' : 'category_id';
+    const catIdField = 'category_id';
     
     const cats = await AccountCategory.find().sort({ sort_order: 1, createdAt: -1 });
     // Attach stock count for each
@@ -51,9 +50,8 @@ router.patch("/categories/:id", async (req, res) => {
 // Delete category (only if no available accounts remain)
 router.delete("/categories/:id", async (req, res) => {
   try {
-    const isMysql = process.env.DB_TYPE === "mysql";
     const count = await ReadymadeAccount.countDocuments({ 
-      [isMysql ? 'category_id_attr' : 'category_id']: req.params.id, 
+      category_id: req.params.id, 
       status: "available" 
     });
     if (count > 0) return res.status(400).json({ error: "Remove all available accounts first" });
@@ -70,8 +68,7 @@ router.delete("/categories/:id", async (req, res) => {
 // List accounts in a category (paginated)
 router.get("/categories/:id/accounts", async (req, res) => {
   try {
-    const isMysql = process.env.DB_TYPE === "mysql";
-    const catIdField = isMysql ? 'category_id_attr' : 'category_id';
+    const catIdField = 'category_id';
     
     const { page = 1, limit = 50, status } = req.query;
     const filter = { [catIdField]: req.params.id };
@@ -91,8 +88,7 @@ router.get("/categories/:id/accounts", async (req, res) => {
 // Bulk add accounts (newline-separated credentials)
 router.post("/categories/:id/accounts/bulk", async (req, res) => {
   try {
-    const isMysql = process.env.DB_TYPE === "mysql";
-    const catIdField = isMysql ? 'category_id_attr' : 'category_id';
+    const catIdField = 'category_id';
     
     const cat = await AccountCategory.findById(req.params.id);
     if (!cat) return res.status(404).json({ error: "Category not found" });

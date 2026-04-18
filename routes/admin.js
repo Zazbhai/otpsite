@@ -453,7 +453,7 @@ router.put("/services/:id", upload.single("logo"), async (req, res) => {
          server = await Server.findById(server_id).populate("country_id", "code");
          if (server && server.country_id) service.country_code = server.country_id.code;
        }
-        service.server_id_attr = server_id;
+        service.server_id = server_id;
         service.server_id = server_id;
      }
 
@@ -498,7 +498,7 @@ router.delete("/services/bulk/:server_id", async (req, res) => {
     
     if (DB_TYPE === "mysql") {
       const { Op } = require("sequelize");
-      const where = { server_id_attr: server_id };
+      const where = { server_id: server_id };
       if (min || max) {
         where.price = {};
         if (min) where.price[Op.gte] = parseFloat(min);
@@ -575,7 +575,7 @@ router.get("/servers", async (_, res) => res.json(await Server.find().sort({ nam
 router.post("/servers", async (req, res) => {
   try { 
     if (DB_TYPE === "mysql" && req.body.country_id) {
-       req.body.country_id_attr = req.body.country_id;
+       // country_id is already set
     }
     const server = await Server.create(req.body); 
     
@@ -591,12 +591,13 @@ router.post("/servers", async (req, res) => {
         const Country = require("../models/Country");
         const Service = require("../models/Service");
         
-        if (server.country_id_attr || server.country_id) {
-           const country = await Country.findById(server.country_id_attr || server.country_id);
+        if (server.country_id) {
+           const country = await Country.findById(server.country_id);
            if (country) countryCode = country.code;
         }
 
-        const sFindQuery = DB_TYPE === "mysql" ? { server_id_attr: server.id } : { server_id: server._id }; const existingServices = await Service.find(sFindQuery);
+        const sFindQuery = { server_id: server.id || server._id }; 
+        const existingServices = await Service.find(sFindQuery);
         const existingCodes = new Set(existingServices.map(s => s.service_code));
         const existingNames = new Set(existingServices.map(s => s.name.toLowerCase()));
 
@@ -632,7 +633,7 @@ router.post("/servers", async (req, res) => {
 router.put("/servers/:id", async (req, res) => {
   try { 
     console.log("[DEBUG] Update Server Body:", req.body);
-    if (DB_TYPE === "mysql" && req.body.country_id) req.body.country_id_attr = req.body.country_id;
+    if (DB_TYPE === "mysql" && req.body.country_id) { /* already handled */ }
     const server = await Server.findByIdAndUpdate(req.params.id, req.body, { new: true }); 
     
     if (req.body.auto_add_services) {
@@ -647,12 +648,13 @@ router.put("/servers/:id", async (req, res) => {
         const Country = require("../models/Country");
         const Service = require("../models/Service");
         
-        if (server.country_id_attr || server.country_id) {
-           const country = await Country.findById(server.country_id_attr || server.country_id);
+        if (server.country_id) {
+           const country = await Country.findById(server.country_id);
            if (country) countryCode = country.code;
         }
 
-        const sFindQuery2 = DB_TYPE === "mysql" ? { server_id_attr: server.id } : { server_id: server._id }; const existingServices = await Service.find(sFindQuery2);
+        const sFindQuery2 = { server_id: server.id || server._id }; 
+        const existingServices = await Service.find(sFindQuery2);
         const existingCodes = new Set(existingServices.map(s => s.service_code));
         const existingNames = new Set(existingServices.map(s => s.name.toLowerCase()));
 
