@@ -574,7 +574,9 @@ router.get("/servers", async (_, res) => res.json(await Server.find().sort({ nam
 
 router.post("/servers", async (req, res) => {
   try { 
-    console.log("[DEBUG] Create Server Body:", req.body);
+    if (DB_TYPE === "mysql" && req.body.country_id) {
+       req.body.country_id_attr = req.body.country_id;
+    }
     const server = await Server.create(req.body); 
     
     if (req.body.auto_add_services) {
@@ -589,12 +591,12 @@ router.post("/servers", async (req, res) => {
         const Country = require("../models/Country");
         const Service = require("../models/Service");
         
-        if (server.country_id) {
-           const country = await Country.findById(server.country_id);
+        if (server.country_id_attr || server.country_id) {
+           const country = await Country.findById(server.country_id_attr || server.country_id);
            if (country) countryCode = country.code;
         }
 
-        const existingServices = await Service.find({ server_id: server._id });
+        const sFindQuery = DB_TYPE === "mysql" ? { server_id_attr: server.id } : { server_id: server._id }; const existingServices = await Service.find(sFindQuery);
         const existingCodes = new Set(existingServices.map(s => s.service_code));
         const existingNames = new Set(existingServices.map(s => s.name.toLowerCase()));
 
@@ -605,7 +607,8 @@ router.post("/servers", async (req, res) => {
            
            servicesToCreate.push({
              name: item.name,
-             server_id: server._id,
+             server_id: (DB_TYPE === "mysql" ? server.id : server._id),
+             server_id_attr: (DB_TYPE === "mysql" ? server.id : undefined),
              service_code: item.code,
              country_code: countryCode,
              price: (item.price || 5.0) + extraProfit,
@@ -629,6 +632,7 @@ router.post("/servers", async (req, res) => {
 router.put("/servers/:id", async (req, res) => {
   try { 
     console.log("[DEBUG] Update Server Body:", req.body);
+    if (DB_TYPE === "mysql" && req.body.country_id) req.body.country_id_attr = req.body.country_id;
     const server = await Server.findByIdAndUpdate(req.params.id, req.body, { new: true }); 
     
     if (req.body.auto_add_services) {
@@ -643,12 +647,12 @@ router.put("/servers/:id", async (req, res) => {
         const Country = require("../models/Country");
         const Service = require("../models/Service");
         
-        if (server.country_id) {
-           const country = await Country.findById(server.country_id);
+        if (server.country_id_attr || server.country_id) {
+           const country = await Country.findById(server.country_id_attr || server.country_id);
            if (country) countryCode = country.code;
         }
 
-        const existingServices = await Service.find({ server_id: server._id });
+        const sFindQuery2 = DB_TYPE === "mysql" ? { server_id_attr: server.id } : { server_id: server._id }; const existingServices = await Service.find(sFindQuery2);
         const existingCodes = new Set(existingServices.map(s => s.service_code));
         const existingNames = new Set(existingServices.map(s => s.name.toLowerCase()));
 
@@ -659,7 +663,7 @@ router.put("/servers/:id", async (req, res) => {
 
            servicesToCreate.push({
              name: item.name,
-             server_id: server._id,
+             server_id: (DB_TYPE === " mysql\ ? server.id : server._id), server_id_attr: (DB_TYPE === \mysql\ ? server.id : undefined),
              service_code: item.code,
              country_code: countryCode,
              price: (item.price || 5.0) + extraProfit,
