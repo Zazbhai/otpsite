@@ -645,8 +645,31 @@ document.addEventListener("DOMContentLoaded", () => {
   applySiteSettings();
 
   // C. Lightweight init
-  if (isLoggedIn()) updateBalanceDisplay();
+  if (isLoggedIn()) {
+    updateBalanceDisplay();
+    injectAdminLinks();
+  }
 });
+
+window.injectAdminLinks = function() {
+  if (!isAdmin()) return;
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar && !sidebar.querySelector('a[href="/admin"]')) {
+     const div = document.createElement('div'); div.className = 'sidebar-divider';
+     const a = document.createElement('a'); a.href = "/admin"; a.className = "sidebar-item";
+     a.style.color = "var(--warning)"; a.style.fontWeight = "800"; a.innerHTML = "🛡️ Admin Panel";
+     const logout = [...sidebar.childNodes].find(n => n.textContent && n.textContent.includes('Logout'));
+     if (logout) { sidebar.insertBefore(div, logout); sidebar.insertBefore(a, logout); }
+     else { sidebar.appendChild(div); sidebar.appendChild(a); }
+  }
+  const nav = document.getElementById('nav-links');
+  if (nav && !nav.querySelector('a[href="/admin"]')) {
+     const a = document.createElement('a'); a.href = "/admin"; a.style.color = "var(--warning)";
+     a.style.fontWeight = "700"; a.textContent = "Admin";
+     const btn = [...nav.querySelectorAll('button, a')].find(b => b.textContent.includes('Logout'));
+     if (btn) nav.insertBefore(a, btn); else nav.appendChild(a);
+  }
+};
 
 function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -1157,9 +1180,14 @@ window.renderMobileBottomNav = function(path = window.location.pathname) {
     const userLinks = [
       { href: "/dashboard", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`, text: "Home" },
       { href: "/dashboard/orders", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`, text: "Orders" },
-      { href: "/dashboard/buy", icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`, text: "Buy", center: true },
-      { href: "/dashboard/wallet", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12z"/></svg>`, text: "Wallet" },
+      { href: "/dashboard/buy", icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`, text: "Buy", center: true }
     ];
+
+    if (isAdmin()) {
+      userLinks.push({ href: "/admin", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`, text: "Admin" });
+    } else {
+      userLinks.push({ href: "/dashboard/wallet", icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12z"/></svg>`, text: "Wallet" });
+    }
 
     const links = isCurrentPageAdmin ? adminLinks : userLinks;
     let html = "";
@@ -1201,9 +1229,9 @@ window.renderMobileBottomNav = function(path = window.location.pathname) {
       { href: "/support", icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`, text: "Support" },
     ];
     
-    // Add Admin Panel link if user is actually an admin (from localStorage/helper)
-    if (typeof isAdmin === 'function' && isAdmin()) {
-      userMore.push({ href: "/admin", icon: "🛡️", text: "Admin Panel" });
+    // For admins, Wallet is moved to more menu to make room for Admin link on main bar
+    if (isAdmin()) {
+      userMore.push({ href: "/dashboard/wallet", icon: "💰", text: "My Wallet" });
     }
 
     const moreLinks = isCurrentPageAdmin ? adminMore : userMore;

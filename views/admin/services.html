@@ -251,7 +251,7 @@
     allCountries = countries;
     
     const optionsHTML = allServers.map(s => {
-      const country = allCountries.find(c => c._id === s.country_id);
+      const country = allCountries.find(c => c._id == s.country_id);
       return `<option value="${s._id}">${s.name} ${country ? `(${country.flag} ${country.name})` : ''}</option>`;
     }).join("");
 
@@ -293,8 +293,8 @@
     const data = await API.get("/api/admin/services?" + params.toString());
     currentServices = data;
     tbody.innerHTML = data.map(s => {
-      const server = allServers.find(x => x._id === s.server_id);
-      const country = server ? allCountries.find(c => c._id === server.country_id) : null;
+      const server = allServers.find(x => x._id == s.server_id);
+      const country = server ? allCountries.find(c => c._id == server.country_id) : null;
       return `
       <tr>
         <td>
@@ -335,7 +335,7 @@
   }
 
   function openEdit(id) {
-    const s = currentServices.find(x => x._id === id);
+    const s = currentServices.find(x => x._id == id);
     if (!s) return;
     editingId = s._id;
     document.getElementById("svc-modal-title").textContent = "Edit Service";
@@ -421,7 +421,7 @@
     const sel = document.getElementById("bulk-del-server");
     sel.innerHTML = '<option value="">Select Server</option>' + 
       allServers.map(s => {
-        const country = allCountries.find(c => c._id === s.country_id);
+        const country = allCountries.find(c => c._id == s.country_id);
         return `<option value="${s._id}">${s.name} ${country ? `(${country.flag} ${country.name})` : ''}</option>`;
       }).join("");
     openModal("bulk-del-modal");
