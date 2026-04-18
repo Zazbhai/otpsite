@@ -320,9 +320,14 @@ const applyMongooseShims = (model) => {
         const data = originalToJSON.call(this);
         
         // Ensure associations are also mapped to legacy names
-        if (this.server !== undefined) data.server_id = data.server || data.server_id;
+        if (this.server !== undefined) {
+           data.server_id = data.server || data.server_id;
+        }
         if (this.country !== undefined) data.country_id = data.country || data.country_id;
         if (this.category !== undefined) data.category_id = data.category || data.category_id;
+        
+        // Final sanity check for server_id
+        if (data.server && !data.server_id) data.server_id = data.server;
         
         // Debug for auto-added services issue
         if (data.service_code && (!data.server_id || !data.country_code)) {

@@ -445,7 +445,10 @@ router.post("/orders/:id/retry", async (req, res) => {
   try {
     const order = await Order.findOne({ order_id: req.params.id, user_id: req.userId });
     if (!order) return res.status(404).json({ error: "Order not found" });
-    if (order.status !== "completed") return res.status(400).json({ error: "Can only request next SMS for completed orders" });
+    const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
+    if (order.status !== "completed" && !(order.status === "active" && hasOtp)) {
+        return res.status(400).json({ error: "Can only request next SMS for completed orders or active orders with at least one OTP" });
+    }
 
     // Request Next SMS from provider
     if (order.external_order_id) {
