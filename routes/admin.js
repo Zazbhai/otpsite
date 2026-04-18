@@ -174,7 +174,10 @@ router.get("/users", async (req, res) => {
       .limit(parseInt(limit));
 
     res.json({ users, total, page: parseInt(page), pages: Math.ceil(total / limit) });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 router.get("/users/:id", async (req, res) => {
@@ -184,7 +187,10 @@ router.get("/users/:id", async (req, res) => {
     const orders       = await Order.find({ user_id: req.params.id }).sort({ createdAt: -1 }).limit(10);
     const transactions = await Transaction.find({ user_id: req.params.id }).sort({ createdAt: -1 }).limit(10);
     res.json({ user, recent_orders: orders, recent_transactions: transactions });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 router.patch("/users/:id", async (req, res) => {
@@ -198,7 +204,10 @@ router.patch("/users/:id", async (req, res) => {
     if (notes     !== undefined) user.notes     = notes;
     await user.save();
     res.json({ user });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 router.post("/users/:id/login-as", async (req, res) => {
@@ -215,7 +224,10 @@ router.post("/users/:id/login-as", async (req, res) => {
     };
     
     res.json({ token, user: publicUser });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 /* ─── ORDERS ───────────────────────────────────────────────────── */
@@ -239,7 +251,10 @@ router.get("/orders", async (req, res) => {
       .limit(parseInt(limit));
 
     res.json({ orders, total, page: parseInt(page), pages: Math.ceil(total / limit) });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 router.patch("/orders/:id", async (req, res) => {
@@ -478,7 +493,10 @@ router.get("/countries", async (_, res) => {
   try {
     const countries = await Country.find().sort({ sort_order: 1, name: 1 });
     res.json(countries);
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 router.post("/countries", async (req, res) => {
@@ -506,7 +524,10 @@ router.delete("/countries/:id", async (req, res) => {
     }
     await Country.findByIdAndDelete(req.params.id);
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 /* ─── SERVERS ──────────────────────────────────────────────────── */
@@ -640,7 +661,10 @@ router.get("/transactions", async (req, res) => {
       .limit(parseInt(limit));
 
     res.json({ transactions, total, page: parseInt(page), pages: Math.ceil(total / limit) });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 router.post("/transactions/deposit", async (req, res) => {
@@ -664,15 +688,23 @@ router.post("/transactions/deposit", async (req, res) => {
     });
     emitToUser(String(user_id), "balance", { balance: user.balance }); // Real-time balance push
     res.json({ balance: user.balance });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 /* ─── SETTINGS ─────────────────────────────────────────────────── */
 router.get("/settings", async (_, res) => {
-  const settings = await Setting.find();
-  const obj = {};
-  settings.forEach((s) => (obj[s.key] = s.value));
-  res.json(obj);
+  try {
+    const settings = await Setting.find();
+    const obj = {};
+    settings.forEach((s) => (obj[s.key] = s.value));
+    res.json(obj);
+  } catch (err) {
+    console.error("ADMIN_SETTINGS_GET_ERROR:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 router.post("/settings", async (req, res) => {
@@ -693,7 +725,10 @@ router.post("/settings", async (req, res) => {
     clearSettingsCache();
     emitToAll("settings", {});
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 /* ─── BROADCAST ────────────────────────────────────────────────── */
@@ -708,7 +743,10 @@ router.post("/broadcast", async (req, res) => {
     );
     emitToAll("broadcast", entry); // Push broadcast message to all users instantly
     res.json({ success: true, message: "Broadcast saved!" });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 
@@ -724,7 +762,10 @@ router.get("/promo-codes", async (req, res) => {
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
     res.json({ codes, total, page: parseInt(page), pages: Math.ceil(total / limit) });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 router.post("/promo-codes", async (req, res) => {
@@ -740,7 +781,10 @@ router.delete("/promo-codes/:id", async (req, res) => {
   try {
     await PromoCode.findByIdAndDelete(req.params.id);
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ADMIN_ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 /* ─── REFERRALS ────────────────────────────────────────────────── */

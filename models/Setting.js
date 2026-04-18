@@ -7,7 +7,16 @@ let Setting;
 if (DB_TYPE === "mysql") {
   Setting = sequelize.define("Setting", {
     key: { type: DataTypes.STRING, unique: true, allowNull: false },
-    value: { type: DataTypes.JSON },
+    value: { 
+      type: DataTypes.TEXT, 
+      get() {
+        const val = this.getDataValue('value');
+        try { return JSON.parse(val); } catch (e) { return val; }
+      },
+      set(val) {
+        this.setDataValue('value', typeof val === 'object' ? JSON.stringify(val) : val);
+      }
+    },
     label: { type: DataTypes.STRING, defaultValue: "" },
     group: { type: DataTypes.STRING, defaultValue: "general" },
     _id: {
