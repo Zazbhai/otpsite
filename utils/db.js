@@ -81,7 +81,8 @@ const applyMongooseShims = (model) => {
       "$gte": Op.gte,
       "$lt": Op.lt,
       "$lte": Op.lte,
-      "$ne": Op.ne
+      "$ne": Op.ne,
+      "$regex": Op.regexp
     };
 
     const processObject = (obj) => {
@@ -105,9 +106,12 @@ const applyMongooseShims = (model) => {
           let hasOp = false;
           for (const vKey in val) {
             if (operatorMap[vKey]) {
-              innerObj[operatorMap[vKey]] = val[vKey];
+              let actualVal = val[vKey];
+              // Convert JS RegExp to string for SQL Compatibility
+              if (vKey === "$regex" && actualVal instanceof RegExp) actualVal = actualVal.source;
+              innerObj[operatorMap[vKey]] = actualVal;
               hasOp = true;
-            } else {
+            } else if (vKey !== "$options") {
               innerObj[vKey] = val[vKey];
             }
           }
