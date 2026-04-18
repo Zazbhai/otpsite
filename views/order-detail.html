@@ -620,7 +620,7 @@
         let html = `<div style="display:flex;flex-direction:column;gap:12px;align-items:center;width:100%;margin:0 auto">
           <div class="otp-card jiggle" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.1)">
             <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.15em">Verification Code</div>
-            <div style="font-size:32px;line-height:1;font-weight:800;letter-spacing:4px;color:var(--text);margin:8px 0">${latestOTP}</div>
+            <div style="font-size:22px;line-height:1;font-weight:800;letter-spacing:2px;color:var(--text);margin:8px 0">${latestOTP}</div>
             <button class="action-btn primary btn-sm w-full" style="margin-top:8px" onclick="copyOTP('${latestOTP.replace(/'/g, "\\'")}')">📋 Copy Full Message</button>
           </div>`;
         
