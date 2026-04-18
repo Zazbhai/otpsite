@@ -213,6 +213,7 @@ const applyMongooseShims = (model) => {
         if (this.options.offset) finalOptions.offset = this.options.offset;
         if (this.options.limit) finalOptions.limit = this.options.limit;
         if (this.options.raw !== undefined) finalOptions.raw = this.options.raw;
+        if (this.options.include) finalOptions.include = this.options.include;
         
         const result = this.options.single ? await originalFindOne(finalOptions) : await originalFindAll(finalOptions);
         return resolve(result);
