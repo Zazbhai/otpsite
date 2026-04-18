@@ -663,7 +663,7 @@ router.put("/servers/:id", async (req, res) => {
 
            servicesToCreate.push({
              name: item.name,
-             server_id: (DB_TYPE === " mysql\ ? server.id : server._id), server_id_attr: (DB_TYPE === \mysql\ ? server.id : undefined),
+             server_id: (DB_TYPE === "mysql" ? server.id : server._id), server_id_attr: (DB_TYPE === "mysql" ? server.id : undefined),
              service_code: item.code,
              country_code: countryCode,
              price: (item.price || 5.0) + extraProfit,
