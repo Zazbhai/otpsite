@@ -7,7 +7,7 @@ let Service;
 if (DB_TYPE === "mysql") {
   Service = sequelize.define("Service", {
     name: { type: DataTypes.STRING, allowNull: false },
-    server_id: { type: DataTypes.STRING }, // Store ID as string for compatibility
+    server_id_attr: { type: DataTypes.STRING, field: 'server_id' }, 
     service_code: { type: DataTypes.STRING, allowNull: false },
     country_code: { type: DataTypes.STRING, allowNull: false },
     price: { type: DataTypes.FLOAT, allowNull: false },
@@ -30,7 +30,7 @@ if (DB_TYPE === "mysql") {
   setTimeout(() => {
     const Server = sequelize.models.Server;
     if (Server) {
-        Service.belongsTo(Server, { foreignKey: 'server_id', as: 'server_id' });
+        Service.belongsTo(Server, { foreignKey: 'server_id_attr', as: 'server_id' });
     }
   }, 0);
 } else {

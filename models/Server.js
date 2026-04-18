@@ -8,7 +8,7 @@ if (DB_TYPE === "mysql") {
   Server = sequelize.define("Server", {
     name: { type: DataTypes.STRING, allowNull: false },
     slug: { type: DataTypes.STRING },
-    country_id: { type: DataTypes.STRING }, // Store ID as string for compatibility
+    country_id_attr: { type: DataTypes.STRING, field: 'country_id' }, // Store ID as string for compatibility
     api_key: { type: DataTypes.STRING, defaultValue: "" },
     api_get_number_url: { type: DataTypes.STRING, defaultValue: "" },
     api_check_status_url: { type: DataTypes.STRING, defaultValue: "" },
@@ -42,7 +42,7 @@ if (DB_TYPE === "mysql") {
   setTimeout(() => {
     const Country = sequelize.models.Country;
     if (Country) {
-        Server.belongsTo(Country, { foreignKey: 'country_id', as: 'country_id' });
+        Server.belongsTo(Country, { foreignKey: 'country_id_attr', as: 'country_id' });
     }
   }, 0);
 } else {
