@@ -71,7 +71,7 @@
             </tr>
           </thead>
           <tbody id="users-body">
-            <tr><td colspan="6" style="padding:40px;text-align:center">${window.renderSkeleton ? renderSkeleton('list', 8) : 'Loading...'}</td></tr>
+            <tr><td colspan="6" style="padding:0;text-align:center" id="users-loading-placeholder">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -316,6 +316,9 @@
     
     const tbody = document.getElementById("users-body");
     if (!tbody) return;
+
+    // Show skeleton while loading
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px">${window.renderSkeleton ? renderSkeleton('list', 10) : 'Loading...'}</td></tr>`;
     
     try {
       const data = await API.get(`/api/admin/users?${params}`);
