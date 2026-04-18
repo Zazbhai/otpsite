@@ -782,9 +782,9 @@ router.post("/broadcast", async (req, res) => {
   try {
     const { text, btn_text, btn_url } = req.body;
     const entry = { text, btn_text, btn_url, id: Date.now().toString() };
-    await Setting.updateOne(
+    await Setting.findOneAndUpdate(
       { key: "site_broadcast" },
-      { $set: { value: JSON.stringify(entry) } },
+      { value: JSON.stringify(entry) },
       { upsert: true }
     );
     emitToAll("broadcast", entry); // Push broadcast message to all users instantly
