@@ -50,7 +50,10 @@ router.get("/countries", async (req, res) => {
   try {
     const countries = await Country.find({ is_active: true }).sort({ sort_order: 1, name: 1 });
     res.json(countries);
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 router.use(loginRequired);
@@ -128,13 +131,16 @@ router.get("/dashboard", async (req, res) => {
       total_spent:   user.total_spent,
       recent_orders: enrichedRecentOrders,
     });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 // ── GET /api/user/referrals ──────────────────────────────────────
 router.get("/referrals", async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("referral_code referral_count referral_earnings");
+    const user = await User.findById(req.userId).select("id referral_code referral_count referral_earnings");
     if (!user) return res.status(404).json({ error: "User not found" });
 
     // Always use User ID for the referral identifier as requested
@@ -170,97 +176,123 @@ router.get("/referrals", async (req, res) => {
 
 // ── POST /api/user/orders  (buy) ─────────────────────────────────
 router.post("/orders", async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const { withTransaction } = require("../utils/db");
+  
   try {
     const { service_id } = req.body;
-    if (!service_id) {
-      await session.abortTransaction();
-      return res.status(400).json({ error: "service_id is required" });
+    if (!service_id) return res.status(400).json({ error: "service_id is required" });
+
+    // 1. Pre-check and deduct balance
+    const orderResult = await withTransaction(async (session) => {
+      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
+      
+      const service = await Service.findById(service_id, queryOptions);
+      if (!service || !service.is_active) throw new Error("Service not found or inactive");
+
+      const serverConf = await Server.findById(service.server_id, queryOptions);
+      if (!serverConf) throw new Error("Server not configured");
+
+      const user = await User.findById(req.userId, queryOptions);
+      if (!user) throw new Error("User not found");
+
+      if (user.balance < service.price) throw new Error("INSUFFICIENT_BALANCE");
+
+      // Deduct balance immediately in transaction
+      user.balance = parseFloat((user.balance - service.price).toFixed(4));
+      user.total_spent = parseFloat((user.total_spent + service.price).toFixed(4));
+      user.total_orders += 1;
+      await user.save(queryOptions);
+
+      // Return configuration needed for API call
+      return { service, serverConf, userBalance: user.balance };
+    });
+
+    const { service, serverConf } = orderResult;
+
+    // 2. Provider API call (OUTSIDE database transaction)
+    let providerRes;
+    try {
+      providerRes = await providerApi.getNumber(serverConf, service.service_code, service.country_code);
+    } catch (apiErr) {
+      providerRes = { error: apiErr.message || "Provider API Failure" };
     }
 
-    const service = await Service.findById(service_id).session(session);
-    if (!service || !service.is_active) {
-      await session.abortTransaction();
-      return res.status(404).json({ error: "Service not found or inactive" });
-    }
-
-    const serverConf = await Server.findById(service.server_id).session(session);
-    if (!serverConf) {
-      await session.abortTransaction();
-      return res.status(404).json({ error: "Server not configured" });
-    }
-
-    const user = await User.findById(req.userId).session(session);
-    if (!user) {
-      await session.abortTransaction();
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const newBalance = parseFloat((user.balance - service.price).toFixed(4));
-    if (newBalance < 0) {
-      await session.abortTransaction();
-      return res.status(402).json({ error: "Insufficient balance" });
-    }
-
-    const providerRes = await providerApi.getNumber(serverConf, service.service_code, service.country_code);
     if (providerRes.error) {
-      await session.abortTransaction();
-      console.error("\n====================================");
-      console.error("❌ PROVIDER API REJECTION ❌");
-      console.error("TARGET URL:", providerRes.url || "Unknown URL");
-      console.error("ERROR TYPE:", providerRes.error);
-      console.error("DETAILS:", providerRes.details);
-      console.error("====================================\n");
-      return res.status(502).json({ error: "Number Not Available" });
+      // 3. REFUND if API failed
+      console.error("❌ PROVIDER API REJECTION ❌", providerRes.error);
+      
+      await withTransaction(async (session) => {
+        const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
+        const user = await User.findById(req.userId, queryOptions);
+        if (user) {
+          user.balance = parseFloat((user.balance + service.price).toFixed(4));
+          user.total_spent = parseFloat((user.total_spent - service.price).toFixed(4));
+          user.total_orders -= 1;
+          await user.save(queryOptions);
+        }
+      });
+      
+      if (providerRes.error === "Provider request timed out") throw new Error("PROVIDER_TIMEOUT");
+      throw new Error("PROVIDER_REJECTION");
     }
 
-    user.balance      = newBalance;
-    user.total_spent  = parseFloat((user.total_spent + service.price).toFixed(4));
-    user.total_orders += 1;
-    await user.save({ session });
+    // 4. Success: Create order in final transaction
+    const finalResult = await withTransaction(async (session) => {
+      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
+      
+      const orderId = "ORD-" + nanoid(10).toUpperCase();
+      const cancelMinutes = serverConf.auto_cancel_minutes || 20;
+      const expiresAt = new Date(Date.now() + cancelMinutes * 60 * 1000);
+      const minCancelMinutes = serverConf.min_cancel_minutes || 0;
+      const minCancelAt = new Date(Date.now() + minCancelMinutes * 60 * 1000);
 
-    const orderId   = "ORD-" + nanoid(10).toUpperCase();
-    const cancelMinutes = serverConf.auto_cancel_minutes || 20;
-    const expiresAt = new Date(Date.now() + cancelMinutes * 60 * 1000);
-    const minCancelMinutes = serverConf.min_cancel_minutes || 0;
-    const minCancelAt = new Date(Date.now() + minCancelMinutes * 60 * 1000);
+      const orderData = {
+        order_id: orderId,
+        user_id: req.userId,
+        service_name: service.name,
+        server_name: serverConf.name,
+        country: service.country_code,
+        phone: providerRes.phone,
+        external_order_id: providerRes.api_order_id,
+        cost: service.price,
+        status: "active",
+        expires_at: expiresAt,
+        min_cancel_at: minCancelAt,
+        service_image: service.image_url || "",
+        service_color: service.icon_color || "",
+        check_interval: serverConf.check_interval || 3,
+        multi_otp_enabled: serverConf.multi_otp_supported || false
+      };
 
-    const order = await Order.create([{
-      order_id:          orderId,
-      user_id:           req.userId,
-      service_name:      service.name,
-      server_name:       serverConf.name,
-      country:           service.country_code,
-      phone:             providerRes.phone,
-      external_order_id: providerRes.api_order_id,
-      cost:              service.price,
-      status:            "active",
-      expires_at:        expiresAt,
-      min_cancel_at:     minCancelAt,
-      service_image:     service.image_url || "",
-      service_color:     service.icon_color || "",
-      check_interval:    serverConf.check_interval || 3,
-      multi_otp_enabled: serverConf.multi_otp_supported || false
-    }], { session });
+      let order;
+      if (process.env.DB_TYPE === "mysql") {
+        order = await Order.create(orderData, queryOptions);
+      } else {
+        const createdOrders = await Order.create([orderData], queryOptions);
+        order = createdOrders[0];
+      }
 
-    await Transaction.create([{
-      user_id:      req.userId,
-      type:         "purchase",
-      amount:       -service.price,
-      balance_after: user.balance,
-      description:  `Purchased ${service.name} (${service.country_code})`,
-      order_id:     orderId,
-    }], { session });
+      await Transaction.create({
+        user_id: req.userId,
+        type: "purchase",
+        amount: -service.price,
+        balance_after: orderResult.userBalance, // We know this from first step
+        description: `Purchased ${service.name} (${service.country_code})`,
+        order_id: orderId,
+      }, queryOptions);
 
-    await session.commitTransaction();
-    res.json({ order: order[0] });
+      return order;
+    });
+
+    res.json({ order: finalResult });
   } catch (err) {
-    await session.abortTransaction();
+    if (err.message === "INSUFFICIENT_BALANCE") return res.status(402).json({ error: "Insufficient balance" });
+    if (err.message === "PROVIDER_REJECTION") return res.status(502).json({ error: "Number Not Available" });
+    if (err.message === "PROVIDER_TIMEOUT") return res.status(504).json({ error: "Provider timed out. Please try again." });
+    if (err.message === "Service not found or inactive") return res.status(404).json({ error: err.message });
+    
     console.error("Order error:", err);
     res.status(500).json({ error: "Server error" });
-  } finally {
-    session.endSession();
   }
 });
 
@@ -284,7 +316,10 @@ router.get("/orders", async (req, res) => {
       .limit(parseInt(limit));
 
     res.json({ orders, total, page: parseInt(page), pages: Math.ceil(total / limit) });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 // ── GET /api/user/orders/:id ─────────────────────────────────────
@@ -320,76 +355,70 @@ router.get("/orders/:id", async (req, res) => {
 
 // ── POST /api/user/orders/:id/cancel ─────────────────────────────
 router.post("/orders/:id/cancel", async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const { withTransaction } = require("../utils/db");
+  
   try {
-    const order = await Order.findOne({ order_id: req.params.id, user_id: req.userId }).session(session);
-    if (!order) {
-      await session.abortTransaction();
-      return res.status(404).json({ error: "Order not found" });
-    }
-    if (order.status !== "active") {
-      await session.abortTransaction();
-      return res.status(400).json({ error: "Order cannot be cancelled" });
-    }
+    const result = await withTransaction(async (session) => {
+      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
 
-    // Enforce min_cancel_at (allow cancel after 2 mins only)
-    if (order.min_cancel_at && Date.now() < new Date(order.min_cancel_at).getTime()) {
-      await session.abortTransaction();
-      return res.status(400).json({ error: "Numbers can only be cancelled after 2 minutes of purchase." });
-    }
+      const order = await Order.findOne({ order_id: req.params.id, user_id: req.userId }, queryOptions);
+      if (!order) throw new Error("ORDER_NOT_FOUND");
+      if (order.status !== "active") throw new Error("ORDER_NOT_ACTIVE");
 
-    // Call provider cancel API (fire-and-forget, don't block on error)
-    if (order.external_order_id) {
-      const serverConf = await Server.findOne({ name: order.server_name }).session(session);
-      if (serverConf && serverConf.api_cancel_url) {
-        await providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
+      // Enforce min_cancel_at (allow cancel after 2 mins only)
+      if (order.min_cancel_at && Date.now() < new Date(order.min_cancel_at).getTime()) {
+        throw new Error("CANCEL_COOLDOWN");
       }
-    }
 
-    // ── Key business rule: OTP already received = order is COMPLETE ──
-    // If at least one OTP was delivered, the service was rendered.
-    // No refund is issued; the order is marked as completed.
-    const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
+      // Call provider cancel API
+      if (order.external_order_id) {
+        const serverConf = await Server.findOne({ name: order.server_name }, queryOptions);
+        if (serverConf && serverConf.api_cancel_url) {
+          await providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
+        }
+      }
 
-    if (hasOtp) {
-      // Service was rendered — just mark complete, no refund
-      order.status = "completed";
-      await order.save({ session });
-      await session.commitTransaction();
-      const { emitToUser } = require("../utils/realtimeEmitter");
-      emitToUser(String(req.userId), "order", { orderId: order.order_id, status: "completed", otp: order.otp, all_otps: order.all_otps });
-      return res.json({ success: true, order, refunded: false });
-    }
+      const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
 
-    // No OTP received — full refund and cancel
-    const user = await User.findById(req.userId).session(session);
-    if (!user) {
-      await session.abortTransaction();
-      return res.status(404).json({ error: "User not found" });
-    }
+      if (hasOtp) {
+        order.status = "completed";
+        await order.save(queryOptions);
+        return { success: true, order, refunded: false };
+      }
 
-    user.balance = parseFloat((user.balance + order.cost).toFixed(4));
-    await user.save({ session });
+      const user = await User.findById(req.userId, queryOptions);
+      if (!user) throw new Error("USER_NOT_FOUND");
 
-    await Transaction.create([{
-        user_id: user._id, type: "refund", amount: order.cost,
-        balance_after: user.balance, description: `User cancelled order ${order.order_id} (no OTP)`, order_id: order.order_id
-    }], { session });
+      user.balance = parseFloat((user.balance + order.cost).toFixed(4));
+      await user.save(queryOptions);
 
-    order.status = "cancelled";
-    await order.save({ session });
+      await Transaction.create({
+          user_id: user._id || user.id, type: "refund", amount: order.cost,
+          balance_after: user.balance, description: `User cancelled order ${order.order_id} (no OTP)`, order_id: order.order_id
+      }, queryOptions);
 
-    await session.commitTransaction();
+      order.status = "cancelled";
+      await order.save(queryOptions);
+
+      return { success: true, order, refunded: true, newBalance: user.balance };
+    });
+
     const { emitToUser } = require("../utils/realtimeEmitter");
-    emitToUser(String(req.userId), "balance", { balance: user.balance });
-    emitToUser(String(req.userId), "order", { orderId: order.order_id, status: "cancelled" });
-    res.json({ success: true, order, refunded: true });
+    if (result.refunded) {
+      emitToUser(String(req.userId), "balance", { balance: result.newBalance });
+      emitToUser(String(req.userId), "order", { orderId: result.order.order_id, status: "cancelled" });
+    } else if (result.order.status === "completed") {
+      emitToUser(String(req.userId), "order", { orderId: result.order.order_id, status: "completed", otp: result.order.otp, all_otps: result.order.all_otps });
+    }
+
+    res.json(result);
   } catch (err) {
-    await session.abortTransaction();
+    if (err.message === "CANCEL_COOLDOWN") return res.status(400).json({ error: "Numbers can only be cancelled after 2 minutes of purchase." });
+    if (err.message === "ORDER_NOT_ACTIVE") return res.status(400).json({ error: "Order cannot be cancelled" });
+    if (err.message === "ORDER_NOT_FOUND") return res.status(404).json({ error: "Order not found" });
+
+    console.error("Cancel error:", err);
     res.status(500).json({ error: "Server error" });
-  } finally {
-    session.endSession();
   }
 });
 
@@ -424,7 +453,10 @@ router.post("/orders/:id/retry", async (req, res) => {
     await order.save();
 
     res.json({ success: true, order });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("ROUTE_ERROR:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 
@@ -452,17 +484,51 @@ router.get("/wallet", async (req, res) => {
       .limit(parseInt(limit));
 
     // Calculate Summary Stats (Total Deposited, Spent, Refunded)
-    const stats = await Transaction.aggregate([
-      { $match: { user_id: req.userId.toString() } },
-      { $group: {
-          _id: null,
-          total_deposited: { $sum: { $cond: [{ $in: ["$type", ["deposit", "bonus"]] }, "$amount", 0] } },
-          total_spent: { $sum: { $cond: [{ $eq: ["$type", "purchase"] }, { $abs: "$amount" }, 0] } },
-          total_refunded: { $sum: { $cond: [{ $eq: ["$type", "refund"] }, "$amount", 0] } }
-      }}
-    ]);
+    let summary = { total_deposited: 0, total_spent: 0, total_refunded: 0 };
 
-    const summary = stats[0] || { total_deposited: 0, total_spent: 0, total_refunded: 0 };
+    if (process.env.DB_TYPE === "mysql") {
+      // Sequelize/MySQL way
+      const { Op, fn, col } = require("sequelize");
+      const userId = req.userId.toString();
+
+      // Use findAll with attributes for SUM to avoid current Sequelize version bug with sum() on MySQL
+      // Actually, separate calls are cleaner and safer across dialects
+      const [depositedRes, spentRes, refundedRes] = await Promise.all([
+        Transaction.findAll({
+          attributes: [[fn('SUM', col('amount')), 'total']],
+          where: { user_id: userId, type: { [Op.in]: ['deposit', 'bonus'] } },
+          raw: true
+        }),
+        Transaction.findAll({
+          attributes: [[fn('SUM', col('amount')), 'total']],
+          where: { user_id: userId, type: 'purchase' },
+          raw: true
+        }),
+        Transaction.findAll({
+          attributes: [[fn('SUM', col('amount')), 'total']],
+          where: { user_id: userId, type: 'refund' },
+          raw: true
+        })
+      ]);
+
+      summary = {
+        total_deposited: parseFloat(depositedRes[0]?.total || 0),
+        total_spent: Math.abs(parseFloat(spentRes[0]?.total || 0)),
+        total_refunded: parseFloat(refundedRes[0]?.total || 0)
+      };
+    } else {
+      // Mongoose/MongoDB way
+      const stats = await Transaction.aggregate([
+        { $match: { user_id: req.userId.toString() } },
+        { $group: {
+            _id: null,
+            total_deposited: { $sum: { $cond: [{ $in: ["$type", ["deposit", "bonus"]] }, "$amount", 0] } },
+            total_spent: { $sum: { $cond: [{ $eq: ["$type", "purchase"] }, { $abs: "$amount" }, 0] } },
+            total_refunded: { $sum: { $cond: [{ $eq: ["$type", "refund"] }, "$amount", 0] } }
+        }}
+      ]);
+      if (stats[0]) summary = stats[0];
+    }
 
     res.json({
       balance:      user?.balance || 0,

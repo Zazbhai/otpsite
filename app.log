@@ -1,0 +1,6 @@
+[2026-04-18T11:11:44.597Z] 🚀 Server starting on port 5007...
+[2026-04-18T11:11:45.413Z] ✅ MongoDB connected
+[2026-04-18T11:11:45.414Z] ✅ Database initialized successfully.
+[2026-04-18T11:11:45.416Z] 🕒 Order Watcher started.
+[2026-04-18T11:11:45.420Z] 💰 Currency Updater started.
+[2026-04-18T11:11:45.426Z] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007

@@ -9,12 +9,9 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
+-- NOTE: Please create your database manually or select it before running this script.
+-- Example: USE `your_database_name`;
 
-CREATE DATABASE IF NOT EXISTS `zaz`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `zaz`;
 
 -- -----------------------------------------------------------
 -- Table: Users

@@ -1,14 +1,14 @@
 require("dotenv").config();
-const express  = require("express");
+const express = require("express");
 const mongoose = require("mongoose");
-const cors     = require("cors");
-const morgan   = require("morgan");
-const path     = require("path");
+const cors = require("cors");
+const morgan = require("morgan");
+const path = require("path");
 const rateLimit = require("express-rate-limit");
 const fs = require("fs");
 const { getCachedSettings } = require("./utils/settingsCache");
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 5000;
 
 /* ─── Middleware ──────────────────────────────────────────────── */
@@ -25,6 +25,7 @@ app.use(cors({
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.set("trust proxy", 1);
 
 // Basic rate limiting on API
 // Increased rate limiting to support high-frequency polling (3s intervals)
@@ -45,8 +46,8 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, "public")));
 
 /* ─── API Routes ─────────────────────────────────────────────── */
-app.use("/api/auth",  require("./routes/auth"));
-app.use("/api/user",  require("./routes/user"));
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/user", require("./routes/user"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/admin/readymade", require("./routes/accounts-admin"));
 app.use("/api/accounts", require("./routes/accounts"));
@@ -57,21 +58,31 @@ app.use("/stubs/handler_api.php", require("./routes/apiGateway"));
 /* ─── HTML Page Routes ───────────────────────────────────────── */
 const views = path.join(__dirname, "views");
 
+const pageCache = new Map();
+
 async function renderPage(res, filename) {
   try {
     const settings = await getCachedSettings();
-    let html = fs.readFileSync(path.join(views, filename), "utf8");
-    
-    // Core Branding
+    let html;
+
+    // Simple in-memory cache for HTML templates
+    if (pageCache.has(filename) && process.env.NODE_ENV === "production") {
+      html = pageCache.get(filename);
+    } else {
+      html = fs.readFileSync(path.join(views, filename), "utf8");
+      if (process.env.NODE_ENV === "production") pageCache.set(filename, html);
+    }
+
+    // Core Branding... (replacements continue below)
     const siteName = settings.site_name || "Zaz";
     const siteLogo = settings.site_logo || "/img/logo.png";
     const siteFavicon = settings.site_favicon || "/favicon.ico";
-    
+
     // SEO & Meta
     const seoTitle = settings.seo_title || `${siteName} — Instant Virtual Numbers for SMS Verification`;
-    const seoDesc  = settings.seo_description || `Get instant virtual phone numbers for ${siteName}. Receive OTP online for WhatsApp, Telegram, and 500+ services. Reliable, fast, and secure virtual numbers globally.`;
-    const seoKeys  = settings.seo_keywords || `otp, sms verification, virtual numbers, ${siteName}, receive sms online, burner number, private phone numbers, bypass otp`;
-    const seoOg    = settings.seo_og_image || "/img/og-preview.png";
+    const seoDesc = settings.seo_description || `Get instant virtual phone numbers for ${siteName}. Receive OTP online for WhatsApp, Telegram, and 500+ services. Reliable, fast, and secure virtual numbers globally.`;
+    const seoKeys = settings.seo_keywords || `otp, sms verification, virtual numbers, ${siteName}, receive sms online, burner number, private phone numbers, bypass otp`;
+    const seoOg = settings.seo_og_image || "/img/og-preview.png";
 
     // Perform replacements
     const replacements = {
@@ -88,7 +99,7 @@ async function renderPage(res, filename) {
     for (const [key, value] of Object.entries(replacements)) {
       html = html.replace(new RegExp(key, "g"), value);
     }
-    
+
     res.send(html);
   } catch (err) {
     console.error("Render error:", err);
@@ -97,64 +108,77 @@ async function renderPage(res, filename) {
 }
 
 // Public
-app.get("/",             (_, res) => renderPage(res, "index.html"));
-app.get("/pricing",      (_, res) => renderPage(res, "pricing.html"));
-app.get("/api-docs",     (_, res) => renderPage(res, "api-docs.html"));
+app.get("/", (_, res) => renderPage(res, "index.html"));
+app.get("/pricing", (_, res) => renderPage(res, "pricing.html"));
+app.get("/api-docs", (_, res) => renderPage(res, "api-docs.html"));
 app.get("/how-it-works", (_, res) => renderPage(res, "how-it-works.html"));
-app.get("/terms",        (_, res) => renderPage(res, "terms.html"));
-app.get("/support",      (_, res) => renderPage(res, "support.html"));
-app.get("/maintenance",  (_, res) => renderPage(res, "maintenance.html"));
+app.get("/terms", (_, res) => renderPage(res, "terms.html"));
+app.get("/support", (_, res) => renderPage(res, "support.html"));
+app.get("/maintenance", (_, res) => renderPage(res, "maintenance.html"));
 
 // User portal
-app.get("/dashboard",             (_, res) => renderPage(res, "dashboard.html"));
-app.get("/dashboard/buy",         (_, res) => renderPage(res, "buy.html"));
-app.get("/dashboard/orders",      (_, res) => renderPage(res, "orders.html"));
-app.get("/dashboard/orders/:id",  (_, res) => renderPage(res, "order-detail.html"));
-app.get("/dashboard/wallet",      (_, res) => renderPage(res, "wallet.html"));
-app.get("/dashboard/profile",     (_, res) => renderPage(res, "profile.html"));
-app.get("/dashboard/referrals",   (_, res) => renderPage(res, "referrals.html"));
-app.get("/dashboard/accounts",    (_, res) => renderPage(res, "accounts.html"));
+app.get("/dashboard", (_, res) => renderPage(res, "dashboard.html"));
+app.get("/dashboard/buy", (_, res) => renderPage(res, "buy.html"));
+app.get("/dashboard/orders", (_, res) => renderPage(res, "orders.html"));
+app.get("/dashboard/orders/:id", (_, res) => renderPage(res, "order-detail.html"));
+app.get("/dashboard/wallet", (_, res) => renderPage(res, "wallet.html"));
+app.get("/dashboard/profile", (_, res) => renderPage(res, "profile.html"));
+app.get("/dashboard/referrals", (_, res) => renderPage(res, "referrals.html"));
+app.get("/dashboard/accounts", (_, res) => renderPage(res, "accounts.html"));
 
 // Admin panel
-app.get("/admin",               (_, res) => renderPage(res, "admin/index.html"));
-app.get("/admin/users",         (_, res) => renderPage(res, "admin/users.html"));
-app.get("/admin/users/:id",     (_, res) => renderPage(res, "admin/user-detail.html"));
-app.get("/admin/orders",        (_, res) => renderPage(res, "admin/orders.html"));
-app.get("/admin/orders/:id",    (_, res) => renderPage(res, "admin/order-detail.html"));
-app.get("/admin/services",      (_, res) => renderPage(res, "admin/services.html"));
-app.get("/admin/countries",     (_, res) => renderPage(res, "admin/countries.html"));
-app.get("/admin/servers",       (_, res) => renderPage(res, "admin/servers.html"));
-app.get("/admin/payments",      (_, res) => renderPage(res, "admin/payments.html"));
-app.get("/admin/transactions",  (_, res) => renderPage(res, "admin/transactions.html"));
-app.get("/admin/broadcast",     (_, res) => renderPage(res, "admin/broadcast.html"));
-app.get("/admin/settings",      (_, res) => renderPage(res, "admin/settings.html"));
-app.get("/admin/analytics",     (_, res) => renderPage(res, "admin/analytics.html"));
-app.get("/admin/readymade",     (_, res) => renderPage(res, "admin/readymade.html"));
-app.get("/admin/promo-codes",   (_, res) => renderPage(res, "admin/promo-codes.html"));
-app.get("/admin/referrals",     (_, res) => renderPage(res, "admin/referrals.html"));
+app.get("/admin", (_, res) => renderPage(res, "admin/index.html"));
+app.get("/admin/users", (_, res) => renderPage(res, "admin/users.html"));
+app.get("/admin/users/:id", (_, res) => renderPage(res, "admin/user-detail.html"));
+app.get("/admin/orders", (_, res) => renderPage(res, "admin/orders.html"));
+app.get("/admin/orders/:id", (_, res) => renderPage(res, "admin/order-detail.html"));
+app.get("/admin/services", (_, res) => renderPage(res, "admin/services.html"));
+app.get("/admin/countries", (_, res) => renderPage(res, "admin/countries.html"));
+app.get("/admin/servers", (_, res) => renderPage(res, "admin/servers.html"));
+app.get("/admin/payments", (_, res) => renderPage(res, "admin/payments.html"));
+app.get("/admin/transactions", (_, res) => renderPage(res, "admin/transactions.html"));
+app.get("/admin/broadcast", (_, res) => renderPage(res, "admin/broadcast.html"));
+app.get("/admin/settings", (_, res) => renderPage(res, "admin/settings.html"));
+app.get("/admin/analytics", (_, res) => renderPage(res, "admin/analytics.html"));
+app.get("/admin/readymade", (_, res) => renderPage(res, "admin/readymade.html"));
+app.get("/admin/promo-codes", (_, res) => renderPage(res, "admin/promo-codes.html"));
+app.get("/admin/referrals", (_, res) => renderPage(res, "admin/referrals.html"));
 
-// 404
+// global 404
 app.use((_, res) => res.status(404).sendFile(path.join(views, "404.html")));
+
+// Global Error Handler Safety Net
+app.use((err, req, res, next) => {
+  console.error("GLOBAL_ERROR:", err.stack || err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: "Internal Server Error", message: err.message });
+});
 
 /* ─── Database ────────────────────────────────────────────────── */
 const { connectDB } = require("./utils/db");
 
 /* ─── Start ──────────────────────────────────────────────────── */
+const { log } = require("./utils/db");
 const os = require("os");
-const server = app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  connectDB();
-  
-  // Start background order monitoring
+
+const server = app.listen(PORT, "0.0.0.0", async () => {
+  log(`🚀 Server starting on port ${PORT}...`);
+
   try {
+    await connectDB();
+    log("✅ Database initialized successfully.");
+
+    // Start background services ONLY after DB is ready
     const { startWatcher } = require("./utils/orderWatcher");
     startWatcher();
+    log("🕒 Order Watcher started.");
 
-    // Start daily currency rate updater
     const { startCurrencyUpdater } = require("./utils/currencyUpdater");
     startCurrencyUpdater();
+    log("💰 Currency Updater started.");
+
   } catch (err) {
-    console.error("❌ Failed to start Order Watcher:", err.message);
+    log("❌ Critical Startup Error: " + err.message);
   }
 
   const nets = os.networkInterfaces();
@@ -167,17 +191,16 @@ const server = app.listen(PORT, "0.0.0.0", () => {
       }
     }
   }
-  console.log(`🚀 Rapid OTP running on:`);
-  console.log(`   - Local:  http://localhost:${PORT}`);
-  console.log(`   - Local:  http://localhost:${PORT}`);
-  console.log(`   - LAN:    http://${localIp}:${PORT}`);
+  log(`🚀 Rapid OTP fully ready at http://${localIp}:${PORT}`);
 });
 
 // Handle port-already-in-use gracefully
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {
-    console.error(`❌ Port ${PORT} is in use. Run this to free it:`);
-    console.error(`   Stop-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess -Force`);
+    const cmd = process.platform === "win32"
+      ? `Stop-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess -Force`
+      : `fuser -k ${PORT}/tcp`;
+    console.error(`   ${cmd}`);
     process.exit(1);
   } else {
     throw err;

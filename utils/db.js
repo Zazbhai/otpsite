@@ -5,24 +5,33 @@ require("dotenv").config();
 const DB_TYPE = process.env.DB_TYPE || "mongodb";
 
 let sequelize;
+if (DB_TYPE === "mysql") {
+  sequelize = new Sequelize(
+    process.env.DB_NAME || "zaz",
+    process.env.DB_USER || "root",
+    process.env.DB_PASS || "",
+    {
+      host: process.env.DB_HOST || "localhost",
+      port: process.env.DB_PORT || 3306,
+      dialect: "mysql",
+      logging: false,
+      pool: {
+        max: 10,     // Increased for better concurrency (standard for production)
+        min: 1,      // Keep at least one connection warm
+        idle: 10000, // Close idle connections after 10s
+        evict: 5000,
+        acquire: 60000 // Wait up to 60s for a connection if pool is full
+      }
+    }
+  );
+}
 
 const connectDB = async () => {
   if (DB_TYPE === "mysql") {
-    sequelize = new Sequelize(
-      process.env.DB_NAME || "zaz",
-      process.env.DB_USER || "root",
-      process.env.DB_PASS || "",
-      {
-        host: process.env.DB_HOST || "localhost",
-        port: process.env.DB_PORT || 3306,
-        dialect: "mysql",
-        logging: false,
-      }
-    );
 
     try {
       await sequelize.authenticate();
-      console.log("✅ MySQL connected via Sequelize");
+      log("✅ MySQL connected via Sequelize");
       
       // Load all models to Ensure they are defined before sync
       require("../models/User");
@@ -36,10 +45,10 @@ const connectDB = async () => {
       require("../models/ReadymadeAccount");
       require("../models/AccountCategory");
 
-      await sequelize.sync({ alter: true });
-      console.log("✅ MySQL Models synchronized");
+      await sequelize.sync({ alter: false });
+      log("✅ MySQL Models synchronized");
     } catch (err) {
-      console.error("❌ MySQL connection error:", err.message);
+      log("❌ MySQL connection error: " + err.message);
     }
   } else {
     const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/RapidOTP";
@@ -47,9 +56,9 @@ const connectDB = async () => {
 
     try {
       await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
-      console.log("✅ MongoDB connected");
+      log("✅ MongoDB connected");
     } catch (err) {
-      console.error("❌ MongoDB connection error:", err.message);
+      log("❌ MongoDB connection error: " + err.message);
     }
   }
 };
@@ -59,71 +68,187 @@ const applyMongooseShims = (model) => {
 
   const translateQuery = (query) => {
     if (!query) return {};
+    const { Op } = require("sequelize");
     const where = query.where ? { ...query.where } : { ...query };
     
-    // Simple translation of $in to Sequelize array format
-    for (const key in where) {
-      if (where[key] && typeof where[key] === 'object' && where[key].$in) {
-        where[key] = where[key].$in;
+    // Map of MongoDB operators to Sequelize Operators
+    const operatorMap = {
+      "$or": Op.or,
+      "$and": Op.and,
+      "$in": Op.in,
+      "$nin": Op.nin,
+      "$gt": Op.gt,
+      "$gte": Op.gte,
+      "$lt": Op.lt,
+      "$lte": Op.lte,
+      "$ne": Op.ne
+    };
+
+    const processObject = (obj) => {
+      const newObj = {};
+      for (const key in obj) {
+        let val = obj[key];
+        
+        // Handle MongoDB operators at the key level (e.g., $or: [...])
+        if (operatorMap[key]) {
+          if (Array.isArray(val)) {
+            newObj[operatorMap[key]] = val.map(v => processObject(v));
+          } else {
+            newObj[operatorMap[key]] = processObject(val);
+          }
+          continue;
+        }
+
+        // Handle value-level operators (e.g., price: { $gte: 10 })
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          const innerObj = {};
+          let hasOp = false;
+          for (const vKey in val) {
+            if (operatorMap[vKey]) {
+              innerObj[operatorMap[vKey]] = val[vKey];
+              hasOp = true;
+            } else {
+              innerObj[vKey] = val[vKey];
+            }
+          }
+          newObj[key] = hasOp ? innerObj : val;
+        } else {
+          newObj[key] = val;
+        }
       }
-      if (where[key] && typeof where[key] === 'object' && where[key].$gte) {
-        const { Op } = require("sequelize");
-        where[key] = { [Op.gte]: where[key].$gte };
-      }
-    }
-    return where;
+      return newObj;
+    };
+
+    return processObject(where);
   };
 
-  const createQueryProxy = (promise, m, where) => {
-    promise.sort = (sort) => {
+  // Save original methods to avoid infinite recursion
+  const originalFindOne = model.findOne.bind(model);
+  const originalFindAll = model.findAll.bind(model);
+  const originalCount   = model.count.bind(model);
+  const originalDestroy = model.destroy.bind(model);
+
+  class Query {
+    constructor(m, where, options = {}) {
+      this.m = m;
+      this.where = where;
+      this.options = options;
+    }
+    select(fields) {
+      if (typeof fields === 'string') {
+        const parts = fields.split(' ');
+        const include = [], exclude = [];
+        parts.forEach(p => {
+          if (!p) return;
+          let field = p;
+          if (p === '_id') field = 'id';
+          else if (p === '-_id') field = '-id';
+
+          if (field.startsWith('-')) exclude.push(field.slice(1));
+          else include.push(field);
+        });
+        if (include.length > 0) this.options.attributes = include;
+        else if (exclude.length > 0) this.options.attributes = { exclude };
+      }
+      return this;
+    }
+    sort(sort) {
       let order = [];
       if (typeof sort === 'string') {
         const parts = sort.split(' ');
-        order.push([parts[0].replace(/^-/, ''), parts[0].startsWith('-') ? 'DESC' : 'ASC']);
+        parts.forEach(p => {
+          if (!p) return;
+          let field = p === '_id' ? 'id' : p;
+          order.push([field.replace(/^-/, ''), field.startsWith('-') ? 'DESC' : 'ASC']);
+        });
       } else if (typeof sort === 'object') {
-        for (const k in sort) order.push([k, sort[k] === -1 ? 'DESC' : 'ASC']);
+        for (const k in sort) order.push([k === '_id' ? 'id' : k, sort[k] === -1 ? 'DESC' : 'ASC']);
       }
-      const newPromise = m.findAll({ where, order });
-      return createQueryProxy(newPromise, m, where);
-    };
-    promise.skip = (n) => {
-      const newPromise = m.findAll({ where, offset: parseInt(n) });
-      return createQueryProxy(newPromise, m, where);
-    };
-    promise.limit = (n) => {
-      const newPromise = m.findAll({ where, limit: parseInt(n) });
-      return createQueryProxy(newPromise, m, where);
-    };
-    return promise;
+      this.options.order = order;
+      return this;
+    }
+    skip(n) { this.options.offset = parseInt(n); return this; }
+    limit(n) { this.options.limit = parseInt(n); return this; }
+    
+    populate(params) {
+      if (!this.options.include) this.options.include = [];
+      
+      const processPopulate = (item) => {
+        const p = typeof item === 'string' ? { path: item } : item;
+        const includeObj = { association: p.path };
+        if (p.select) {
+          includeObj.attributes = p.select.split(' ').map(f => f === '_id' ? 'id' : f);
+        }
+        if (p.populate) {
+          includeObj.include = Array.isArray(p.populate) 
+            ? p.populate.map(nested => processPopulate(nested))
+            : [processPopulate(p.populate)];
+        }
+        return includeObj;
+      };
+
+      if (Array.isArray(params)) {
+        params.forEach(p => this.options.include.push(processPopulate(p)));
+      } else {
+        this.options.include.push(processPopulate(params));
+      }
+      return this;
+    }
+    
+    lean() { this.options.raw = true; return this; }
+    
+    async then(resolve, reject) {
+      try {
+        const finalOptions = { where: { ...this.where }, transaction: this.options.transaction };
+        if (this.options.attributes) finalOptions.attributes = this.options.attributes;
+        if (this.options.order) finalOptions.order = this.options.order;
+        if (this.options.offset) finalOptions.offset = this.options.offset;
+        if (this.options.limit) finalOptions.limit = this.options.limit;
+        if (this.options.raw !== undefined) finalOptions.raw = this.options.raw;
+        
+        const result = this.options.single ? await originalFindOne(finalOptions) : await originalFindAll(finalOptions);
+        return resolve(result);
+      } catch (err) {
+        if (reject) return reject(err);
+        throw err;
+      }
+    }
+  }
+
+  model.findById = (id, opts = {}) => {
+    const where = { [model.primaryKeyAttribute || 'id']: id };
+    return new Query(model, where, { ...opts, single: true });
+  };
+  
+  model.findOne = (query, opts = {}) => {
+    const where = translateQuery(query && query.where ? query.where : query);
+    return new Query(model, where, { ...opts, single: true });
   };
 
-  model.findById = (id) => model.findByPk(id);
-  model.findOne = (query) => {
+  model.find = (query, opts = {}) => {
     const where = translateQuery(query);
-    return model.findOne({ where });
+    return new Query(model, where, opts);
   };
-  model.find = (query) => {
-    const where = translateQuery(query);
-    const promise = model.findAll({ where });
-    return createQueryProxy(promise, model, where);
-  };
+
   model.findOneAndUpdate = async (query, update, options) => {
     const where = translateQuery(query);
-    const record = await model.findOne({ where });
+    const record = await originalFindOne({ where, transaction: options?.transaction });
     if (!record) {
-      if (options?.upsert) return model.create({ ...where, ...update });
+      if (options?.upsert) return model.create({ ...where, ...update }, { transaction: options?.transaction });
       return null;
     }
-    await record.update(update);
+    await record.update(update, { transaction: options?.transaction });
     return record;
   };
-  model.deleteMany = (query) => {
+
+  model.deleteMany = (query, options) => {
     const where = translateQuery(query);
-    return model.destroy({ where });
+    return originalDestroy({ where, transaction: options?.transaction });
   };
-  model.countDocuments = (query) => {
+
+  model.countDocuments = (query, options) => {
     const where = translateQuery(query);
-    return model.count({ where });
+    return originalCount({ where, transaction: options?.transaction });
   };
   
   model.bulkWrite = async (operations) => {
@@ -142,4 +267,62 @@ const applyMongooseShims = (model) => {
   return model;
 };
 
-module.exports = { connectDB, sequelize, DB_TYPE, applyMongooseShims };
+/**
+ * A database-agnostic transaction wrapper.
+ * Handles Sequelize transactions for MySQL and Mongoose sessions for MongoDB.
+ */
+const withTransaction = async (callback) => {
+  if (DB_TYPE === "mysql") {
+    return await sequelize.transaction(async (t) => {
+      return await callback(t);
+    });
+  } else {
+    const mongoose = require("mongoose");
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const result = await callback(session);
+      await session.commitTransaction();
+      return result;
+    } catch (err) {
+      if (session.inTransaction()) await session.abortTransaction();
+      throw err;
+    } finally {
+      session.endSession();
+    }
+  }
+};
+
+// Global Logger Redirection for cPanel/Linux debugging
+const fs = require("fs");
+const path = require("path");
+const logFile = path.join(__dirname, "../app.log");
+
+const originalConsoleLog = console.log.bind(console);
+const originalConsoleError = console.error.bind(console);
+
+const logToFile = (msg, isError = false) => {
+    const timestamp = new Date().toISOString();
+    const prefix = isError ? "[ERROR]" : "[INFO]";
+    const line = `[${timestamp}] ${prefix} ${msg}\n`;
+    try {
+        fs.appendFileSync(logFile, line);
+    } catch (e) {}
+};
+
+// Overwrite global console methods
+console.log = (...args) => {
+    const msg = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ');
+    logToFile(msg);
+    originalConsoleLog(...args);
+};
+
+console.error = (...args) => {
+    const msg = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ');
+    logToFile(msg, true);
+    originalConsoleError(...args);
+};
+
+const log = (msg) => console.log(msg);
+
+module.exports = { connectDB, sequelize, DB_TYPE, applyMongooseShims, withTransaction, log };

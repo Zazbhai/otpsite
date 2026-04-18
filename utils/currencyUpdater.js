@@ -39,12 +39,12 @@ async function updateCurrencyRates() {
       USDT: apiRates.USD       // Use USD rate for Crypto stablecoin
     };
 
-    const setting = await Setting.findOne();
-    if (setting) {
-      setting.exchange_rates = JSON.stringify(newRates);
-      await setting.save();
-      console.log("[Currency Updater] Global exchange rates automatically updated from live API.");
-    }
+    await Setting.findOneAndUpdate(
+      { key: "exchange_rates" },
+      { value: newRates, label: "Currency Exchange Rates", group: "system" },
+      { upsert: true }
+    );
+    console.log("[Currency Updater] Global exchange rates automatically updated from live API.");
   } catch (error) {
     console.error("[Currency Updater] Failed to update daily exchange rates:", error.message);
   }

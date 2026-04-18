@@ -8,30 +8,48 @@ const { syncOrder } = require("./orderStatusManager");
 function startWatcher() {
   console.log("🕒 Order Monitor: Background service started.");
 
-  // Run every 15 seconds
+  let isRunning = false;
+
+  // Run every 10 seconds (faster response for users)
   setInterval(async () => {
+    if (isRunning) return; // Prevent overlapping runs
+    isRunning = true;
+
     try {
       // Find orders that are active
       const activeOrders = await Order.find({ status: "active" });
-      
-      if (activeOrders.length === 0) return;
+      if (activeOrders.length === 0) {
+        isRunning = false;
+        return;
+      }
 
-      console.log(`🕒 Order Monitor: Syncing ${activeOrders.length} active orders...`);
+      // Check which orders are due for a sync based on their check_interval
+      const now = new Date();
+      const dueOrders = activeOrders.filter(order => {
+        const lastCheck = order.last_check_at ? new Date(order.last_check_at) : new Date(0);
+        const intervalMs = (order.check_interval || 3) * 1000;
+        return (now.getTime() - lastCheck.getTime()) >= intervalMs;
+      });
 
-      // Process in batches or with slight delays if needed
-      // For now, we'll use Promise.allSettled with a concurrency limit if it gets large,
-      // but simple loop works for MVP.
-      for (const order of activeOrders) {
-        try {
-          await syncOrder(order);
-        } catch (err) {
-          console.error(`[Order Monitor] Error syncing order ${order.order_id}:`, err.message);
-        }
+      if (dueOrders.length === 0) {
+        isRunning = false;
+        return;
+      }
+
+      console.log(`🕒 Order Monitor: Syncing ${dueOrders.length}/${activeOrders.length} due orders...`);
+
+      // Process up to 10 orders in parallel to speed up the loop
+      const CONCURRENCY = 10;
+      for (let i = 0; i < dueOrders.length; i += CONCURRENCY) {
+        const batch = dueOrders.slice(i, i + CONCURRENCY);
+        await Promise.allSettled(batch.map(order => syncOrder(order)));
       }
     } catch (err) {
       console.error("[Order Monitor] Global loop error:", err.message);
+    } finally {
+      isRunning = false;
     }
-  }, 15000); 
+  }, 10000); 
 }
 
 module.exports = { startWatcher };

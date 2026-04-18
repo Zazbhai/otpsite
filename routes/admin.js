@@ -43,121 +43,98 @@ router.get("/analytics", async (req, res) => {
     const thirtyDaysAgo = new Date(now - 30 * 864e5);
     const fourteenDaysAgo = new Date(now - 14 * 864e5);
 
-    // Basic Counts
     const totalUsers = await User.countDocuments();
-    const todayUsersList = await User.find({ createdAt: { $gte: todayStart } });
-    const todayUsers = todayUsersList.length;
-
-    // Deposits
-    const depositPipeline = await Transaction.aggregate([
-      { $match: { type: "deposit" } },
-      { $group: {
-          _id: null,
-          total: { $sum: "$amount" },
-          today: { $sum: { $cond: [{ $gte: ["$createdAt", todayStart] }, "$amount", 0] } }
-        }
-      }
-    ]);
-    const totalDeposits = depositPipeline[0]?.total || 0;
-    const todayDeposits = depositPipeline[0]?.today || 0;
-
-    // Revenue (from Orders)
-    const orderPipeline = await Order.aggregate([
-      { $match: { status: "completed" } },
-      { $group: {
-          _id: null,
-          total: { $sum: "$cost" },
-          today: { $sum: { $cond: [{ $gte: ["$createdAt", todayStart] }, "$cost", 0] } }
-        }
-      }
-    ]);
-    const totalRevenue = orderPipeline[0]?.total || 0;
-    const todayRevenue = orderPipeline[0]?.today || 0;
-
-    // Additional Order Context
+    const todayUsers = await User.countDocuments({ createdAt: { [DB_TYPE === "mysql" ? require("sequelize").Op.gte : "$gte"]: todayStart } });
     const totalOrders = await Order.countDocuments();
     const activeOrders = await Order.countDocuments({ status: "active" });
 
-    // Graphs: Daily Data (Last 14 Days)
-    const dailyDeposits = await Transaction.aggregate([
-      { $match: { type: "deposit", createdAt: { $gte: fourteenDaysAgo } } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, total: { $sum: "$amount" } } },
-      { $sort: { _id: 1 } }
-    ]);
-    
-    const dailyRevenue = await Order.aggregate([
-      { $match: { status: "completed", createdAt: { $gte: fourteenDaysAgo } } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, total: { $sum: "$cost" } } },
-      { $sort: { _id: 1 } }
-    ]);
+    let metrics = { totalUsers, todayUsers, totalOrders, activeOrders };
+    let graphs = { dailyDeposits: [], dailyRevenue: [], userGrowth: [] };
+    let topServices = [];
+    let orderDistribution = [];
 
-    const userGrowth = await User.aggregate([
-      { $match: { createdAt: { $gte: fourteenDaysAgo } } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { _id: 1 } }
-    ]);
+    if (DB_TYPE === "mysql") {
+      const { Op, fn, col } = require("sequelize");
+      
+      const [depRes, todayDepRes, revRes, todayRevRes, liabRes, volRes] = await Promise.all([
+        Transaction.findAll({ attributes: [[fn('SUM', col('amount')), 'total']], where: { type: 'deposit' }, raw: true }),
+        Transaction.findAll({ attributes: [[fn('SUM', col('amount')), 'total']], where: { type: 'deposit', createdAt: { [Op.gte]: todayStart } }, raw: true }),
+        Order.findAll({ attributes: [[fn('SUM', col('cost')), 'total']], where: { status: 'completed' }, raw: true }),
+        Order.findAll({ attributes: [[fn('SUM', col('cost')), 'total']], where: { status: 'completed', createdAt: { [Op.gte]: todayStart } }, raw: true }),
+        User.findAll({ attributes: [[fn('SUM', col('balance')), 'total']], raw: true }),
+        User.findAll({ attributes: [[fn('SUM', col('total_spent')), 'total']], raw: true })
+      ]);
 
-    // Pie Chart: Top Services
-    const topServices = await Order.aggregate([
-      { $match: { status: "completed" } },
-      { $group: { _id: "$service_name", count: { $sum: 1 }, revenue: { $sum: "$cost" } } },
-      { $sort: { count: -1 } },
-      { $limit: 6 }
-    ]);
+      const totalDeposits = parseFloat(depRes[0]?.total || 0);
+      const todayDeposits = parseFloat(todayDepRes[0]?.total || 0);
+      const totalRevenue  = parseFloat(revRes[0]?.total || 0);
+      const todayRevenue  = parseFloat(todayRevRes[0]?.total || 0);
+      const totalLiability = parseFloat(liabRes[0]?.total || 0);
+      const lifetimeVolume = parseFloat(volRes[0]?.total || 0);
 
-    // ── User Perspective Stats ──
-    const userStats = await User.aggregate([
-      { $group: {
-          _id: null,
-          totalLiability: { $sum: "$balance" },
-          totalSpent: { $sum: "$total_spent" }
-        }
-      }
-    ]);
-    const totalLiability = userStats[0]?.totalLiability || 0;
-    const lifetimeVolume = userStats[0]?.totalSpent || 0;
+      const totalAttempts = await Order.count();
+      const completedCount = await Order.count({ where: { status: 'completed' } });
+      const successRate = totalAttempts > 0 ? (completedCount / totalAttempts) : 0;
+      metrics = { ...metrics, totalDeposits, todayDeposits, totalRevenue, todayRevenue, totalLiability, lifetimeVolume, successRate };
 
-    const orderStats = await Order.aggregate([
-      { $group: {
-          _id: null,
-          total: { $sum: 1 },
-          completed: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } }
-        }
-      }
-    ]);
-    const totalAttempts = orderStats[0]?.total || 0;
-    const completedOrders = orderStats[0]?.completed || 0;
-    const successRate = totalAttempts > 0 ? (completedOrders / totalAttempts) : 0;
+      graphs.dailyDeposits = await Transaction.findAll({
+        attributes: [[fn('DATE', col('createdAt')), 'date'], [fn('SUM', col('amount')), 'total']],
+        where: { type: 'deposit', createdAt: { [Op.gte]: fourteenDaysAgo } },
+        group: [fn('DATE', col('createdAt'))],
+        order: [[fn('DATE', col('createdAt')), 'ASC']]
+      }).then(res => res.map(r => ({ _id: r.get('date'), total: r.get('total') })));
 
-    // Group orders by status for Pie Chart (treat expired as cancelled)
-    const osDist = await Order.aggregate([
-      {
-        $project: {
-          normalizedStatus: {
-            $cond: [{ $eq: ["$status", "expired"] }, "cancelled", "$status"]
-          }
-        }
-      },
-      { $group: { _id: "$normalizedStatus", count: { $sum: 1 } } }
-    ]);
+      graphs.dailyRevenue = await Order.findAll({
+        attributes: [[fn('DATE', col('createdAt')), 'date'], [fn('SUM', col('cost')), 'total']],
+        where: { status: 'completed', createdAt: { [Op.gte]: fourteenDaysAgo } },
+        group: [fn('DATE', col('createdAt'))],
+        order: [[fn('DATE', col('createdAt')), 'ASC']]
+      }).then(res => res.map(r => ({ _id: r.get('date'), total: r.get('total') })));
+
+      graphs.userGrowth = await User.findAll({
+        attributes: [[fn('DATE', col('createdAt')), 'date'], [fn('COUNT', col('id')), 'count']],
+        where: { createdAt: { [Op.gte]: fourteenDaysAgo } },
+        group: [fn('DATE', col('createdAt'))],
+        order: [[fn('DATE', col('createdAt')), 'ASC']]
+      }).then(res => res.map(r => ({ _id: r.get('date'), count: r.get('count') })));
+
+      topServices = await Order.findAll({
+        attributes: ['service_name', [fn('COUNT', col('id')), 'count'], [fn('SUM', col('cost')), 'revenue']],
+        where: { status: 'completed' },
+        group: ['service_name'], order: [[fn('COUNT', col('id')), 'DESC']], limit: 6
+      }).then(res => res.map(r => ({ _id: r.service_name, count: r.get('count'), revenue: r.get('revenue') })));
+
+      const rawDist = await Order.findAll({ attributes: ['status', [fn('COUNT', col('id')), 'count']], group: ['status'] });
+      const distMap = { active: 0, completed: 0, cancelled: 0 };
+      rawDist.forEach(r => {
+        const s = r.status === 'expired' ? 'cancelled' : r.status;
+        distMap[s] = (distMap[s] || 0) + r.get('count');
+      });
+      orderDistribution = Object.entries(distMap).map(([k, v]) => ({ _id: k, count: v }));
+    } else {
+      // Original MongoDB Aggregations
+      const depositPipeline = await Transaction.aggregate([{ $match: { type: "deposit" } },{ $group: { _id: null, total: { $sum: "$amount" }, today: { $sum: { $cond: [{ $gte: ["$createdAt", todayStart] }, "$amount", 0] } } } }]);
+      const orderPipeline = await Order.aggregate([{ $match: { status: "completed" } },{ $group: { _id: null, total: { $sum: "$cost" }, today: { $sum: { $cond: [{ $gte: ["$createdAt", todayStart] }, "$cost", 0] } } } }]);
+      const userStats = await User.aggregate([{ $group: { _id: null, totalLiability: { $sum: "$balance" }, totalSpent: { $sum: "$total_spent" } } }]);
+      const orderStats = await Order.aggregate([{ $group: { _id: null, total: { $sum: 1 }, completed: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } } } }]);
+      metrics = { ...metrics, totalDeposits: depositPipeline[0]?.total || 0, todayDeposits: depositPipeline[0]?.today || 0, totalRevenue: orderPipeline[0]?.total || 0, todayRevenue: orderPipeline[0]?.today || 0, totalLiability: userStats[0]?.totalLiability || 0, lifetimeVolume: userStats[0]?.totalSpent || 0, successRate: orderStats[0]?.total > 0 ? (orderStats[0]?.completed / orderStats[0]?.total) : 0 };
+      graphs.dailyDeposits = await Transaction.aggregate([{ $match: { type: "deposit", createdAt: { $gte: fourteenDaysAgo } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, total: { $sum: "$amount" } } }, { $sort: { _id: 1 } }]);
+      graphs.dailyRevenue = await Order.aggregate([{ $match: { status: "completed", createdAt: { $gte: fourteenDaysAgo } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, total: { $sum: "$cost" } } }, { $sort: { _id: 1 } }]);
+      graphs.userGrowth = await User.aggregate([{ $match: { createdAt: { $gte: fourteenDaysAgo } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }]);
+      topServices = await Order.aggregate([{ $match: { status: "completed" } }, { $group: { _id: "$service_name", count: { $sum: 1 }, revenue: { $sum: "$cost" } } }, { $sort: { count: -1 } }, { $limit: 6 }]);
+      orderDistribution = await Order.aggregate([{ $project: { normalizedStatus: { $cond: [{ $eq: ["$status", "expired"] }, "cancelled", "$status"] } } }, { $group: { _id: "$normalizedStatus", count: { $sum: 1 } } }]);
+    }
 
     res.json({
-      metrics: {
-        totalUsers, todayUsers,
-        totalDeposits, todayDeposits,
-        totalRevenue, todayRevenue,
-        totalOrders, activeOrders,
-        totalLiability, lifetimeVolume, successRate
-      },
-      graphs: {
-        dailyDeposits,
-        dailyRevenue,
-        userGrowth
-      },
+      metrics,
+      graphs,
       topServices,
-      orderDistribution: osDist
+      orderDistribution
     });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("Analytics Error:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 /* ─── USERS ────────────────────────────────────────────────────── */
@@ -165,19 +142,27 @@ router.get("/users", async (req, res) => {
   try {
     const { q, page = 1, limit = 30, banned } = req.query;
     const filter = {};
+    
     if (q) {
-      const orClauses = [
-        { username:     new RegExp(q, "i") },
-        { email:        new RegExp(q, "i") },
-        { display_name: new RegExp(q, "i") },
-      ];
-      
-      // If q looks like a MongoDB ID, add it to the search
-      if (mongoose.Types.ObjectId.isValid(q)) {
-        orClauses.push({ _id: new mongoose.Types.ObjectId(q) });
+      if (DB_TYPE === "mysql") {
+        const { Op } = require("sequelize");
+        filter[Op.or] = [
+          { username:     { [Op.like]: `%${q}%` } },
+          { email:        { [Op.like]: `%${q}%` } },
+          { display_name: { [Op.like]: `%${q}%` } }
+        ];
+        if (q.match(/^\d+$/)) filter[Op.or].push({ id: q });
+      } else {
+        const orClauses = [
+          { username:     new RegExp(q, "i") },
+          { email:        new RegExp(q, "i") },
+          { display_name: new RegExp(q, "i") },
+        ];
+        if (mongoose.Types.ObjectId.isValid(q)) {
+          orClauses.push({ _id: new mongoose.Types.ObjectId(q) });
+        }
+        filter.$or = orClauses;
       }
-      
-      filter.$or = orClauses;
     }
     if (banned !== undefined) filter.is_banned = banned === "true";
 
@@ -264,7 +249,11 @@ router.patch("/orders/:id", async (req, res) => {
     if (!order) return res.status(404).json({ error: "Order not found" });
 
     if (status === "refunded" && order.status !== "refunded") {
-      await User.findByIdAndUpdate(order.user_id, { $inc: { balance: order.cost } });
+      const user = await User.findById(order.user_id);
+      if (user) {
+        user.balance = parseFloat((user.balance + order.cost).toFixed(4));
+        await user.save();
+      }
       await Transaction.create({
         user_id: order.user_id, type: "refund", amount: order.cost,
         description: `Refund for order ${order.order_id}`, order_id: order.order_id,
@@ -275,7 +264,10 @@ router.patch("/orders/:id", async (req, res) => {
     await order.save();
     emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
     res.json({ order });
-  } catch (err) { res.status(500).json({ error: "Server error" }); }
+  } catch (err) { 
+    console.error("Admin order update error:", err);
+    res.status(500).json({ error: "Server error" }); 
+  }
 });
 
 /* ─── SERVICES ─────────────────────────────────────────────────── */
@@ -685,12 +677,21 @@ router.get("/settings", async (_, res) => {
 
 router.post("/settings", async (req, res) => {
   try {
-    const ops = Object.entries(req.body).map(([key, value]) => ({
-      updateOne: { filter: { key }, update: { $set: { key, value } }, upsert: true },
-    }));
-    await Setting.bulkWrite(ops);
+    if (DB_TYPE === "mysql") {
+      for (const [key, value] of Object.entries(req.body)) {
+        await Setting.findOne({ where: { key } }).then(async s => {
+          if (s) await s.update({ value });
+          else await Setting.create({ key, value });
+        });
+      }
+    } else {
+      const ops = Object.entries(req.body).map(([key, value]) => ({
+        updateOne: { filter: { key }, update: { $set: { key, value } }, upsert: true },
+      }));
+      await Setting.bulkWrite(ops);
+    }
     clearSettingsCache();
-    emitToAll("settings", {}); // Push to all connected browsers
+    emitToAll("settings", {});
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: "Server error" }); }
 });
@@ -745,17 +746,24 @@ router.delete("/promo-codes/:id", async (req, res) => {
 /* ─── REFERRALS ────────────────────────────────────────────────── */
 router.get("/referrals-stats", async (req, res) => {
   try {
-    const totalReferrals = await User.countDocuments({ referred_by: { $ne: null } });
-    const totalEarnings = await User.aggregate([
-      { $group: { _id: null, total: { $sum: "$referral_earnings" } } }
-    ]);
+    const totalReferrals = await User.countDocuments({ referred_by: { [DB_TYPE === "mysql" ? require("sequelize").Op.ne : "$ne"]: null } });
+    let totalEarnings = 0;
     
-    const topReferrers = await User.find({ referral_count: { $gt: 0 } })
+    if (DB_TYPE === "mysql") {
+      const { fn, col } = require("sequelize");
+      const res = await User.findAll({ attributes: [[fn("SUM", col("referral_earnings")), "total"]], raw: true });
+      totalEarnings = parseFloat(res[0]?.total || 0);
+    } else {
+      const e = await User.aggregate([{ $group: { _id: null, total: { $sum: "$referral_earnings" } } }]);
+      totalEarnings = e[0]?.total || 0;
+    }
+    
+    const topReferrers = await User.find({ referral_count: { [DB_TYPE === "mysql" ? require("sequelize").Op.gt : "$gt"]: 0 } })
       .sort({ referral_count: -1 })
       .limit(10)
       .select("username referral_count referral_earnings email");
 
-    const recentCommissions = await Transaction.find({ type: "bonus", description: /Referral bonus/ })
+    const recentCommissions = await Transaction.find({ type: "bonus", description: { [DB_TYPE === "mysql" ? require("sequelize").Op.like : "$regex"]: "%Referral bonus%" } })
       .sort({ createdAt: -1 })
       .limit(20)
       .populate("user_id", "username");
@@ -763,7 +771,7 @@ router.get("/referrals-stats", async (req, res) => {
     res.json({
       metrics: {
         total_referrals: totalReferrals,
-        total_earnings:  totalEarnings[0]?.total || 0,
+        total_earnings:  totalEarnings,
       },
       top_referrers: topReferrers,
       recent_commissions: recentCommissions
