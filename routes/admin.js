@@ -607,8 +607,8 @@ router.post("/servers", async (req, res) => {
            
            servicesToCreate.push({
              name: item.name,
-             server_id: (DB_TYPE === "mysql" ? server.id : server._id),
-             server_id_attr: (DB_TYPE === "mysql" ? server.id : undefined),
+             server_id: server.id || server._id,      // Virtual/Legacy
+             server_id_attr: server.id || server._id, // Real Sequelize Attribute
              service_code: item.code,
              country_code: countryCode,
              price: (item.price || 5.0) + extraProfit,
@@ -618,6 +618,7 @@ router.post("/servers", async (req, res) => {
            });
         }
         if (servicesToCreate.length > 0) {
+           console.log(`[Admin/Servers] Auto-adding ${servicesToCreate.length} for server: ${server.id || server._id}`);
            await Service.insertMany(servicesToCreate);
            console.log(`[Admin/Servers] Auto-added ${servicesToCreate.length} NEW services to server`);
         }
@@ -663,7 +664,8 @@ router.put("/servers/:id", async (req, res) => {
 
            servicesToCreate.push({
              name: item.name,
-             server_id: (DB_TYPE === "mysql" ? server.id : server._id), server_id_attr: (DB_TYPE === "mysql" ? server.id : undefined),
+             server_id: server.id || server._id,
+             server_id_attr: server.id || server._id,
              service_code: item.code,
              country_code: countryCode,
              price: (item.price || 5.0) + extraProfit,
@@ -673,6 +675,7 @@ router.put("/servers/:id", async (req, res) => {
            });
         }
         if (servicesToCreate.length > 0) {
+           console.log(`[Admin/Servers] Auto-adding ${servicesToCreate.length} for EXISTING server: ${server.id || server._id}`);
            await Service.insertMany(servicesToCreate);
            console.log(`[Admin/Servers] Auto-added ${servicesToCreate.length} NEW services to existing server`);
         }

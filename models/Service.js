@@ -24,11 +24,13 @@ if (DB_TYPE === "mysql") {
     },
     server_id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.server_id_attr; }
+      get() { return this.server_id_attr; },
+      set(val) { this.setDataValue('server_id_attr', val); }
     },
     country_id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.country_id_attr; }
+      get() { return this.country_id_attr; },
+      set(val) { this.setDataValue('country_id_attr', val); }
     }
   }, {
     indexes: [

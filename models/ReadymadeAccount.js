@@ -22,7 +22,8 @@ if (DB_TYPE === "mysql") {
     },
     category_id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.category_id_attr; }
+      get() { return this.category_id_attr; },
+      set(val) { this.setDataValue('category_id_attr', val); }
     }
   }, {
     indexes: [

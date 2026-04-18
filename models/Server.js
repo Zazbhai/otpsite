@@ -28,7 +28,8 @@ if (DB_TYPE === "mysql") {
     },
     country_id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.country_id_attr; }
+      get() { return this.country_id_attr; },
+      set(val) { this.setDataValue('country_id_attr', val); }
     }
   }, {
     hooks: {
