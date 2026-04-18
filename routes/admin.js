@@ -453,8 +453,9 @@ router.put("/services/:id", upload.single("logo"), async (req, res) => {
          server = await Server.findById(server_id).populate("country_id", "code");
          if (server && server.country_id) service.country_code = server.country_id.code;
        }
-       service.server_id = server_id;
-    }
+        service.server_id_attr = server_id;
+        service.server_id = server_id;
+     }
 
     if (name) service.name = name;
     if (service_code) service.service_code = service_code;
@@ -497,7 +498,7 @@ router.delete("/services/bulk/:server_id", async (req, res) => {
     
     if (DB_TYPE === "mysql") {
       const { Op } = require("sequelize");
-      const where = { server_id };
+      const where = { server_id_attr: server_id };
       if (min || max) {
         where.price = {};
         if (min) where.price[Op.gte] = parseFloat(min);
@@ -568,7 +569,7 @@ router.delete("/countries/:id", async (req, res) => {
 });
 
 /* ─── SERVERS ──────────────────────────────────────────────────── */
-router.get("/servers", async (_, res) => res.json(await Server.find().sort({ name: 1 })));
+router.get("/servers", async (_, res) => res.json(await Server.find().sort({ name: 1 }).populate("country_id")));
 
 router.post("/servers", async (req, res) => {
   try { 

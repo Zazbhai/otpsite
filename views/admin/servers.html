@@ -421,14 +421,14 @@
     }
     
     grid.innerHTML = servers.map((s, i) => {
-      const country = allCountries.find(c => c._id.toString() === (s.country_id?.toString() || ""));
+      const countryObj = (s.country_id && typeof s.country_id === 'object') ? s.country_id : allCountries.find(c => c._id == s.country_id);
       return `
         <div class="server-card" onclick="openEdit('${s._id}')" style="animation-delay: ${i * 50}ms">
           <div class="server-header">
             <div class="server-icon">🖥️</div>
             <div class="server-info">
               <div class="server-name">${s.name}</div>
-              <div class="server-country">${country ? `${country.flag || '🌍'} ${country.name}` : '🌍 No Country'}</div>
+              <div class="server-country">${countryObj ? `${countryObj.flag || '🌍'} ${countryObj.name}` : '🌍 No Country'}</div>
             </div>
             <div class="server-status ${s.is_active !== false ? 'active' : 'inactive'}">${s.is_active !== false ? 'Active' : 'Off'}</div>
           </div>
@@ -490,7 +490,7 @@
       const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
       setVal("srv-id", s._id);
       setVal("srv-name", s.name);
-      setVal("srv-country", s.country_id || "");
+      setVal("srv-country", (s.country_id && typeof s.country_id === 'object') ? (s.country_id._id || s.country_id.id) : (s.country_id || ""));
       setVal("srv-key", s.api_key || "");
       setVal("srv-get-url", s.api_get_number_url || "");
       setVal("srv-check-url", s.api_check_status_url || "");

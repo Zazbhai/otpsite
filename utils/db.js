@@ -290,12 +290,21 @@ const applyMongooseShims = (model) => {
   
   // Instance method shims
   if (model.prototype) {
-    model.prototype.toObject = function() { 
+    const originalToJSON = model.prototype.toJSON;
+    const shimmedToJSON = function() {
         const obj = this.get({ plain: true });
-        // Handle virtuals manually if needed, but get({plain:true}) usually includes them if they are defined correctly
+        // Map _attr fields back to original names for the frontend
+        for (const key in obj) {
+            if (key.endsWith('_attr')) {
+                const originalKey = key.replace('_attr', '');
+                if (!obj[originalKey]) obj[originalKey] = obj[key];
+            }
+        }
         if (this._id && !obj._id) obj._id = String(this.id);
         return obj;
     };
+    model.prototype.toObject = shimmedToJSON;
+    model.prototype.toJSON = shimmedToJSON;
   }
   
   return model;
