@@ -70,7 +70,8 @@ async function syncOrder(orderIdOrDoc) {
               order.otp = cleanOtp;
               order.all_otps = [...order.all_otps, cleanOtp];
               // Request next OTP automatically
-              providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
+              console.log(`[Multi-OTP] Auto-requesting next OTP for ${order.order_id}`);
+              providerApi.retryOrder(serverConf, order.external_order_id).catch(e => console.error("Auto-retry fail:", e.message));
               await order.save();
               // Push OTP update to user instantly
               emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
