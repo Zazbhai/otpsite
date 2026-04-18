@@ -9,9 +9,11 @@ const fs = require("fs");
 const { getCachedSettings } = require("./utils/settingsCache");
 
 const app = express();
+const cookieParser = require("cookie-parser");
 const PORT = process.env.PORT || 5000;
 
 /* ─── Middleware ──────────────────────────────────────────────── */
+app.use(cookieParser());
 // NOTE: Helmet removed — it was blocking onclick= handlers via script-src-attr.
 // Add back only in production with explicit scriptSrcAttr: ["'unsafe-inline'"]
 
@@ -30,12 +32,56 @@ app.set("trust proxy", 1);
 // Basic rate limiting on API
 // Increased rate limiting to support high-frequency polling (3s intervals)
 app.use("/api/", rateLimit({ windowMs: 15 * 60 * 1000, max: 2000, standardHeaders: true, legacyHeaders: false }));
+// Maintenance Mode Interceptor
+app.use(async (req, res, next) => {
+  const { isMaintenanceOn } = require("./utils/maintenance");
+  const { decodeToken } = require("./middleware/auth");
+  
+  // Allow these paths even during maintenance:
+  const allowedPaths = [
+    "/maintenance", 
+    "/api/auth/status", 
+    "/api/auth/login",
+    "/api/auth/settings",
+    "/login",
+    "/register",
+    "/img/", 
+    "/css/", 
+    "/js/", 
+    "/favicon.ico"
+  ];
+  
+  const isAllowed = allowedPaths.some(p => req.path.startsWith(p));
+  
+  // Check if current user is admin via token
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : (req.cookies?.token || req.query?.token || "");
+  const payload = decodeToken(token);
+  const isUserAdmin = payload && payload.is_admin === true;
+
+  const isAdminPath = req.path.startsWith("/admin") || req.path.startsWith("/api/admin");
+
+  // Bypass maintenance if:
+  // 1. Path is explicitly allowed (login, assets, status)
+  // 2. Path is an admin path (to allow login/mgmt during outage)
+  // 3. User is an authenticated ADMIN
+  if (!isAllowed && !isAdminPath && !isUserAdmin) {
+    if (await isMaintenanceOn()) {
+      if (req.path.startsWith("/api/")) {
+        return res.status(503).json({ error: "Under Maintenance", maintenance: true });
+      }
+      return res.redirect("/maintenance");
+    }
+  }
+  next();
+});
+
 // Database Health Check Middleware
-// Prevents requests from hanging if MongoDB/MySQL is disconnected
 app.use((req, res, next) => {
   if (req.path.startsWith("/api/")) {
     const { DB_TYPE } = require("./utils/db");
-    if (DB_TYPE === "mongodb" && mongoose.connection.readyState !== 1) {
+    const { connection } = require("mongoose");
+    if (DB_TYPE === "mongodb" && connection.readyState !== 1) {
       return res.status(503).json({ message: "Database connection lost. Please check your internet or retry later." });
     }
   }

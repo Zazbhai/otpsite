@@ -29,3 +29,50 @@
 [2026-04-18T14:24:13.154Z] [INFO] >> HIT PUBLIC SERVICES ROUTE
 [2026-04-18T15:45:00.251Z] [INFO] >> HIT PUBLIC SERVICES ROUTE
 [2026-04-18T15:45:06.370Z] [INFO] >> HIT PUBLIC SERVICES ROUTE
+[2026-04-18T17:21:45.945Z] [INFO] >> HIT PUBLIC SERVICES ROUTE
+[2026-04-18T17:25:02.715Z] [INFO] >> HIT PUBLIC SERVICES ROUTE
+[2026-04-18T17:25:09.033Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-18T17:25:09.035Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-18T17:25:09.537Z] [INFO] ✅ MongoDB connected
+[2026-04-18T17:25:09.538Z] [INFO] ✅ Database initialized successfully.
+[2026-04-18T17:25:09.540Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-18T17:25:09.540Z] [INFO] 🕒 Order Watcher started.
+[2026-04-18T17:25:09.545Z] [INFO] 💰 Currency Updater started.
+[2026-04-18T17:25:09.556Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-18T17:25:10.649Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-18T17:32:00.316Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-18T17:32:00.318Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-18T17:32:00.958Z] [INFO] ✅ MongoDB connected
+[2026-04-18T17:32:00.959Z] [INFO] ✅ Database initialized successfully.
+[2026-04-18T17:32:00.961Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-18T17:32:00.961Z] [INFO] 🕒 Order Watcher started.
+[2026-04-18T17:32:00.964Z] [INFO] 💰 Currency Updater started.
+[2026-04-18T17:32:00.971Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-18T17:32:01.825Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-18T17:34:19.876Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-18T17:34:19.878Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-18T17:34:20.406Z] [INFO] ✅ MongoDB connected
+[2026-04-18T17:34:20.406Z] [INFO] ✅ Database initialized successfully.
+[2026-04-18T17:34:20.408Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-18T17:34:20.408Z] [INFO] 🕒 Order Watcher started.
+[2026-04-18T17:34:20.412Z] [INFO] 💰 Currency Updater started.
+[2026-04-18T17:34:20.418Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-18T17:34:21.580Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-18T17:36:49.517Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-18T17:36:49.518Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-18T17:36:50.005Z] [INFO] ✅ MongoDB connected
+[2026-04-18T17:36:50.006Z] [INFO] ✅ Database initialized successfully.
+[2026-04-18T17:36:50.007Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-18T17:36:50.008Z] [INFO] 🕒 Order Watcher started.
+[2026-04-18T17:36:50.011Z] [INFO] 💰 Currency Updater started.
+[2026-04-18T17:36:50.017Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-18T17:36:51.122Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-18T17:38:39.325Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-18T17:38:39.328Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-18T17:38:39.888Z] [INFO] ✅ MongoDB connected
+[2026-04-18T17:38:39.889Z] [INFO] ✅ Database initialized successfully.
+[2026-04-18T17:38:39.891Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-18T17:38:39.891Z] [INFO] 🕒 Order Watcher started.
+[2026-04-18T17:38:39.894Z] [INFO] 💰 Currency Updater started.
+[2026-04-18T17:38:39.901Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-18T17:38:40.981Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
