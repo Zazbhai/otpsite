@@ -35,13 +35,12 @@ router.get("/services", async (req, res) => {
       .sort({ name: 1 })
       .populate({
         path: "server_id",
-        select: "name country_id",
         populate: { path: "country_id" }
       });
     
     // Log first service server name for debugging
     if (services.length > 0 && services[0].server_id) {
-       console.log("DEBUG: Service 0 Server Name:", services[0].server_id.name);
+       console.log("DEBUG: Service 0 Server Object:", JSON.stringify(services[0].server_id, null, 2));
     }
 
     res.json(services);

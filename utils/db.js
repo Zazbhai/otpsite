@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
-const DB_TYPE = process.env.DB_TYPE || "mongodb";
+const DB_TYPE = (process.env.DB_TYPE || "mongodb").toLowerCase().trim();
 
 let sequelize;
 if (DB_TYPE === "mysql") {
