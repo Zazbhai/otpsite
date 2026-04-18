@@ -7,7 +7,7 @@ let Service;
 if (DB_TYPE === "mysql") {
   Service = sequelize.define("Service", {
     name: { type: DataTypes.STRING, allowNull: false },
-    server_id_attr: { type: DataTypes.INTEGER, field: 'server_id' }, 
+    server_id: { type: DataTypes.INTEGER }, 
     service_code: { type: DataTypes.STRING, allowNull: false },
     country_code: { type: DataTypes.STRING, allowNull: false },
     price: { type: DataTypes.FLOAT, allowNull: false },
@@ -21,22 +21,12 @@ if (DB_TYPE === "mysql") {
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
-    },
-    server_id: {
-      type: DataTypes.VIRTUAL,
-      get() { return this.server_id_attr; },
-      set(val) { this.setDataValue('server_id_attr', val); }
-    },
-    country_id: {
-      type: DataTypes.VIRTUAL,
-      get() { return this.country_id_attr; },
-      set(val) { this.setDataValue('country_id_attr', val); }
     }
   }, {
     indexes: [
       { fields: ['service_code', 'country_code', 'is_active'] },
       { fields: ['is_active'] },
-      { fields: ['server_id_attr'] },
+      { fields: ['server_id'] },
       { fields: ['name'] }
     ]
   });
@@ -45,7 +35,7 @@ if (DB_TYPE === "mysql") {
 
   // Define Associations for MySQL mode immediately if possible, or via a safer method
   Service.associate = (models) => {
-    Service.belongsTo(models.Server, { foreignKey: 'server_id_attr', as: 'server' });
+    Service.belongsTo(models.Server, { foreignKey: 'server_id', as: 'server' });
   };
 } else {
   const serviceSchema = new mongoose.Schema(

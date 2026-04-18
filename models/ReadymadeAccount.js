@@ -6,7 +6,7 @@ let ReadymadeAccount;
 
 if (DB_TYPE === "mysql") {
   ReadymadeAccount = sequelize.define("ReadymadeAccount", {
-    category_id_attr: { type: DataTypes.INTEGER, field: 'category_id', allowNull: false },
+    category_id: { type: DataTypes.INTEGER, allowNull: false },
     credentials: { type: DataTypes.TEXT, allowNull: false },
     notes: { type: DataTypes.TEXT, defaultValue: "" },
     status: {
@@ -19,11 +19,6 @@ if (DB_TYPE === "mysql") {
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
-    },
-    category_id: {
-      type: DataTypes.VIRTUAL,
-      get() { return this.category_id_attr; },
-      set(val) { this.setDataValue('category_id_attr', val); }
     }
   }, {
     indexes: [
@@ -36,7 +31,7 @@ if (DB_TYPE === "mysql") {
   applyMongooseShims(ReadymadeAccount);
 
   ReadymadeAccount.associate = (models) => {
-    ReadymadeAccount.belongsTo(models.AccountCategory, { foreignKey: 'category_id_attr', as: 'category' });
+    ReadymadeAccount.belongsTo(models.AccountCategory, { foreignKey: 'category_id', as: 'category' });
   };
 } else {
   const readymadeAccountSchema = new mongoose.Schema(

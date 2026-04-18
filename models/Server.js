@@ -8,7 +8,7 @@ if (DB_TYPE === "mysql") {
   Server = sequelize.define("Server", {
     name: { type: DataTypes.STRING, allowNull: false },
     slug: { type: DataTypes.STRING },
-    country_id_attr: { type: DataTypes.INTEGER, field: 'country_id' }, // Store ID for compatibility
+    country_id: { type: DataTypes.INTEGER }, 
     api_key: { type: DataTypes.STRING, defaultValue: "" },
     api_get_number_url: { type: DataTypes.STRING, defaultValue: "" },
     api_check_status_url: { type: DataTypes.STRING, defaultValue: "" },
@@ -25,11 +25,6 @@ if (DB_TYPE === "mysql") {
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
-    },
-    country_id: {
-      type: DataTypes.VIRTUAL,
-      get() { return this.country_id_attr; },
-      set(val) { this.setDataValue('country_id_attr', val); }
     }
   }, {
     hooks: {
@@ -44,7 +39,7 @@ if (DB_TYPE === "mysql") {
   applyMongooseShims(Server);
 
   Server.associate = (models) => {
-    Server.belongsTo(models.Country, { foreignKey: 'country_id_attr', as: 'country' });
+    Server.belongsTo(models.Country, { foreignKey: 'country_id', as: 'country' });
   };
 } else {
   const serverSchema = new mongoose.Schema(

@@ -607,8 +607,7 @@ router.post("/servers", async (req, res) => {
            
            servicesToCreate.push({
              name: item.name,
-             server_id: server.id || server._id,      // Virtual/Legacy
-             server_id_attr: server.id || server._id, // Real Sequelize Attribute
+             server_id: server.id || server._id,
              service_code: item.code,
              country_code: countryCode,
              price: (item.price || 5.0) + extraProfit,
@@ -665,7 +664,6 @@ router.put("/servers/:id", async (req, res) => {
            servicesToCreate.push({
              name: item.name,
              server_id: server.id || server._id,
-             server_id_attr: server.id || server._id,
              service_code: item.code,
              country_code: countryCode,
              price: (item.price || 5.0) + extraProfit,

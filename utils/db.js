@@ -190,7 +190,7 @@ const applyMongooseShims = (model) => {
       
       const processPopulate = (item) => {
         const p = typeof item === 'string' ? { path: item } : item;
-        const mappings = { 'server_id': 'server', 'country_id': 'country', 'category_id': 'category' };
+        const mappings = {}; // No manual mappings needed now as we use exact names
         const realPath = mappings[p.path] || p.path;
         const includeObj = { association: realPath };
         if (p.select) {
@@ -329,16 +329,6 @@ const applyMongooseShims = (model) => {
            console.log(`[DEBUG] Serialization Issue for ${data.name}: server_id=${data.server_id}, country_code=${data.country_code}`);
         }
 
-        // Ensure _attr fields are mapped back
-        for (const key in data) {
-            if (key.endsWith('_attr')) {
-                const originalKey = key.replace('_attr', '');
-                if (data[originalKey] === undefined || data[originalKey] === null) {
-                    data[originalKey] = data[key];
-                }
-            }
-        }
-
         if (this.id && !data._id) data._id = String(this.id);
         
         // Re-apply getters for TEXT columns that are JSON (like all_otps)
@@ -347,10 +337,6 @@ const applyMongooseShims = (model) => {
            const attr = this.constructor.rawAttributes[key];
            if (attr.get) {
               data[key] = this.get(key);
-              // Also map the legacy name if it's an _attr field
-              if (key.endsWith('_attr')) {
-                 data[key.replace('_attr', '')] = this.get(key);
-              }
            }
         }
 
