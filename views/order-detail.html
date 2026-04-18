@@ -163,14 +163,65 @@
     }
     .copy-btn:active { transform: scale(0.95); }
     
-    .otp-card {
-      background: var(--bg-2);
+    .otp-card-main {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .otp-card.jiggle {
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 320px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      margin: 0 auto;
+    }
+    .otp-card.prev {
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px 20px;
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      animation: none;
+      transform: scale(0.95);
+      opacity: 0.8;
+      width: 100%;
+      max-width: 320px;
+      margin: 8px auto 0;
+    }
+    .otp-text {
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 600;
+      color: var(--text);
       text-align: center;
-      margin-bottom: 16px;
-      animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+      word-break: break-word;
+    }
+    .otp-label-mini {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+    .prev-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 24px 0 8px;
+      text-align: center;
     }
     
     .otp-label {
@@ -617,25 +668,23 @@
         // Previous OTPs are all except the latest one
         const prevOTPs = all.slice(0, -1);
         
-        let html = `<div style="display:flex;flex-direction:column;gap:12px;align-items:center;width:100%;margin:0 auto">
-          <div class="otp-card jiggle" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.1)">
-            <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.15em">Verification Code</div>
-            <div style="font-size:12px;line-height:1.4;font-weight:600;color:var(--text);margin:4px 0">${latestOTP}</div>
+        let html = `
+          <div class="otp-card jiggle">
+            <div class="otp-label-mini">Verification Code</div>
+            <div class="otp-text">${latestOTP}</div>
             <button class="action-btn primary btn-sm w-full" style="margin-top:8px" onclick="copyOTP('${latestOTP.replace(/'/g, "\\'")}')">📋 Copy Full Message</button>
           </div>`;
         
         if (prevOTPs.length) {
-          html += `<div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:320px">
-            <div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.1em;margin:16px 0 4px;text-align:center">Previous Messages</div>`;
+          html += `<div class="prev-label">Previous Messages</div>`;
           prevOTPs.forEach((code, i) => {
-            html += `<div class="otp-card" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;animation:none;transform:scale(0.95);opacity:0.8">
-              <div style="font-size:13px;line-height:1.4;user-select:text;cursor:text;word-break:break-word;text-align:center">${code}</div>
+            html += `<div class="otp-card prev">
+              <div class="otp-text" style="font-size:11px">${code}</div>
               <div style="display:flex;justify-content:center">
                 <button onclick="copyOTP('${code.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">📋 Copy</button>
               </div>
             </div>`;
           });
-          html += `</div>`;
         }
         
         if (o.status === 'active' && o.multi_otp_enabled) {

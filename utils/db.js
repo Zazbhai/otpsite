@@ -309,23 +309,33 @@ const applyMongooseShims = (model) => {
   if (model.prototype) {
     const originalToJSON = model.prototype.toJSON;
     const shimmedToJSON = function() {
-        const obj = this.get({ plain: true });
+        // Use this.get() without plain:true to ensure getters (like JSON parsing for all_otps) are applied
+        const obj = this.get();
+        const data = {};
+        
+        // Manual deep clone / cleaning to match lean() behavior but with getters
+        for (const key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                data[key] = obj[key];
+            }
+        }
         
         // Map _attr fields back to original names for the frontend
-        for (const key in obj) {
+        for (const key in data) {
             if (key.endsWith('_attr')) {
                 const originalKey = key.replace('_attr', '');
-                if (!obj[originalKey]) obj[originalKey] = obj[key];
+                if (!data[originalKey]) data[originalKey] = data[key];
             }
         }
         
         // Map renamed associations back to legacy names if populated
-        if (obj.server && !obj.server_id) obj.server_id = obj.server;
-        if (obj.country && !obj.country_id) obj.country_id = obj.country;
-        if (obj.category && !obj.category_id) obj.category_id = obj.category;
+        if (data.server && !data.server_id) data.server_id = data.server;
+        if (data.country && !data.country_id) data.country_id = data.country;
+        if (data.category && !data.category_id) data.category_id = data.category;
 
-        if (this._id && !obj._id) obj._id = String(this.id);
-        return obj;
+        if (this.id && !data._id) data._id = String(this.id);
+        
+        return data;
     };
     model.prototype.toObject = shimmedToJSON;
     model.prototype.toJSON = shimmedToJSON;
