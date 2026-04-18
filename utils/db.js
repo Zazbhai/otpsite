@@ -316,23 +316,20 @@ const applyMongooseShims = (model) => {
   if (model.prototype) {
     const originalToJSON = model.prototype.toJSON;
     const shimmedToJSON = function() {
-        // Use this.get() without plain:true to ensure getters (like JSON parsing for all_otps) are applied
-        const obj = this.get();
-        const data = {};
+        // Use plain: true but then we MUST manually re-apply getters for JSON-stored fields
+        const data = originalToJSON.call(this);
         
-        // Manual deep clone / cleaning to match lean() behavior but with getters
-        for (const key in obj) {
-            if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                data[key] = obj[key];
-            }
+        // Ensure associations are also mapped to legacy names
+        if (this.server !== undefined) data.server_id = data.server || data.server_id;
+        if (this.country !== undefined) data.country_id = data.country || data.country_id;
+        if (this.category !== undefined) data.category_id = data.category || data.category_id;
+        
+        // Debug for auto-added services issue
+        if (data.service_code && (!data.server_id || !data.country_code)) {
+           console.log(`[DEBUG] Serialization Issue for ${data.name}: server_id=${data.server_id}, country_code=${data.country_code}`);
         }
-        
-        // 1. Map renamed associations back to legacy names if populated (High priority)
-        if (data.server) data.server_id = data.server;
-        if (data.country) data.country_id = data.country;
-        if (data.category) data.category_id = data.category;
-        
-        // 2. Map _attr fields back to original names for the frontend (Lower priority, doesn't overwrite objects)
+
+        // Ensure _attr fields are mapped back
         for (const key in data) {
             if (key.endsWith('_attr')) {
                 const originalKey = key.replace('_attr', '');
@@ -344,6 +341,19 @@ const applyMongooseShims = (model) => {
 
         if (this.id && !data._id) data._id = String(this.id);
         
+        // Re-apply getters for TEXT columns that are JSON (like all_otps)
+        // This is safe because getters like 'all_otps' handle string-to-array conversion
+        for (const key in this.constructor.rawAttributes) {
+           const attr = this.constructor.rawAttributes[key];
+           if (attr.get) {
+              data[key] = this.get(key);
+              // Also map the legacy name if it's an _attr field
+              if (key.endsWith('_attr')) {
+                 data[key.replace('_attr', '')] = this.get(key);
+              }
+           }
+        }
+
         return data;
     };
     model.prototype.toObject = shimmedToJSON;
