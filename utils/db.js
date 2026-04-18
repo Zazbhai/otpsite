@@ -190,7 +190,7 @@ const applyMongooseShims = (model) => {
       
       const processPopulate = (item) => {
         const p = typeof item === 'string' ? { path: item } : item;
-        const mappings = { 'server_id': 'server', 'country_id': 'country' };
+        const mappings = { 'server_id': 'server', 'country_id': 'country', 'category_id': 'category' };
         const realPath = mappings[p.path] || p.path;
         const includeObj = { association: realPath };
         if (p.select) {
@@ -322,6 +322,7 @@ const applyMongooseShims = (model) => {
         // Map renamed associations back to legacy names if populated
         if (obj.server && !obj.server_id) obj.server_id = obj.server;
         if (obj.country && !obj.country_id) obj.country_id = obj.country;
+        if (obj.category && !obj.category_id) obj.category_id = obj.category;
 
         if (this._id && !obj._id) obj._id = String(this.id);
         return obj;
