@@ -1035,7 +1035,7 @@
             <div class="server-name">${(v.server_id && typeof v.server_id === 'object' && v.server_id.name) ? v.server_id.name : (v.server_name || 'Standard Server')}</div>
             <div class="server-stats">
               <span class="stat stat-success">✓ ${v.success_rate || '95%'} Success</span>
-              <span class="stat stat-time">⏱ Avg ${v.avg_time || '2m'}</span>
+              <span class="stat stat-time">⏱ Avg ${v.avg_time || '3s'}</span>
             </div>
           </div>
           <div class="server-price">${fmtMoney(v.price)}</div>

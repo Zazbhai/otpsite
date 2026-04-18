@@ -14,7 +14,7 @@ if (DB_TYPE === "mysql") {
     image_url: { type: DataTypes.STRING, defaultValue: "" },
     icon_color: { type: DataTypes.STRING, defaultValue: "" },
     success_rate: { type: DataTypes.STRING, defaultValue: "95%" },
-    avg_time: { type: DataTypes.STRING, defaultValue: "2m" },
+    avg_time: { type: DataTypes.STRING, defaultValue: "3s" },
     check_interval: { type: DataTypes.INTEGER, defaultValue: 3 },
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     is_auto: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -48,7 +48,7 @@ if (DB_TYPE === "mysql") {
       image_url: { type: String, default: "" },
       icon_color: { type: String, default: "" },
       success_rate: { type: String, default: "95%" },
-      avg_time: { type: String, default: "2m" },
+      avg_time: { type: String, default: "3s" },
       check_interval: { type: Number, default: 3 },
       is_active: { type: Boolean, default: true },
       is_auto: { type: Boolean, default: false }
