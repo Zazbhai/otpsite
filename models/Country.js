@@ -13,7 +13,7 @@ if (DB_TYPE === "mysql") {
     sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
     _id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.id; }
+      get() { return String(this.id); }
     }
   }, {
     indexes: [

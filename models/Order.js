@@ -39,7 +39,7 @@ if (DB_TYPE === "mysql") {
     check_interval: { type: DataTypes.INTEGER, defaultValue: 3 },
     _id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.id; }
+      get() { return String(this.id); }
     }
   });
 

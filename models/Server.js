@@ -24,7 +24,7 @@ if (DB_TYPE === "mysql") {
     extra_profit: { type: DataTypes.FLOAT, defaultValue: 0 },
     _id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.id; }
+      get() { return String(this.id); }
     }
   }, {
     hooks: {

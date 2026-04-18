@@ -26,7 +26,7 @@ if (DB_TYPE === "mysql") {
     has_deposited: { type: DataTypes.BOOLEAN, defaultValue: false },
     _id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.id; }
+      get() { return String(this.id); }
     }
   });
 

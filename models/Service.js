@@ -20,7 +20,7 @@ if (DB_TYPE === "mysql") {
     is_auto: { type: DataTypes.BOOLEAN, defaultValue: false },
     _id: {
       type: DataTypes.VIRTUAL,
-      get() { return this.id; }
+      get() { return String(this.id); }
     }
   });
 
