@@ -87,10 +87,10 @@ const applyMongooseShims = (model) => {
 
     const processObject = (obj) => {
       const newObj = {};
-      for (const key in obj) {
+      for (let key in obj) {
         let val = obj[key];
-        
-        // Handle MongoDB operators at the key level (e.g., $or: [...])
+        // Map _id to id for MySQL compatibility
+        if (key === '_id') key = 'id';
         if (operatorMap[key]) {
           if (Array.isArray(val)) {
             newObj[operatorMap[key]] = val.map(v => processObject(v));

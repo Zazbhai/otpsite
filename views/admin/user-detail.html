@@ -138,10 +138,10 @@
             <div class="text-sm text-muted">ID</div>
             <div class="font-bold text-xs mono" id="u-id" style="word-break:break-all">—</div>
           </div>
-          <div>
-            <div class="text-sm text-muted">Status</div>
-            <div>
+            <div class="font-bold">Actions</div>
+            <div style="display:flex; flex-direction:column; gap:6px">
               <button id="ban-btn" class="btn btn-sm" onclick="toggleBan()" style="margin-top:4px"></button>
+              <button id="admin-btn" class="btn btn-sm" onclick="toggleAdmin()" style="margin-top:4px"></button>
             </div>
           </div>
         </div>
@@ -258,9 +258,19 @@
         banBtn.textContent = "Unban User";
         document.getElementById("u-badge").innerHTML = `<span class="badge badge-expired" style="vertical-align:middle;margin-left:8px">BANNED</span>`;
       } else {
-        banBtn.className = "btn btn-danger btn-sm w-full";
-        banBtn.textContent = "Ban User";
         document.getElementById("u-badge").innerHTML = ``;
+      }
+
+      // Admin Button
+      const adminBtn = document.getElementById("admin-btn");
+      if(userObj.is_admin) {
+        adminBtn.className = "btn btn-secondary btn-sm w-full";
+        adminBtn.textContent = "Revoke Admin";
+        adminBtn.style.color = "var(--warning)";
+      } else {
+        adminBtn.className = "btn btn-secondary btn-sm w-full";
+        adminBtn.textContent = "Make Admin";
+        adminBtn.style.color = "var(--accent)";
       }
 
         // Transactions
@@ -327,6 +337,15 @@
     try {
       await API.patch(`/api/admin/users/${userId}`, { is_banned: !userObj.is_banned });
       toast(userObj.is_banned ? "User unbanned" : "User banned", "success");
+      loadUser();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  async function toggleAdmin() {
+    if (!(await uiConfirm(userObj.is_admin ? "Revoke admin privileges?" : "Make this user an admin?"))) return;
+    try {
+      await API.patch(`/api/admin/users/${userId}`, { is_admin: !userObj.is_admin });
+      toast(userObj.is_admin ? "Admin status revoked" : "User promoted to Admin", "success");
       loadUser();
     } catch (e) { toast(e.message, "error"); }
   }
