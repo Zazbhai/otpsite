@@ -504,8 +504,9 @@ router.delete("/services/bulk/:server_id", async (req, res) => {
         if (min) where.price[Op.gte] = parseFloat(min);
         if (max) where.price[Op.lte] = parseFloat(max);
       }
-      if (is_auto === "true" || auto_only === "true") where.is_auto = true;
-      else if (is_auto === "false") where.is_auto = false;
+      if (is_auto === "true" || auto_only === "true") where.is_auto = 1;
+      else if (is_auto === "false") where.is_auto = 0;
+      
       deletedCount = await Service.destroy({ where });
     } else {
       const filter = { server_id };

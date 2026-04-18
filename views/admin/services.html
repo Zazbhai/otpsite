@@ -427,7 +427,7 @@
     const sel = document.getElementById("bulk-del-server");
     sel.innerHTML = '<option value="">Select Server</option>' + 
       allServers.map(s => {
-        const country = allCountries.find(c => c._id == s.country_id);
+        const country = (s.country_id && typeof s.country_id === 'object') ? s.country_id : allCountries.find(c => c._id == s.country_id);
         return `<option value="${s._id}">${s.name} ${country ? `(${country.flag} ${country.name})` : ''}</option>`;
       }).join("");
     openModal("bulk-del-modal");
