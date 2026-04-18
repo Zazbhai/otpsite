@@ -190,7 +190,7 @@ const applyMongooseShims = (model) => {
       
       const processPopulate = (item) => {
         const p = typeof item === 'string' ? { path: item } : item;
-        const mappings = {}; // No manual mappings needed now as we use exact names
+        const mappings = { 'server_id': 'server', 'country_id': 'country', 'category_id': 'category' };
         const realPath = mappings[p.path] || p.path;
         const includeObj = { association: realPath };
         if (p.select) {
