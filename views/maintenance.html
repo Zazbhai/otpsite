@@ -2,810 +2,442 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Under Maintenance</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>503 - System Maintenance</title>
+  <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
 
-        :root {
-            --c: #00ffe7;
-            --p: #ff2d6b;
-            --y: #ffe94d;
-        }
-
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background: #000;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Fira Code', monospace;
             overflow: hidden;
-            font-family: 'Share Tech Mono', monospace;
-            color: #c8d8f0;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
         }
 
-        /* scanlines */
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: repeating-linear-gradient(to bottom,
-                    transparent 0px, transparent 3px,
-                    rgba(0, 0, 0, .2) 3px, rgba(0, 0, 0, .2) 4px);
-            pointer-events: none;
-            z-index: 200;
-        }
-
-        /* ── STAR FIELD ── 3 layers of pseudo-random dots via box-shadow, no JS */
-        .stars,
-        .stars::before,
-        .stars::after {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 2px;
-            height: 2px;
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        .stars {
-            background: transparent;
-            box-shadow:
-                120px -340px #fff, 450px 200px #fff, -300px 150px #fff,
-                80px 420px #fff, -450px -200px #fff, 300px -100px #fff,
-                -100px 300px #fff, 500px -400px #fff, -500px 350px #fff,
-                200px 250px #fff, -200px -350px #fff, 400px 400px #fff,
-                -400px 100px #fff, 150px -450px #fff, -150px 480px #fff,
-                350px -250px #fff, -350px -150px #fff, 480px 80px #fff;
-            animation: twinkle 6s ease-in-out infinite alternate;
-        }
-
-        .stars::before {
-            content: '';
-            background: transparent;
-            width: 1px;
-            height: 1px;
-            box-shadow:
-                -60px 380px rgba(255, 255, 255, .6), 230px -280px rgba(255, 255, 255, .5),
-                -380px 220px rgba(255, 255, 255, .7), 410px 150px rgba(255, 255, 255, .4),
-                -210px -410px rgba(255, 255, 255, .6), 90px 350px rgba(255, 255, 255, .5),
-                -90px -300px rgba(255, 255, 255, .7), 460px -180px rgba(255, 255, 255, .4),
-                -460px 280px rgba(255, 255, 255, .6), 180px -80px rgba(255, 255, 255, .5),
-                320px 320px rgba(255, 255, 255, .4), -320px -80px rgba(255, 255, 255, .7),
-                -180px 420px rgba(255, 255, 255, .5), 60px -200px rgba(255, 255, 255, .6);
-            animation: twinkle 9s ease-in-out infinite alternate-reverse;
-        }
-
-        .stars::after {
-            content: '';
-            background: transparent;
-            width: 3px;
-            height: 3px;
-            box-shadow:
-                -240px 140px rgba(0, 255, 231, .4), 370px -320px rgba(255, 45, 107, .3),
-                -130px -250px rgba(255, 233, 77, .3), 280px 370px rgba(0, 255, 231, .3),
-                -420px -180px rgba(255, 45, 107, .4), 140px 200px rgba(255, 233, 77, .3);
-            animation: twinkle 12s ease-in-out infinite alternate;
-        }
-
-        @keyframes twinkle {
-            0% {
-                opacity: .4;
-            }
-
-            50% {
-                opacity: 1;
-            }
-
-            100% {
-                opacity: .5;
-            }
-        }
-
-        /* ── ORBIT RINGS ── pure CSS concentric ellipses rotating */
-        .orbit-scene {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            width: 0;
-            height: 0;
-        }
-
-        .ring {
+        /* Canvas Background */
+        #space {
             position: absolute;
-            border-radius: 50%;
-            border: 1px solid transparent;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
         }
 
-        .ring-1 {
-            width: 320px;
-            height: 100px;
-            border-color: rgba(0, 255, 231, .15);
-            transform: translate(-50%, -50%) rotateX(75deg);
-            animation: orbit1 12s linear infinite;
-        }
-
-        .ring-2 {
-            width: 480px;
-            height: 160px;
-            border-color: rgba(255, 45, 107, .1);
-            transform: translate(-50%, -50%) rotateX(75deg) rotateZ(45deg);
-            animation: orbit2 20s linear infinite;
-        }
-
-        .ring-3 {
-            width: 620px;
-            height: 220px;
-            border-color: rgba(255, 233, 77, .08);
-            transform: translate(-50%, -50%) rotateX(75deg) rotateZ(-30deg);
-            animation: orbit3 30s linear infinite;
-        }
-
-        /* dots on each ring */
-        .ring::after {
-            content: '';
+        /* UI Overlay */
+        .overlay {
             position: absolute;
-            border-radius: 50%;
-            top: -4px;
-            left: calc(50% - 4px);
-        }
-
-        .ring-1::after {
-            width: 7px;
-            height: 7px;
-            background: var(--c);
-            box-shadow: 0 0 10px var(--c), 0 0 20px var(--c);
-            animation: orbit1-dot 12s linear infinite;
-        }
-
-        .ring-2::after {
-            width: 5px;
-            height: 5px;
-            background: var(--p);
-            box-shadow: 0 0 8px var(--p), 0 0 16px var(--p);
-            animation: orbit2-dot 20s linear infinite;
-        }
-
-        .ring-3::after {
-            width: 6px;
-            height: 6px;
-            background: var(--y);
-            box-shadow: 0 0 8px var(--y), 0 0 14px var(--y);
-            animation: orbit3-dot 30s linear infinite;
-        }
-
-        @keyframes orbit1 {
-            to {
-                transform: translate(-50%, -50%) rotateX(75deg) rotate(360deg);
-            }
-        }
-
-        @keyframes orbit2 {
-            to {
-                transform: translate(-50%, -50%) rotateX(75deg) rotateZ(45deg) rotate(360deg);
-            }
-        }
-
-        @keyframes orbit3 {
-            to {
-                transform: translate(-50%, -50%) rotateX(75deg) rotateZ(-30deg) rotate(360deg);
-            }
-        }
-
-        @keyframes orbit1-dot {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes orbit2-dot {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes orbit3-dot {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ── CARD ── */
-        .card {
-            position: relative;
-            z-index: 20;
-            padding: 48px 44px 42px;
-            max-width: 450px;
-            width: 92%;
-            text-align: center;
-            background: rgba(5, 5, 8, .88);
-            border: 1px solid rgba(0, 255, 231, .14);
-            border-radius: 4px;
-            box-shadow:
-                0 0 0 1px rgba(0, 255, 231, .04),
-                inset 0 1px 0 rgba(255, 255, 255, .04),
-                0 32px 80px rgba(0, 0, 0, .8);
-            backdrop-filter: blur(18px);
-        }
-
-        .card::before,
-        .card::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-color: var(--c);
-            border-style: solid;
-        }
-
-        .card::before {
-            top: -1px;
-            left: -1px;
-            border-width: 2px 0 0 2px;
-        }
-
-        .card::after {
-            bottom: -1px;
-            right: -1px;
-            border-width: 0 2px 2px 0;
-        }
-
-        /* ── PULSE CORE (replaces wrench with something cooler) ── */
-        .core-wrap {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 30px;
-            position: relative;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            /* Let clicks pass through to canvas */
         }
 
-        /* three ripple rings */
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            border: 1px solid var(--c);
-            animation: ripple-out 3s ease-out infinite;
-            opacity: 0;
+        /* Advanced Glitch Effect */
+        .glitch-wrapper {
+            position: relative;
+            margin-bottom: 1rem;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
 
-        .ripple:nth-child(1) {
-            width: 40px;
-            height: 40px;
-            animation-delay: 0s;
+        .status-badge {
+            background: rgba(255, 179, 0, 0.1);
+            border: 1px solid #ffb300;
+            color: #ffb300;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(255, 179, 0, 0.2);
+            animation: pulse-warn 2s infinite alternate;
         }
 
-        .ripple:nth-child(2) {
-            width: 40px;
-            height: 40px;
-            animation-delay: 1s;
-        }
-
-        .ripple:nth-child(3) {
-            width: 40px;
-            height: 40px;
-            animation-delay: 2s;
-        }
-
-        @keyframes ripple-out {
+        @keyframes pulse-warn {
             0% {
-                transform: scale(1);
-                opacity: .8;
+                opacity: 0.6;
+                box-shadow: 0 0 5px rgba(255, 179, 0, 0.2);
             }
 
             100% {
-                transform: scale(2.8);
-                opacity: 0;
+                opacity: 1;
+                box-shadow: 0 0 15px rgba(255, 179, 0, 0.6);
             }
         }
 
-        /* inner glowing circle */
-        .core {
+        .cyber-glitch {
+            font-size: clamp(2.5rem, 8vw, 6rem);
+            font-weight: 700;
+            line-height: 1;
+            color: #fff;
             position: relative;
-            z-index: 2;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 38% 35%, rgba(0, 255, 231, .4), rgba(0, 100, 120, .15) 60%, transparent 80%);
-            border: 1.5px solid rgba(0, 255, 231, .6);
-            box-shadow:
-                0 0 12px rgba(0, 255, 231, .5),
-                0 0 30px rgba(0, 255, 231, .2),
-                inset 0 0 12px rgba(0, 255, 231, .2);
-            animation: core-pulse 3s ease-in-out infinite;
+            text-shadow: 0 0 20px rgba(255, 179, 0, 0.5);
+            letter-spacing: 4px;
+            word-wrap: break-word;
+            padding: 0 10px;
+            margin: 0;
         }
 
-        @keyframes core-pulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 12px rgba(0, 255, 231, .5), 0 0 30px rgba(0, 255, 231, .2), inset 0 0 12px rgba(0, 255, 231, .2);
-            }
-
-            50% {
-                box-shadow: 0 0 20px rgba(0, 255, 231, .9), 0 0 50px rgba(0, 255, 231, .4), inset 0 0 18px rgba(0, 255, 231, .4);
-            }
-        }
-
-        /* wrench icon inside core */
-        .core svg {
-            width: 22px;
-            height: 22px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation: wrench-rock 2.6s ease-in-out infinite;
-            transform-origin: center;
-        }
-
-        @keyframes wrench-rock {
-
-            0%,
-            100% {
-                transform: translate(-50%, -50%) rotate(-18deg);
-            }
-
-            50% {
-                transform: translate(-50%, -50%) rotate(18deg);
-            }
-        }
-
-        /* ── GLITCH HEADING ── */
-        .glitch-wrap {
-            position: relative;
-            margin-bottom: 12px;
-            display: inline-block;
-            cursor: default;
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(1.5rem, 5.5vw, 2.1rem);
-            font-weight: 900;
-            letter-spacing: 1px;
-            line-height: 1.2;
-            background: linear-gradient(135deg, #fff 10%, var(--c) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: auto-glitch 7s steps(1) infinite;
-        }
-
-        /* pseudo clones for glitch */
-        h1::before,
-        h1::after {
+        .cyber-glitch::before,
+        .cyber-glitch::after {
             content: attr(data-text);
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            -webkit-background-clip: text;
+            background: transparent;
+            /* Changed from black to prevent hiding stars */
+            will-change: clip-path, transform, opacity;
         }
 
-        h1::before {
-            background: linear-gradient(135deg, var(--p) 0%, var(--p) 100%);
-            animation: glitch-a 7s steps(1) infinite;
+        /* Red/Magenta shift */
+        .cyber-glitch::before {
+            left: 3px;
+            text-shadow: -2px 0 #ff003c;
+            animation: intense-glitch-1 3s infinite linear alternate-reverse;
+            background: #050505;
         }
 
-        h1::after {
-            background: linear-gradient(135deg, var(--c) 0%, var(--c) 100%);
-            animation: glitch-b 7s steps(1) infinite;
+        /* Cyan shift */
+        .cyber-glitch::after {
+            left: -3px;
+            text-shadow: -2px 0 #00ffff;
+            animation: intense-glitch-2 2.5s infinite linear alternate-reverse;
+            background: #050505;
         }
 
-        @keyframes glitch-a {
+        /* Highly erratic clipping for realism, but spaced out for performance */
+        @keyframes intense-glitch-1 {
 
             0%,
-            95%,
-            100% {
-                clip-path: inset(100% 0 100% 0);
+            70% {
+                clip-path: inset(0 0 0 0);
+                opacity: 0;
                 transform: translate(0);
             }
 
-            96% {
-                clip-path: inset(20% 0 60% 0);
-                transform: translate(-3px, 1px);
+            71% {
+                opacity: 1;
+                clip-path: inset(20% 0 80% 0);
+                transform: translate(-4px, 2px);
             }
 
-            97% {
-                clip-path: inset(55% 0 15% 0);
-                transform: translate(3px, -1px);
+            74% {
+                opacity: 1;
+                clip-path: inset(60% 0 10% 0);
+                transform: translate(4px, -2px) skewX(5deg);
             }
 
-            98% {
-                clip-path: inset(70% 0 5% 0);
-                transform: translate(-2px, 0);
+            78% {
+                opacity: 1;
+                clip-path: inset(40% 0 50% 0);
+                transform: translate(-4px, 4px);
             }
-        }
 
-        @keyframes glitch-b {
+            82% {
+                opacity: 1;
+                clip-path: inset(80% 0 5% 0);
+                transform: translate(4px, -4px) skewX(-5deg);
+            }
 
-            0%,
-            95%,
-            100% {
-                clip-path: inset(100% 0 100% 0);
+            86% {
+                opacity: 1;
+                clip-path: inset(10% 0 70% 0);
+                transform: translate(-2px, 2px);
+            }
+
+            90% {
+                opacity: 0;
+                clip-path: inset(0 0 0 0);
                 transform: translate(0);
             }
 
-            96% {
-                clip-path: inset(60% 0 20% 0);
-                transform: translate(3px, -1px);
-            }
-
-            97% {
-                clip-path: inset(10% 0 75% 0);
-                transform: translate(-3px, 2px);
-            }
-
-            98% {
-                clip-path: inset(35% 0 45% 0);
-                transform: translate(2px, 0);
+            100% {
+                opacity: 0;
             }
         }
 
-        @keyframes auto-glitch {
+        @keyframes intense-glitch-2 {
 
             0%,
-            95%,
-            100% {
+            65% {
+                clip-path: inset(0 0 0 0);
+                opacity: 0;
                 transform: translate(0);
             }
 
-            96% {
-                transform: translate(-2px, 1px);
+            66% {
+                opacity: 1;
+                clip-path: inset(10% 0 60% 0);
+                transform: translate(4px, -2px);
             }
 
-            97% {
-                transform: translate(2px, -1px);
+            70% {
+                opacity: 1;
+                clip-path: inset(30% 0 20% 0);
+                transform: translate(-4px, 2px) skewX(-3deg);
             }
 
-            98% {
-                transform: translate(0, 0);
+            75% {
+                opacity: 1;
+                clip-path: inset(70% 0 10% 0);
+                transform: translate(4px, 4px);
+            }
+
+            80% {
+                opacity: 1;
+                clip-path: inset(20% 0 50% 0);
+                transform: translate(-4px, -4px) skewX(3deg);
+            }
+
+            85% {
+                opacity: 0;
+                clip-path: inset(0 0 0 0);
+                transform: translate(0);
+            }
+
+            100% {
+                opacity: 0;
             }
         }
 
-        /* badge */
-        .badge {
-            display: inline-flex;
+        /* Status Readout with High-Tech Decryption */
+        .status-readout {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 7px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: .6rem;
-            font-weight: 700;
-            letter-spacing: 3px;
-            color: var(--c);
-            background: rgba(0, 255, 231, .06);
-            border: 1px solid rgba(0, 255, 231, .2);
-            border-radius: 2px;
-            padding: 5px 14px;
-            margin-bottom: 16px;
+            gap: 15px;
+            margin-top: 1rem;
+            width: 100%;
+            max-width: 600px;
+            padding: 0 20px;
         }
 
-        .bdot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--c);
-            animation: blink 1.2s ease-in-out infinite;
+        .decryption-box {
+            background: rgba(255, 179, 0, 0.05);
+            border-left: 3px solid #ffb300;
+            padding: 15px;
+            width: 100%;
+            text-align: left;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .decryption-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg,
+                    rgba(0, 0, 0, 0.1),
+                    rgba(0, 0, 0, 0.1) 1px,
+                    transparent 1px,
+                    transparent 2px);
+            pointer-events: none;
+        }
+
+        .scramble-text {
+            color: #ffb300;
+            font-size: clamp(0.8rem, 3vw, 1.1rem);
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(255, 179, 0, 0.5);
+            margin-bottom: 5px;
+            font-family: 'Fira Code', monospace;
+            min-height: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .scramble-text::before {
+            content: "> ";
+            color: #00ffff;
+            margin-right: 8px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1em;
+            background: #ffb300;
+            margin-left: 5px;
+            animation: blink 1s step-end infinite;
         }
 
         @keyframes blink {
 
             0%,
             100% {
-                opacity: 1
+                opacity: 1;
             }
 
             50% {
-                opacity: .1
+                opacity: 0;
             }
         }
 
-        p {
-            font-size: .8rem;
-            line-height: 1.85;
-            color: rgba(200, 216, 240, .45);
-            margin-bottom: 28px;
-            letter-spacing: .3px;
-        }
-
-        /* ── CONSOLE ── */
-        .console {
-            text-align: left;
-            border: 1px solid rgba(0, 255, 231, .1);
-            background: rgba(0, 0, 0, .45);
-            border-radius: 3px;
-            padding: 12px 14px;
-            font-size: .68rem;
-            line-height: 2;
-            color: rgba(200, 216, 240, .38);
-            overflow: hidden;
-            height: 116px;
-        }
-
-        .line {
-            display: block;
-            opacity: 0;
-            animation: fade-ln .3s ease forwards;
-        }
-
-        .line.c {
-            color: var(--c);
-        }
-
-        .line.p {
-            color: var(--p);
-        }
-
-        .line.g {
-            color: #40e090;
-        }
-
-        .line:nth-child(1) {
-            animation-delay: .4s;
-        }
-
-        .line:nth-child(2) {
-            animation-delay: 1.4s;
-        }
-
-        .line:nth-child(3) {
-            animation-delay: 2.6s;
-        }
-
-        .line:nth-child(4) {
-            animation-delay: 4s;
-        }
-
-        .line:nth-child(5) {
-            animation-delay: 5.5s;
-        }
-
-        @keyframes fade-ln {
-            to {
-                opacity: 1;
-            }
-        }
-
-        .cur {
-            display: inline-block;
-            width: 7px;
-            height: .85em;
-            background: var(--c);
-            margin-left: 2px;
-            vertical-align: middle;
-            animation: blink .8s step-end infinite;
-        }
-
-        /* ── RISING SPARKS ── */
-        .sparks {
+        /* CRT Scanline Overlay */
+        .scanlines {
             position: fixed;
-            inset: 0;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.2));
+            background-size: 100% 4px;
             pointer-events: none;
-            overflow: hidden;
-        }
-
-        .sp {
-            position: absolute;
-            border-radius: 50%;
-            animation: rise linear infinite;
-            opacity: 0;
-        }
-
-        .sp:nth-child(1) {
-            width: 3px;
-            height: 3px;
-            left: 6%;
-            background: var(--c);
-            animation-duration: 9s;
-            animation-delay: 0s;
-        }
-
-        .sp:nth-child(2) {
-            width: 2px;
-            height: 2px;
-            left: 19%;
-            background: var(--p);
-            animation-duration: 11s;
-            animation-delay: 1.8s;
-        }
-
-        .sp:nth-child(3) {
-            width: 4px;
-            height: 4px;
-            left: 38%;
-            background: var(--c);
-            animation-duration: 8s;
-            animation-delay: .9s;
-        }
-
-        .sp:nth-child(4) {
-            width: 2px;
-            height: 2px;
-            left: 62%;
-            background: #fff;
-            animation-duration: 13s;
-            animation-delay: 2.8s;
-        }
-
-        .sp:nth-child(5) {
-            width: 3px;
-            height: 3px;
-            left: 80%;
-            background: var(--p);
-            animation-duration: 10s;
-            animation-delay: 1.3s;
-        }
-
-        .sp:nth-child(6) {
-            width: 2px;
-            height: 2px;
-            left: 93%;
-            background: var(--c);
-            animation-duration: 7s;
-            animation-delay: 3.8s;
-        }
-
-        .sp:nth-child(7) {
-            width: 2px;
-            height: 2px;
-            left: 50%;
-            background: var(--y);
-            animation-duration: 12s;
-            animation-delay: 5s;
-        }
-
-        @keyframes rise {
-            0% {
-                transform: translateY(105vh) scale(0);
-                opacity: 0;
-            }
-
-            8% {
-                opacity: .9;
-            }
-
-            90% {
-                opacity: .4;
-            }
-
-            100% {
-                transform: translateY(-6vh) scale(1);
-                opacity: 0;
-            }
-        }
-
-        /* ── BOTTOM STATUS ROW ── */
-        .status-row {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            margin-top: 22px;
-            font-size: .64rem;
-            color: rgba(200, 216, 240, .3);
-            letter-spacing: 1.5px;
-        }
-
-        .status-row span {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .s-dot {
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-        }
-
-        .s-dot.c {
-            background: var(--c);
-            animation: blink 1.4s ease-in-out infinite;
-        }
-
-        .s-dot.p {
-            background: var(--p);
-            animation: blink 1.4s ease-in-out .5s infinite;
-        }
-
-        .s-dot.y {
-            background: var(--y);
-            animation: blink 1.4s ease-in-out 1s infinite;
+            z-index: 100;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- star field -->
-    <div class="stars"></div>
+    <script src="/js/main.js"></script>
+<script src="/js/ambient-bg.js"></script>
 
-    <!-- orbit rings -->
-    <div class="orbit-scene">
-        <div class="ring ring-1"></div>
-        <div class="ring ring-2"></div>
-        <div class="ring ring-3"></div>
-    </div>
+    
+    <!-- CRT Effect -->
+    <div class="scanlines"></div>
 
-    <!-- sparks -->
-    <div class="sparks">
-        <div class="sp"></div>
-        <div class="sp"></div>
-        <div class="sp"></div>
-        <div class="sp"></div>
-        <div class="sp"></div>
-        <div class="sp"></div>
-        <div class="sp"></div>
-    </div>
+    <!-- UI -->
+    <div class="overlay">
+        <div class="glitch-wrapper">
+            <div class="status-badge">ERR_CODE: 503</div>
+            <h1 class="cyber-glitch" data-text="MAINTENANCE">MAINTENANCE</h1>
+        </div>
 
-    <div class="card">
-
-        <!-- pulsing core -->
-        <div class="core-wrap">
-            <div class="ripple"></div>
-            <div class="ripple"></div>
-            <div class="ripple"></div>
-            <div class="core">
-                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M62 38 L28 72 Q24 76 26 80 Q28 84 32 82 L66 48" stroke="#00ffe7" stroke-width="8"
-                        stroke-linecap="round" />
-                    <circle cx="72" cy="28" r="17" stroke="#00ffe7" stroke-width="6" fill="none" />
-                    <circle cx="72" cy="28" r="7" fill="#00ffe7" opacity=".25" />
-                    <line x1="72" y1="12" x2="72" y2="19" stroke="#00ffe7" stroke-width="4" stroke-linecap="round" />
-                    <line x1="72" y1="37" x2="72" y2="44" stroke="#00ffe7" stroke-width="4" stroke-linecap="round" />
-                    <line x1="56" y1="28" x2="63" y2="28" stroke="#00ffe7" stroke-width="4" stroke-linecap="round" />
-                    <line x1="81" y1="28" x2="88" y2="28" stroke="#00ffe7" stroke-width="4" stroke-linecap="round" />
-                </svg>
+        <div class="status-readout">
+            <div class="decryption-box">
+                <div id="decrypt-line-1" class="scramble-text"></div>
+                <div id="decrypt-line-2" class="scramble-text" style="display: none;"></div>
             </div>
         </div>
-
-        <div class="badge"><span class="bdot"></span>SYSTEM OFFLINE</div>
-
-        <div class="glitch-wrap">
-            <h1 data-text="Under Maintenance">Under Maintenance</h1>
-        </div>
-
-        <p>Our engineers are deep in the reactor.<br>We'll be back online very soon.</p>
-
-        <div class="console">
-            <span class="line c">&gt; Initializing repair sequence...</span>
-            <span class="line">&gt; Snapshot saved .................. done</span>
-            <span class="line g">&gt; Core modules patched ............ OK</span>
-            <span class="line p">&gt; Rebuilding distributed index .... 73%</span>
-            <span class="line">&gt; ETA ~4 min<span class="cur"></span></span>
-        </div>
-
-        <div class="status-row">
-            <span>
-                <div class="s-dot c"></div>DB OFFLINE
-            </span>
-            <span>
-                <div class="s-dot p"></div>API PAUSED
-            </span>
-            <span>
-                <div class="s-dot y"></div>CDN ACTIVE
-            </span>
-        </div>
-
     </div>
 
-</body>
+    <script>
+        /* =========================================
+           1. ADVANCED DECRYPTION ANIMATION
+        ========================================= */
+        const decryptChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;':,./<>?";
+        const logs = [
+            "CONNECTING TO MAINFRAME...",
+            "BYPASSING FIREWALL...",
+            "ERROR 503: SECTOR OFFLINE",
+            "INITIATING RECOVERY PROTOCOLS...",
+            "ESTIMATED TIME: UNKNOWN",
+            "PLEASE STAND BY."
+        ];
+
+        const line1El = document.getElementById('decrypt-line-1');
+        const line2El = document.getElementById('decrypt-line-2');
+        let currentLogIndex = 0;
+
+        function decodeString(element, targetString, callback) {
+            let iteration = 0;
+            clearInterval(element.scrambleInterval);
+            element.style.display = "flex";
+
+            element.scrambleInterval = setInterval(() => {
+                element.innerText = targetString
+                    .split("")
+                    .map((letter, index) => {
+                        if (index < iteration) {
+                            return targetString[index];
+                        }
+                        return decryptChars[Math.floor(Math.random() * decryptChars.length)];
+                    })
+                    .join("");
+
+                if (iteration >= targetString.length) {
+                    clearInterval(element.scrambleInterval);
+                    // Add blinker at the end of finished text
+                    element.innerHTML += '<span class="cursor"></span>';
+                    if (callback) callback();
+                }
+
+                iteration += 1 / 2; // Speed of decryption
+            }, 30);
+        }
+
+        function runDecryptionSequence() {
+            line1El.innerHTML = "";
+            line2El.innerHTML = "";
+            line2El.style.display = "none";
+
+            // Decode line 1
+            decodeString(line1El, logs[currentLogIndex], () => {
+                // Remove cursor from line 1
+                const cursor = line1El.querySelector('.cursor');
+                if (cursor) cursor.remove();
+
+                currentLogIndex = (currentLogIndex + 1) % logs.length;
+
+                // Pause, then decode line 2
+                setTimeout(() => {
+                    decodeString(line2El, logs[currentLogIndex], () => {
+                        currentLogIndex = (currentLogIndex + 1) % logs.length;
+
+                        // Wait a few seconds, then restart cycle
+                        setTimeout(runDecryptionSequence, 4000);
+                    });
+                }, 800);
+            });
+        }
+
+        // Start sequence
+        setTimeout(runDecryptionSequence, 500);
+
+        /* =========================================
+           4. REAL-TIME AUTO-RECOVERY
+        ========================================= */
+        (function() {
+            console.log("Recovery system active.");
+            const checkStatus = async () => {
+                try {
+                    const res = await fetch('/api/auth/status');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (!data.maintenance) {
+                            console.log("Sector restored! Redirecting...");
+                            window.location.href = '/dashboard';
+                        }
+                    }
+                } catch (e) {
+                    // Site offline or throttled, ignore
+                }
+            };
+            // Check every 3 seconds
+            setInterval(checkStatus, 3000);
+        })();
+
+    </script>
+<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
 
 </html>
+
+

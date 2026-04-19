@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Users — Admin — {{SITE_NAME}}</title>
+  <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
 </head>
@@ -296,7 +297,10 @@
   </div>
 </div>
 
-<script src="/js/main.js?v=1.0.2"></script>
+
+<script src="/js/main.js"></script>
+<script src="/js/ambient-bg.js"></script>
+
 <script>
   async function init() {
     if (!await requireAdmin()) return;
@@ -464,3 +468,6 @@
 </script>
 </body>
 </html>
+
+
+

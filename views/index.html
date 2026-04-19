@@ -1,464 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{SEO_TITLE}}</title>
-  <meta name="description" content="{{SEO_DESC}}" />
-  <meta name="keywords" content="{{SEO_KEYWORDS}}" />
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
-  <link rel="shortcut icon" href="{{SITE_FAVICON}}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{SITE_NAME}} — Instant Virtual Numbers for SMS Verification</title>
+    <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
+    <link rel="shortcut icon" href="{{SITE_FAVICON}}">
+    <link rel="stylesheet" href="/css/main.css">
+    
+    <!-- SEO & Social Meta Tags -->
+    <meta name="description" content="{{SEO_DESC}}">
+    <meta name="keywords" content="{{SEO_KEYWORDS}}">
+    <meta property="og:title" content="{{SEO_TITLE}}">
+    <meta property="og:description" content="{{SEO_DESC}}">
+    <meta property="og:image" content="{{SEO_OG_IMAGE}}">
+    <meta property="og:type" content="website">
+    <meta property="twitter:card" content="summary_large_image">
 
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="{{SEO_TITLE}}">
-  <meta property="og:description" content="{{SEO_DESC}}">
-  <meta property="og:image" content="{{SEO_OG_IMAGE}}">
-
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:title" content="{{SEO_TITLE}}">
-  <meta property="twitter:description" content="{{SEO_DESC}}">
-  <meta property="twitter:image" content="{{SEO_OG_IMAGE}}">
-
-  <link rel="stylesheet" href="/css/main.css" />
-  <script src="/js/preloader.js"></script>
-   <script>
-     // Redirect logged-in users to the buy page immediately
-     if (localStorage.getItem("otp_token")) {
-       window.location.href = "/dashboard/buy";
-     }
-   </script>
- </head>
+    <script src="/js/preloader.js"></script>
+    <script>
+      if (localStorage.getItem("otp_token")) {
+        window.location.href = "/dashboard/buy";
+      }
+    </script>
+</head>
 <body>
 
-<!-- ── Navbar ── -->
-<nav class="navbar">
-  <div class="container" style="display:flex;align-items:center;justify-content:space-between">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-    
-    <div class="nav-links" id="nav-links">
-      <a href="/pricing">Pricing</a>
-      <a href="/how-it-works">How It Works</a>
-      <a href="/support">Support</a>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
-      <span id="nav-auth-mobile" class="nav-auth-mobile"></span>
-      <span id="nav-auth"></span>
-      <button class="nav-burger" id="nav-burger">☰</button>
-    </div>
-  </div>
-</nav>
-
-<!-- ── Hero ── -->
-<section class="hero">
-  <div class="container">
-    <div class="hero-grid">
-      <div>
-        <div class="hero-eyebrow">⚡ #1 Virtual Number Service</div>
-        <h1>Instant <span class="gradient-text">Virtual Numbers</span> for Any Service</h1>
-        <p class="hero-desc">Get real SMS verifications for WhatsApp, Telegram, Instagram, and 500+ more services. Delivered in seconds, starting from ₹4.</p>
-        <div class="hero-btns">
-          <button class="btn btn-primary btn-lg" onclick="openAuthModal('register')" id="cta-start">
-            🚀 Get Started Free
-          </button>
-          <a href="/how-it-works" class="btn btn-secondary btn-lg">See How It Works →</a>
-        </div>
-        <div class="flex gap-4 mt-8" style="flex-wrap:wrap">
-          <div class="flex items-center gap-2 text-sm text-muted"><span style="color:var(--success)">✓</span> Free registration</div>
-          <div class="flex items-center gap-2 text-sm text-muted"><span style="color:var(--success)">✓</span> Instant delivery</div>
-          <div class="flex items-center gap-2 text-sm text-muted"><span style="color:var(--success)">✓</span> 50+ countries</div>
-          <div class="flex items-center gap-2 text-sm text-muted"><span style="color:var(--success)">✓</span> 24/7 available</div>
-        </div>
-      </div>
-      <div class="hero-visual">
-        <div class="phone-mockup">
-          <div class="phone-bar"></div>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div class="card" style="padding:14px;border-radius:12px">
-              <div class="text-xs text-muted mb-4">📱 WhatsApp verification</div>
-              <div class="otp-display" style="font-size:28px">483 291</div>
-              <div class="text-xs text-muted mt-4" style="display:flex;align-items:center;gap:6px;color:var(--success)">✓ Delivered in 3 seconds</div>
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="container" style="display:flex;align-items:center;justify-content:space-between">
+            <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
+            
+            <div class="nav-links" id="nav-links">
+                <a href="/pricing">Pricing</a>
+                <a href="/how-it-works">How It Works</a>
+                <a href="/support">Support</a>
             </div>
-            <div class="card" style="padding:14px;border-radius:12px">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <span class="text-sm">🇮🇳 +91 98765 43210</span>
-                <span class="badge badge-active">Active</span>
+
+            <div class="nav-right" style="display:flex;align-items:center;gap:12px">
+                <span id="nav-auth"></span>
+                <button class="nav-burger" id="nav-burger">☰</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Hero Section ── -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div>
+                    <div class="hero-eyebrow">⚡ #1 Virtual Number Service</div>
+                    <h1>Instant <span class="gradient-text">Virtual Numbers</span> for Any Service</h1>
+                    <p class="hero-desc">Get real SMS verifications for WhatsApp, Telegram, and 500+ more services. Delivered in seconds, starting from ₹4.</p>
+                    <div class="hero-btns">
+                        <button class="btn btn-primary btn-lg" onclick="openAuthModal('register')" id="cta-start">🚀 Get Started Free</button>
+                        <a href="/how-it-works" class="btn btn-secondary btn-lg">See How It Works →</a>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="phone-mockup">
+                        <div class="phone-bar"></div>
+                        <div style="display:flex;flex-direction:column;gap:10px">
+                            <div class="card" style="padding:14px;border-radius:12px">
+                                <div class="text-xs text-muted mb-4">📱 WhatsApp verification</div>
+                                <div class="otp-display" style="font-size:28px">483 291</div>
+                                <div class="text-xs text-muted mt-4" style="display:flex;align-items:center;gap:6px;color:var(--success)">✓ Delivered in 3 seconds</div>
+                            </div>
+                            <div class="card" style="padding:14px;border-radius:12px">
+                                <div style="display:flex;justify-content:space-between;align-items:center">
+                                    <span class="text-sm">🇮🇳 +91 98765 43210</span>
+                                    <span class="badge badge-active">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hero-glow"></div>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="hero-stats">
+              <div class="hero-stat">
+                <div class="stat-val">2M+</div>
+                <div class="stat-label">Numbers Sold</div>
+              </div>
+              <div class="hero-stat">
+                <div class="stat-val">500+</div>
+                <div class="stat-label">Services</div>
+              </div>
+              <div class="hero-stat">
+                <div class="stat-val">50+</div>
+                <div class="stat-label">Countries</div>
+              </div>
+              <div class="hero-stat">
+                <div class="stat-val">3s</div>
+                <div class="stat-label">Avg Delivery</div>
               </div>
             </div>
-            <div class="card" style="padding:14px;border-radius:12px">
-              <div style="display:flex;justify-content:space-between">
-                <span class="text-sm text-muted">Balance</span>
-                <span class="text-sm font-bold" style="color:var(--success)">₹1,038</span>
+        </div>
+    </section>
+
+    <!-- ── Features ── -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Everything You Need, <span class="gradient-text">Nothing You Don't</span></h2>
+          <p>Built for speed, reliability, and simplicity</p>
+        </div>
+        <div class="features-grid">
+          <div class="card card-glow">
+            <div class="feature-icon">⚡</div>
+            <h3>Lightning Fast</h3>
+            <p class="text-muted text-sm">Get your OTP in under 3 seconds. Multi-server architecture ensures you're always connected to the fastest number.</p>
+          </div>
+          <div class="card card-glow">
+            <div class="feature-icon" style="background:rgba(139,92,246,0.12)">🌍</div>
+            <h3>Global Coverage</h3>
+            <p class="text-muted text-sm">50+ countries including US, UK, India, and more. New countries added weekly based on demand.</p>
+          </div>
+          <div class="card card-glow">
+            <div class="feature-icon" style="background:rgba(16,185,129,0.12)">🔒</div>
+            <h3>Fully Private</h3>
+            <p class="text-muted text-sm">All numbers are unique and discarded after use. Your orders are private to your account only.</p>
+          </div>
+          <div class="card card-glow">
+            <div class="feature-icon" style="background:rgba(245,158,11,0.12)">💰</div>
+            <h3>Best Prices</h3>
+            <p class="text-muted text-sm">Starting from $0.05 per number. Volume discounts available for bulk buyers. Auto-refunds active.</p>
+          </div>
+          <div class="card card-glow">
+            <div class="feature-icon" style="background:rgba(6,182,212,0.12)">📊</div>
+            <h3>Live Dashboard</h3>
+            <p class="text-muted text-sm">Track all your orders in real-time. Watch OTPs arrive live without any page refreshing.</p>
+          </div>
+          <div class="card card-glow">
+            <div class="feature-icon" style="background:rgba(239,68,68,0.12)">🔄</div>
+            <h3>Auto Refunds</h3>
+            <p class="text-muted text-sm">If no OTP is received within the time window, your balance is automatically refunded. Zero risk.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── How It Works ── -->
+    <section class="section" style="background:var(--bg-1)">
+      <div class="container">
+        <div class="how-grid">
+          <div>
+            <div class="section-header" style="text-align:left;margin-bottom:32px">
+              <h2>Up & Running in <span class="gradient-text">60 Seconds</span></h2>
+            </div>
+            <div class="steps">
+              <div class="step">
+                <div class="step-num">1</div>
+                <div><h3>Create Free Account</h3><p class="text-sm text-muted">Sign up in seconds with just your email.</p></div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div><h3>Add Balance</h3><p class="text-sm text-muted">Top up using Crypto, UPI, or BharatPe QR.</p></div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div><h3>Select Service</h3><p class="text-sm text-muted">Pick your service and country to get a number.</p></div>
               </div>
             </div>
           </div>
-        </div>
-        <!-- Glow rings -->
-        <div style="position:absolute;width:340px;height:340px;border:1px solid rgba(99,102,241,0.15);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)"></div>
-        <div style="position:absolute;width:420px;height:420px;border:1px solid rgba(59,130,246,0.08);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)"></div>
-      </div>
-    </div>
-
-    <!-- Stats Bar -->
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div style="font-size:28px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">2M+</div>
-        <div class="text-sm text-muted mt-4">Numbers Sold</div>
-      </div>
-      <div class="hero-stat hero-stat-border">
-        <div style="font-size:28px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">500+</div>
-        <div class="text-sm text-muted mt-4">Services</div>
-      </div>
-      <div class="hero-stat hero-stat-border">
-        <div style="font-size:28px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">50+</div>
-        <div class="text-sm text-muted mt-4">Countries</div>
-      </div>
-      <div class="hero-stat hero-stat-border">
-        <div style="font-size:28px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">3s</div>
-        <div class="text-sm text-muted mt-4">Avg Delivery</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── Features ── -->
-<section class="section">
-  <div class="container">
-    <div class="section-header">
-      <h2>Everything You Need, <span class="gradient-text">Nothing You Don't</span></h2>
-      <p>Built for speed, reliability, and simplicity</p>
-    </div>
-    <div class="features-grid">
-      <div class="card card-glow" style="transition:all .25s">
-        <div class="feature-icon">⚡</div>
-        <h3>Lightning Fast</h3>
-        <p class="text-muted text-sm" style="margin-top:8px;line-height:1.7">Get your OTP in under 3 seconds. Our multi-server architecture ensures you're always connected to the fastest available number.</p>
-      </div>
-      <div class="card card-glow">
-        <div class="feature-icon" style="background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.2)">🌍</div>
-        <h3>Global Coverage</h3>
-        <p class="text-muted text-sm" style="margin-top:8px;line-height:1.7">50+ countries including US, UK, India, Russia, Ukraine, and more. New countries added weekly based on user demand.</p>
-      </div>
-      <div class="card card-glow">
-        <div class="feature-icon" style="background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.2)">🔒</div>
-        <h3>Fully Private</h3>
-        <p class="text-muted text-sm" style="margin-top:8px;line-height:1.7">All numbers are unique and discarded after use. Your orders are private to your account only. We never share your data.</p>
-      </div>
-      <div class="card card-glow">
-        <div class="feature-icon" style="background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.2)">💰</div>
-        <h3>Best Prices</h3>
-        <p class="text-muted text-sm" style="margin-top:8px;line-height:1.7">Starting from $0.05 per number. Volume discounts available for bulk buyers. Auto-refund if no OTP received.</p>
-      </div>
-      <div class="card card-glow">
-        <div class="feature-icon" style="background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.2)">📊</div>
-        <h3>Live Dashboard</h3>
-        <p class="text-muted text-sm" style="margin-top:8px;line-height:1.7">Track all your orders in real-time from your personal dashboard. Watch OTPs arrive live without refreshing the page.</p>
-      </div>
-      <div class="card card-glow">
-        <div class="feature-icon" style="background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.2)">🔄</div>
-        <h3>Auto Refunds</h3>
-        <p class="text-muted text-sm" style="margin-top:8px;line-height:1.7">If no OTP is received within the time window, your balance is automatically refunded. Zero risk, every time.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── How it works ── -->
-<section class="section" style="background:var(--bg-1)">
-  <div class="container">
-    <div class="how-grid">
-      <div>
-        <div class="section-header how-header">
-          <h2>Up & Running in <span class="gradient-text">60 Seconds</span></h2>
-          <p>Create a free account and start receiving OTPs immediately.</p>
-        </div>
-        <div class="steps">
-          <div class="step">
-            <div class="step-num">1</div>
-            <div>
-              <h3 style="margin-bottom:6px">Create a Free Account</h3>
-              <p class="text-sm text-muted">Sign up with your email and password. Takes under 30 seconds.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-num">2</div>
-            <div>
-              <h3 style="margin-bottom:6px">Add Balance</h3>
-              <p class="text-sm text-muted">Top up your wallet using crypto or any supported payment method.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-num">3</div>
-            <div>
-              <h3 style="margin-bottom:6px">Pick a Service & Country</h3>
-              <p class="text-sm text-muted">Choose the service (e.g. WhatsApp) and country you need a number for.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-num">4</div>
-            <div>
-              <h3 style="margin-bottom:6px">Get Your OTP Instantly</h3>
-              <p class="text-sm text-muted">Your virtual number is ready. Use it, get the OTP. Done.</p>
-            </div>
-          </div>
-        </div>
-        <div class="mt-8">
-          <button class="btn btn-primary" onclick="openAuthModal('register')">Start Now — It's Free →</button>
-        </div>
-      </div>
-      <div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div class="card" style="padding:20px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-              <span class="text-sm font-bold">🛒 New Order</span>
-              <span class="badge badge-active">Active</span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <div style="display:flex;justify-content:space-between;font-size:13px"><span class="text-muted">Service</span><span>WhatsApp</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:13px"><span class="text-muted">Country</span><span>🇺🇸 United States</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:13px"><span class="text-muted">Phone</span><span class="mono">+91 98765 43210</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:13px"><span class="text-muted">Cost</span><span class="text-success">₹12.50</span></div>
-            </div>
-          </div>
-          <div class="card" style="padding:20px;border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.05)">
-            <div class="text-sm text-muted mb-4">📩 SMS Received</div>
-            <div class="otp-display" style="font-size:32px;margin-bottom:8px">483 291</div>
-            <div style="font-size:12px;color:var(--text-2)">Your WhatsApp code is <strong>483291</strong>. Don't share this code.</div>
+          <div class="hero-visual">
+             <div class="card" style="padding:24px">
+                <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">ACTIVE SESSION</div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                   <div style="font-size:20px;font-weight:700">Waiting for SMS...</div>
+                   <div class="loader-sm"></div>
+                </div>
+                <div style="margin-top:20px;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;font-family:monospace">
+                   +44 7912 345678
+                </div>
+             </div>
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ── FAQ ── -->
+    <section class="section">
+      <div class="container container-sm">
+        <div class="section-header">
+          <h2>Frequently Asked <span class="gradient-text">Questions</span></h2>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)"><span>How many services do you support?</span><span class="faq-icon">+</span></div>
+            <div class="faq-a">We support 500+ services including WhatsApp, Telegram, Instagram, Google, and more.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)"><span>What if the number doesn't work?</span><span class="faq-icon">+</span></div>
+            <div class="faq-a">If you don't receive an OTP, you won't be charged. Your money is automatically returned to your wallet.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)"><span>Is this service private?</span><span class="faq-icon">+</span></div>
+            <div class="faq-a">Absolutely. We don't store your logs, and numbers are single-use only.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA ── -->
+    <section class="section">
+      <div class="container">
+        <div class="cta-box">
+          <h2>Protect Your Privacy Today</h2>
+          <p class="text-muted">Join 100,000+ users using {{SITE_NAME}} for secure verifications.</p>
+          <button class="btn btn-primary btn-lg" style="margin-top:24px" onclick="openAuthModal('register')">⚡ Get Your First Number Now</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer>
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <div class="nav-logo" style="margin-bottom:12px">⚡ {{SITE_NAME}}</div>
+            <p class="text-sm text-muted">The fastest virtual number service. Instant delivery, 24/7 support.</p>
+          </div>
+          <div class="footer-col">
+            <h4>Quick Links</h4>
+            <a href="/pricing">Pricing</a>
+            <a href="/support">Support</a>
+            <a href="/terms">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ── Auth Modal ── -->
+    <div class="modal-backdrop" id="auth-modal">
+      <div class="modal auth-modal-glow" style="max-width:440px">
+        <div class="modal-header" style="border:none; padding-bottom:0">
+           <div class="auth-tabs">
+             <button id="tab-login" onclick="switchTab('login')" class="active">Sign In</button>
+             <button id="tab-register" onclick="switchTab('register')">Create Account</button>
+           </div>
+           <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+        </div>
+        
+        <div class="modal-content-wrap" style="padding-top:10px">
+           <div id="auth-header-text" style="text-align:center; margin-bottom:24px">
+              <h2 id="auth-title" style="font-size:24px; margin-bottom:8px">Welcome Back</h2>
+              <p id="auth-subtitle" class="text-sm text-muted">Please enter your details to continue</p>
+           </div>
+
+           <!-- Login -->
+           <div id="form-login">
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <div class="input-with-icon">
+                  <i class="input-icon">✉️</i>
+                  <input type="email" id="l-email" placeholder="you@example.com" style="padding-left:40px">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="input-with-icon">
+                  <i class="input-icon">🔒</i>
+                  <input type="password" id="l-pass" placeholder="••••••••" style="padding-left:40px">
+                </div>
+              </div>
+              <button class="btn btn-primary w-full mt-8" id="l-btn" onclick="submitLogin()" style="height:48px; font-size:16px">
+                Sign In →
+              </button>
+           </div>
+
+           <!-- Register -->
+           <div id="form-register" class="hidden">
+              <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" id="r-user" placeholder="Choose a name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="r-email" placeholder="you@example.com">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="r-pass" placeholder="Min 6 characters">
+              </div>
+              
+              <div style="margin:20px 0; display:flex; gap:10px; align-items:flex-start">
+                <input type="checkbox" id="r-terms" style="margin-top:3px; width:18px; height:18px; cursor:pointer; flex-shrink:0">
+                <label for="r-terms" class="text-xs text-muted" style="line-height:1.5; cursor:pointer">
+                  I agree to the <a href="/terms" class="gradient-text" style="font-weight:700">Terms of Service</a> and <a href="/privacy" class="gradient-text" style="font-weight:700">Privacy Policy</a>
+                </label>
+              </div>
+
+              <button class="btn btn-primary w-full mt-4" id="r-btn" onclick="submitRegister()" style="height:48px; font-size:16px">
+                Create Free Account 🚀
+              </button>
+           </div>
+
+           <div id="auth-error" class="alert alert-danger hidden mt-4" style="text-align:center"></div>
+        </div>
+      </div>
     </div>
-  </div>
-</section>
 
-
-
-<!-- ── FAQ ── -->
-<section class="section" style="background:var(--bg-1)">
-  <div class="container container-sm">
-    <div class="section-header">
-      <h2>Frequently Asked <span class="gradient-text">Questions</span></h2>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:10px" id="faq">
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)"><span>What is a virtual phone number?</span><div class="faq-icon">+</div></div>
-        <div class="faq-a">A virtual phone number is a real phone number that can receive SMS messages but isn't tied to a physical SIM card. It's perfect for verifying accounts without using your personal number.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)"><span>What if I don't receive the OTP?</span><div class="faq-icon">+</div></div>
-        <div class="faq-a">If no OTP is received within 20 minutes, you'll received an automatic full refund to your wallet. No questions asked.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)"><span>Which payment methods are accepted?</span><div class="faq-icon">+</div></div>
-        <div class="faq-a">We accept UPI, cryptocurrency (USDT, BTC, ETH), and other methods. Check the deposit page for currently available options.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)"><span>Is it safe to use?</span><div class="faq-icon">+</div></div>
-        <div class="faq-a">Yes. Your password is encrypted with bcrypt and never stored in plain text. Numbers are discarded after use. Orders are completely private to your account.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)"><span>Can I use the same number again?</span><div class="faq-icon">+</div></div>
-        <div class="faq-a">No — each number is single-use and discarded after your order. This is intentional to maximize privacy and ensure the number works for verification services.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── CTA ── -->
-<section class="section">
-  <div class="container">
-    <div class="cta-box">
-      <h2>Ready to Get Your OTP?</h2>
-      <p style="color:var(--text-2);font-size:18px;margin:16px auto 36px;max-width:480px">Join thousands of users who get their verifications done in seconds.</p>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary btn-lg" onclick="openAuthModal('register')">⚡ Create Free Account</button>
-        <button class="btn btn-secondary btn-lg" onclick="openAuthModal('login')">Sign In →</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── Footer ── -->
-<footer>
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <div class="nav-logo" style="margin-bottom:12px;display:inline-flex">⚡ {{SITE_NAME}}</div>
-        <p style="font-size:14px;color:var(--text-3);line-height:1.7">The fastest virtual number service on the web. Get OTPs for any service in seconds.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Product</h4>
-        <a href="/pricing">Pricing</a>
-        <a href="/how-it-works">How It Works</a>
-        <a href="/support">Contact Us</a>
-      </div>
-      <div class="footer-col">
-        <h4>Company</h4>
-        <a href="/support">Support</a>
-        <a href="/terms">Terms</a>
-      </div>
-      <div class="footer-col">
-        <h4>Account</h4>
-        <a href="/dashboard">Dashboard</a>
-        <a href="/dashboard/wallet">Wallet</a>
-        <a href="/dashboard/orders">Orders</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2025 {{SITE_NAME}}. All rights reserved.</p>
-      <p>Made with ⚡ for speed</p>
-    </div>
-  </div>
-</footer>
-
-<!-- ── Auth Modal (Login / Register) ── -->
-<div class="modal-backdrop" id="auth-modal">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-header">
-      <div style="display:flex;gap:0;background:var(--surface);border-radius:var(--r-md);padding:4px">
-        <button id="tab-login"    onclick="switchTab('login')"    class="btn" style="flex:1;border-radius:8px;background:var(--accent);color:#fff">Sign In</button>
-        <button id="tab-register" onclick="switchTab('register')" class="btn" style="flex:1;border-radius:8px;background:transparent;color:var(--text-2)">Register</button>
-      </div>
-      <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
-    </div>
-
-    <!-- Login Form -->
-    <div id="form-login">
-      <div style="display:flex;flex-direction:column;gap:14px;margin-top:20px">
-        <div class="form-group"><label class="form-label">Email</label><input type="email" id="l-email" placeholder="you@example.com" autocomplete="email" /></div>
-        <div class="form-group"><label class="form-label">Password</label><input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" /></div>
-        <div id="l-error" class="alert alert-danger hidden"></div>
-        <button class="btn btn-primary w-full" id="l-btn" onclick="submitLogin()">Sign In →</button>
-        <p class="text-xs text-muted" style="text-align:center">Don't have an account? <a href="#" onclick="switchTab('register')" style="color:var(--accent)">Register free</a></p>
-      </div>
-    </div>
-
-    <!-- Register Form -->
-    <div id="form-register" class="hidden">
-      <div style="display:flex;flex-direction:column;gap:14px;margin-top:20px">
-        <div class="form-group"><label class="form-label">Username</label><input type="text" id="r-user" placeholder="cooluser123" autocomplete="username" /></div>
-        <div class="form-group"><label class="form-label">Email</label><input type="email" id="r-email" placeholder="you@example.com" autocomplete="email" /></div>
-        <div class="form-group"><label class="form-label">Password <span class="text-xs text-muted">(min 6 chars)</span></label><input type="password" id="r-pass" placeholder="••••••••" autocomplete="new-password" /></div>
-        <div id="r-error" class="alert alert-danger hidden"></div>
-        <button class="btn btn-primary w-full" id="r-btn" onclick="submitRegister()">Create Account →</button>
-        <p class="text-xs text-muted" style="text-align:center">Already have an account? <a href="#" onclick="switchTab('login')" style="color:var(--accent)">Sign in</a></p>
-      </div>
-    </div>
-
-    <p class="text-xs text-muted" style="margin-top:16px;text-align:center">By continuing, you agree to our <a href="/terms" style="color:var(--accent)">Terms</a>.</p>
-  </div>
-</div>
-
-<script src="/js/main.js"></script>
-<script>
-  function openAuthModal(tab = 'login') {
-    if (isLoggedIn()) { window.location.href = '/dashboard'; return; }
-    switchTab(tab);
-    openModal('auth-modal');
-  }
-
-  function switchTab(tab) {
-    const isLogin = tab === 'login';
-    document.getElementById('form-login').classList.toggle('hidden', !isLogin);
-    document.getElementById('form-register').classList.toggle('hidden', isLogin);
-    document.getElementById('tab-login').style.cssText    = isLogin  ? 'flex:1;border-radius:8px;background:var(--accent);color:#fff'         : 'flex:1;border-radius:8px;background:transparent;color:var(--text-2)';
-    document.getElementById('tab-register').style.cssText = !isLogin ? 'flex:1;border-radius:8px;background:var(--accent);color:#fff'         : 'flex:1;border-radius:8px;background:transparent;color:var(--text-2)';
-  }
-
-  async function submitLogin() {
-    const btn = document.getElementById('l-btn');
-    const errEl = document.getElementById('l-error');
-    errEl.classList.add('hidden');
-    btn.disabled = true; btn.textContent = 'Signing in…';
-    window.showPageLoader();
-    try {
-      const data = await doLogin(document.getElementById('l-email').value, document.getElementById('l-pass').value);
-      saveAuth(data.token, data.user);
-      window.location.href = data.user.is_admin ? '/admin' : '/dashboard/buy';
-    } catch(e) {
-      errEl.textContent = e.message; errEl.classList.remove('hidden');
-      btn.disabled = false; btn.textContent = 'Sign In →';
-      window.hidePageLoader();
-    }
-  }
-
-  // Handle URL parameters (referral, login, register)
-  const params = new URLSearchParams(window.location.search);
-  const urlReferralCode = params.get('ref') || params.get('referral');
-
-  async function submitRegister() {
-    const btn = document.getElementById('r-btn');
-    const errEl = document.getElementById('r-error');
-    errEl.classList.add('hidden');
-    btn.disabled = true; btn.textContent = 'Creating account…';
-    window.showPageLoader();
-    try {
-      const data = await doRegister(
-        document.getElementById('r-user').value,
-        document.getElementById('r-email').value,
-        document.getElementById('r-pass').value,
-        urlReferralCode
-      );
-      saveAuth(data.token, data.user);
-      window.location.href = '/dashboard/buy';
-    } catch(e) {
-      errEl.textContent = e.message; errEl.classList.remove('hidden');
-      btn.disabled = false; btn.textContent = 'Create Account →';
-      window.hidePageLoader();
-    }
-  }
-
-  // Enter key support
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && document.getElementById('auth-modal').classList.contains('open')) {
-      const loginVisible = !document.getElementById('form-login').classList.contains('hidden');
-      if (loginVisible) submitLogin(); else submitRegister();
-    }
-  });
-
-  // On Load Actions
-  window.addEventListener('DOMContentLoaded', async () => {
-    // 1. Handle auto-opening modals from URL
-    if (params.get('login') === '1' || params.get('register') === '1') {
-      openAuthModal(params.get('register') ? 'register' : 'login');
-    } else if (urlReferralCode) {
-       try {
-         const settings = await API.get("/api/auth/settings");
-         if (settings.referral_system_enabled !== false && settings.referral_system_enabled !== 'false') {
-            openAuthModal('register');
-         }
-       } catch(e) {}
-    }
-
-    // 2. Nav state
-    const navAuth = document.getElementById('nav-auth');
-    const navAuthMobile = document.getElementById('nav-auth-mobile');
-    const ctaBtn  = document.getElementById('cta-start');
-    if (isLoggedIn()) {
-      const buyHtml = '<a href="/dashboard/buy" class="btn btn-primary btn-sm">Buy Number →</a>';
-      if (navAuth) navAuth.innerHTML = buyHtml;
-      if (navAuthMobile) navAuthMobile.innerHTML = buyHtml;
-      if (ctaBtn) {
-        ctaBtn.textContent = '🛒 Buy New Number';
-        ctaBtn.onclick = () => window.location.href = '/dashboard/buy';
+    <!-- Scripts -->
+    <script src="/js/main.js"></script>
+    <script src="/js/ambient-bg.js"></script>
+    <script>
+      function openAuthModal(tab = 'login') {
+        switchTab(tab);
+        if (typeof window.openModal === 'function') {
+           window.openModal('auth-modal');
+        } else {
+           document.getElementById('auth-modal').classList.add('open');
+        }
       }
-    } else {
-      const authButtonsHtml = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>&nbsp;<button class="btn btn-primary btn-sm" onclick="openAuthModal(\'register\')">Register</button>';
-      if (navAuth) navAuth.innerHTML = authButtonsHtml;
-      if (navAuthMobile) navAuthMobile.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="openAuthModal(\'login\')">Sign In</button>';
-      if (ctaBtn) ctaBtn.onclick = () => openAuthModal('register');
-    }
-  });
 
-  function toggleFaq(el) {
-    const item = el.parentElement;
-    document.querySelectorAll('.faq-item').forEach(f => { if (f !== item) f.classList.remove('open'); });
-    item.classList.toggle('open');
-  }
-</script>
+      function switchTab(tab) {
+        const isLogin = tab === 'login';
+        document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+        document.getElementById('form-register').classList.toggle('hidden', isLogin);
+        document.getElementById('tab-login').classList.toggle('active', isLogin);
+        document.getElementById('tab-register').classList.toggle('active', !isLogin);
+        
+        // Update header text
+        document.getElementById('auth-title').textContent = isLogin ? "Welcome Back" : "Start For Free";
+        document.getElementById('auth-subtitle').textContent = isLogin ? "Please enter your details to continue" : "Create an account to get started in seconds";
+      }
+
+      async function submitLogin() {
+        const btn = document.getElementById('l-btn');
+        const err = document.getElementById('auth-error');
+        err.classList.add('hidden');
+        
+        const email = document.getElementById('l-email').value;
+        const password = document.getElementById('l-pass').value;
+
+        if (!email || !password) {
+           err.textContent = "Email and password are required";
+           err.classList.remove('hidden');
+           return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Processing...";
+        
+        try {
+          const data = await API.post('/api/auth/login', { email, password });
+          saveAuth(data.token, data.user);
+          window.location.href = data.user.is_admin ? '/admin' : '/dashboard/buy';
+        } catch(e) { 
+            err.textContent = e.message; 
+            err.classList.remove('hidden'); 
+            btn.disabled = false;
+            btn.textContent = "Sign In →";
+        }
+      }
+
+      async function submitRegister() {
+        const btn = document.getElementById('r-btn');
+        const err = document.getElementById('auth-error');
+        err.classList.add('hidden');
+        
+        const username = document.getElementById('r-user').value;
+        const email = document.getElementById('r-email').value;
+        const password = document.getElementById('r-pass').value;
+        const agreed = document.getElementById('r-terms').checked;
+
+        if (!username || !email || !password) {
+           err.textContent = "All fields are required";
+           err.classList.remove('hidden');
+           return;
+        }
+
+        if (!agreed) {
+           err.textContent = "You must agree to the Terms & Conditions";
+           err.classList.remove('hidden');
+           return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Creating Account...";
+
+        try {
+          const data = await API.post('/api/auth/register', { username, email, password });
+          saveAuth(data.token, data.user);
+          window.location.href = '/dashboard/buy';
+        } catch(e) { 
+            err.textContent = e.message; 
+            err.classList.remove('hidden'); 
+            btn.disabled = false;
+            btn.textContent = "Create Free Account 🚀";
+        }
+      }
+
+      function toggleFaq(el) {
+        const item = el.parentElement;
+        item.classList.toggle('open');
+      }
+
+      // Navbar Auth State
+      window.addEventListener('DOMContentLoaded', () => {
+        const navAuth = document.getElementById('nav-auth');
+        const ctaStart = document.getElementById('cta-start');
+        
+        if (isLoggedIn()) {
+          const html = '<a href="/dashboard/buy" class="btn btn-primary btn-sm nav-btn-compact" style="border-radius:10px">Dashboard →</a>';
+          if (navAuth) navAuth.innerHTML = html;
+          if (ctaStart) {
+             ctaStart.textContent = "🛒 Buy New Number";
+             ctaStart.onclick = () => window.location.href = "/dashboard/buy";
+          }
+        } else {
+          const html = `
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="btn btn-secondary btn-sm nav-btn-compact" onclick="openAuthModal('login')" style="border-radius:10px">Sign In</button>
+              <button class="btn btn-primary btn-sm nav-btn-compact" onclick="openAuthModal('register')" style="border-radius:10px">Join Free</button>
+            </div>
+          `;
+          if (navAuth) navAuth.innerHTML = html;
+        }
+      });
+    </script>
 </body>
 </html>

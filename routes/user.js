@@ -214,13 +214,13 @@ router.post("/orders", async (req, res) => {
     const orderResult = await withTransaction(async (session) => {
       const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
       
-      const service = await Service.findById(service_id, queryOptions);
+      const service = await Service.findById(service_id, null, queryOptions);
       if (!service || !service.is_active) throw new Error("Service not found or inactive");
 
-      const serverConf = await Server.findById(service.server_id, queryOptions);
+      const serverConf = await Server.findById(service.server_id, null, queryOptions);
       if (!serverConf) throw new Error("Server not configured");
 
-      const user = await User.findById(req.userId, queryOptions);
+      const user = await User.findById(req.userId, null, queryOptions);
       if (!user) throw new Error("User not found");
 
       if (user.balance < service.price) throw new Error("INSUFFICIENT_BALANCE");
@@ -251,7 +251,7 @@ router.post("/orders", async (req, res) => {
       
       await withTransaction(async (session) => {
         const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-        const user = await User.findById(req.userId, queryOptions);
+        const user = await User.findById(req.userId, null, queryOptions);
         if (user) {
           user.balance = parseFloat((user.balance + service.price).toFixed(4));
           user.total_spent = parseFloat((user.total_spent - service.price).toFixed(4));
@@ -300,14 +300,14 @@ router.post("/orders", async (req, res) => {
         order = createdOrders[0];
       }
 
-      await Transaction.create({
+      await Transaction.create([{
         user_id: req.userId,
         type: "purchase",
         amount: -service.price,
         balance_after: orderResult.userBalance, // We know this from first step
         description: `Purchased ${service.name} (${service.country_code})`,
         order_id: orderId,
-      }, queryOptions);
+      }], queryOptions);
 
       return order;
     });

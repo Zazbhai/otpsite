@@ -771,7 +771,10 @@ router.get("/settings", async (_, res) => {
 router.post("/settings", async (req, res) => {
   try {
     if (DB_TYPE === "mysql") {
-      // Sequential upsert for MySQL
+      // Deduplicate: ensure old 'maintenance' key doesn't conflict with 'maintenance_mode'
+      const { Op } = require("sequelize");
+      await Setting.destroy({ where: { key: { [Op.in]: ["maintenance", "isMaintenance"] } } });
+      
       for (const [key, value] of Object.entries(req.body)) {
         const found = await Setting.findOne({ where: { key } });
         if (found) {
@@ -781,11 +784,16 @@ router.post("/settings", async (req, res) => {
         }
       }
     } else {
+      // Deduplicate for MongoDB
+      await Setting.deleteMany({ key: { $in: ["maintenance", "isMaintenance"] } });
+      
       const ops = Object.entries(req.body).map(([key, value]) => ({
         updateOne: { filter: { key }, update: { $set: { key, value } }, upsert: true },
       }));
       await Setting.bulkWrite(ops);
     }
+    
+    const { clearSettingsCache } = require("../utils/settingsCache");
     clearSettingsCache();
     emitToAll("settings", {});
     res.json({ ok: true });

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Order Detail — {{SITE_NAME}}</title>
+  <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     .detail-page { max-width: 520px; margin: 0 auto; }
@@ -535,7 +536,10 @@
   </main>
 </div>
 
+
 <script src="/js/main.js"></script>
+<script src="/js/ambient-bg.js"></script>
+`n
 <script>
   if (!requireLogin()) {}
 
@@ -957,5 +961,8 @@
   window.addEventListener('beforeunload', clearAllIntervals);
   loadOrder();
 </script>
-</body>
+<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
 </html>
+
+
+

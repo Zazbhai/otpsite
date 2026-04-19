@@ -48,7 +48,10 @@ app.use(async (req, res, next) => {
     "/img/", 
     "/css/", 
     "/js/", 
-    "/favicon.ico"
+    "/favicon.ico",
+    "/uploads/",
+    "/api/auth/status",
+    "/api/auth/settings"
   ];
   
   const isAllowed = allowedPaths.some(p => req.path.startsWith(p));
@@ -70,6 +73,7 @@ app.use(async (req, res, next) => {
       if (req.path.startsWith("/api/")) {
         return res.status(503).json({ error: "Under Maintenance", maintenance: true });
       }
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       return res.redirect("/maintenance");
     }
   }
@@ -122,7 +126,7 @@ async function renderPage(res, filename) {
     // Core Branding... (replacements continue below)
     const siteName = settings.site_name || "Zaz";
     const siteLogo = settings.site_logo || "/img/logo.png";
-    const siteFavicon = settings.site_favicon || "/favicon.ico";
+    const siteFavicon = (settings.site_favicon && settings.site_favicon !== "null") ? settings.site_favicon : "/favicon.ico";
 
     // SEO & Meta
     const seoTitle = settings.seo_title || `${siteName} — Instant Virtual Numbers for SMS Verification`;

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>How It Works — {{SITE_NAME}}</title>
+  <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
 </head>
 <body class="bg-dark">
@@ -110,7 +111,10 @@
     }
   </style>
 
-  <script src="/js/main.js"></script>
+  
+<script src="/js/main.js"></script>
+<script src="/js/ambient-bg.js"></script>
+`n
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const navAuth = document.getElementById("nav-auth");
@@ -120,5 +124,8 @@
       if (typeof renderMobileBottomNav === 'function') renderMobileBottomNav('/how-it-works');
     });
   </script>
-</body>
+<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
 </html>
+
+
+

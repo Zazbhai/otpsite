@@ -76,3 +76,2206 @@
 [2026-04-18T17:38:39.894Z] [INFO] 💰 Currency Updater started.
 [2026-04-18T17:38:39.901Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
 [2026-04-18T17:38:40.981Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T12:51:58.491Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T12:51:58.493Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T12:51:59.015Z] [INFO] ✅ MongoDB connected
+[2026-04-19T12:51:59.016Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T12:51:59.018Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T12:51:59.018Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T12:51:59.023Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T12:51:59.031Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T12:52:00.140Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T12:52:50.859Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T12:52:50.862Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T12:52:51.666Z] [INFO] ✅ MongoDB connected
+[2026-04-19T12:52:51.667Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T12:52:51.669Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T12:52:51.669Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T12:52:51.672Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T12:52:51.679Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T12:52:52.892Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T12:56:15.270Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T12:56:15.272Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T12:56:15.797Z] [INFO] ✅ MongoDB connected
+[2026-04-19T12:56:15.797Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T12:56:15.799Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T12:56:15.800Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T12:56:15.803Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T12:56:15.810Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T12:56:16.751Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T12:57:12.964Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T12:57:12.966Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T12:57:13.482Z] [INFO] ✅ MongoDB connected
+[2026-04-19T12:57:13.483Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T12:57:13.485Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T12:57:13.485Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T12:57:13.489Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T12:57:13.495Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T12:57:14.491Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:00:00.682Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:00:00.684Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:00:00.685Z] [INFO] ❌ Critical Startup Error: mongoose is not defined
+[2026-04-19T13:00:00.691Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:00:14.946Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:00:14.948Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:00:14.949Z] [INFO] ❌ Critical Startup Error: mongoose is not defined
+[2026-04-19T13:00:14.955Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:00:39.129Z] [ERROR] [Maintenance] Error checking status: Operation `settings.findOne()` buffering timed out after 10000ms
+[2026-04-19T13:00:39.130Z] [ERROR] ROUTE_ERROR: {}
+[2026-04-19T13:00:45.891Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:00:45.893Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:00:45.894Z] [INFO] ✅ Database initialized successfully (MySQL/Sequelize).
+[2026-04-19T13:00:45.897Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:00:45.898Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:00:45.930Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:00:45.938Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:00:55.964Z] [ERROR] [Maintenance] Error checking status: Operation `settings.findOne()` buffering timed out after 10000ms
+[2026-04-19T13:00:57.120Z] [ERROR] [Currency Updater] Failed to update daily exchange rates: Operation `settings.findOneAndUpdate()` buffering timed out after 10000ms
+[2026-04-19T13:00:58.371Z] [ERROR] [Maintenance] Error checking status: Operation `settings.findOne()` buffering timed out after 10000ms
+[2026-04-19T13:01:05.914Z] [ERROR] [Order Monitor] Global loop error: Operation `orders.find()` buffering timed out after 10000ms
+[2026-04-19T13:01:18.773Z] [ERROR] [Maintenance] Error checking status: Operation `settings.findOne()` buffering timed out after 10000ms
+[2026-04-19T13:01:25.927Z] [ERROR] [Order Monitor] Global loop error: Operation `orders.find()` buffering timed out after 10000ms
+[2026-04-19T13:01:39.143Z] [ERROR] ROUTE_ERROR: {}
+[2026-04-19T13:01:39.144Z] [ERROR] ROUTE_ERROR: {}
+[2026-04-19T13:01:39.146Z] [ERROR] [Maintenance] Error checking status: Operation `settings.findOne()` buffering timed out after 10000ms
+[2026-04-19T13:01:45.949Z] [ERROR] [Order Monitor] Global loop error: Operation `orders.find()` buffering timed out after 10000ms
+[2026-04-19T13:01:49.157Z] [ERROR] ROUTE_ERROR: {}
+[2026-04-19T13:01:59.156Z] [ERROR] ROUTE_ERROR: {}
+[2026-04-19T13:02:05.958Z] [ERROR] [Order Monitor] Global loop error: Operation `orders.find()` buffering timed out after 10000ms
+[2026-04-19T13:02:25.984Z] [ERROR] [Order Monitor] Global loop error: Operation `orders.find()` buffering timed out after 10000ms
+[2026-04-19T13:02:45.992Z] [ERROR] [Order Monitor] Global loop error: Operation `orders.find()` buffering timed out after 10000ms
+[2026-04-19T13:03:04.543Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:03:04.545Z] [INFO] 🔌 Attempting to connect to database (Type: mysql)...
+[2026-04-19T13:03:04.553Z] [INFO] ❌ MySQL connection error: 
+[2026-04-19T13:03:04.553Z] [INFO] ❌ Critical Startup Error: 
+[2026-04-19T13:03:04.560Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:04:48.477Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:04:48.478Z] [INFO] 🔌 Attempting to connect to database (Type: mysql)...
+[2026-04-19T13:04:48.487Z] [INFO] ❌ MySQL connection error: 
+[2026-04-19T13:04:48.488Z] [INFO] ❌ Critical Startup Error: 
+[2026-04-19T13:04:48.495Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:05:25.662Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:05:25.664Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:05:26.316Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:05:26.317Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:05:26.319Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:05:26.319Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:05:26.322Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:05:26.329Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:05:27.653Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:08:54.051Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:08:54.054Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:08:54.600Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:08:54.601Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:08:54.603Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:08:54.604Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:08:54.607Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:08:54.614Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:08:55.813Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:11:44.719Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:11:44.721Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:11:45.259Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:11:45.260Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:11:45.261Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:11:45.262Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:11:45.265Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:11:45.273Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:11:46.294Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:16:33.954Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:16:33.956Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:16:34.471Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:16:34.471Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:16:34.473Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:16:34.474Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:16:34.477Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:16:34.484Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:16:35.391Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:19:34.209Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:19:34.212Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:19:35.078Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:19:35.079Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:19:35.081Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:19:35.081Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:19:35.084Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:19:35.091Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:19:36.284Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:19:44.840Z] [ERROR] Order error: {
+  "errorLabelSet": {}
+}
+[2026-04-19T13:19:59.368Z] [ERROR] Order error: {
+  "errorLabelSet": {}
+}
+[2026-04-19T13:20:11.753Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:20:11.754Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:20:12.344Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:20:12.345Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:20:12.347Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:20:12.348Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:20:12.351Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:20:12.358Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:20:14.419Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:20:16.223Z] [ERROR] Order error: {
+  "errorLabelSet": {}
+}
+[2026-04-19T13:21:58.096Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:21:58.098Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:21:58.927Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:21:58.928Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:21:58.930Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:21:58.930Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:21:58.933Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:21:58.939Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:22:00.297Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:22:01.828Z] [ERROR] Order error: {
+  "errorLabelSet": {}
+}
+[2026-04-19T13:22:06.684Z] [ERROR] Order error: {
+  "errorLabelSet": {}
+}
+[2026-04-19T13:22:17.428Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:22:17.429Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:22:18.031Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:22:18.032Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:22:18.034Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:22:18.034Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:22:18.037Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:22:18.044Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:22:19.252Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:22:22.708Z] [ERROR] Order error: {
+  "errorLabelSet": {}
+}
+[2026-04-19T13:23:43.794Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:23:43.796Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:23:44.676Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:23:44.676Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:23:44.678Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:23:44.678Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:23:44.681Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:23:44.688Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:23:45.969Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:23:50.769Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: https://rapidotp.shop/stubs/handler_api.php?api_key=5920192c11c6de48804d4ba5161d5d75&action=getNumber&service=1and1&server=49
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:23:51.999Z] [INFO] [DEBUG] Provider Response [Attempt 0]: BAD_SERVICE
+[2026-04-19T13:23:52.001Z] [ERROR] ❌ PROVIDER API REJECTION ❌ Number Not Available
+[2026-04-19T13:24:05.841Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: https://rapidotp.shop/stubs/handler_api.php?api_key=5920192c11c6de48804d4ba5161d5d75&action=getNumber&service=flipkart&server=49
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:07.199Z] [INFO] [DEBUG] Provider Response [Attempt 0]: ACCESS_NUMBER:23303:919122413606
+[2026-04-19T13:24:10.504Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:10.506Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:13.837Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:13.838Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:14.738Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:24:14.797Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:14.798Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:16.957Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:16.958Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:20.077Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:20.078Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:23.192Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:23.193Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:24.734Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:24:24.758Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:24.760Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:26.356Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:26.357Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:29.561Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:29.562Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:32.679Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:32.680Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:34.739Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:24:34.763Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:34.764Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:35.853Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:35.854Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:38.953Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:38.954Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:42.125Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:42.126Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:44.763Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:24:44.828Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:44.830Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:45.288Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:45.289Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:48.444Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:48.445Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:51.629Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:51.630Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:54.752Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:24:54.814Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:54.815Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:54.818Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:54.819Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:24:58.017Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:24:58.018Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:01.140Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:01.141Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:04.290Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:04.291Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:04.769Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:25:04.825Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:04.826Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:07.411Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:07.411Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:10.528Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:10.528Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:13.649Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:13.650Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:14.796Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:25:14.832Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:14.833Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:18.033Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:18.034Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:21.236Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:21.237Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:24.365Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:24.366Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:24.837Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:25:24.871Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:24.872Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:27.549Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:27.550Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:30.653Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:30.654Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:33.803Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:33.803Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:34.809Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:25:34.846Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:34.847Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:36.882Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:36.882Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:40.111Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:40.112Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:43.212Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:43.213Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:44.820Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:25:44.858Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:44.859Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:46.337Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:46.338Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:49.419Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:49.420Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:52.566Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:52.566Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:54.799Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:25:54.815Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:54.815Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:55.951Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:55.952Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:25:59.964Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:25:59.965Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:03.973Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:03.974Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:04.825Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:26:04.851Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:04.852Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:08.012Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:08.013Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:08.125Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:08.126Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:11.947Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:11.948Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:14.843Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:26:14.879Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:14.880Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:16.001Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:16.002Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:19.952Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:19.953Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:23.960Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:23.961Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:24.841Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:26:24.881Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:24.882Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:27.931Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:27.933Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:31.969Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:31.970Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:34.851Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:26:34.881Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:34.881Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:35.950Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:35.951Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:39.955Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:39.956Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:44.047Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:44.047Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:44.841Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:26:44.872Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:44.873Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:47.933Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:47.935Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:51.933Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:51.934Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:54.865Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:26:54.958Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:54.959Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:55.998Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:55.999Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:26:59.966Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:26:59.967Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:03.963Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:03.964Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:04.867Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:27:04.898Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:04.899Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:07.953Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:07.954Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:11.948Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:11.949Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:14.876Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:27:14.932Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:14.932Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:15.950Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:15.951Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:19.966Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:19.967Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:24.034Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:24.035Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:24.892Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:27:24.926Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:24.926Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:27.953Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:27.954Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:31.995Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:31.996Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:34.922Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:27:34.958Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:34.959Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:35.966Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:35.967Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:39.941Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:39.942Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:44.039Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:44.040Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:44.902Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:27:44.925Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:44.926Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:47.971Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:47.972Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:51.968Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:51.969Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:54.926Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:27:54.955Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:54.956Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:27:56.013Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:27:56.014Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:00.017Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:00.017Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:03.324Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:03.326Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:04.925Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:28:04.978Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:04.979Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:06.981Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:06.982Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:14.919Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:28:14.958Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:14.959Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:24.950Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:28:24.989Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:24.990Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:34.930Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:28:34.978Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:34.980Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:44.966Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:28:44.994Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:44.995Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:28:54.999Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:28:55.055Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:28:55.056Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:29:05.004Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:29:05.080Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:29:05.081Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:29:15.014Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:29:15.099Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:29:15.100Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:29:25.009Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:29:25.092Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:29:25.093Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:29:35.010Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:29:35.060Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:29:35.061Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:29:44.997Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:29:45.066Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:29:45.067Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:29:55.084Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:29:55.132Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:29:55.133Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:30:05.012Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:30:05.062Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:30:05.063Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:30:15.043Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:30:15.086Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:30:15.087Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:30:25.010Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:30:25.052Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:30:25.053Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:30:35.024Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:30:35.081Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:30:35.082Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:30:45.029Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:30:45.073Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:30:45.074Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:30:55.041Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:30:55.059Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:30:55.060Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:31:05.066Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:31:05.092Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:31:05.093Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:31:15.047Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:31:15.086Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:31:15.087Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:31:25.075Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:31:25.152Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:31:25.153Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:31:35.070Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:31:35.093Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:31:35.094Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:31:45.094Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:31:45.141Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:31:45.142Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:31:55.093Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:31:55.135Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:31:55.136Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:32:05.081Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:32:05.155Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:32:05.156Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:32:15.098Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:32:15.129Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:32:15.130Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:32:25.089Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:32:25.140Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:32:25.141Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:32:35.124Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:32:35.156Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:32:35.157Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:32:45.128Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:32:45.159Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:32:45.160Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:32:55.146Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:32:55.175Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:32:55.176Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:33:09.772Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:33:09.774Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:33:10.529Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:33:10.530Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:33:10.531Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:33:10.532Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:33:10.535Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:33:10.542Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:33:11.895Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:33:20.575Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:33:20.612Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:33:20.628Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:33:30.617Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:33:30.650Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:33:30.651Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:33:40.607Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:33:40.635Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:33:40.637Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:33:50.611Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:33:50.668Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:33:50.669Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:34:00.629Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:34:00.684Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:34:00.685Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:34:10.620Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:34:10.651Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:34:10.652Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:34:20.656Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:34:20.692Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:34:20.693Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:34:30.642Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:34:30.677Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:34:30.678Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:34:40.667Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:34:40.696Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:34:40.697Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:34:50.636Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:34:50.657Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:34:50.658Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:35:00.658Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:35:00.697Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:35:00.698Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:35:10.648Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:35:10.676Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:35:10.677Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:35:20.678Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:35:20.697Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:35:20.698Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:35:30.678Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:35:30.738Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:35:30.738Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:35:40.693Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:35:40.733Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:35:40.734Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:35:50.697Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:35:50.729Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:35:50.729Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:36:00.721Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:36:00.773Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:36:00.774Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:36:10.759Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:36:10.785Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:36:10.786Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:36:20.733Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:36:20.779Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:36:20.780Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:36:30.743Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:36:30.779Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:36:30.780Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:36:40.774Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:36:40.813Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:36:40.814Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:36:50.759Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:36:50.814Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:36:50.815Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:37:00.754Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:37:00.783Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:37:00.784Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:37:10.784Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:37:10.812Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:37:10.813Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:37:20.782Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:37:20.827Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:37:20.828Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:37:30.782Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:37:30.807Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:37:30.808Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:37:40.809Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:37:40.870Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:37:40.871Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:37:50.816Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:37:50.858Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:37:50.858Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:38:00.820Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:38:00.865Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:38:00.866Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:38:10.828Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:38:10.866Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:38:10.867Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:38:20.855Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:38:20.909Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:38:20.910Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:38:30.845Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:38:30.872Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:38:30.873Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:38:40.861Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:38:40.891Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:38:40.892Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:38:50.865Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:38:50.906Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:38:50.907Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:39:00.870Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:39:00.912Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:39:00.913Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:39:10.860Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:39:10.884Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:39:10.885Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:39:20.892Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:39:20.927Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:39:20.927Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:39:30.879Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:39:30.908Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:39:30.909Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:39:40.887Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:39:40.932Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:39:40.933Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:39:50.911Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:39:50.947Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:39:50.949Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:40:00.933Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:40:00.963Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:40:00.964Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:40:10.943Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:40:10.984Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:40:10.985Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:40:20.944Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:40:21.022Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:40:21.023Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:40:30.928Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:40:30.977Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:40:30.977Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:40:40.944Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:40:40.978Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:40:40.979Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:40:50.938Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:40:50.978Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:40:50.979Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:41:00.943Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:41:00.974Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:41:00.975Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:41:11.018Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:41:11.081Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:41:11.082Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:41:21.039Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:41:21.104Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:41:21.105Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:41:31.036Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:41:31.107Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:41:31.108Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:41:41.004Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:41:41.060Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:41:41.061Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:41:51.000Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:41:51.029Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:41:51.030Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:42:01.016Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:42:01.060Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:42:01.061Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:42:11.016Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:42:11.044Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:42:11.045Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:42:21.035Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:42:21.057Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:42:21.058Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:42:31.020Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:42:31.095Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:42:31.096Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:42:41.066Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:42:41.101Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:42:41.102Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:42:51.041Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:42:51.096Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:42:51.097Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:42:54.776Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:42:54.778Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:42:55.317Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:42:55.318Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:42:55.320Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:42:55.320Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:42:55.323Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:42:55.330Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:42:56.605Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:43:05.391Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:43:05.430Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:43:05.445Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:43:15.376Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:43:15.407Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:43:15.408Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:43:25.376Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:43:25.430Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:43:25.431Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:43:35.376Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:43:35.404Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:43:35.405Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:43:36.706Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: https://rapidotp.shop/stubs/handler_api.php?api_key=5920192c11c6de48804d4ba5161d5d75&action=getNumber&service=adidas&server=49
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:43:37.639Z] [INFO] [DEBUG] Provider Response [Attempt 0]: BAD_SERVICE
+[2026-04-19T13:43:37.639Z] [ERROR] ❌ PROVIDER API REJECTION ❌ Number Not Available
+[2026-04-19T13:43:45.392Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:43:45.428Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:43:45.429Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:43:55.377Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:43:55.415Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:43:55.416Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:44:05.418Z] [INFO] 🕒 Order Monitor: Syncing 1 due orders...
+[2026-04-19T13:44:05.463Z] [INFO] 
+[DEBUG] === CALLING 3RD PARTY PROVIDER ===
+METHOD: GET
+URL: sfsdfsdf
+HEADERS: {
+  "Accept": "application/json"
+} 
+
+[2026-04-19T13:44:05.464Z] [ERROR] Provider API Error: Failed to parse URL from sfsdfsdf
+[2026-04-19T13:47:15.745Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:47:15.747Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:47:16.433Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:47:16.434Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:47:16.435Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:47:16.435Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:47:16.438Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:47:16.445Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:47:17.836Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:49:37.143Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:49:37.145Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:49:37.738Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:49:37.739Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:49:37.741Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:49:37.742Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:49:37.745Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:49:37.752Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:49:38.963Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:52:02.025Z] [INFO] 🔍 Searching for servers with invalid 'sfsdfsdf' URLs...
+[2026-04-19T13:52:03.030Z] [INFO] ❌ Found 1 bad servers:
+[2026-04-19T13:52:03.031Z] [INFO]  - ID: 69db8f031c7c4a26cb558ae0, Name: nigger-server 2, URL: https://rapidotp.shop/stubs/handler_api.php?api_key=5920192c11c6de48804d4ba5161d5d75&action=getNumber&service=$service&server=49
+[2026-04-19T13:52:18.712Z] [INFO] {
+  "check_interval": 3,
+  "auto_add_services": false,
+  "extra_profit": 0,
+  "_id": "69db8f031c7c4a26cb558ae0",
+  "name": "nigger-server 2",
+  "country_id": "69db4e1b33168dee7a0ef940",
+  "api_key": "5920192c11c6de48804dd4ba5161d5d75",
+  "api_get_number_url": "https://rapidotp.shop/stubs/handler_api.php?api_key=5920192c11c6de48804d4ba5161d5d75&action=getNumber&service=$service&server=49",
+  "api_check_status_url": "sfsdfsdf",
+  "api_cancel_url": "sdfsdfs",
+  "api_retry_url": "sdfsdfs",
+  "auto_cancel_minutes": 20,
+  "retry_count": 5,
+  "min_cancel_minutes": 2,
+  "is_active": true,
+  "multi_otp_supported": false,
+  "createdAt": "2026-04-12T12:24:35.472Z",
+  "updatedAt": "2026-04-12T12:25:11.745Z",
+  "slug": "nigger-server-2",
+  "__v": 0
+}
+[2026-04-19T13:52:31.882Z] [INFO] 🗑️ Bad server deleted.
+[2026-04-19T13:52:47.251Z] [INFO] Orders using this server: 12
+[2026-04-19T13:53:00.324Z] [INFO] Updated orders: 0
+[2026-04-19T13:53:13.645Z] [INFO] [
+  {
+    "id": "ORD-GKXQJ-DIW-",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-PCDHU1RF1S",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-BUGO7AKDSB",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-UCEMHK6O8_",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-WZBVQXJXFG",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-5BD2Y1DVT9",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-CCLTJCBV6Q",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-Z-BFLV1PQX",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-RMGPURPE14",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-WPWXSCHMGN",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-E_3OQQCEAV",
+    "status": "cancelled"
+  },
+  {
+    "id": "ORD-7GHZG5JNPP",
+    "status": "expired"
+  }
+]
+[2026-04-19T13:53:27.564Z] [INFO] Active orders count: 0
+[2026-04-19T13:53:51.076Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:53:51.077Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:53:51.683Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:53:51.684Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:53:51.686Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:53:51.686Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:53:51.689Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:53:51.695Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:53:52.763Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:56:08.274Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:56:08.276Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:56:08.808Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:56:08.808Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:56:08.810Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:56:08.810Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:56:08.814Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:56:08.820Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:56:10.057Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T13:58:47.124Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T13:58:47.125Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T13:58:47.722Z] [INFO] ✅ MongoDB connected
+[2026-04-19T13:58:47.722Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T13:58:47.724Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T13:58:47.725Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T13:58:47.728Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T13:58:47.734Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T13:58:48.969Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:00:55.757Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:00:55.759Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:00:56.458Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:00:56.459Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:00:56.461Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:00:56.461Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:00:56.464Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:00:56.471Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:00:57.772Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:02:41.333Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:02:41.335Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:02:42.224Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:02:42.224Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:02:42.226Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:02:42.227Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:02:42.230Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:02:42.236Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:02:43.216Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:04:41.096Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:04:41.098Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:04:41.861Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:04:41.862Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:04:41.863Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:04:41.864Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:04:41.866Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:04:41.873Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:04:43.303Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:07:20.555Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:07:20.557Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:07:21.377Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:07:21.378Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:07:21.379Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:07:21.380Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:07:21.383Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:07:21.389Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:07:23.864Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:14:32.503Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:14:32.505Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:14:33.221Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:14:33.222Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:14:33.224Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:14:33.224Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:14:33.227Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:14:33.234Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:14:34.680Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:17:31.818Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:17:31.820Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:17:32.429Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:17:32.430Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:17:32.432Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:17:32.433Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:17:32.435Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:17:32.442Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:17:33.605Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:19:08.937Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:19:08.939Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:19:09.856Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:19:09.857Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:19:09.859Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:19:09.859Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:19:09.862Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:19:09.869Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:19:11.243Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.

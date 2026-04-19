@@ -35,7 +35,7 @@ router.post("/buy/:categoryId", async (req, res) => {
     const result = await withTransaction(async (session) => {
       const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
 
-      const user = await User.findById(req.userId, queryOptions);
+      const user = await User.findById(req.userId, null, queryOptions);
       if (!user) throw new Error("USER_NOT_FOUND");
 
       let cat;
@@ -84,7 +84,7 @@ router.post("/buy/:categoryId", async (req, res) => {
       user.total_orders = (user.total_orders || 0) + 1;
       await user.save(queryOptions);
 
-      await Transaction.create({
+      await Transaction.create([{
         user_id: req.userId,
         type: "purchase",
         amount: -Number(cat.price),
@@ -92,7 +92,7 @@ router.post("/buy/:categoryId", async (req, res) => {
         description: `Readymade Account: ${cat.name}`,
         reference: account._id?.toString() || account.id?.toString(),
         status: "completed",
-      }, queryOptions);
+      }], queryOptions);
 
       return {
         category: cat.name,

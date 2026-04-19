@@ -4,6 +4,7 @@
   <script src="/js/preloader.js"></script>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pricing — {{SITE_NAME}}</title>
+  <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <meta name="description" content="View all {{SITE_NAME}} service pricing by country and provider." />
   <link rel="stylesheet" href="/css/main.css" />
 </head>
@@ -47,7 +48,10 @@
     </div>
   </div>
 </footer>
+
 <script src="/js/main.js"></script>
+<script src="/js/ambient-bg.js"></script>
+`n
 <script>
   const navAuth = document.getElementById("nav-auth");
   if (isLoggedIn()) navAuth.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard →</a>';
@@ -174,5 +178,8 @@
     .col-val { flex-wrap: wrap; }
   }
 </style>
-</body>
+<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
 </html>
+
+
+

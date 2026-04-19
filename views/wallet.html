@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wallet — {{SITE_NAME}}</title>
+  <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <meta name="description" content="{{SEO_DESC}}" />
   <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
   <link rel="stylesheet" href="/css/main.css" />
@@ -252,7 +253,10 @@
   </div>
 </div>
 
+
 <script src="/js/main.js"></script>
+<script src="/js/ambient-bg.js"></script>
+`n
 <script>
 (function() {
   let walletData = { balance: 0, transactions: [], page: 1, pages: 1 };
@@ -502,5 +506,8 @@
   window.addEventListener('popstate', () => clearInterval(polling), { once: true });
 })();
 </script>
-</body>
+<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
 </html>
+
+
+

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Sector Not Found</title>
+  <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
 
@@ -193,8 +194,9 @@
 </head>
 <body>
 
-    <!-- 3D Starfield Canvas -->
-    <canvas id="space"></canvas>
+    <script src="/js/main.js"></script>
+<script src="/js/ambient-bg.js"></script>
+
     
     <!-- CRT Effect -->
     <div class="scanlines"></div>
@@ -254,137 +256,8 @@
         
         startScramble();
 
-        /* =========================================
-           2. INTERACTIVE 3D WARP DRIVE CANVAS
-        ========================================= */
-        const canvas = document.getElementById('space');
-        // Optimized for potato devices: disabling alpha blending on the canvas node
-        const ctx = canvas.getContext('2d', { alpha: false }); 
-        
-        let width, height;
-        let stars = [];
-        // Dynamically set particle count based on screen size to save CPU/GPU
-        let numStars = window.innerWidth < 768 ? 150 : 350; 
-        
-        // Physics variables
-        let speed = 2;
-        let targetSpeed = 2;
-        const baseSpeed = 2;
-        const warpSpeed = 35;
-        
-        // Mouse tracking for parallax
-        let mouseX = 0;
-        let mouseY = 0;
-        let targetX = 0;
-        let targetY = 0;
-
-        function initCanvas() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            mouseX = targetX = width / 2;
-            mouseY = targetY = height / 2;
-            
-            // Update star count in case of window resize
-            numStars = window.innerWidth < 768 ? 150 : 350;
-
-            // Paint an initial solid background
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, width, height);
-        }
-
-        function createStars() {
-            stars = [];
-            for (let i = 0; i < numStars; i++) {
-                stars.push({
-                    x: Math.random() * width * 2 - width,
-                    y: Math.random() * height * 2 - height,
-                    z: Math.random() * width, // depth
-                    pz: Math.random() * width  // previous depth (for drawing lines)
-                });
-            }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Create the trailing effect by filling with semi-transparent black
-            ctx.fillStyle = 'rgba(5, 5, 5, 0.3)';
-            ctx.fillRect(0, 0, width, height);
-
-            // Smoothly interpolate speed and mouse position
-            speed += (targetSpeed - speed) * 0.05;
-            mouseX += (targetX - mouseX) * 0.05;
-            mouseY += (targetY - mouseY) * 0.05;
-
-            // Shift the center of the universe based on mouse
-            const cx = width / 2 + (mouseX - width / 2) * 0.2;
-            const cy = height / 2 + (mouseY - height / 2) * 0.2;
-
-            stars.forEach(star => {
-                star.z -= speed;
-
-                // Reset star if it passes the camera
-                if (star.z <= 0) {
-                    star.x = Math.random() * width * 2 - width;
-                    star.y = Math.random() * height * 2 - height;
-                    star.z = width;
-                    star.pz = width;
-                }
-
-                // 3D to 2D Projection
-                const fov = 300;
-                const px = (star.x / star.z) * fov + cx;
-                const py = (star.y / star.z) * fov + cy;
-                
-                const ppx = (star.x / star.pz) * fov + cx;
-                const ppy = (star.y / star.pz) * fov + cy;
-
-                star.pz = star.z;
-
-                // Color changes based on depth and speed
-                const hue = 180 + (star.z / width) * 60; // Cyan to Blue
-                const opacity = Math.max(0, 1 - (star.z / width));
-                
-                // Draw star trail
-                ctx.beginPath();
-                ctx.moveTo(ppx, ppy);
-                ctx.lineTo(px, py);
-                ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${opacity})`;
-                
-                // Lines get thicker as they get closer and as speed increases
-                ctx.lineWidth = Math.max(0.5, (1 - star.z / width) * 3) + (speed * 0.05);
-                ctx.stroke();
-            });
-        }
-
-        // Event Listeners
-        window.addEventListener('resize', () => {
-            initCanvas();
-            createStars();
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            targetX = e.clientX;
-            targetY = e.clientY;
-        });
-
-        // Touch support for mobile
-        window.addEventListener('touchmove', (e) => {
-            targetX = e.touches[0].clientX;
-            targetY = e.touches[0].clientY;
-        });
-
-        // Engage Warp Drive
-        window.addEventListener('mousedown', () => targetSpeed = warpSpeed);
-        window.addEventListener('mouseup', () => targetSpeed = baseSpeed);
-        window.addEventListener('touchstart', () => targetSpeed = warpSpeed);
-        window.addEventListener('touchend', () => targetSpeed = baseSpeed);
-
-        // Initialize
-        initCanvas();
-        createStars();
-        animate();
-
     </script>
-</body>
+<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
 </html>
+
+

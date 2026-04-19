@@ -2,7 +2,7 @@ const Setting = require("../models/Setting");
 
 let cache = null;
 let lastUpdate = 0;
-const TTL = 60000; // 1 minute
+const TTL = 1000; // 1 second for instant-feeling updates
 
 async function getCachedSettings() {
     const now = Date.now();
