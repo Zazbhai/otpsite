@@ -51,7 +51,10 @@ router.get("/services", async (req, res) => {
         populate: { path: "country_id" }
       });
     
-    const services = servicesRaw.map(s => s.get ? s.get({ plain: true }) : s);
+    const services = servicesRaw.map(s => {
+      const data = s.toJSON ? s.toJSON() : s;
+      return { ...data, _id: data._id || data.id };
+    });
     
     setToCache(cacheKey, services);
     res.json(services);
@@ -67,7 +70,11 @@ router.get("/countries", async (req, res) => {
   if (cachedData) return res.json(cachedData);
 
   try {
-    const countries = await Country.find({ is_active: true }).sort({ sort_order: 1, name: 1 });
+    const countriesRaw = await Country.find({ is_active: true }).sort({ sort_order: 1, name: 1 });
+    const countries = countriesRaw.map(c => {
+      const data = c.toJSON ? c.toJSON() : c;
+      return { ...data, _id: data._id || data.id };
+    });
     setToCache('countries', countries);
     res.json(countries);
   } catch (err) { 
@@ -83,7 +90,8 @@ router.get("/profile", async (req, res) => {
   try {
     const user = await User.findById(req.userId).select("-password_hash");
     if (!user) return res.status(404).json({ error: "User not found" });
-    res.json(user);
+    const data = user.toJSON ? user.toJSON() : user;
+    res.json({ ...data, _id: data._id || data.id });
   } catch (err) {
     console.error("[/api/user/profile]", err.message);
     res.status(500).json({ error: err.message });
@@ -335,7 +343,10 @@ router.get("/orders", async (req, res) => {
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
 
-    const orders = ordersRaw.map(o => o.get ? o.get({ plain: true }) : o);
+    const orders = ordersRaw.map(o => {
+      const data = o.toJSON ? o.toJSON() : o;
+      return { ...data, _id: data._id || data.id };
+    });
 
     res.json({ orders, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) { 

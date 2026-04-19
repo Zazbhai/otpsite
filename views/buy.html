@@ -959,7 +959,8 @@
     
     try {
       // Fetch services for this country in Real-Time
-      const services = await API.get(`/api/user/services?country_id=${country._id}`);
+      const countryId = country._id || country.id;
+      const services = await API.get(`/api/user/services?country_id=${countryId}`);
       allServices = services;
       filteredServices = services;
       

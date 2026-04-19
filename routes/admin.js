@@ -173,8 +173,11 @@ router.get("/users", async (req, res) => {
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
     
-    // Ensure plain objects to reduce memory overhead
-    const users = usersRaw.map(u => u.get ? u.get({ plain: true }) : u);
+    // Ensure plain objects and _id mapping for frontend compatibility
+    const users = usersRaw.map(u => {
+      const data = u.toJSON ? u.toJSON() : u;
+      return { ...data, _id: data._id || data.id };
+    });
 
     res.json({ users, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) { 
@@ -302,7 +305,10 @@ router.get("/orders", async (req, res) => {
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
     
-    const orders = ordersRaw.map(o => o.get ? o.get({ plain: true }) : o);
+    const orders = ordersRaw.map(o => {
+      const data = o.toJSON ? o.toJSON() : o;
+      return { ...data, _id: data._id || data.id };
+    });
 
     res.json({ orders, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) { 
@@ -752,7 +758,7 @@ router.get("/settings", async (_, res) => {
     const obj = {};
     settings.forEach((s) => {
       // Ensure we handle both Mongoose and Sequelize models correctly
-      const data = s.get ? s.get({ plain: true }) : s;
+      const data = s.toJSON ? s.toJSON() : s;
       obj[data.key] = data.value;
     });
     res.json(obj);
