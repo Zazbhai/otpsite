@@ -33,8 +33,27 @@
         ctx.fillRect(0, 0, width, height);
     }
 
+    function hexToRgba(hex, alpha) {
+        let r = 255, g = 179, b = 0;
+        if (hex.startsWith('#')) {
+            const h = hex.replace('#', '');
+            if (h.length === 3) {
+                r = parseInt(h[0] + h[0], 16);
+                g = parseInt(h[1] + h[1], 16);
+                b = parseInt(h[2] + h[2], 16);
+            } else if (h.length === 6) {
+                r = parseInt(h.substring(0, 2), 16);
+                g = parseInt(h.substring(2, 4), 16);
+                b = parseInt(h.substring(4, 6), 16);
+            }
+        }
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
     function createParticles() {
         particles = [];
+        const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3b82f6';
+        
         for (let i = 0; i < numParticles; i++) {
             particles.push({
                 x: Math.random() * width,
@@ -42,7 +61,7 @@
                 vx: (Math.random() - 0.5) * 2.4,
                 vy: (Math.random() - 0.5) * 2.4,
                 size: Math.random() * 3 + 1,
-                color: `rgba(255, 179, 0, ${Math.random() * 0.4 + 0.2})`
+                color: hexToRgba(themeColor, Math.random() * 0.4 + 0.2)
             });
         }
     }
@@ -76,6 +95,10 @@
     document.addEventListener('visibilitychange', () => {
         isAnimating = !document.hidden;
         if (isAnimating) animate();
+    });
+
+    window.addEventListener('themeChanged', () => {
+        createParticles();
     });
 
     initCanvas();

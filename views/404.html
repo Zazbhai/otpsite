@@ -190,14 +190,15 @@
             pointer-events: none;
             z-index: 100;
         }
+
+        /* Hide Navbar for 404 */
+        .navbar, nav, .mb-more-menu, #mb-nav-more-menu, .mb-nav-bottom {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
 
-    <script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-
-    
     <!-- CRT Effect -->
     <div class="scanlines"></div>
 
@@ -218,6 +219,8 @@
 
     </div>
 
+    <script src="/js/main.js"></script>
+    <script src="/js/ambient-bg.js"></script>
     <script>
         /* =========================================
            1. DECODING TEXT EFFECT
@@ -257,7 +260,7 @@
         startScramble();
 
     </script>
-<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
+</body>
 </html>
 
 

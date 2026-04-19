@@ -124,8 +124,9 @@ window.applyTheme = function(themeId, isPreview = false) {
     // Persist for page loads
     localStorage.setItem(THEME_STORAGE_KEY, theme.id);
   }
-  // For preview-only we still want the native CSS variables to show (via data-theme),
-  // no need to set inline styles — the CSS ruleset does it.
+  
+  // Notify other components (like background particles)
+  window.dispatchEvent(new CustomEvent('themeChanged', { detail: { themeId: theme.id } }));
 };
 
 window.getThemePreference = function() {

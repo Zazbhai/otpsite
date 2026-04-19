@@ -2279,3 +2279,21 @@ HEADERS: {
 [2026-04-19T14:19:09.862Z] [INFO] 💰 Currency Updater started.
 [2026-04-19T14:19:09.869Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
 [2026-04-19T14:19:11.243Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:22:39.001Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:22:39.004Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:22:39.878Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:22:39.878Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:22:39.880Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:22:39.881Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:22:39.883Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:22:39.890Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:22:41.326Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
+[2026-04-19T14:23:43.679Z] [INFO] 🚀 Server starting on port 5007...
+[2026-04-19T14:23:43.681Z] [INFO] 🔌 Attempting to connect to database (Type: mongodb)...
+[2026-04-19T14:23:44.756Z] [INFO] ✅ MongoDB connected
+[2026-04-19T14:23:44.757Z] [INFO] ✅ Database initialized successfully.
+[2026-04-19T14:23:44.758Z] [INFO] 🕒 Order Monitor: Background service started.
+[2026-04-19T14:23:44.759Z] [INFO] 🕒 Order Watcher started.
+[2026-04-19T14:23:44.762Z] [INFO] 💰 Currency Updater started.
+[2026-04-19T14:23:44.769Z] [INFO] 🚀 Rapid OTP fully ready at http://192.168.1.6:5007
+[2026-04-19T14:23:46.275Z] [INFO] [Currency Updater] Global exchange rates automatically updated from live API.
