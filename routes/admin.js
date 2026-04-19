@@ -167,11 +167,14 @@ router.get("/users", async (req, res) => {
     if (banned !== undefined) filter.is_banned = banned === "true";
 
     const total = await User.countDocuments(filter);
-    const users = await User.find(filter)
+    const usersRaw = await User.find(filter)
       .select("-password_hash")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
+    
+    // Ensure plain objects to reduce memory overhead
+    const users = usersRaw.map(u => u.get ? u.get({ plain: true }) : u);
 
     res.json({ users, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) { 
@@ -294,10 +297,12 @@ router.get("/orders", async (req, res) => {
     if (user_id) filter.user_id = user_id;
 
     const total  = await Order.countDocuments(filter);
-    const orders = await Order.find(filter)
+    const ordersRaw = await Order.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
+    
+    const orders = ordersRaw.map(o => o.get ? o.get({ plain: true }) : o);
 
     res.json({ orders, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) { 

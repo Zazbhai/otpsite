@@ -44,12 +44,14 @@ router.get("/services", async (req, res) => {
        filter.server_id = { $in: servers.map(s => s._id) };
     }
 
-    const services = await Service.find(filter)
+    const servicesRaw = await Service.find(filter)
       .sort({ name: 1 })
       .populate({
         path: "server_id",
         populate: { path: "country_id" }
       });
+    
+    const services = servicesRaw.map(s => s.get ? s.get({ plain: true }) : s);
     
     setToCache(cacheKey, services);
     res.json(services);
@@ -328,10 +330,12 @@ router.get("/orders", async (req, res) => {
     }
 
     const total  = await Order.countDocuments(filter);
-    const orders = await Order.find(filter)
+    const ordersRaw = await Order.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
+
+    const orders = ordersRaw.map(o => o.get ? o.get({ plain: true }) : o);
 
     res.json({ orders, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (err) { 

@@ -16,11 +16,11 @@ if (DB_TYPE === "mysql") {
       dialect: "mysql",
       logging: false,
       pool: {
-        max: 10,     // Increased for better concurrency (standard for production)
-        min: 1,      // Keep at least one connection warm
-        idle: 10000, // Close idle connections after 10s
+        max: 25,
+        min: 2,
+        idle: 10000,
         evict: 5000,
-        acquire: 60000 // Wait up to 60s for a connection if pool is full
+        acquire: 30000
       }
     }
   );
