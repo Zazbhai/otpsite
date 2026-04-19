@@ -745,7 +745,11 @@ router.get("/settings", async (_, res) => {
   try {
     const settings = await Setting.find();
     const obj = {};
-    settings.forEach((s) => (obj[s.key] = s.value));
+    settings.forEach((s) => {
+      // Ensure we handle both Mongoose and Sequelize models correctly
+      const data = s.get ? s.get({ plain: true }) : s;
+      obj[data.key] = data.value;
+    });
     res.json(obj);
   } catch (err) {
     console.error("ADMIN_SETTINGS_GET_ERROR:", err);
@@ -756,11 +760,14 @@ router.get("/settings", async (_, res) => {
 router.post("/settings", async (req, res) => {
   try {
     if (DB_TYPE === "mysql") {
+      // Sequential upsert for MySQL
       for (const [key, value] of Object.entries(req.body)) {
-        await Setting.findOne({ where: { key } }).then(async s => {
-          if (s) await s.update({ value });
-          else await Setting.create({ key, value });
-        });
+        const found = await Setting.findOne({ where: { key } });
+        if (found) {
+          await found.update({ value });
+        } else {
+          await Setting.create({ key, value });
+        }
       }
     } else {
       const ops = Object.entries(req.body).map(([key, value]) => ({
@@ -772,7 +779,7 @@ router.post("/settings", async (req, res) => {
     emitToAll("settings", {});
     res.json({ ok: true });
   } catch (err) { 
-    console.error("ADMIN_ROUTE_ERROR:", err);
+    console.error("ADMIN_SETTINGS_POST_ERROR:", err);
     res.status(500).json({ error: "Server error" }); 
   }
 });

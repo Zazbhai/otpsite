@@ -291,7 +291,7 @@ INSERT IGNORE INTO `Settings` (`key`, `value`, `label`, `group`) VALUES
   ('default_theme',     '"dark"',        'Default Theme',     'branding'),
   ('maintenance_mode',  'false',         'Maintenance Mode',  'general'),
   ('min_deposit',       '10',            'Min Deposit (INR)', 'general'),
-  ('referral_bonus',    '5',             'Referral Bonus %',  'general'),
+  ('referral_bonus_percent', '5',             'Referral Bonus %',  'general'),
   ('custom_css',        '""',            'Custom CSS',        'advanced'),
   ('head_scripts',      '""',            'Head Scripts',      'advanced'),
   ('foot_scripts',      '""',            'Foot Scripts',      'advanced');

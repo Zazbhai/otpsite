@@ -12,7 +12,7 @@ async function isMaintenanceOn() {
   if (now - lastCheck < 10000) return cachedMaintenance;
 
   try {
-    const setting = await Setting.findOne({ key: "maintenance" });
+    const setting = await Setting.findOne({ key: "maintenance_mode" });
     if (setting) {
       cachedMaintenance = setting.value === true || setting.value === "true";
     } else {
