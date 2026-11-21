@@ -207,7 +207,7 @@ async function checkStatus(server, api_order_id) {
   }
 
   if (text.startsWith("STATUS_OK:")) {
-     const otp = text.split(":")[1];
+     const otp = text.slice("STATUS_OK:".length);
      return { status: "completed", otp };
   }
 

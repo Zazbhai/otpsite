@@ -5,12 +5,12 @@ const Server = require("../models/Server");
 const providerApi = require("./providerApi");
 const mongoose = require("mongoose");
 const { emitToUser } = require("./realtimeEmitter");
-const { withTransaction } = require("./db");
+const { DB_TYPE, withTransaction } = require("./db");
+const { recordOrderSms } = require("./orderSms");
 
-// In-memory cache to prevent concurrent parallel orders from accepting the exact same OTP before it hits the DB
-const recentlySeenOTPs = new Set();
-setInterval(() => recentlySeenOTPs.clear(), 5 * 60 * 1000); // Clear memory cache every 5 minutes
-
+// Retain the existing protection against providers recycling a response
+// across different orders while multiple polls are running in this process.
+const processingMessages = new Set();
 
 const { acquireLock, releaseLock } = require("./orderLocks");
 
@@ -122,50 +122,32 @@ async function syncOrder(orderIdOrDoc) {
         const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
         
         if (!checkRes.error) {
-          if (checkRes.otp) {
-            const cleanOtp = checkRes.otp.trim();
-            if (order.otp !== cleanOtp || !order.all_otps.includes(cleanOtp)) {
-              
-              // NEW: Global OTP Isolation
-              // Prevent two different orders for the same service from receiving the exact same OTP (provider bug/stub recycling)
-              const OrderModel = require("../models/Order");
-              const isDuplicateGlobally = await OrderModel.exists({
-                all_otps: cleanOtp,
+          if (checkRes.otp?.trim()) {
+            const message = checkRes.otp.trim();
+            if (order.all_otps?.includes(message) || processingMessages.has(message)) return order;
+            processingMessages.add(message);
+            try {
+              if (DB_TYPE !== "mysql" && await Order.exists({
+                all_otps: message,
                 order_id: { $ne: order.order_id },
-                createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+                createdAt: { $gte: new Date(Date.now() - 86400000) },
+              })) return order;
+
+              const saved = await recordOrderSms(order, message, {
+                complete: checkRes.status === "completed" && !order.multi_otp_enabled,
+                checkedAt: now,
               });
-
-              // Also check memory cache to prevent concurrent bypass
-              const cacheKey = cleanOtp; // Strict global uniqueness
-              const isConcurrentDuplicate = recentlySeenOTPs.has(cacheKey);
-
-              if (isDuplicateGlobally || isConcurrentDuplicate) {
-                console.log(`[SyncOrder] Ignored duplicate OTP ${cleanOtp} for ${order.order_id} (Already assigned to another order)`);
-                checkRes.status = "waiting"; // Force it to wait for a fresh OTP
-                checkRes.otp = null;
-              } else {
-                recentlySeenOTPs.add(cacheKey); // Mark it as seen in memory for concurrent locks
-                order.otp = cleanOtp;
-                if (!order.all_otps.includes(cleanOtp)) {
-                  order.all_otps = [...order.all_otps, cleanOtp];
-                }
-                order.refund_issued = true; // Lock refunds once OTP is received
-                
-                if (checkRes.status === "completed" && !order.multi_otp_enabled) {
-                  order.status = "completed";
-                }
-                await order.save();
-                emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
+              if (saved?.multi_otp_enabled && checkRes.status === "completed") {
+                providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
               }
+              return saved || order;
+            } finally {
+              processingMessages.delete(message);
             }
           }
 
-          const cleanResOtp = checkRes.otp ? checkRes.otp.trim() : null;
-          const isSameOtp = cleanResOtp && order.all_otps.includes(cleanResOtp);
-          console.log(`[DEBUG SyncOrder] orderId: ${order.order_id}, providerOtp: ${cleanResOtp}, all_otps: ${JSON.stringify(order.all_otps)}, isSameOtp: ${isSameOtp}`);
-
-          if (checkRes.status === "waiting" || (checkRes.status === "completed" && isSameOtp)) {
-            // Reset verification count if provider returns to waiting state, or gives us an OTP we already processed
+          if (checkRes.status === "waiting") {
+            // Reset verification count when the provider returns to waiting.
             if (order.verification_count > 0) {
               order.verification_count = 0;
               await order.save();
@@ -178,28 +160,10 @@ async function syncOrder(orderIdOrDoc) {
             if (order.verification_count >= 3) {
               // PROCEED with final status update after 3 confirmations
               if (order.multi_otp_enabled && checkRes.status === "completed") {
-                // Multi-OTP: Stay active but update OTPs
+                // Multi-OTP: Stay active for the next message.
                 order.status = "active";
                 order.verification_count = 0; // Reset for next possible event
-                if (checkRes.otp) {
-                  const cleanOtp = checkRes.otp.trim();
-                  if (!order.all_otps.includes(cleanOtp)) {
-                    order.otp = cleanOtp;
-                    order.all_otps = [...order.all_otps, cleanOtp];
-                    console.log(`[Multi-OTP] Auto-requesting next OTP for ${order.order_id}`);
-                    providerApi.retryOrder(serverConf, order.external_order_id).catch(e => console.error("Auto-retry fail:", e.message));
-                  }
-                }
               } else {
-                // Standard Handling
-                if (checkRes.otp) {
-                  const cleanOtp = checkRes.otp.trim();
-                  order.otp = cleanOtp;
-                  if (!order.all_otps.includes(cleanOtp)) {
-                    order.all_otps = [...order.all_otps, cleanOtp];
-                  }
-                }
-                 
                 const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
                 if (hasOtp && !order.refund_issued) {
                   order.refund_issued = true;

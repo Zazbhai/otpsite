@@ -19,6 +19,10 @@ const eaglepay = require("../utils/eaglepay");
 const providerApi = require("../utils/providerApi");
 const { nanoid }  = require("nanoid");
 const { emitToUser } = require("../utils/realtimeEmitter");
+const rateLimit = require("express-rate-limit");
+const UserWebhook = require("../models/UserWebhook");
+const { DB_TYPE } = require("../utils/db");
+const { parseWebhookUrl, buildSmsPayload, deliverWebhook } = require("../utils/customerWebhook");
 
 // --- CACHE SYSTEM ---
 const { getFromCache, setToCache } = require("../utils/apiCache");
@@ -206,6 +210,78 @@ router.get("/servers", async (req, res) => {
 
 
 router.use(loginRequired);
+
+const webhookFilter = req => ({ user_id: String(req.userId) });
+const findWebhook = filter => UserWebhook.findOne(DB_TYPE === "mysql" ? { where: filter } : filter);
+
+router.get("/profile/webhook", async (req, res) => {
+  try {
+    const prefs = await findWebhook(webhookFilter(req));
+    res.json({ url: prefs?.url || "" });
+  } catch {
+    res.status(500).json({ error: "Could not load webhook settings." });
+  }
+});
+
+router.put("/profile/webhook", async (req, res) => {
+  const value = req.body?.url;
+  if (typeof value !== "string") return res.status(400).json({ error: "A callback URL is required. Send an empty URL to disable delivery." });
+  let url;
+  try {
+    url = value.trim() ? parseWebhookUrl(value.trim()).href : "";
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  try {
+    const filter = webhookFilter(req);
+    const account = await User.findById(req.userId).select("is_banned");
+    if (!account || account.is_banned) return res.status(403).json({ error: "This account cannot change webhook settings." });
+    if (DB_TYPE === "mysql") {
+      if (url) await UserWebhook.upsert({ ...filter, url });
+      else await UserWebhook.destroy({ where: filter });
+    } else if (url) {
+      await UserWebhook.updateOne(filter, { $set: { url } }, { upsert: true, runValidators: true });
+    } else {
+      await UserWebhook.deleteOne(filter);
+    }
+    res.json({ url });
+  } catch {
+    res.status(500).json({ error: "Could not save webhook settings." });
+  }
+});
+
+const webhookTestLimit = rateLimit({
+  windowMs: 60_000,
+  limit: 3,
+  keyGenerator: req => String(req.userId),
+  message: { error: "Too many webhook tests. Try again in a minute." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post("/profile/webhook/test", webhookTestLimit, async (req, res) => {
+  try {
+    const [prefs, user] = await Promise.all([
+      findWebhook(webhookFilter(req)),
+      User.findById(req.userId).select("api_key is_banned"),
+    ]);
+    if (!user || user.is_banned) return res.status(403).json({ error: "This account cannot send webhook tests." });
+    if (!prefs?.url) return res.status(400).json({ error: "Save a callback URL before sending a test." });
+    if (!user.api_key) return res.status(400).json({ error: "Generate an API key before sending a test." });
+    const sample = buildSmsPayload(
+      { order_id: "test-order", service_name: "WhatsApp", country: "India", phone: "+919000000000", cost: 0 },
+      "Your verification code is 123456."
+    );
+    const result = await deliverWebhook(prefs.url, user.api_key, sample);
+    if (!result.ok) {
+      return res.status(502).json({ error: result.status ? `Callback returned HTTP ${result.status}.` : result.error });
+    }
+    res.json(result);
+  } catch {
+    res.status(500).json({ error: "Could not send the webhook test." });
+  }
+});
 
 // ── GET /api/user/profile ────────────────────────────────────────
 router.get("/profile", async (req, res) => {

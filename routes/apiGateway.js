@@ -11,6 +11,7 @@ const { calculateUserPrice, parseDiscounts } = require("../utils/pricing");
 const { nanoid } = require("nanoid");
 const { withTransaction } = require("../utils/db");
 const { notifyAdminChange } = require("../utils/adminRealtime");
+const { recordOrderSms } = require("../utils/orderSms");
 
 router.all("/", async (req, res) => {
   try {
@@ -265,30 +266,20 @@ router.all("/", async (req, res) => {
             const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
 
             if (!checkRes.error && checkRes.status !== "waiting") {
-              // Attach OTP if received
               if (checkRes.otp) {
-                const cleanOtp = checkRes.otp.trim();
-                order.otp = cleanOtp;
-                if (!order.all_otps.includes(cleanOtp)) {
-                  order.all_otps = [...order.all_otps, cleanOtp];
+                const saved = await recordOrderSms(order, checkRes.otp);
+                if (saved) {
+                  if (saved.multi_otp_enabled && checkRes.status === "completed") {
+                    providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
+                  }
+                  return res.send(`STATUS_OK:${saved.otp}`);
                 }
-              }
-
-              const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
-
-              if (hasOtp) {
-                // Mark as non-refundable immediately
-                if (!order.refund_issued) {
-                  await Order.updateOne({ _id: order._id }, { $set: { refund_issued: true } });
-                  order.refund_issued = true;
+                const current = await Order.findById(order._id);
+                if (current?.otp) return res.send(`STATUS_OK:${current.otp}`);
+                if (!current || ["cancelled", "expired", "refunded"].includes(current.status)) {
+                  return res.send("STATUS_CANCEL");
                 }
-                
-                // NEVER auto-complete here. Stay active so user can get more OTPs.
-                if (order.status !== "active") {
-                  order.status = "active";
-                  await order.save();
-                }
-                return res.send(`STATUS_OK:${order.otp}`);
+                return res.send("STATUS_WAIT_CODE");
               }
 
               if (checkRes.status === "cancelled" || checkRes.status === "refunded" || checkRes.status === "expired") {

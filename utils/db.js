@@ -36,6 +36,7 @@ const connectDB = async () => {
       
       // Load all models to Ensure they are defined before sync
       require("../models/User");
+      require("../models/UserWebhook");
       require("../models/Order");
       require("../models/Service");
       require("../models/Server");

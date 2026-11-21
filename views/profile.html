@@ -210,6 +210,47 @@
           </div>
         </div>
 
+        <section class="bg-surface border border-outline-variant/30 rounded-2xl shadow-sm p-5 sm:p-8" aria-labelledby="webhook-title">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined" aria-hidden="true">webhook</span>
+            </div>
+            <h3 id="webhook-title" class="font-headline-sm text-[20px] font-bold text-on-background">SMS Webhook</h3>
+          </div>
+          <p class="text-[13px] text-on-surface-variant mb-4">Send new SMS codes directly to your application, even when this page is closed.</p>
+          <form id="webhook-form" class="space-y-3">
+            <label for="webhook-url" class="block text-[13px] font-bold text-on-surface">Callback URL</label>
+            <input type="url" id="webhook-url" maxlength="2048" autocomplete="off" spellcheck="false"
+              placeholder="https://your-site.com/sms-hook" disabled
+              class="w-full min-w-0 bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-3 py-2 text-sm text-on-surface">
+            <div class="flex flex-wrap gap-2">
+              <button id="webhook-save" type="submit" disabled class="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50">Save URL</button>
+              <button id="webhook-test" type="button" disabled class="bg-surface-container text-on-surface px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50">Send test</button>
+            </div>
+            <p class="text-[12px] text-on-surface-variant">Clear the URL and save to disable delivery.</p>
+            <p id="webhook-status" role="status" class="text-[13px] text-on-surface"></p>
+          </form>
+          <details class="mt-4 border border-outline-variant/30 rounded-lg">
+            <summary class="cursor-pointer px-3 py-2 text-[13px] font-bold text-on-surface">Callback format</summary>
+            <div class="space-y-3 border-t border-outline-variant/30 p-3">
+              <p class="text-[12px] text-on-surface-variant">Your endpoint must accept a JSON POST and return a 2xx status within 10 seconds. Verify <code class="break-all">X-SmsCandy-Signature</code> using HMAC SHA-256 of the raw request body and your API key. The signature is hex encoded. <code>X-SmsCandy-Event</code> is <code>sms.received</code>.</p>
+              <pre id="webhook-example" class="overflow-x-auto bg-surface-container rounded-lg p-3 text-[12px] text-on-surface">{
+  "event": "sms.received",
+  "orderId": "test-order",
+  "service": "WhatsApp",
+  "country": "India",
+  "number": "+919000000000",
+  "code": "123456",
+  "message": "Your verification code is 123456.",
+  "customer": null,
+  "price": 0,
+  "at": "2026-09-25T04:53:00.000Z"
+}</pre>
+              <button id="webhook-copy" type="button" class="text-primary text-[12px] font-bold">Copy sample payload</button>
+            </div>
+          </details>
+        </section>
+
         <!-- Preferences & Links -->
         <div class="bg-surface border border-outline-variant/30 rounded-2xl shadow-sm p-6 sm:p-8 flex-1">
            <h3 class="font-headline-sm text-[18px] font-bold text-on-background mb-6">Preferences & Support</h3>
@@ -291,6 +332,7 @@
 </div>
 
 <script src="/js/main.js"></script>
+<script src="/js/profile-webhook.js" defer></script>
 
 <script>
 {
