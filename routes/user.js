@@ -1452,6 +1452,9 @@ router.post("/wallet/verify-bharatpe", async (req, res) => {
       if (result.reason === "unavailable") {
         return res.status(503).json({ error: "BharatPe verification is temporarily unavailable. Keep your UTR and try again later." });
       }
+      if (result.reason === "search_incomplete") {
+        return res.status(503).json({ error: "BharatPe could not finish checking recent payments. Keep your UTR and contact support if the issue persists." });
+      }
       // If unconfirmed, update existing pending transaction with submitted UTR if found
       if (order_no) {
         try {
