@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Readymade Accounts — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
@@ -28,10 +29,10 @@
     input:checked + .toggle-slider:before { transform:translateX(24px); }
   </style>
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a>
       <a href="/admin/readymade" class="active">Accounts</a>
@@ -68,8 +69,15 @@
     <div id="view-categories">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <h1 style="font-size:24px;margin:0">🗂️ Readymade Accounts</h1>
-        <button class="btn btn-primary" onclick="openCatModal()">+ New Category</button>
+        <div style="display:flex; gap:12px; align-items:center">
+          <div class="search-box" style="position:relative">
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.6">🔍</span>
+            <input type="text" id="cat-search" style="padding-left:36px" placeholder="" onkeyup="filterCategories()" />
+          </div>
+          <button class="btn btn-primary" onclick="openCatModal()">+ New Category</button>
+        </div>
       </div>
+
 
       <!-- Global Feature Toggle -->
       <div class="toggle-wrap mb-8" id="toggle-bar">
@@ -95,22 +103,30 @@
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="showCategories()">← Back</button>
         <h2 id="panel-title" style="margin:0;font-size:20px"></h2>
+        <div class="search-box" style="position:relative; max-width:240px">
+          <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.6">🔍</span>
+          <input type="text" id="acc-search" style="padding-left:36px" placeholder="" onkeyup="debounceAccSearch()" />
+        </div>
+
         <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" onclick="openBulkModal()">📋 Add Accounts</button>
           <button class="btn btn-secondary btn-sm" id="filter-btn" onclick="toggleFilter()">Filter: Available</button>
         </div>
       </div>
 
+
       <!-- Inline add single account -->
       <div class="card" style="margin-bottom:16px">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
           <div class="form-group" style="flex:1;min-width:200px;margin:0">
             <label class="form-label" style="margin-bottom:6px">Quick Add Single Account</label>
-            <input type="text" id="quick-cred" placeholder="email@example.com:password123" style="font-family:monospace;width:100%" />
+            <input type="text" id="quick-cred" class="form-input" placeholder="email@example.com:password123" style="font-family:monospace;width:100%" />
+
           </div>
           <div class="form-group" style="flex:0 0 200px;margin:0">
             <label class="form-label" style="margin-bottom:6px">Notes (optional)</label>
-            <input type="text" id="quick-notes" placeholder="Region, plan, etc." style="width:100%" />
+            <input type="text" id="quick-notes" class="form-input" placeholder="Region, plan, etc." style="width:100%" />
+
           </div>
           <button class="btn btn-success" style="height:42px;white-space:nowrap" onclick="quickAdd()">+ Add</button>
         </div>
@@ -142,25 +158,30 @@
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="form-group">
           <label class="form-label">Category Name *</label>
-          <input type="text" id="cat-name" placeholder="e.g. Netflix Premium" />
+          <input type="text" id="cat-name" class="form-input" placeholder="e.g. Netflix Premium" />
+
         </div>
         <div class="form-group">
           <label class="form-label">Description</label>
-          <input type="text" id="cat-desc" placeholder="Shown to users under the category name" />
+          <input type="text" id="cat-desc" class="form-input" placeholder="Shown to users under the category name" />
+
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div class="form-group">
             <label class="form-label">Icon (emoji)</label>
-            <input type="text" id="cat-icon" placeholder="🎬" maxlength="8" />
+            <input type="text" id="cat-icon" class="form-input" placeholder="🎬" maxlength="8" />
+
           </div>
           <div class="form-group">
             <label class="form-label">Price per account (₹) *</label>
-            <input type="number" id="cat-price" placeholder="199" step="0.01" min="0" />
+            <input type="number" id="cat-price" class="form-input" placeholder="199" step="0.01" min="0" />
+
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Sort Order (lower = shown first)</label>
-          <input type="number" id="cat-sort" placeholder="0" />
+          <input type="number" id="cat-sort" class="form-input" placeholder="0" />
+
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <input type="checkbox" id="cat-active" checked style="width:18px;height:18px;accent-color:var(--accent)" />
@@ -198,8 +219,8 @@
 </div>
 
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
+<script src="/js/main.js?v=1784210170374"></script>
+
 
 <script>
   async function init() {
@@ -211,8 +232,10 @@
   init();
   let editingCat  = null;
   let showAll     = false;
+  let allCatsRaw  = [];
 
   /* ── Feature Toggle ─────────────────────────────────────────── */
+
   async function loadFeatureToggle() {
     try {
       const { enabled } = await API.get('/api/admin/readymade/settings');
@@ -240,36 +263,49 @@
     const grid = document.getElementById('cat-grid');
     try {
       const cats = await API.get('/api/admin/readymade/categories');
-      if (!cats.length) {
-        grid.innerHTML = `<div class="text-muted text-center" style="grid-column:1/-1;padding:36px">No categories yet. Click <strong>+ New Category</strong> to get started.</div>`;
-        return;
-      }
-      grid.innerHTML = cats.map(c => `
-        <div class="cat-card${c.is_active ? '' : ' inactive'}">
-          <div class="cat-card-top" style="padding:22px 18px 16px;text-align:center;background:linear-gradient(160deg,rgba(59,130,246,.06) 0%,transparent 70%);border-bottom:1px solid var(--border)">
-            <span style="font-size:40px;display:block;margin-bottom:8px">${c.icon || '🗂️'}</span>
-            <div style="font-size:16px;font-weight:700;margin-bottom:4px">${c.name}</div>
-            <div style="font-size:12px;color:var(--text-3);min-height:16px">${c.description || '—'}</div>
-            <div style="font-size:22px;font-weight:800;color:var(--accent);margin-top:10px">₹${Number(c.price).toFixed(2)}</div>
-          </div>
-          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <span class="stock-badge ${c.available > 0 ? 'stock-ok' : 'stock-empty'}">
-                ${c.available > 0 ? `✓ ${c.available} in stock` : '✗ Out of stock'}
-              </span>
-              <span class="stock-badge" style="background:rgba(100,116,139,.1);color:var(--text-2)">${c.sold} sold</span>
-              ${!c.is_active ? '<span class="badge badge-expired" style="font-size:11px">Inactive</span>' : ''}
-            </div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-primary btn-sm" style="flex:1" onclick="openAccounts('${c._id}','${c.name.replace(/'/g,"\\'")}','${(c.icon||'🗂️').replace(/'/g,"\\'")}')">
-                📂 Manage Accounts
-              </button>
-              <button class="btn btn-secondary btn-sm" title="Edit category" onclick="openEditCat(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
-            </div>
-          </div>
-        </div>`).join('');
+      allCatsRaw = cats;
+      renderCategories(cats);
     } catch(e) { toast(e.message, 'error'); }
   }
+
+  function filterCategories() {
+    const q = document.getElementById('cat-search').value.toLowerCase();
+    const filtered = allCatsRaw.filter(c => c.name.toLowerCase().includes(q) || (c.description && c.description.toLowerCase().includes(q)));
+    renderCategories(filtered);
+  }
+
+  function renderCategories(cats) {
+    const grid = document.getElementById('cat-grid');
+    if (!cats.length) {
+      grid.innerHTML = `<div class="text-muted text-center" style="grid-column:1/-1;padding:36px">No categories found.</div>`;
+      return;
+    }
+    grid.innerHTML = cats.map(c => `
+      <div class="cat-card${c.is_active ? '' : ' inactive'}">
+        <div class="cat-card-top" style="padding:22px 18px 16px;text-align:center;background:linear-gradient(160deg,rgba(59,130,246,.06) 0%,transparent 70%);border-bottom:1px solid var(--border)">
+          <span style="font-size:40px;display:block;margin-bottom:8px">${c.icon || '🗂️'}</span>
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px">${c.name}</div>
+          <div style="font-size:12px;color:var(--text-3);min-height:16px">${c.description || '—'}</div>
+          <div style="font-size:22px;font-weight:800;color:var(--accent);margin-top:10px">₹${Number(c.price).toFixed(2)}</div>
+        </div>
+        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="stock-badge ${c.available > 0 ? 'stock-ok' : 'stock-empty'}">
+              ${c.available > 0 ? `✓ ${c.available} in stock` : '✗ Out of stock'}
+            </span>
+            <span class="stock-badge" style="background:rgba(100,116,139,.1);color:var(--text-2)">${c.sold} sold</span>
+            ${!c.is_active ? '<span class="badge badge-expired" style="font-size:11px">Inactive</span>' : ''}
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" style="flex:1" onclick="openAccounts('${c._id}','${c.name.replace(/'/g,"\\'")}','${(c.icon||'🗂️').replace(/'/g,"\\'")}')">
+              📂 Manage Accounts
+            </button>
+            <button class="btn btn-secondary btn-sm" title="Edit category" onclick="openEditCat(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
 
   function openCatModal() {
     editingCat = null;
@@ -324,13 +360,19 @@
 
   async function deleteCategory() {
     if (!editingCat) return;
-    if (!(await uiConfirm(`Delete "${editingCat.name}"? This is permanent.`))) return;
+    closeModal('cat-modal');
+    if (!(await uiConfirm(`Delete "${editingCat.name}"? This is permanent.`))) {
+      openModal('cat-modal');
+      return;
+    }
     try {
       await API.del(`/api/admin/readymade/categories/${editingCat._id}`);
       toast('Category deleted', 'success');
-      closeModal('cat-modal');
       loadCategories();
-    } catch(e) { toast(e.message, 'error'); }
+    } catch(e) { 
+      toast(e.message, 'error'); 
+      openModal('cat-modal');
+    }
   }
 
   /* ── Accounts Panel ─────────────────────────────────────────── */
@@ -361,8 +403,10 @@
     const tbody = document.getElementById('accounts-body');
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
     try {
-      const qs = showAll ? '' : '?status=available';
+      const q = document.getElementById('acc-search').value.trim();
+      const qs = (showAll ? '?all=1' : '?status=available') + (q ? `&q=${encodeURIComponent(q)}` : '');
       const data = await API.get(`/api/admin/readymade/categories/${selectedCat}/accounts${qs}`);
+
       if (!data.accounts.length) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-3)">No accounts found. Add some above.</td></tr>`;
         return;
@@ -434,6 +478,7 @@
 </script>
 </body>
 </html>
+
 
 
 

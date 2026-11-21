@@ -86,7 +86,7 @@ const applyMongooseShims = (model) => {
       "$or": Op.or,
       "$and": Op.and,
       "$in": Op.in,
-      "$nin": Op.nin,
+      "$nin": Op.notIn,
       "$gt": Op.gt,
       "$gte": Op.gte,
       "$lt": Op.lt,
@@ -218,6 +218,7 @@ const applyMongooseShims = (model) => {
       try {
         if (this.options.forceNull) return resolve(null);
         const finalOptions = { where: { ...this.where }, transaction: this.options.transaction };
+        if (this.options.lock !== undefined) finalOptions.lock = this.options.lock;
         if (this.options.attributes) finalOptions.attributes = this.options.attributes;
         if (this.options.order) finalOptions.order = this.options.order;
         if (this.options.offset) finalOptions.offset = this.options.offset;
@@ -234,36 +235,85 @@ const applyMongooseShims = (model) => {
     }
   }
 
-  model.findById = (id, opts = {}) => {
+  model.findById = (id, projection, options) => {
+    let finalOpts = {};
+    if (options && typeof options === 'object') {
+      finalOpts = { ...options };
+    } else if (projection && typeof projection === 'object' && !options) {
+      finalOpts = { ...projection };
+    }
+
     if (id === undefined || id === null || id === "undefined" || id === "") {
-        return new Query(model, { id: null }, { ...opts, single: true, forceNull: true });
+        return new Query(model, { id: null }, { ...finalOpts, single: true, forceNull: true });
     }
     const where = { [model.primaryKeyAttribute || 'id']: id };
-    return new Query(model, where, { ...opts, single: true });
+    return new Query(model, where, { ...finalOpts, single: true });
   };
   
-  model.findOne = (query, opts = {}) => {
+  model.findOne = (query, projection, options) => {
+    let finalOpts = {};
+    if (options && typeof options === 'object') {
+      finalOpts = { ...options };
+    } else if (projection && typeof projection === 'object' && !options) {
+      finalOpts = { ...projection };
+    }
+
     const q = query && query.where ? query.where : query;
     if (!q || (typeof q === 'object' && Object.values(q).every(v => v === undefined))) {
-       return new Query(model, { id: null }, { ...opts, single: true, forceNull: true });
+       return new Query(model, { id: null }, { ...finalOpts, single: true, forceNull: true });
     }
     const where = translateQuery(q);
-    return new Query(model, where, { ...opts, single: true });
+    return new Query(model, where, { ...finalOpts, single: true });
   };
 
-  model.find = (query, opts = {}) => {
+  model.find = (query, projection, options) => {
+    let finalOpts = {};
+    if (options && typeof options === 'object') {
+      finalOpts = { ...options };
+    } else if (projection && typeof projection === 'object' && !options) {
+      finalOpts = { ...projection };
+    }
+
     const where = translateQuery(query);
-    return new Query(model, where, opts);
+    return new Query(model, where, finalOpts);
   };
 
   model.findOneAndUpdate = async (query, update, options) => {
     const where = translateQuery(query);
-    const record = await originalFindOne({ where, transaction: options?.transaction });
+    const findOptions = { where, transaction: options?.transaction };
+    if (options?.transaction) {
+      findOptions.lock = options.transaction.LOCK?.UPDATE || true;
+    }
+    const record = await originalFindOne(findOptions);
     if (!record) {
       if (options?.upsert) return model.create({ ...where, ...update }, { transaction: options?.transaction });
       return null;
     }
-    await record.update(update, { transaction: options?.transaction });
+
+    // Extract updates
+    let finalUpdate = { ...update };
+    
+    // Handle Mongoose-style $inc
+    if (update.$inc) {
+      const incs = update.$inc;
+      for (const key in incs) {
+        const val = parseFloat(incs[key]);
+        record[key] = (record[key] || 0) + val;
+      }
+      delete finalUpdate.$inc;
+    }
+
+    // Handle Mongoose-style $set
+    if (update.$set) {
+      const sets = update.$set;
+      for (const key in sets) {
+        record[key] = sets[key];
+      }
+      delete finalUpdate.$set;
+      finalUpdate = { ...finalUpdate, ...sets };
+    }
+
+    await record.update(finalUpdate, { transaction: options?.transaction });
     return record;
   };
 
@@ -366,14 +416,12 @@ const withTransaction = async (callback) => {
   } else {
     const mongoose = require("mongoose");
     const session = await mongoose.startSession();
-    session.startTransaction();
     try {
-      const result = await callback(session);
-      await session.commitTransaction();
+      let result;
+      await session.withTransaction(async () => {
+        result = await callback(session);
+      });
       return result;
-    } catch (err) {
-      if (session.inTransaction()) await session.abortTransaction();
-      throw err;
     } finally {
       session.endSession();
     }

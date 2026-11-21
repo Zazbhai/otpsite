@@ -1,426 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{SITE_NAME}} — Instant Virtual Numbers for SMS Verification</title>
-    <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
-    <link rel="shortcut icon" href="{{SITE_FAVICON}}">
-    <link rel="stylesheet" href="/css/main.css">
-    
-    <!-- SEO & Social Meta Tags -->
-    <meta name="description" content="{{SEO_DESC}}">
-    <meta name="keywords" content="{{SEO_KEYWORDS}}">
-    <meta property="og:title" content="{{SEO_TITLE}}">
-    <meta property="og:description" content="{{SEO_DESC}}">
-    <meta property="og:image" content="{{SEO_OG_IMAGE}}">
-    <meta property="og:type" content="website">
-    <meta property="twitter:card" content="summary_large_image">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{SITE_NAME}} - Secure Auth</title>
+  {{THEME_INIT}}
+  <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
+  <link rel="shortcut icon" href="{{SITE_FAVICON}}">
 
-    <script src="/js/preloader.js"></script>
-    <script>
-      if (localStorage.getItem("otp_token")) {
-        window.location.href = "/dashboard/buy";
-      }
-    </script>
+  <!-- SEO & Social Meta Tags -->
+  <meta name="description" content="{{SEO_DESC}}">
+  <meta name="keywords" content="{{SEO_KEYWORDS}}">
+  <meta name="author" content="{{SITE_NAME}}">
+
+  <style>
+      .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+      .icon-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+      .hidden { display: none !important; }
+  </style>
+
+  <script src="/js/preloader.js"></script>
+  <script>
+    if (localStorage.getItem("otp_token")) {
+      window.location.href = "/dashboard/buy";
+    }
+  </script>
 </head>
-<body>
 
-    <!-- ── Navbar ── -->
-    <nav class="navbar">
-        <div class="container" style="display:flex;align-items:center;justify-content:space-between">
-            <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-            
-            <div class="nav-links" id="nav-links">
-                <a href="/pricing">Pricing</a>
-                <a href="/how-it-works">How It Works</a>
-                <a href="/support">Support</a>
-            </div>
+<body class="bg-background min-h-screen flex items-center justify-center p-4 antialiased selection:bg-primary-container selection:text-on-primary-container">
 
-            <div class="nav-right" style="display:flex;align-items:center;gap:12px">
-                <span id="nav-auth"></span>
-                <button class="nav-burger" id="nav-burger">☰</button>
-            </div>
+  <!-- Decorative ambient background elements -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-primary-fixed-dim/20 blur-[120px]"></div>
+    <div class="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-secondary-fixed/20 blur-[100px]"></div>
+  </div>
+
+  <!-- Error Alert Container -->
+  <div id="auth-error" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-error text-on-error font-body-md px-6 py-3 rounded-lg shadow-lg hidden"></div>
+
+  <!-- LOGIN VIEW -->
+  <main id="login-view" class="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.05)] border border-outline-variant/30 p-8 sm:p-10 z-10 relative overflow-hidden">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary-container"></div>
+    <div class="text-center mb-stack-lg">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary-container/10 text-primary mb-stack-md">
+        <span class="material-symbols-outlined icon-fill text-[28px]">shield_lock</span>
+      </div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface mb-stack-sm">{{SITE_NAME}}</h1>
+      <p class="font-body-md text-body-md text-on-surface-variant">Secure access to your OTP dashboard</p>
+    </div>
+    <form class="flex flex-col gap-stack-md" onsubmit="event.preventDefault(); submitLogin();">
+      <div class="flex flex-col gap-stack-sm">
+        <label class="font-label-md text-label-md text-on-surface" for="l-email">Email Address</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">mail</span>
+          <input type="email" id="l-email" class="w-full pl-10 pr-4 py-3 bg-surface border border-outline-variant/50 rounded-lg font-body-md text-body-md text-on-surface placeholder:text-outline/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" placeholder="name@company.com" required/>
         </div>
-    </nav>
-
-    <!-- ── Hero Section ── -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-grid">
-                <div>
-                    <div class="hero-eyebrow">⚡ #1 Virtual Number Service</div>
-                    <h1>Instant <span class="gradient-text">Virtual Numbers</span> for Any Service</h1>
-                    <p class="hero-desc">Get real SMS verifications for WhatsApp, Telegram, and 500+ more services. Delivered in seconds, starting from ₹4.</p>
-                    <div class="hero-btns">
-                        <button class="btn btn-primary btn-lg" onclick="openAuthModal('register')" id="cta-start">🚀 Get Started Free</button>
-                        <a href="/how-it-works" class="btn btn-secondary btn-lg">See How It Works →</a>
-                    </div>
-                </div>
-                <div class="hero-visual">
-                    <div class="phone-mockup">
-                        <div class="phone-bar"></div>
-                        <div style="display:flex;flex-direction:column;gap:10px">
-                            <div class="card" style="padding:14px;border-radius:12px">
-                                <div class="text-xs text-muted mb-4">📱 WhatsApp verification</div>
-                                <div class="otp-display" style="font-size:28px">483 291</div>
-                                <div class="text-xs text-muted mt-4" style="display:flex;align-items:center;gap:6px;color:var(--success)">✓ Delivered in 3 seconds</div>
-                            </div>
-                            <div class="card" style="padding:14px;border-radius:12px">
-                                <div style="display:flex;justify-content:space-between;align-items:center">
-                                    <span class="text-sm">🇮🇳 +91 98765 43210</span>
-                                    <span class="badge badge-active">Active</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="hero-glow"></div>
-                </div>
-            </div>
-
-            <!-- Stats Bar -->
-            <div class="hero-stats">
-              <div class="hero-stat">
-                <div class="stat-val">2M+</div>
-                <div class="stat-label">Numbers Sold</div>
-              </div>
-              <div class="hero-stat">
-                <div class="stat-val">500+</div>
-                <div class="stat-label">Services</div>
-              </div>
-              <div class="hero-stat">
-                <div class="stat-val">50+</div>
-                <div class="stat-label">Countries</div>
-              </div>
-              <div class="hero-stat">
-                <div class="stat-val">3s</div>
-                <div class="stat-label">Avg Delivery</div>
-              </div>
-            </div>
+      </div>
+      <div class="flex flex-col gap-stack-sm">
+        <div class="flex justify-between items-center">
+          <label class="font-label-md text-label-md text-on-surface" for="l-pass">Password</label>
+          <a class="font-label-md text-label-md text-primary hover:text-primary-container transition-colors" href="#">Forgot password?</a>
         </div>
-    </section>
-
-    <!-- ── Features ── -->
-    <section class="section">
-      <div class="container">
-        <div class="section-header">
-          <h2>Everything You Need, <span class="gradient-text">Nothing You Don't</span></h2>
-          <p>Built for speed, reliability, and simplicity</p>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">lock</span>
+          <input type="password" id="l-pass" class="w-full pl-10 pr-10 py-3 bg-surface border border-outline-variant/50 rounded-lg font-body-md text-body-md text-on-surface placeholder:text-outline/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" placeholder="••••••••" required/>
         </div>
-        <div class="features-grid">
-          <div class="card card-glow">
-            <div class="feature-icon">⚡</div>
-            <h3>Lightning Fast</h3>
-            <p class="text-muted text-sm">Get your OTP in under 3 seconds. Multi-server architecture ensures you're always connected to the fastest number.</p>
+      </div>
+      <button id="l-btn" class="w-full mt-stack-sm py-3 px-6 bg-primary text-on-primary font-label-md text-label-md rounded-lg hover:bg-primary-container hover:shadow-[0_4px_12px_rgba(16,80,212,0.2)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 group" type="submit">
+        Sign In
+        <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+      </button>
+    </form>
+    <div class="relative flex items-center py-stack-md mt-stack-md">
+      <div class="flex-grow border-t border-outline-variant/30"></div>
+      <span class="flex-shrink-0 mx-4 font-label-md text-label-md text-outline">OR</span>
+      <div class="flex-grow border-t border-outline-variant/30"></div>
+    </div>
+    <p class="text-center font-body-sm text-body-sm text-on-surface-variant">
+      Don't have an account? <a href="#" onclick="switchTab('register')" class="text-primary font-medium hover:underline decoration-primary/50 underline-offset-4">Sign up for free</a>
+    </p>
+  </main>
+
+  <!-- SIGNUP VIEW -->
+  <main id="signup-view" class="w-full max-w-5xl hidden z-10">
+    <div class="flex flex-col md:flex-row bg-surface-container-lowest rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)] overflow-hidden border border-outline-variant/30">
+      
+      <!-- Branding / Visual Panel -->
+      <div class="hidden md:flex flex-col justify-between w-1/2 p-10 bg-primary relative overflow-hidden text-on-primary">
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 24px 24px;"></div>
+        <div class="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-on-primary/10 blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/20 to-transparent"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-stack-lg">
+            <span class="material-symbols-outlined text-3xl font-bold">shield_lock</span>
+            <h1 class="font-headline-md text-headline-md font-bold tracking-tight">{{SITE_NAME}}</h1>
           </div>
-          <div class="card card-glow">
-            <div class="feature-icon" style="background:rgba(139,92,246,0.12)">🌍</div>
-            <h3>Global Coverage</h3>
-            <p class="text-muted text-sm">50+ countries including US, UK, India, and more. New countries added weekly based on demand.</p>
+          <h2 class="font-headline-lg text-headline-lg font-bold mb-stack-sm leading-tight">Secure authentication,<br/>instant delivery.</h2>
+          <p class="font-body-md text-body-md text-primary-fixed-dim max-w-sm">Join thousands of businesses relying on our high-availability OTP infrastructure for their critical security needs.</p>
+        </div>
+        <div class="relative z-10 flex flex-col gap-4">
+          <div class="flex items-center gap-4 bg-on-primary/10 p-4 rounded-lg backdrop-blur-sm border border-on-primary/20">
+            <span class="material-symbols-outlined text-tertiary-fixed">bolt</span>
+            <div>
+              <p class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider">Speed</p>
+              <p class="font-body-md text-body-md font-medium text-on-primary">&lt; 1s average delivery</p>
+            </div>
           </div>
-          <div class="card card-glow">
-            <div class="feature-icon" style="background:rgba(16,185,129,0.12)">🔒</div>
-            <h3>Fully Private</h3>
-            <p class="text-muted text-sm">All numbers are unique and discarded after use. Your orders are private to your account only.</p>
-          </div>
-          <div class="card card-glow">
-            <div class="feature-icon" style="background:rgba(245,158,11,0.12)">💰</div>
-            <h3>Best Prices</h3>
-            <p class="text-muted text-sm">Starting from $0.05 per number. Volume discounts available for bulk buyers. Auto-refunds active.</p>
-          </div>
-          <div class="card card-glow">
-            <div class="feature-icon" style="background:rgba(6,182,212,0.12)">📊</div>
-            <h3>Live Dashboard</h3>
-            <p class="text-muted text-sm">Track all your orders in real-time. Watch OTPs arrive live without any page refreshing.</p>
-          </div>
-          <div class="card card-glow">
-            <div class="feature-icon" style="background:rgba(239,68,68,0.12)">🔄</div>
-            <h3>Auto Refunds</h3>
-            <p class="text-muted text-sm">If no OTP is received within the time window, your balance is automatically refunded. Zero risk.</p>
+          <div class="flex items-center gap-4 bg-on-primary/10 p-4 rounded-lg backdrop-blur-sm border border-on-primary/20">
+            <span class="material-symbols-outlined text-tertiary-fixed">public</span>
+            <div>
+              <p class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-wider">Coverage</p>
+              <p class="font-body-md text-body-md font-medium text-on-primary">200+ countries supported</p>
+            </div>
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- ── How It Works ── -->
-    <section class="section" style="background:var(--bg-1)">
-      <div class="container">
-        <div class="how-grid">
-          <div>
-            <div class="section-header" style="text-align:left;margin-bottom:32px">
-              <h2>Up & Running in <span class="gradient-text">60 Seconds</span></h2>
-            </div>
-            <div class="steps">
-              <div class="step">
-                <div class="step-num">1</div>
-                <div><h3>Create Free Account</h3><p class="text-sm text-muted">Sign up in seconds with just your email.</p></div>
-              </div>
-              <div class="step">
-                <div class="step-num">2</div>
-                <div><h3>Add Balance</h3><p class="text-sm text-muted">Top up using Crypto, UPI, or BharatPe QR.</p></div>
-              </div>
-              <div class="step">
-                <div class="step-num">3</div>
-                <div><h3>Select Service</h3><p class="text-sm text-muted">Pick your service and country to get a number.</p></div>
-              </div>
-            </div>
-          </div>
-          <div class="hero-visual">
-             <div class="card" style="padding:24px">
-                <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">ACTIVE SESSION</div>
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                   <div style="font-size:20px;font-weight:700">Waiting for SMS...</div>
-                   <div class="loader-sm"></div>
-                </div>
-                <div style="margin-top:20px;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;font-family:monospace">
-                   +44 7912 345678
-                </div>
-             </div>
-          </div>
+      
+      <!-- Form Panel -->
+      <div class="w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center">
+        <div class="mb-stack-lg md:hidden flex items-center gap-2 justify-center">
+          <span class="material-symbols-outlined text-3xl text-primary font-bold">shield_lock</span>
+          <h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">{{SITE_NAME}}</h1>
         </div>
-      </div>
-    </section>
-
-    <!-- ── FAQ ── -->
-    <section class="section">
-      <div class="container container-sm">
-        <div class="section-header">
-          <h2>Frequently Asked <span class="gradient-text">Questions</span></h2>
-        </div>
-        <div class="faq-list">
-          <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)"><span>How many services do you support?</span><span class="faq-icon">+</span></div>
-            <div class="faq-a">We support 500+ services including WhatsApp, Telegram, Instagram, Google, and more.</div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)"><span>What if the number doesn't work?</span><span class="faq-icon">+</span></div>
-            <div class="faq-a">If you don't receive an OTP, you won't be charged. Your money is automatically returned to your wallet.</div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)"><span>Is this service private?</span><span class="faq-icon">+</span></div>
-            <div class="faq-a">Absolutely. We don't store your logs, and numbers are single-use only.</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── CTA ── -->
-    <section class="section">
-      <div class="container">
-        <div class="cta-box">
-          <h2>Protect Your Privacy Today</h2>
-          <p class="text-muted">Join 100,000+ users using {{SITE_NAME}} for secure verifications.</p>
-          <button class="btn btn-primary btn-lg" style="margin-top:24px" onclick="openAuthModal('register')">⚡ Get Your First Number Now</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Footer ── -->
-    <footer>
-      <div class="container">
-        <div class="footer-grid">
-          <div>
-            <div class="nav-logo" style="margin-bottom:12px">⚡ {{SITE_NAME}}</div>
-            <p class="text-sm text-muted">The fastest virtual number service. Instant delivery, 24/7 support.</p>
-          </div>
-          <div class="footer-col">
-            <h4>Quick Links</h4>
-            <a href="/pricing">Pricing</a>
-            <a href="/support">Support</a>
-            <a href="/terms">Terms of Service</a>
-          </div>
-        </div>
-      </div>
-    </footer>
-
-    <!-- ── Auth Modal ── -->
-    <div class="modal-backdrop" id="auth-modal">
-      <div class="modal auth-modal-glow" style="max-width:440px">
-        <div class="modal-header" style="border:none; padding-bottom:0">
-           <div class="auth-tabs">
-             <button id="tab-login" onclick="switchTab('login')" class="active">Sign In</button>
-             <button id="tab-register" onclick="switchTab('register')">Create Account</button>
-           </div>
-           <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+        <div class="mb-stack-lg text-center md:text-left">
+          <h2 class="font-headline-md text-headline-md font-bold text-on-surface mb-2">Create your account</h2>
+          <p class="font-body-md text-body-md text-on-surface-variant">Enter your details to start integrating secure OTPs.</p>
         </div>
         
-        <div class="modal-content-wrap" style="padding-top:10px">
-           <div id="auth-header-text" style="text-align:center; margin-bottom:24px">
-              <h2 id="auth-title" style="font-size:24px; margin-bottom:8px">Welcome Back</h2>
-              <p id="auth-subtitle" class="text-sm text-muted">Please enter your details to continue</p>
-           </div>
+        <form class="flex flex-col gap-stack-md" onsubmit="event.preventDefault(); submitRegister();">
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="r-user">Username</label>
+            <input type="text" id="r-user" class="w-full bg-surface text-on-surface border border-outline-variant/50 rounded-lg px-4 py-3 font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow hover:bg-surface-container-low" placeholder="Choose a name" required/>
+          </div>
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="r-email">Work Email</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <span class="material-symbols-outlined text-outline">mail</span>
+              </span>
+              <input type="email" id="r-email" class="w-full bg-surface text-on-surface border border-outline-variant/50 rounded-lg pl-12 pr-4 py-3 font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow hover:bg-surface-container-low" placeholder="name@company.com" required/>
+            </div>
+          </div>
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface-variant mb-2" for="r-pass">Password</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <span class="material-symbols-outlined text-outline">lock</span>
+              </span>
+              <input type="password" id="r-pass" class="w-full bg-surface text-on-surface border border-outline-variant/50 rounded-lg pl-12 pr-12 py-3 font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow hover:bg-surface-container-low" placeholder="••••••••" required/>
+            </div>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Must be at least 6 characters long.</p>
+          </div>
 
-           <!-- Login -->
-           <div id="form-login">
-              <div class="form-group">
-                <label class="form-label">Email</label>
-                <div class="input-with-icon">
-                  <i class="input-icon">✉️</i>
-                  <input type="email" id="l-email" placeholder="you@example.com" style="padding-left:40px">
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Password</label>
-                <div class="input-with-icon">
-                  <i class="input-icon">🔒</i>
-                  <input type="password" id="l-pass" placeholder="••••••••" style="padding-left:40px">
-                </div>
-              </div>
-              <button class="btn btn-primary w-full mt-8" id="l-btn" onclick="submitLogin()" style="height:48px; font-size:16px">
-                Sign In →
-              </button>
-           </div>
+          <div id="referral-status" class="hidden bg-tertiary/10 border border-tertiary/20 p-3 rounded-lg text-tertiary font-body-sm flex items-center gap-2">
+            <span class="material-symbols-outlined">stars</span>
+            <span>Referred by: <span id="ref-code-display" class="font-bold"></span></span>
+          </div>
 
-           <!-- Register -->
-           <div id="form-register" class="hidden">
-              <div class="form-group">
-                <label class="form-label">Username</label>
-                <input type="text" id="r-user" placeholder="Choose a name">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" id="r-email" placeholder="you@example.com">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" id="r-pass" placeholder="Min 6 characters">
-              </div>
-              
-              <div style="margin:20px 0; display:flex; gap:10px; align-items:flex-start">
-                <input type="checkbox" id="r-terms" style="margin-top:3px; width:18px; height:18px; cursor:pointer; flex-shrink:0">
-                <label for="r-terms" class="text-xs text-muted" style="line-height:1.5; cursor:pointer">
-                  I agree to the <a href="/terms" class="gradient-text" style="font-weight:700">Terms of Service</a> and <a href="/privacy" class="gradient-text" style="font-weight:700">Privacy Policy</a>
-                </label>
-              </div>
-
-              <button class="btn btn-primary w-full mt-4" id="r-btn" onclick="submitRegister()" style="height:48px; font-size:16px">
-                Create Free Account 🚀
-              </button>
-           </div>
-
-           <div id="auth-error" class="alert alert-danger hidden mt-4" style="text-align:center"></div>
-        </div>
+          <div class="flex items-start gap-3 mt-2">
+            <div class="flex items-center h-5">
+              <input type="checkbox" id="r-terms" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-surface-container-lowest bg-surface" required/>
+            </div>
+            <label class="font-body-sm text-body-sm text-on-surface-variant" for="r-terms">
+                I agree to the <a class="text-primary hover:text-primary-container font-medium transition-colors" href="/terms">Terms of Service</a> and Privacy Policy.
+            </label>
+          </div>
+          <button id="r-btn" class="w-full mt-stack-sm bg-primary text-on-primary font-body-md text-body-md font-medium py-3 px-6 rounded-lg hover:bg-primary-container hover:text-on-primary-container active:scale-[0.98] transition-all flex justify-center items-center gap-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest" type="submit">
+              Create Account
+              <span class="material-symbols-outlined text-lg">arrow_forward</span>
+          </button>
+        </form>
+        <p class="mt-stack-lg text-center font-body-md text-body-md text-on-surface-variant">
+            Already have an account? <a href="#" onclick="switchTab('login')" class="text-primary font-medium hover:underline focus:outline-none focus:underline">Log in</a>
+        </p>
       </div>
     </div>
+  </main>
 
-    <!-- Scripts -->
-    <script src="/js/main.js"></script>
-    <script src="/js/ambient-bg.js"></script>
-    <script>
-      function openAuthModal(tab = 'login') {
-        switchTab(tab);
-        if (typeof window.openModal === 'function') {
-           window.openModal('auth-modal');
-        } else {
-           document.getElementById('auth-modal').classList.add('open');
+  <script src="/js/main.js"></script>
+  <script>
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const ref = urlParams.get('ref');
+      if (ref) localStorage.setItem('pending_ref', ref);
+    })();
+
+    function switchTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('login-view').classList.toggle('hidden', !isLogin);
+      document.getElementById('signup-view').classList.toggle('hidden', isLogin);
+
+      if (!isLogin) {
+        const ref = localStorage.getItem('pending_ref');
+        if (ref) {
+          document.getElementById('referral-status').classList.remove('hidden');
+          const displayEl = document.getElementById('ref-code-display');
+          displayEl.textContent = "Loading...";
+          API.get(`/api/auth/referral-info/${ref}`)
+            .then(data => displayEl.textContent = data.name)
+            .catch(() => displayEl.textContent = ref);
         }
       }
+    }
 
-      function switchTab(tab) {
-        const isLogin = tab === 'login';
-        document.getElementById('form-login').classList.toggle('hidden', !isLogin);
-        document.getElementById('form-register').classList.toggle('hidden', isLogin);
-        document.getElementById('tab-login').classList.toggle('active', isLogin);
-        document.getElementById('tab-register').classList.toggle('active', !isLogin);
-        
-        // Update header text
-        document.getElementById('auth-title').textContent = isLogin ? "Welcome Back" : "Start For Free";
-        document.getElementById('auth-subtitle').textContent = isLogin ? "Please enter your details to continue" : "Create an account to get started in seconds";
+    // Auto-open based on params
+    if (window.location.search.includes('ref=') || window.location.search.includes('register=1')) {
+      switchTab('register');
+    }
+
+    function showError(msg) {
+      const errEl = document.getElementById('auth-error');
+      errEl.textContent = msg;
+      errEl.classList.remove('hidden');
+      setTimeout(() => errEl.classList.add('hidden'), 5000);
+    }
+
+    async function submitLogin() {
+      const btn = document.getElementById('l-btn');
+      const email = document.getElementById('l-email').value;
+      const password = document.getElementById('l-pass').value;
+
+      btn.disabled = true;
+      btn.innerHTML = 'Processing...';
+
+      try {
+        const data = await API.post('/api/auth/login', { email, password });
+        saveAuth(data.token, data.user);
+        window.location.href = data.user.is_admin ? '/admin' : '/dashboard/buy';
+      } catch (e) {
+        showError(e.message);
+        btn.disabled = false;
+        btn.innerHTML = 'Sign In <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+      }
+    }
+
+    async function submitRegister() {
+      const btn = document.getElementById('r-btn');
+      const username = document.getElementById('r-user').value;
+      const email = document.getElementById('r-email').value;
+      const password = document.getElementById('r-pass').value;
+      const agreed = document.getElementById('r-terms').checked;
+
+      if (!agreed) {
+        showError("You must agree to the Terms & Conditions");
+        return;
       }
 
-      async function submitLogin() {
-        const btn = document.getElementById('l-btn');
-        const err = document.getElementById('auth-error');
-        err.classList.add('hidden');
-        
-        const email = document.getElementById('l-email').value;
-        const password = document.getElementById('l-pass').value;
+      btn.disabled = true;
+      btn.innerHTML = 'Creating...';
 
-        if (!email || !password) {
-           err.textContent = "Email and password are required";
-           err.classList.remove('hidden');
-           return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = "Processing...";
-        
-        try {
-          const data = await API.post('/api/auth/login', { email, password });
-          saveAuth(data.token, data.user);
-          window.location.href = data.user.is_admin ? '/admin' : '/dashboard/buy';
-        } catch(e) { 
-            err.textContent = e.message; 
-            err.classList.remove('hidden'); 
-            btn.disabled = false;
-            btn.textContent = "Sign In →";
-        }
+      try {
+        const ref = localStorage.getItem('pending_ref');
+        const data = await API.post('/api/auth/register', { username, email, password, referral_code: ref });
+        saveAuth(data.token, data.user);
+        window.location.href = '/dashboard/buy';
+      } catch (e) {
+        showError(e.message);
+        btn.disabled = false;
+        btn.innerHTML = 'Create Account <span class="material-symbols-outlined text-lg">arrow_forward</span>';
       }
-
-      async function submitRegister() {
-        const btn = document.getElementById('r-btn');
-        const err = document.getElementById('auth-error');
-        err.classList.add('hidden');
-        
-        const username = document.getElementById('r-user').value;
-        const email = document.getElementById('r-email').value;
-        const password = document.getElementById('r-pass').value;
-        const agreed = document.getElementById('r-terms').checked;
-
-        if (!username || !email || !password) {
-           err.textContent = "All fields are required";
-           err.classList.remove('hidden');
-           return;
-        }
-
-        if (!agreed) {
-           err.textContent = "You must agree to the Terms & Conditions";
-           err.classList.remove('hidden');
-           return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = "Creating Account...";
-
-        try {
-          const data = await API.post('/api/auth/register', { username, email, password });
-          saveAuth(data.token, data.user);
-          window.location.href = '/dashboard/buy';
-        } catch(e) { 
-            err.textContent = e.message; 
-            err.classList.remove('hidden'); 
-            btn.disabled = false;
-            btn.textContent = "Create Free Account 🚀";
-        }
-      }
-
-      function toggleFaq(el) {
-        const item = el.parentElement;
-        item.classList.toggle('open');
-      }
-
-      // Navbar Auth State
-      window.addEventListener('DOMContentLoaded', () => {
-        const navAuth = document.getElementById('nav-auth');
-        const ctaStart = document.getElementById('cta-start');
-        
-        if (isLoggedIn()) {
-          const html = '<a href="/dashboard/buy" class="btn btn-primary btn-sm nav-btn-compact" style="border-radius:10px">Dashboard →</a>';
-          if (navAuth) navAuth.innerHTML = html;
-          if (ctaStart) {
-             ctaStart.textContent = "🛒 Buy New Number";
-             ctaStart.onclick = () => window.location.href = "/dashboard/buy";
-          }
-        } else {
-          const html = `
-            <div style="display:flex;gap:6px;align-items:center">
-              <button class="btn btn-secondary btn-sm nav-btn-compact" onclick="openAuthModal('login')" style="border-radius:10px">Sign In</button>
-              <button class="btn btn-primary btn-sm nav-btn-compact" onclick="openAuthModal('register')" style="border-radius:10px">Join Free</button>
-            </div>
-          `;
-          if (navAuth) navAuth.innerHTML = html;
-        }
-      });
-    </script>
+    }
+  </script>
 </body>
 </html>

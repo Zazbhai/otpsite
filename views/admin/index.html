@@ -1,25 +1,22 @@
 <!DOCTYPE html>
+<style>[data-admin-route]{visibility:hidden;opacity:0;}</style>
+<script>if(!localStorage.getItem("otp_token"))window.location.href="/index.html";</script>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
-    :root {
-      --accent-glow: rgba(59, 130, 246, 0.18);
-    }
-
     body {
       background: var(--bg);
-      background-image: radial-gradient(at 0% 0%, rgba(255,255,255,0.05) 0px, transparent 30%),
-                        radial-gradient(at 100% 100%, rgba(255,255,255,0.05) 0px, transparent 25%);
-      color: var(--text);
+      color: var(--on-surface);
     }
 
     .main-content {
-      animation: fadeIn 0.8s ease-out;
+      animation: fadeIn 0.5s ease-out;
     }
 
     @keyframes fadeIn {
@@ -28,29 +25,27 @@
     }
 
     .dashboard-header {
-      margin-bottom: 40px;
+      margin-bottom: 32px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
     }
 
     .dashboard-header h1 {
-      font-size: 32px;
+      font-size: clamp(24px, 3vw, 32px);
       font-weight: 800;
-      letter-spacing: -0.5px;
-      background: var(--grad-primary);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+      color: var(--on-surface);
       margin-bottom: 4px;
     }
 
     .dashboard-header p {
-      color: var(--text-3);
+      color: var(--on-surface-variant);
       font-weight: 500;
       display: flex;
       align-items: center;
       gap: 6px;
+      font-size: 13px;
     }
 
     .refresh-pulse {
@@ -59,74 +54,67 @@
       background: var(--success);
       border-radius: 50%;
       display: inline-block;
-      box-shadow: 0 0 10px var(--success);
+      box-shadow: 0 0 8px rgba(0,105,71,0.4);
       animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
       0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 15px var(--success); }
+      50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 12px rgba(0,105,71,0.5); }
       100% { transform: scale(0.95); opacity: 0.8; }
     }
 
     .grid-4 {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 24px;
-      margin-bottom: 32px;
+      gap: 20px;
+      margin-bottom: 24px;
     }
 
     .stat-card-pro {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px;
-      backdrop-filter: blur(12px);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: var(--surface-container-lowest);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--r-lg);
+      padding: 22px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
     }
 
     .stat-card-pro:hover {
-      transform: translateY(-8px) scale(1.02);
-      border-color: var(--border-2);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18), 0 0 15px rgba(59, 130, 246, 0.12);
-    }
-
-    .stat-card-pro::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.05) 100%);
-      pointer-events: none;
+      transform: translateY(-4px);
+      border-color: rgba(16, 80, 212, 0.3);
+      box-shadow: var(--shadow);
     }
 
     .stat-card-pro .stat-icon {
-      width: 48px;
-      height: 48px;
-      background: var(--surface-2);
-      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      background: var(--surface-container);
+      border-radius: var(--r-md);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
+      font-size: 22px;
+      margin-bottom: 18px;
+      border: 1px solid var(--outline-variant);
     }
 
     .stat-card-pro .stat-label {
-      color: var(--text-3);
-      font-size: 13px;
-      font-weight: 600;
+      color: var(--on-surface-variant);
+      font-size: 11px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      font-family: 'Inter', sans-serif;
     }
 
     .stat-card-pro .stat-value {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
-      color: var(--text);
+      color: var(--on-surface);
+      letter-spacing: -0.02em;
     }
 
     .stat-trend {
@@ -136,14 +124,16 @@
       font-size: 12px;
       margin-top: 12px;
       padding-top: 12px;
-      border-top: 1px solid var(--border-2);
+      border-top: 1px solid var(--outline-variant);
+      color: var(--on-surface-variant);
+      font-family: 'Inter', sans-serif;
     }
 
     .grid-2 {
       display: grid;
       grid-template-columns: 1.6fr 1fr;
-      gap: 24px;
-      margin-bottom: 32px;
+      gap: 20px;
+      margin-bottom: 24px;
     }
 
     @media (max-width: 1024px) {
@@ -151,34 +141,33 @@
     }
 
     .analytics-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 32px;
-      backdrop-filter: blur(12px);
+      background: var(--surface-container-lowest);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--r-lg);
+      padding: 28px;
     }
     
     @media (max-width: 600px) {
-      .analytics-card { padding: 16px; border-radius: 20px; }
-      .dashboard-header h1 { font-size: 24px; }
+      .analytics-card { padding: 16px; border-radius: var(--r-lg); }
+      .dashboard-header h1 { font-size: 22px; }
       .chart-mobile-hint { display: block; }
       .order-status-list { grid-template-columns: 1fr; gap: 8px; }
       .order-status-item { padding: 12px; font-size: 13px; }
     }
 
     .analytics-card h3 {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       gap: 10px;
-      color: var(--text);
+      color: var(--on-surface);
     }
     .chart-mobile-hint {
       display: none;
       font-size: 12px;
-      color: var(--text-3);
+      color: var(--on-surface-variant);
       margin: -14px 0 14px;
     }
     .order-status-list {
@@ -193,24 +182,24 @@
       justify-content: space-between;
       gap: 10px;
       padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--surface-2);
+      border-radius: var(--r-md);
+      border: 1px solid var(--outline-variant);
+      background: var(--surface-container-low);
       font-size: 12px;
-      color: var(--text-2);
+      color: var(--on-surface-variant);
       cursor: pointer;
       transition: border-color .2s ease, background .2s ease;
     }
     .order-status-item:hover {
-      border-color: var(--border-2);
-      background: var(--surface);
+      border-color: var(--primary);
+      background: var(--surface-container);
     }
     .order-status-name {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       font-weight: 600;
-      color: var(--text);
+      color: var(--on-surface);
     }
     .order-status-dot {
       width: 8px;
@@ -220,58 +209,59 @@
     }
     .order-status-value {
       font-weight: 700;
-      color: var(--text);
+      color: var(--on-surface);
     }
 
     .service-row {
-      padding: 16px;
-      background: var(--surface-2);
-      border-radius: 16px;
+      padding: 14px 16px;
+      background: var(--surface-container-low);
+      border-radius: var(--r-md);
       border: 1px solid transparent;
-      transition: all 0.3s;
-      margin-bottom: 12px;
+      transition: all 0.2s;
+      margin-bottom: 10px;
     }
 
     .service-row:hover {
-      background: var(--surface);
-      border-color: var(--border);
-      transform: translateX(4px);
+      background: var(--surface-container);
+      border-color: var(--outline-variant);
+      transform: translateX(3px);
     }
 
     .action-badge {
-      padding: 12px 20px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      color: var(--text);
+      padding: 12px 18px;
+      background: var(--surface-container-low);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--r-md);
+      color: var(--on-surface);
       font-size: 14px;
       font-weight: 600;
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: all 0.3s;
+      transition: all 0.2s;
       cursor: pointer;
+      text-decoration: none;
     }
 
     .action-badge:hover {
-      background: var(--surface);
-      border-color: var(--border-2);
-      transform: translateY(-3px);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
+      background: var(--surface-container);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
     }
 
     /* Staggered entry for cards */
-    .stagger-1 { animation-delay: 0.1s; }
-    .stagger-2 { animation-delay: 0.2s; }
-    .stagger-3 { animation-delay: 0.3s; }
-    .stagger-4 { animation-delay: 0.4s; }
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
 
   </style>
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:10px;background:rgba(186,26,26,.1);color:var(--danger);font-weight:800;padding:2px 6px;border-radius:4px;margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin" class="active">Dashboard</a>
       <a href="/admin/users">Users</a>
@@ -279,7 +269,7 @@
       <a href="/admin/analytics">Analytics</a>
       <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
     </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
+    <div style="margin-left:auto"><button class="nav-burger" id="nav-burger">☰</button></div>
   </div>
 </nav>
 
@@ -299,10 +289,12 @@
     <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
     <a href="/admin/referrals" class="sidebar-item">🤝 Referrals</a>
     <a href="/admin/payments" class="sidebar-item">💳 Payments</a>
+    <a href="/admin/payout" class="sidebar-item">🏦 Payouts & Withdrawals</a>
     <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
     <div class="sidebar-divider"></div>
     <div class="sidebar-label">Config</div>
     <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+    <a href="/admin/payout" class="sidebar-item">🏦 Payouts & Withdrawals</a>
     <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
     <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
     <div class="sidebar-divider"></div>
@@ -339,10 +331,10 @@
         <div class="stat-trend" style="color:var(--success)">Deposits: <span id="s-deposits-today">0</span></div>
       </div>
       <div class="stat-card-pro stagger-4">
-        <div class="stat-icon">⚖️</div>
-        <div class="stat-label">Success Rate</div>
-        <div class="stat-value" style="color:var(--warning)" id="s-success-rate">—</div>
-        <div class="stat-trend" style="color:var(--warning)">Global Avg</div>
+        <div class="stat-icon" aria-hidden="true">&#10003;</div>
+        <div class="stat-label">Total Successful Orders</div>
+        <div class="stat-value" style="color:var(--success)" id="s-successful-orders" aria-live="polite">—</div>
+        <div class="stat-trend">Success rate: <span id="s-success-rate">—</span></div>
       </div>
     </div>
 
@@ -351,15 +343,15 @@
       <div class="analytics-card">
         <h3 style="color:var(--warning)">💎 System Financial Health</h3>
         <div style="display:flex; flex-direction:column; gap:20px; margin-top:10px">
-          <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px">
+          <div style="background:var(--surface-container-low); padding:20px; border-radius:16px">
             <div class="stat-label" style="font-size:11px">Combined User Balances</div>
             <div class="stat-value" id="s-liability" style="font-size:24px; color:var(--danger)">—</div>
           </div>
-          <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px">
+          <div style="background:var(--surface-container-low); padding:20px; border-radius:16px">
             <div class="stat-label" style="font-size:11px">Lifetime Gross Volume</div>
             <div class="stat-value" id="s-volume" style="font-size:24px; color:var(--success)">—</div>
           </div>
-          <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px">
+          <div style="background:var(--surface-container-low); padding:20px; border-radius:16px">
             <div class="stat-label" style="font-size:11px">Total System Deposits</div>
             <div class="stat-value" id="s-deposits-total" style="font-size:24px; color:var(--accent)">—</div>
           </div>
@@ -392,8 +384,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
+<script src="/js/main.js?v=1784210170370"></script>
+<script src="/js/admin-live.js?v=1"></script>
+
 <script>
   let growthChart = null;
   let orderPieChart = null;
@@ -401,18 +394,22 @@
   async function init() {
     const ok = await requireAdmin();
     if (!ok) return;
-    loadStats();
-    setInterval(loadStats, 60000);
+    document.body.classList.add("admin-ready");
+    document.body.style.visibility = "visible";
+    document.body.style.opacity = "1";
+    await loadStats();
+    subscribeAdminUpdates(() => loadStats(true));
   }
 
-  async function loadStats() {
+  async function loadStats(silent = false) {
     const updateLabel = document.getElementById("last-updated");
-    updateLabel.textContent = "Processing System Data…";
+    if (!silent) updateLabel.textContent = "Processing System Data…";
     
     try {
       const data = await API.get("/api/admin/analytics");
       
       const m = data.metrics;
+      document.getElementById("s-successful-orders").textContent = Number(m.successfulOrders || 0).toLocaleString();
       document.getElementById("s-users").textContent   = m.totalUsers.toLocaleString();
       document.getElementById("s-users-today").textContent = "+" + m.todayUsers;
       document.getElementById("s-revenue").textContent = fmtMoney(m.todayRevenue);
@@ -420,9 +417,7 @@
       document.getElementById("s-success-rate").textContent = Math.round(m.successRate * 100) + "%";
       
       // Top Service Spotlight
-      if (data.topServices && data.topServices.length > 0) {
-        document.getElementById("s-top-service").textContent = data.topServices[0]._id;
-      }
+      document.getElementById("s-top-service").textContent = data.topServices?.[0]?._id || "—";
 
       document.getElementById("s-liability").textContent = fmtMoney(m.totalLiability);
       document.getElementById("s-volume").textContent = fmtMoney(m.lifetimeVolume);
@@ -436,7 +431,7 @@
       
     } catch (e) {
       console.error("Admin stats error:", e);
-      toast(e.message, "error");
+      if (!silent) toast(e.message, "error");
       updateLabel.textContent = "Cloud Sync Error.";
     }
   }
@@ -448,7 +443,7 @@
     const normalized = {};
     dist.forEach((d) => {
       const key = d._id === "expired" ? "cancelled" : d._id;
-      normalized[key] = (normalized[key] || 0) + d.count;
+      normalized[key] = (normalized[key] || 0) + Number(d.count);
     });
     const normalizedDist = Object.entries(normalized).map(([key, count]) => ({ _id: key, count }));
 
@@ -458,8 +453,6 @@
     const colors = { completed: '#22c55e', active: '#3b82f6', refunded: '#ef4444', cancelled: '#64748b' };
     const bgColors = normalizedDist.map(d => colors[d._id] || '#cbd5e1');
 
-    if (orderPieChart) orderPieChart.destroy();
-    
     const totalCount = values.reduce((a, b) => a + b, 0);
     if (statusListEl) {
       statusListEl.innerHTML = normalizedDist.map((d) => {
@@ -474,6 +467,13 @@
       }).join("");
     }
 
+    if (orderPieChart) {
+      orderPieChart.data.labels = labels;
+      orderPieChart.data.datasets[0].data = values;
+      orderPieChart.data.datasets[0].backgroundColor = bgColors;
+      orderPieChart.update("none");
+      return;
+    }
     orderPieChart = new Chart(ctx, {
       type: 'doughnut',
       data: {
@@ -484,7 +484,7 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 20, font: { size: 12, weight: '600' }, usePointStyle: true } },
+          legend: { position: 'bottom', labels: { color: "var(--on-surface-variant)", padding: 20, font: { size: 12, weight: '600' }, usePointStyle: true } },
           tooltip: {
             backgroundColor: 'rgba(15, 23, 42, 0.9)',
             padding: 12,
@@ -492,7 +492,8 @@
             callbacks: {
               label: (item) => {
                 const val = item.raw;
-                const perc = ((val / totalCount) * 100).toFixed(1);
+                const total = item.dataset.data.reduce((sum, count) => sum + Number(count), 0);
+                const perc = total ? ((val / total) * 100).toFixed(1) : "0.0";
                 return ` ${val} (${perc}%)`;
               }
             }
@@ -519,7 +520,8 @@
           // Count Value
           ctx.font = isMobile ? '800 20px Inter, sans-serif' : '800 28px Inter, sans-serif';
           ctx.fillStyle = '#fff';
-          ctx.fillText(totalCount.toLocaleString(), width / 2, height / 2 + (isMobile ? 10 : 14));
+          const total = chart.data.datasets[0].data.reduce((sum, count) => sum + Number(count), 0);
+          ctx.fillText(total.toLocaleString(), width / 2, height / 2 + (isMobile ? 10 : 14));
           ctx.restore();
         }
       }]
@@ -535,7 +537,12 @@
     gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
     gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
-    if (growthChart) growthChart.destroy();
+    if (growthChart) {
+      growthChart.data.labels = labels;
+      growthChart.data.datasets[0].data = values;
+      growthChart.update("none");
+      return;
+    }
     growthChart = new Chart(ctx, {
       type: "line",
       data: {
@@ -578,7 +585,7 @@
           },
           y: { 
             beginAtZero: true,
-            grid: { color: "rgba(255,255,255,0.03)" }, 
+            grid: { color: "var(--outline-variant)" }, 
             ticks: { color: "#64748b", font: { size: 11, weight: '600' } } 
           },
         },
@@ -598,7 +605,7 @@
       <div class="service-row">
         <div style="display:flex;justify-content:space-between;margin-bottom:10px; align-items: flex-end">
           <div style="display:flex; flex-direction:column; gap:2px">
-            <span style="font-size:15px; font-weight:700; color:#fff">${s._id}</span>
+            <span style="font-size:15px; font-weight:700; color:var(--on-surface)">${s._id}</span>
             <span style="font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px">Highest Traffic</span>
           </div>
           <div style="text-align:right">
@@ -606,7 +613,7 @@
             <div style="font-size:12px; font-weight:600; color:var(--success)">${fmtMoney(s.revenue)}</div>
           </div>
         </div>
-        <div style="height:6px;border-radius:10px;background:rgba(255,255,255,0.05); overflow:hidden">
+        <div style="height:6px;border-radius:10px;background:var(--surface-container-low); overflow:hidden">
           <div style="height:100%;border-radius:10px;background:var(--grad-primary);width:${(s.count/max*100).toFixed(1)}%; box-shadow: 0 0 10px rgba(59,130,246,0.5)"></div>
         </div>
       </div>`).join("");
@@ -616,5 +623,6 @@
 </script>
 </body>
 </html>
+
 
 

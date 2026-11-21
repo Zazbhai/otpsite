@@ -8,6 +8,7 @@ if (DB_TYPE === "mysql") {
   Order = sequelize.define("Order", {
     order_id: { type: DataTypes.STRING, unique: true, allowNull: false },
     user_id: { type: DataTypes.STRING, allowNull: false },
+    service_id: { type: DataTypes.STRING, defaultValue: "" },
     service_name: { type: DataTypes.STRING, allowNull: false },
     server_name: { type: DataTypes.STRING, defaultValue: "" },
     country: { type: DataTypes.STRING, defaultValue: "" },
@@ -33,10 +34,12 @@ if (DB_TYPE === "mysql") {
     min_cancel_at: { type: DataTypes.DATE },
     external_order_id: { type: DataTypes.STRING, defaultValue: "" },
     multi_otp_enabled: { type: DataTypes.BOOLEAN, defaultValue: false },
+    refund_issued: { type: DataTypes.BOOLEAN, defaultValue: false },
     last_check_at: { type: DataTypes.DATE },
     service_image: { type: DataTypes.STRING, defaultValue: "" },
     service_color: { type: DataTypes.STRING, defaultValue: "" },
     check_interval: { type: DataTypes.INTEGER, defaultValue: 3 },
+    verification_count: { type: DataTypes.INTEGER, defaultValue: 0 },
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
@@ -57,6 +60,7 @@ if (DB_TYPE === "mysql") {
     {
       order_id:          { type: String, unique: true, required: true },
       user_id:           { type: String, required: true, index: true }, 
+      service_id:        { type: String, default: "" },
       service_name:      { type: String, required: true },
       server_name:       { type: String, default: "" },
       country:           { type: String, default: "" },
@@ -73,10 +77,12 @@ if (DB_TYPE === "mysql") {
       min_cancel_at:     { type: Date },
       external_order_id: { type: String, default: "" },
       multi_otp_enabled: { type: Boolean, default: false },
+      refund_issued:     { type: Boolean, default: false },
       last_check_at:     { type: Date },
       service_image:     { type: String, default: "" },
       service_color:     { type: String, default: "" },
       check_interval:    { type: Number, default: 3 },
+      verification_count: { type: Number, default: 0 },
     },
     { timestamps: true }
   );

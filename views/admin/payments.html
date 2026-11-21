@@ -4,105 +4,229 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Payment Gateway — Admin</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
   <style>
-    .config-container { max-width: 1000px; margin: 0 auto; }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    @media (max-width: 768px) { 
-      .config-grid { grid-template-columns: 1fr; } 
-      .sticky-actions { display: none; }
-      .header-text { display: none; }
-      .btn { width: 100% !important; margin-bottom: 8px; }
-      .config-card { padding: 20px; }
-    }
-    
-    .config-card {
-      background: var(--surface);
+    /* ── Layout ─────────────────────────────────────────────── */
+    .pay-container { max-width: 1100px; margin: 0 auto; padding-bottom: 60px; }
+
+    /* ── Page Header ─────────────────────────────────────────── */
+    .pay-hero {
+      background: linear-gradient(135deg, rgba(var(--accent-rgb,99,102,241),0.12) 0%, transparent 60%);
       border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 24px;
-      backdrop-filter: blur(12px);
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    .config-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-    .config-header h2 { font-size: 18px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; }
-    
-    .sticky-actions {
-      position: sticky;
-      top: 60px;
-      z-index: 100;
-      background: var(--bg-1);
-      padding: 16px 0;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 24px;
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
     }
-    
-    .form-group { margin-bottom: 16px; }
-    .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em; }
-    .form-input { 
-      width: 100%; border-radius: 10px; height: 44px; padding: 0 14px; 
-      background: var(--bg-2); border: 1px solid var(--border); color: #fff; font-size: 13px;
+    .pay-hero-title { font-size: 26px; font-weight: 900; color: var(--on-surface); margin: 0 0 4px; }
+    .pay-hero-sub { font-size: 13px; color: var(--text-3); margin: 0; }
+    .pay-hero-badge {
+      display: flex; gap: 8px; flex-shrink: 0;
     }
-    .form-input:focus { outline: none; border-color: var(--accent); }
-    
-    .json-editor {
-      width: 100%;
-      height: 400px;
-      background: #0f172a;
-      color: #9cdcfe;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      resize: vertical;
-      line-height: 1.5;
+    .gw-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      border: 1px solid transparent; cursor: default; white-space: nowrap;
     }
-    
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 44px;
-      height: 24px;
+    .gw-chip.on  { background: rgba(34,197,94,.12); color: #22c55e; border-color: rgba(34,197,94,.25); }
+    .gw-chip.off { background: rgba(148,163,184,.1); color: var(--text-3); border-color: var(--border); }
+    .gw-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* ── Tab Bar ─────────────────────────────────────────────── */
+    .pay-tabs {
+      display: flex; gap: 6px; margin-bottom: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 6px;
+      overflow-x: auto; scrollbar-width: none;
     }
+    .pay-tabs::-webkit-scrollbar { display: none; }
+    .pay-tab {
+      display: flex; align-items: center; gap: 7px;
+      padding: 9px 16px; border-radius: 10px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      border: none; background: transparent; color: var(--text-3);
+      white-space: nowrap; transition: all .2s;
+    }
+    .pay-tab:hover { color: var(--on-surface); background: var(--bg-1); }
+    .pay-tab.active { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,.35); }
+    .pay-tab .tab-icon { font-size: 15px; }
+    .pay-tab .tab-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: rgba(34,197,94,.8); box-shadow: 0 0 5px rgba(34,197,94,.6);
+      flex-shrink: 0;
+    }
+    .pay-tab .tab-dot.off { background: var(--border); box-shadow: none; }
+
+    /* ── Panel ───────────────────────────────────────────────── */
+    .pay-panel { display: none; }
+    .pay-panel.active { display: block; animation: panelIn .25s ease; }
+    @keyframes panelIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Gateway Card ────────────────────────────────────────── */
+    .gw-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden;
+    }
+    .gw-card-head {
+      display: flex; align-items: center; gap: 14px;
+      padding: 22px 28px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(var(--accent-rgb,99,102,241),.05) 0%, transparent 100%);
+    }
+    .gw-icon {
+      width: 46px; height: 46px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; background: var(--bg-1); border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .gw-head-info { flex: 1; }
+    .gw-head-name { font-size: 17px; font-weight: 800; color: var(--on-surface); margin: 0 0 2px; }
+    .gw-head-desc { font-size: 12px; color: var(--text-3); margin: 0; }
+    .gw-toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .gw-toggle-label { font-size: 12px; font-weight: 700; color: var(--text-3); }
+
+    .gw-body { padding: 28px; }
+
+    /* ── Field Grid ─────────────────────────────────────────── */
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+    .field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 28px; }
+    .field-span2 { grid-column: span 2; }
+
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10.5px; font-weight: 800; color: var(--text-3);
+      margin-bottom: 7px; text-transform: uppercase; letter-spacing: .1em;
+    }
+    .form-label .lbl-badge {
+      font-size: 9px; padding: 1px 6px; border-radius: 4px;
+      background: rgba(234,179,8,.15); color: #ca8a04; font-weight: 700;
+    }
+    .form-hint { font-size: 11px; color: var(--text-3); margin-top: 5px; }
+
+    /* ── Section Divider ─────────────────────────────────────── */
+    .gw-section {
+      margin: 24px 0 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .gw-section-line { flex: 1; height: 1px; background: var(--border); }
+    .gw-section-text { font-size: 10.5px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
+
+    /* ── Info Panel ─────────────────────────────────────────── */
+    .gw-info {
+      background: var(--bg-1); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;
+    }
+    .gw-info-title { font-size: 12px; font-weight: 800; color: var(--on-surface); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .ep-endpoint {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 0; border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .ep-endpoint:last-child { border-bottom: none; padding-bottom: 0; }
+    .ep-method {
+      font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 5px;
+      background: rgba(99,102,241,.15); color: #818cf8; flex-shrink: 0; margin-top: 1px;
+    }
+    .ep-path { color: var(--accent); font-family: monospace; font-size: 11.5px; }
+    .ep-desc { color: var(--text-3); font-size: 11px; margin-top: 1px; }
+
+    /* ── Crypto Table ────────────────────────────────────────── */
+    .crypto-table-wrap {
+      border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; max-height: 200px; overflow-y: auto;
+    }
+    .crypto-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .crypto-table thead { background: var(--bg-1); position: sticky; top: 0; z-index: 1; }
+    .crypto-table th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--border); }
+    .crypto-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--on-surface); }
+    .crypto-table tbody tr:last-child td { border-bottom: none; }
+    .crypto-table tbody tr:hover { background: rgba(var(--accent-rgb,99,102,241),.04); }
+
+    /* ── Save Button ─────────────────────────────────────────── */
+    .gw-footer {
+      padding: 20px 28px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      background: var(--bg-1);
+    }
+    .gw-footer-note { font-size: 11px; color: var(--text-3); }
+    .save-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 28px; border-radius: 10px; font-size: 14px; font-weight: 800;
+      background: var(--accent); color: #fff; border: none; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(99,102,241,.35); transition: all .2s;
+    }
+    .save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,.45); }
+    .save-btn:active { transform: translateY(0); }
+
+    /* ── Toggle Switch ──────────────────────────────────────── */
+    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
     .toggle-switch input { opacity: 0; width: 0; height: 0; }
     .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--border);
-      transition: .4s;
-      border-radius: 24px;
+      position: absolute; cursor: pointer; top:0; left:0; right:0; bottom:0;
+      background: var(--border); transition: .3s; border-radius: 24px;
     }
     .slider:before {
-      position: absolute;
-      content: "";
-      height: 16px; width: 16px;
-      left: 4px; bottom: 4px;
-      background-color: #fff;
-      transition: .4s;
-      border-radius: 50%;
+      position: absolute; content: ""; height: 16px; width: 16px;
+      left: 4px; bottom: 4px; background: var(--on-surface); transition: .3s; border-radius: 50%;
     }
-    input:checked + .slider { background-color: var(--success); }
-    input:checked + .slider:before { transform: translateX(20px); }
+    input:checked + .slider { background: #22c55e; }
+    input:checked + .slider:before { transform: translateX(20px); background: #fff; }
 
-    .tab-bar { display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-    .tab-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; border: 1px solid transparent; color: var(--text-3); }
-    .tab-btn.active { background: var(--surface-2); border-color: var(--border); color: var(--accent); }
+    /* ── Promo Section ──────────────────────────────────────── */
+    .promo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .promo-list-wrap { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+    .promo-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 16px; transition: border-color .2s;
+    }
+    .promo-item:hover { border-color: var(--accent); }
+    .promo-code { font-weight: 800; color: var(--accent); font-size: 14px; letter-spacing: .05em; }
+    .promo-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .promo-del {
+      width: 32px; height: 32px; border-radius: 8px; border: none;
+      background: rgba(239,68,68,.1); color: #ef4444; cursor: pointer;
+      font-size: 14px; display: flex; align-items: center; justify-content: center;
+      transition: background .2s; flex-shrink: 0;
+    }
+    .promo-del:hover { background: rgba(239,68,68,.2); }
+
+    /* ── New Promo Form ─────────────────────────────────────── */
+    .promo-form-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px;
+    }
+    .promo-form-title { font-size: 14px; font-weight: 800; color: var(--on-surface); margin: 0 0 16px; display: flex; align-items: center; gap: 7px; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .pay-hero { flex-direction: column; align-items: flex-start; padding: 20px; }
+      .pay-hero-badge { flex-wrap: wrap; }
+      .field-grid, .field-grid-3, .promo-grid { grid-template-columns: 1fr; }
+      .field-span2 { grid-column: span 1; }
+      .gw-body, .gw-footer { padding: 18px; }
+      .gw-card-head { padding: 16px 18px; }
+      .gw-footer { flex-direction: column; align-items: stretch; }
+      .save-btn { width: 100%; justify-content: center; }
+      .pay-hero-title { font-size: 20px; }
+    }
+    @media (max-width: 500px) {
+      .pay-tabs { gap: 4px; padding: 4px; }
+      .pay-tab { padding: 8px 12px; font-size: 12px; }
+    }
   </style>
 </head>
-<body>
+<body data-admin-route>
 
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ Platform Control</a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ Platform Control</a>
     <div class="nav-links">
       <a href="/admin">Analytics</a>
       <a href="/admin/servers">Servers</a>
@@ -122,8 +246,8 @@
     <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
     <a href="/admin/services" class="sidebar-item">🏷️ Services</a>
     <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
-    <a href="/admin/referrals" class="sidebar-item">🤝 Referrals</a>
     <a href="/admin/payments" class="sidebar-item active">💳 Payment Settings</a>
+    <a href="/admin/payout" class="sidebar-item">🏦 Payouts &amp; Withdrawals</a>
     <div class="sidebar-divider"></div>
     <a href="/admin/settings" class="sidebar-item">⚙️ Site Engine</a>
     <a href="/dashboard" class="sidebar-item">🔙 User Dashboard</a>
@@ -131,110 +255,677 @@
   </aside>
 
   <main class="main-content">
-    <div class="config-container">
-      <div class="sticky-actions fade-in">
-        <div class="header-text">
-          <h1 style="font-size:24px;font-weight:900;margin:0">Payment Hub</h1>
-          <p style="color:var(--text-3); font-size: 12px; margin:0">Manage BharatPe & Promo Codes</p>
+    <div class="pay-container">
+
+      <!-- Hero Header -->
+      <div class="pay-hero fade-in">
+        <div>
+          <h1 class="pay-hero-title">💳 Payment Hub</h1>
+          <p class="pay-hero-sub">Configure gateways, credentials &amp; promo codes</p>
         </div>
-        <div style="display:flex; gap:12px">
-           <!-- Rem0ved redundant save button -->
+        <div class="pay-hero-badge" id="gw-status-chips">
+          <!-- Filled by JS -->
         </div>
       </div>
 
-      <!-- Mode 1: UI Editor -->
-      <div id="mode-ui">
-        <div class="config-grid">
-          <!-- BharatPe -->
-          <div class="config-card fade-in">
-            <div class="config-header">
-              <h2><span>💳</span> BharatPe</h2>
+      <!-- Tab Bar -->
+      <div class="pay-tabs" id="pay-tabs">
+        <button class="pay-tab active" data-tab="bharatpe" onclick="switchTab('bharatpe')">
+          <span class="tab-icon">💳</span> BharatPe <span class="tab-dot off" id="dot-bharatpe"></span>
+        </button>
+        <button class="pay-tab" data-tab="paytm" onclick="switchTab('paytm')">
+          <span class="tab-icon">💳</span> Paytm <span class="tab-dot off" id="dot-paytm"></span>
+        </button>
+        <button class="pay-tab" data-tab="omnipay" onclick="switchTab('omnipay')">
+          <span class="tab-icon">⚡</span> OmniPay <span class="tab-dot off" id="dot-omnipay"></span>
+        </button>
+        <button class="pay-tab" data-tab="heleket" onclick="switchTab('heleket')">
+          <span class="tab-icon">₿</span> Heleket Crypto <span class="tab-dot off" id="dot-heleket"></span>
+        </button>
+        <button class="pay-tab" data-tab="eaglepay" onclick="switchTab('eaglepay')">
+          <span class="tab-icon">🦅</span> Eagle Pay <span class="tab-dot off" id="dot-eaglepay"></span>
+        </button>
+        <button class="pay-tab" data-tab="promos" onclick="switchTab('promos')">
+          <span class="tab-icon">🎁</span> Promo Codes
+        </button>
+      </div>
+
+      <!-- ── BharatPe Panel ──────────────────────────────────── -->
+      <div class="pay-panel active" id="panel-bharatpe">
+        <div class="gw-card fade-in">
+          <div class="gw-card-head">
+            <div class="gw-icon">💳</div>
+            <div class="gw-head-info">
+              <div class="gw-head-name">BharatPe</div>
+              <div class="gw-head-desc">Direct UPI via BharatPe merchant API — manual UTR verification</div>
+            </div>
+            <div class="gw-toggle-wrap">
+              <span class="gw-toggle-label">Enabled</span>
               <label class="toggle-switch">
                 <input type="checkbox" id="ui-bharatpe-enabled">
                 <span class="slider"></span>
               </label>
             </div>
-            <div class="form-group">
-              <label class="form-label">Merchant ID</label>
-              <input type="text" class="form-input" id="ui-bharatpe-merchant" />
+          </div>
+          <div class="gw-body">
+            <div class="field-grid">
+              <div class="form-group field-span2">
+                <label class="form-label">Gateway Display Name <span class="lbl-badge">User Facing</span></label>
+                <input type="text" class="form-input" id="ui-bharatpe-displayname" placeholder="e.g. UPI Payment" value="BharatPe" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Merchant ID</label>
+                <input type="text" class="form-input" id="ui-bharatpe-merchant" placeholder="e.g. 60987133" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Access Token</label>
+                <input type="password" class="form-input" id="ui-bharatpe-token" placeholder="Enter Access Token" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">UPI ID</label>
+                <input type="text" class="form-input" id="ui-bharatpe-upi" placeholder="e.g. merchant@upi" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Account Name</label>
+                <input type="text" class="form-input" id="ui-bharatpe-name" placeholder="e.g. {{SITE_NAME}}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Minimum Deposit (₹)</label>
+                <input type="number" class="form-input" id="ui-bharatpe-min-deposit" value="10" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Commission / Surcharge (%)</label>
+                <input type="number" class="form-input" id="ui-bharatpe-commission" value="0" min="0" max="100" step="0.1" />
+                <div class="form-hint">User pays extra; wallet credit = original amount.</div>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Access Token</label>
-              <input type="password" class="form-input" id="ui-bharatpe-token" />
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">🎁 Deposit Bonus</div>
+              <div class="gw-section-line"></div>
             </div>
-            <div class="form-group">
-              <label class="form-label">UPI ID</label>
-              <input type="text" class="form-input" id="ui-bharatpe-upi" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Account Name (e.g. {{SITE_NAME}})</label>
-              <input type="text" class="form-input" id="ui-bharatpe-name" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Minimum Deposit (₹)</label>
-              <input type="number" class="form-input" id="ui-bharatpe-min-deposit" value="10" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Referral Bonus (%)</label>
-              <input type="number" class="form-input" id="ui-referral-bonus-percent" value="5" step="0.1" />
-              <p style="font-size: 11px; color: var(--text-3); margin-top: 4px;">Bonus paid to inviter when a referred user deposits.</p>
-            </div>
-            <div style="margin-top: 24px;">
-              <button class="btn btn-primary" style="width:100%; height:46px" onclick="saveConfig()">💾 Save Settings</button>
+
+            <div class="bonus-box" style="background:rgba(99,102,241,.04); border:1px solid rgba(99,102,241,.18); border-radius:14px; padding:16px 20px; margin-bottom:18px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div>
+                  <div style="font-size:13px; font-weight:800; color:var(--on-surface);">Extra Deposit Bonus</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:2px;">Award extra wallet credit to users on every successful deposit.</div>
+                </div>
+                <div class="gw-toggle-wrap">
+                  <span class="gw-toggle-label">Bonus Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="ui-bharatpe-bonus-enabled">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="field-grid" style="margin-bottom:0;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Calculation Type</label>
+                  <select class="form-input" id="ui-bharatpe-bonus-type" onchange="updateBonusUnit('bharatpe')">
+                    <option value="percent">Percentage (%) — e.g. 5% extra</option>
+                    <option value="flat">Flat Amount (₹) — e.g. ₹10 extra</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Value (<span id="ui-bharatpe-bonus-unit">%</span>)</label>
+                  <input type="number" class="form-input" id="ui-bharatpe-bonus-value" value="0" min="0" step="0.1" placeholder="e.g. 5" />
+                </div>
+              </div>
             </div>
           </div>
-
-          <!-- Promo Code Manager -->
-          <div class="config-card fade-in">
-            <div class="config-header">
-              <h2><span>🎁</span> Promo Codes</h2>
-              <button class="btn btn-secondary btn-sm" onclick="showPromoModal()">+ New Code</button>
-            </div>
-            <div id="promo-list" style="overflow-y:auto; max-height:240px">
-              <!-- Promo codes list here -->
-              <div style="text-align:center; padding:20px; color:var(--text-3)">Loading Promo Codes...</div>
-            </div>
+          <div class="gw-footer">
+            <span class="gw-footer-note">Changes are saved globally across all sessions.</span>
+            <button class="save-btn" onclick="saveConfig()">💾 Save BharatPe Settings</button>
           </div>
         </div>
       </div>
 
-      <!-- Promo Modal -->
-      <div id="promo-modal" class="modal-backdrop">
-        <div class="modal" style="max-width:400px">
-          <div class="modal-header">
-            <h3>Create Promo Code</h3>
-            <button class="modal-close" onclick="closePromoModal()">✕</button>
+      <!-- ── Paytm Panel ─────────────────────────────────────── -->
+      <div class="pay-panel" id="panel-paytm">
+        <div class="gw-card fade-in">
+          <div class="gw-card-head">
+            <div class="gw-icon">💳</div>
+            <div class="gw-head-info">
+              <div class="gw-head-name">Paytm Business</div>
+              <div class="gw-head-desc">Paytm merchant gateway — QR &amp; UPI auto-verification</div>
+            </div>
+            <div class="gw-toggle-wrap">
+              <span class="gw-toggle-label">Enabled</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ui-paytm-enabled">
+                <span class="slider"></span>
+              </label>
+            </div>
           </div>
-          <div class="modal-content-wrap">
+          <div class="gw-body">
+            <div class="field-grid">
+              <div class="form-group field-span2">
+                <label class="form-label">Gateway Display Name <span class="lbl-badge">User Facing</span></label>
+                <input type="text" class="form-input" id="ui-paytm-displayname" placeholder="e.g. Fast UPI" value="Paytm" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Merchant ID (MID)</label>
+                <input type="text" class="form-input" id="ui-paytm-mid" placeholder="e.g. lhQPiT28888..." />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Merchant Token</label>
+                <input type="password" class="form-input" id="ui-paytm-token" placeholder="Enter Merchant Token" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">UPI ID</label>
+                <input type="text" class="form-input" id="ui-paytm-upi" placeholder="e.g. merchant@paytm" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Account Name</label>
+                <input type="text" class="form-input" id="ui-paytm-name" placeholder="e.g. {{SITE_NAME}}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Minimum Deposit (₹)</label>
+                <input type="number" class="form-input" id="ui-paytm-min-deposit" value="10" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Commission / Surcharge (%)</label>
+                <input type="number" class="form-input" id="ui-paytm-commission" value="0" min="0" max="100" step="0.1" />
+                <div class="form-hint">User pays extra; wallet credit = original amount.</div>
+              </div>
+            </div>
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">🎁 Deposit Bonus</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="bonus-box" style="background:rgba(99,102,241,.04); border:1px solid rgba(99,102,241,.18); border-radius:14px; padding:16px 20px; margin-bottom:18px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div>
+                  <div style="font-size:13px; font-weight:800; color:var(--on-surface);">Extra Deposit Bonus</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:2px;">Award extra wallet credit to users on every successful deposit.</div>
+                </div>
+                <div class="gw-toggle-wrap">
+                  <span class="gw-toggle-label">Bonus Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="ui-paytm-bonus-enabled">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="field-grid" style="margin-bottom:0;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Calculation Type</label>
+                  <select class="form-input" id="ui-paytm-bonus-type" onchange="updateBonusUnit('paytm')">
+                    <option value="percent">Percentage (%) — e.g. 5% extra</option>
+                    <option value="flat">Flat Amount (₹) — e.g. ₹10 extra</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Value (<span id="ui-paytm-bonus-unit">%</span>)</label>
+                  <input type="number" class="form-input" id="ui-paytm-bonus-value" value="0" min="0" step="0.1" placeholder="e.g. 5" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="gw-footer">
+            <span class="gw-footer-note">Changes are saved globally across all sessions.</span>
+            <button class="save-btn" onclick="saveConfig()">💾 Save Paytm Settings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── OmniPay Panel ──────────────────────────────────── -->
+      <div class="pay-panel" id="panel-omnipay">
+        <div class="gw-card fade-in">
+          <div class="gw-card-head">
+            <div class="gw-icon">⚡</div>
+            <div class="gw-head-info">
+              <div class="gw-head-name">OmniPay Gateway</div>
+              <div class="gw-head-desc">Automated UPI intent — HMAC-signed, server-to-server callbacks</div>
+            </div>
+            <div class="gw-toggle-wrap">
+              <span class="gw-toggle-label">Enabled</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ui-omnipay-enabled">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="gw-body">
+            <div class="field-grid">
+              <div class="form-group field-span2">
+                <label class="form-label">Gateway Display Name <span class="lbl-badge">User Facing</span></label>
+                <input type="text" class="form-input" id="ui-omnipay-displayname" placeholder="e.g. Instant UPI" value="OmniPay" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">App ID</label>
+                <input type="text" class="form-input" id="ui-omnipay-appid" placeholder="e.g. M20261491FWJ7" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">App Secret (HMAC Key)</label>
+                <input type="password" class="form-input" id="ui-omnipay-secret" placeholder="Enter App Secret" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">API Base URL</label>
+                <input type="text" class="form-input" id="ui-omnipay-apibase" value="https://api.omnipay.global" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Callback URL <span class="lbl-badge">Optional</span></label>
+                <input type="text" class="form-input" id="ui-omnipay-callback" placeholder="https://domain.com/api/payment/omnipay/callback" />
+              </div>
+              <div class="form-group field-span2">
+                <label class="form-label">Redirect / Jump URL <span class="lbl-badge">Optional</span></label>
+                <input type="text" class="form-input" id="ui-omnipay-jump" placeholder="https://domain.com/dashboard/wallet?omnipay_order={order_no}" />
+                <div class="form-hint">Use <code>{order_no}</code> if the gateway needs the order ID in the redirect.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Minimum Deposit (₹)</label>
+                <input type="number" class="form-input" id="ui-omnipay-min-deposit" value="10" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Commission / Surcharge (%)</label>
+                <input type="number" class="form-input" id="ui-omnipay-commission" value="0" min="0" max="100" step="0.1" />
+                <div class="form-hint">User pays extra; wallet credit = original amount.</div>
+              </div>
+            </div>
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">🎁 Deposit Bonus</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="bonus-box" style="background:rgba(99,102,241,.04); border:1px solid rgba(99,102,241,.18); border-radius:14px; padding:16px 20px; margin-bottom:18px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div>
+                  <div style="font-size:13px; font-weight:800; color:var(--on-surface);">Extra Deposit Bonus</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:2px;">Award extra wallet credit to users on every successful deposit.</div>
+                </div>
+                <div class="gw-toggle-wrap">
+                  <span class="gw-toggle-label">Bonus Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="ui-omnipay-bonus-enabled">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="field-grid" style="margin-bottom:0;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Calculation Type</label>
+                  <select class="form-input" id="ui-omnipay-bonus-type" onchange="updateBonusUnit('omnipay')">
+                    <option value="percent">Percentage (%) — e.g. 5% extra</option>
+                    <option value="flat">Flat Amount (₹) — e.g. ₹10 extra</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Value (<span id="ui-omnipay-bonus-unit">%</span>)</label>
+                  <input type="number" class="form-input" id="ui-omnipay-bonus-value" value="0" min="0" step="0.1" placeholder="e.g. 5" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="gw-footer">
+            <span class="gw-footer-note">Changes are saved globally across all sessions.</span>
+            <button class="save-btn" onclick="saveConfig()">💾 Save OmniPay Settings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Heleket Crypto Panel ───────────────────────────── -->
+      <div class="pay-panel" id="panel-heleket">
+        <div class="gw-card fade-in">
+          <div class="gw-card-head">
+            <div class="gw-icon">₿</div>
+            <div class="gw-head-info">
+              <div class="gw-head-name">Heleket Crypto Gateway</div>
+              <div class="gw-head-desc">Multi-coin crypto deposits — USDT, BTC, ETH, TRX &amp; more</div>
+            </div>
+            <div class="gw-toggle-wrap">
+              <span class="gw-toggle-label">Enabled</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ui-heleket-enabled">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="gw-body">
+            <div class="field-grid">
+              <div class="form-group field-span2">
+                <label class="form-label">Gateway Display Name <span class="lbl-badge">User Facing</span></label>
+                <input type="text" class="form-input" id="ui-heleket-displayname" placeholder="e.g. Crypto (USDT / BTC / ETH)" value="Crypto (USDT / BTC / ETH)" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Merchant ID (UUID)</label>
+                <input type="text" class="form-input" id="ui-heleket-merchant" placeholder="Enter Merchant UUID" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payment API Key</label>
+                <input type="password" class="form-input" id="ui-heleket-paymentkey" placeholder="Enter Payment API Key" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payout API Key <span class="lbl-badge">Optional</span></label>
+                <input type="password" class="form-input" id="ui-heleket-payoutkey" placeholder="Enter Payout API Key" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Invoice Lifetime (Seconds)</label>
+                <input type="number" class="form-input" id="ui-heleket-lifetime" value="3600" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Discount Percent (%)</label>
+                <input type="number" class="form-input" id="ui-heleket-discount" value="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Minimum Deposit (₹)</label>
+                <input type="number" class="form-input" id="ui-heleket-min-deposit" value="100" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Commission / Surcharge (%)</label>
+                <input type="number" class="form-input" id="ui-heleket-commission" value="0" min="0" max="100" step="0.1" />
+                <div class="form-hint">User pays extra; wallet credit = original amount.</div>
+              </div>
+            </div>
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">🎁 Deposit Bonus</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="bonus-box" style="background:rgba(99,102,241,.04); border:1px solid rgba(99,102,241,.18); border-radius:14px; padding:16px 20px; margin-bottom:18px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div>
+                  <div style="font-size:13px; font-weight:800; color:var(--on-surface);">Extra Deposit Bonus</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:2px;">Award extra wallet credit to users on every successful deposit.</div>
+                </div>
+                <div class="gw-toggle-wrap">
+                  <span class="gw-toggle-label">Bonus Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="ui-heleket-bonus-enabled">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="field-grid" style="margin-bottom:0;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Calculation Type</label>
+                  <select class="form-input" id="ui-heleket-bonus-type" onchange="updateBonusUnit('heleket')">
+                    <option value="percent">Percentage (%) — e.g. 5% extra</option>
+                    <option value="flat">Flat Amount (₹) — e.g. ₹10 extra</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Value (<span id="ui-heleket-bonus-unit">%</span>)</label>
+                  <input type="number" class="form-input" id="ui-heleket-bonus-value" value="0" min="0" step="0.1" placeholder="e.g. 5" />
+                </div>
+              </div>
+            </div>
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">📡 Live Coin Rates</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="gw-info">
+              <div class="gw-info-title">
+                <span>Supported Crypto Services &amp; Limits</span>
+                <span id="admin-services-badge" style="font-size:10px; background:rgba(56,189,248,.15); color:#38bdf8; padding:2px 8px; border-radius:10px; font-weight:700;">Loading…</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="loadAdminHeleketServices()" style="margin-left:auto; font-size:11px; padding:4px 10px;">🔄 Refresh</button>
+              </div>
+              <div class="crypto-table-wrap">
+                <table class="crypto-table">
+                  <thead>
+                    <tr>
+                      <th>Coin / Network</th>
+                      <th>Commission</th>
+                      <th style="text-align:right">Min Deposit</th>
+                      <th style="text-align:right">Max Deposit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-services-tbody">
+                    <tr><td colspan="4" style="padding:16px; text-align:center; color:var(--text-3)">Loading services…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="gw-footer">
+            <span class="gw-footer-note">Changes are saved globally across all sessions.</span>
+            <button class="save-btn" onclick="saveConfig()">💾 Save Heleket Settings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Eagle Pay Panel ───────────────────────────────────── -->
+      <div class="pay-panel" id="panel-eaglepay">
+        <div class="gw-card fade-in">
+          <div class="gw-card-head">
+            <div class="gw-icon">🦅</div>
+            <div class="gw-head-info">
+              <div class="gw-head-name">Eagle Pay Gateway</div>
+              <div class="gw-head-desc">INR UPI &amp; PKR wallet payments — MD5-signed, server-to-server webhooks</div>
+            </div>
+            <div class="gw-toggle-wrap">
+              <span class="gw-toggle-label">Enabled</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ui-eaglepay-enabled">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="gw-body">
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">🔑 Credentials</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="field-grid">
+              <div class="form-group field-span2">
+                <label class="form-label">Gateway Display Name <span class="lbl-badge">User Facing</span></label>
+                <input type="text" class="form-input" id="ui-eaglepay-displayname" placeholder="e.g. Eagle Pay / Instant UPI" value="Eagle Pay" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Merchant ID</label>
+                <input type="text" class="form-input" id="ui-eaglepay-merchant" placeholder="e.g. 100000001" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Pay-in API Key</label>
+                <input type="password" class="form-input" id="ui-eaglepay-apikey" placeholder="Enter Pay-in API Key" />
+              </div>
+              <div class="form-group field-span2">
+                <label class="form-label">Payout Key <span class="lbl-badge">Optional</span></label>
+                <input type="password" class="form-input" id="ui-eaglepay-payoutkey" placeholder="Enter Payout Key if used" />
+              </div>
+            </div>
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">🔗 URLs &amp; Routing</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="field-grid">
+              <div class="form-group">
+                <label class="form-label">Callback URL <span class="lbl-badge">Webhook</span></label>
+                <input type="text" class="form-input" id="ui-eaglepay-callback" placeholder="https://yourdomain.com/api/payment/eaglepay/callback" />
+                <div class="form-hint">Leave blank to auto-generate from site URL. Register in Eagle Pay merchant portal.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Return URL <span class="lbl-badge">Browser Redirect</span></label>
+                <input type="text" class="form-input" id="ui-eaglepay-return" placeholder="https://yourdomain.com/dashboard/wallet" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Trade Type</label>
+                <select class="form-input" id="ui-eaglepay-tradetype">
+                  <option value="INRUPI">INRUPI — India UPI (Default)</option>
+                  <option value="2400">2400 — Pakistan Easypaisa</option>
+                  <option value="2401">2401 — Pakistan JazzCash</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Currency</label>
+                <select class="form-input" id="ui-eaglepay-currency">
+                  <option value="INR">INR — Indian Rupee</option>
+                  <option value="PKR">PKR — Pakistani Rupee</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">💰 Limits &amp; Fees</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="field-grid">
+              <div class="form-group">
+                <label class="form-label">Minimum Deposit</label>
+                <input type="number" class="form-input" id="ui-eaglepay-min-deposit" value="100" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Commission / Surcharge (%)</label>
+                <input type="number" class="form-input" id="ui-eaglepay-commission" value="0" min="0" max="100" step="0.1" />
+                <div class="form-hint">User pays extra; wallet credit = original amount.</div>
+              </div>
+            </div>
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">🎁 Deposit Bonus</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="bonus-box" style="background:rgba(99,102,241,.04); border:1px solid rgba(99,102,241,.18); border-radius:14px; padding:16px 20px; margin-bottom:18px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div>
+                  <div style="font-size:13px; font-weight:800; color:var(--on-surface);">Extra Deposit Bonus</div>
+                  <div style="font-size:11px; color:var(--text-3); margin-top:2px;">Award extra wallet credit to users on every successful deposit.</div>
+                </div>
+                <div class="gw-toggle-wrap">
+                  <span class="gw-toggle-label">Bonus Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="ui-eaglepay-bonus-enabled">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="field-grid" style="margin-bottom:0;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Calculation Type</label>
+                  <select class="form-input" id="ui-eaglepay-bonus-type" onchange="updateBonusUnit('eaglepay')">
+                    <option value="percent">Percentage (%) — e.g. 5% extra</option>
+                    <option value="flat">Flat Amount (₹) — e.g. ₹10 extra</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Bonus Value (<span id="ui-eaglepay-bonus-unit">%</span>)</label>
+                  <input type="number" class="form-input" id="ui-eaglepay-bonus-value" value="0" min="0" step="0.1" placeholder="e.g. 5" />
+                </div>
+              </div>
+            </div>
+
+            <div class="gw-section">
+              <div class="gw-section-line"></div>
+              <div class="gw-section-text">📡 API Reference</div>
+              <div class="gw-section-line"></div>
+            </div>
+
+            <div class="gw-info">
+              <div class="gw-info-title">Eagle Pay API Endpoints (POST only — do not open in browser)</div>
+              <div class="ep-endpoint">
+                <span class="ep-method">POST</span>
+                <div>
+                  <div class="ep-path">https://xgxbscfgfhtiizzxipog.supabase.co/functions/v1/payin</div>
+                  <div class="ep-desc">Create a new pay-in order. Returns <code>payment_url</code> to redirect user.</div>
+                </div>
+              </div>
+              <div class="ep-endpoint">
+                <span class="ep-method">POST</span>
+                <div>
+                  <div class="ep-path">https://xgxbscfgfhtiizzxipog.supabase.co/functions/v1/payout</div>
+                  <div class="ep-desc">Initiate a bank transfer payout to a beneficiary.</div>
+                </div>
+              </div>
+              <div class="ep-endpoint">
+                <span class="ep-method">POST</span>
+                <div>
+                  <div class="ep-path">https://xgxbscfgfhtiizzxipog.supabase.co/functions/v1/check-order-status</div>
+                  <div class="ep-desc">Query order status (pay-in or payout). Returns <code>pending | processing | success | failed</code>.</div>
+                </div>
+              </div>
+              <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border); font-size:11px; color:var(--text-3);">
+                <strong style="color:var(--on-surface)">Pay-in Signature:</strong>
+                <code>MD5(merchant_id + amount + merchant_order_no + api_key + callback_url)</code> → lowercase hex
+              </div>
+            </div>
+          </div>
+          <div class="gw-footer">
+            <span class="gw-footer-note">Changes are saved globally across all sessions.</span>
+            <button class="save-btn" onclick="saveConfig()">💾 Save Eagle Pay Settings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Promo Codes Panel ──────────────────────────────── -->
+      <div class="pay-panel" id="panel-promos">
+        <div class="promo-grid fade-in">
+          <!-- List -->
+          <div class="gw-card" style="padding:24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+              <div>
+                <div style="font-size:16px; font-weight:800; color:var(--on-surface); margin-bottom:2px;">🎁 Active Promo Codes</div>
+                <div style="font-size:12px; color:var(--text-3);">Click the trash icon to revoke a code.</div>
+              </div>
+            </div>
+            <div class="promo-list-wrap" id="promo-list">
+              <div style="text-align:center; padding:24px; color:var(--text-3); font-size:13px;">Loading promo codes…</div>
+            </div>
+          </div>
+
+          <!-- Create Form -->
+          <div class="promo-form-card">
+            <div class="promo-form-title">✨ Create New Promo Code</div>
             <div class="form-group">
-              <label class="form-label">Code (e.g. WELCOME50)</label>
-              <input type="text" class="form-input" id="promo-code-input" style="text-transform:uppercase" />
+              <label class="form-label">Code</label>
+              <input type="text" class="form-input" id="promo-code-input" placeholder="e.g. WELCOME50" style="text-transform:uppercase" />
             </div>
             <div class="form-group">
               <label class="form-label">Reward Amount (₹)</label>
-              <input type="number" class="form-input" id="promo-amount-input" />
+              <input type="number" class="form-input" id="promo-amount-input" placeholder="e.g. 50" />
             </div>
             <div class="form-group">
-              <label class="form-label">Max Usages (0 = Unlimited)</label>
+              <label class="form-label">Max Usages <span class="lbl-badge">0 = Unlimited</span></label>
               <input type="number" class="form-input" id="promo-limit-input" value="0" />
             </div>
-            <button class="btn btn-primary" style="margin-top:12px" onclick="createPromo()">✨ Create Promo</button>
+            <button class="save-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="createPromo()">✨ Create Promo Code</button>
           </div>
         </div>
       </div>
+
     </div>
   </main>
 </div>
 
+<script src="/js/main.js?v=1784210170372"></script>
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
 <script>
 {
   if (!requireAdmin()) {}
 
   let currentConfig = {};
+  let activeTab = 'bharatpe';
+
+  window.switchTab = function(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.pay-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
+    const btn = document.querySelector(`[data-tab="${tab}"]`);
+    const panel = document.getElementById(`panel-${tab}`);
+    if (btn) btn.classList.add('active');
+    if (panel) panel.classList.add('active');
+  };
 
   async function loadConfig() {
     try {
@@ -250,23 +941,20 @@
       const promos = resp.codes || [];
       const list = document.getElementById('promo-list');
       if (!promos.length) {
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-3); font-size:12px">No active promo codes.</div>';
+        list.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-3); font-size:13px;">No active promo codes.</div>';
         return;
       }
       list.innerHTML = promos.map(p => `
-        <div style="background:var(--bg-1); padding:12px; border-radius:12px; border:1px solid var(--border); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; animation: fadeIn 0.3s ease-out;">
+        <div class="promo-item">
           <div>
-            <div style="font-weight:800; color:var(--accent); font-size:14px; letter-spacing:0.05em">${p.code}</div>
-            <div style="font-size:11px; color:var(--text-3); margin-top:2px">₹${p.amount} • Used: <span style="color:var(--success)">${p.used_count}</span>/${p.usage_limit || '∞'}</div>
+            <div class="promo-code">${p.code}</div>
+            <div class="promo-meta">₹${p.amount} reward &nbsp;•&nbsp; Used: <span style="color:var(--success)">${p.used_count}</span>/${p.usage_limit || '∞'}</div>
           </div>
-          <button class="btn btn-sm" style="color:var(--danger); background:rgba(239,68,68,0.1); border:none; padding:8px" onclick="deletePromo('${p._id}')">🗑️</button>
+          <button class="promo-del" onclick="deletePromo('${p._id}')" title="Delete">🗑️</button>
         </div>
       `).join('');
     } catch (e) { console.error(e); }
   }
-
-  window.showPromoModal = () => document.getElementById('promo-modal').classList.add('open');
-  window.closePromoModal = () => document.getElementById('promo-modal').classList.remove('open');
 
   window.createPromo = async () => {
     const code = document.getElementById('promo-code-input').value;
@@ -275,7 +963,9 @@
     try {
       await API.post('/api/admin/promo-codes', { code, amount, usage_limit: limit });
       toast('Promo code created!', 'success');
-      closePromoModal();
+      document.getElementById('promo-code-input').value = '';
+      document.getElementById('promo-amount-input').value = '';
+      document.getElementById('promo-limit-input').value = '0';
       loadPromos();
     } catch (e) { toast(e.message, 'error'); }
   };
@@ -289,50 +979,249 @@
     } catch (e) { toast(e.message, 'error'); }
   };
 
+  function setDot(id, on) {
+    const el = document.getElementById(`dot-${id}`);
+    if (!el) return;
+    el.classList.toggle('off', !on);
+  }
+
+  function buildChips(cfg) {
+    const gws = [
+      { key:'bharatpe', label:'BharatPe', icon:'💳' },
+      { key:'paytm',    label:'Paytm',    icon:'💳' },
+      { key:'omnipay',  label:'OmniPay',  icon:'⚡' },
+      { key:'heleket',  label:'Heleket',  icon:'₿' },
+      { key:'eaglepay', label:'Eagle Pay',icon:'🦅' },
+    ];
+    const wrap = document.getElementById('gw-status-chips');
+    if (!wrap) return;
+    wrap.innerHTML = gws.map(g => {
+      const on = !!(cfg[g.key] && cfg[g.key].enabled);
+      return `<span class="gw-chip ${on ? 'on' : 'off'}"><span class="dot"></span>${g.icon} ${g.label}</span>`;
+    }).join('');
+  }
+
+  window.updateBonusUnit = function(gw) {
+    const sel = document.getElementById(`ui-${gw}-bonus-type`);
+    const unitEl = document.getElementById(`ui-${gw}-bonus-unit`);
+    if (sel && unitEl) {
+      unitEl.textContent = sel.value === 'flat' ? '₹' : '%';
+    }
+  };
+
   function applyToUI(cfg) {
+    buildChips(cfg);
+
     const bp = cfg.bharatpe || {};
+    setDot('bharatpe', !!bp.enabled);
     document.getElementById('ui-bharatpe-enabled').checked = !!bp.enabled;
+    document.getElementById('ui-bharatpe-displayname').value = bp.display_name || bp.displayName || 'BharatPe';
     document.getElementById('ui-bharatpe-merchant').value = bp.merchant_id || '';
     document.getElementById('ui-bharatpe-token').value = bp.access_token || '';
     document.getElementById('ui-bharatpe-upi').value = bp.upi_id || '';
     document.getElementById('ui-bharatpe-name').value = bp.upi_name || '';
     document.getElementById('ui-bharatpe-min-deposit').value = bp.min_deposit || 1;
-    document.getElementById('ui-referral-bonus-percent').value = cfg.referral_bonus_percent || 5;
+    document.getElementById('ui-bharatpe-commission').value = bp.commission_percent || 0;
+    document.getElementById('ui-bharatpe-bonus-enabled').checked = !!bp.bonus_enabled;
+    document.getElementById('ui-bharatpe-bonus-type').value = bp.bonus_type || 'percent';
+    document.getElementById('ui-bharatpe-bonus-value').value = bp.bonus_value !== undefined ? bp.bonus_value : 0;
+    updateBonusUnit('bharatpe');
+
+    const pt = cfg.paytm || {};
+    setDot('paytm', !!pt.enabled);
+    document.getElementById('ui-paytm-enabled').checked = !!pt.enabled;
+    document.getElementById('ui-paytm-displayname').value = pt.display_name || pt.displayName || 'Paytm';
+    document.getElementById('ui-paytm-mid').value = pt.mid || '';
+    document.getElementById('ui-paytm-token').value = pt.token || '';
+    document.getElementById('ui-paytm-upi').value = pt.upi_id || '';
+    document.getElementById('ui-paytm-name').value = pt.upi_name || '';
+    document.getElementById('ui-paytm-min-deposit').value = pt.min_deposit || 1;
+    document.getElementById('ui-paytm-commission').value = pt.commission_percent || 0;
+    document.getElementById('ui-paytm-bonus-enabled').checked = !!pt.bonus_enabled;
+    document.getElementById('ui-paytm-bonus-type').value = pt.bonus_type || 'percent';
+    document.getElementById('ui-paytm-bonus-value').value = pt.bonus_value !== undefined ? pt.bonus_value : 0;
+    updateBonusUnit('paytm');
+
+    const op = cfg.omnipay || {};
+    setDot('omnipay', !!op.enabled);
+    document.getElementById('ui-omnipay-enabled').checked = !!op.enabled;
+    document.getElementById('ui-omnipay-displayname').value = op.display_name || op.displayName || 'OmniPay';
+    document.getElementById('ui-omnipay-appid').value = op.app_id || op.appId || '';
+    document.getElementById('ui-omnipay-secret').value = op.app_secret || op.appSecret || '';
+    document.getElementById('ui-omnipay-apibase').value = op.api_base || op.apiBase || 'https://api.omnipay.global';
+    document.getElementById('ui-omnipay-callback').value = op.callback_url || '';
+    document.getElementById('ui-omnipay-jump').value = op.jump_url || '';
+    document.getElementById('ui-omnipay-min-deposit').value = op.min_deposit || 10;
+    document.getElementById('ui-omnipay-commission').value = op.commission_percent || 0;
+    document.getElementById('ui-omnipay-bonus-enabled').checked = !!op.bonus_enabled;
+    document.getElementById('ui-omnipay-bonus-type').value = op.bonus_type || 'percent';
+    document.getElementById('ui-omnipay-bonus-value').value = op.bonus_value !== undefined ? op.bonus_value : 0;
+    updateBonusUnit('omnipay');
+
+    const hk = cfg.heleket || {};
+    setDot('heleket', !!hk.enabled);
+    document.getElementById('ui-heleket-enabled').checked = !!hk.enabled;
+    document.getElementById('ui-heleket-displayname').value = hk.display_name || hk.displayName || 'Crypto (USDT / BTC / ETH)';
+    document.getElementById('ui-heleket-merchant').value = hk.merchant_id || '';
+    document.getElementById('ui-heleket-paymentkey').value = hk.payment_key || '';
+    document.getElementById('ui-heleket-payoutkey').value = hk.payout_key || '';
+    document.getElementById('ui-heleket-lifetime').value = hk.lifetime || 3600;
+    document.getElementById('ui-heleket-discount').value = hk.discount_percent || 0;
+    document.getElementById('ui-heleket-min-deposit').value = hk.min_deposit || 100;
+    document.getElementById('ui-heleket-commission').value = hk.commission_percent || 0;
+    document.getElementById('ui-heleket-bonus-enabled').checked = !!hk.bonus_enabled;
+    document.getElementById('ui-heleket-bonus-type').value = hk.bonus_type || 'percent';
+    document.getElementById('ui-heleket-bonus-value').value = hk.bonus_value !== undefined ? hk.bonus_value : 0;
+    updateBonusUnit('heleket');
+
+    if (typeof loadAdminHeleketServices === 'function') loadAdminHeleketServices();
+
+    const ep = cfg.eaglepay || {};
+    setDot('eaglepay', !!ep.enabled);
+    document.getElementById('ui-eaglepay-enabled').checked = !!ep.enabled;
+    document.getElementById('ui-eaglepay-displayname').value = ep.display_name || ep.displayName || 'Eagle Pay';
+    document.getElementById('ui-eaglepay-merchant').value = ep.merchant_id || '';
+    document.getElementById('ui-eaglepay-apikey').value = ep.api_key || '';
+    document.getElementById('ui-eaglepay-payoutkey').value = ep.payout_key || '';
+    document.getElementById('ui-eaglepay-callback').value = ep.callback_url || '';
+    document.getElementById('ui-eaglepay-return').value = ep.return_url || '';
+    const ttEl = document.getElementById('ui-eaglepay-tradetype');
+    if (ttEl) ttEl.value = ep.trade_type || 'INRUPI';
+    const curEl = document.getElementById('ui-eaglepay-currency');
+    if (curEl) curEl.value = ep.currency || 'INR';
+    document.getElementById('ui-eaglepay-min-deposit').value = ep.min_deposit !== undefined ? ep.min_deposit : 100;
+    document.getElementById('ui-eaglepay-commission').value = ep.commission_percent || 0;
+    document.getElementById('ui-eaglepay-bonus-enabled').checked = !!ep.bonus_enabled;
+    document.getElementById('ui-eaglepay-bonus-type').value = ep.bonus_type || 'percent';
+    document.getElementById('ui-eaglepay-bonus-value').value = ep.bonus_value !== undefined ? ep.bonus_value : 0;
+    updateBonusUnit('eaglepay');
   }
+
+  window.loadAdminHeleketServices = async function() {
+    try {
+      const res = await fetch('/api/admin/heleket-services').then(r => r.json());
+      if (!res.success || !res.services) return;
+
+      const tbody = document.getElementById('admin-services-tbody');
+      const badge = document.getElementById('admin-services-badge');
+      if (badge) {
+        badge.textContent = res.source === 'live_api' ? '🔥 Live API' : '⚡ Cached';
+      }
+
+      const usdRate = Number(res.usd_rate) || 96.38;
+      tbody.innerHTML = res.services.map(s => {
+        const net = s.network ? ` (${s.network})` : '';
+        const minUsd = (s.min_amount !== undefined && !isNaN(s.min_amount)) ? parseFloat(s.min_amount) : 1;
+        const maxUsd = (s.max_amount !== undefined && !isNaN(s.max_amount)) ? parseFloat(s.max_amount) : 50000;
+        const minInr = Math.ceil(minUsd * usdRate);
+        const maxInr = Math.floor(maxUsd * usdRate);
+        const comm = s.commission_percent !== undefined ? `${s.commission_percent}%` : '—';
+        return `
+          <tr>
+            <td style="font-weight:700">${s.currency}${net}</td>
+            <td style="text-align:center; color:var(--text-3)">${comm}</td>
+            <td style="text-align:right; font-family:monospace">₹${minInr.toLocaleString('en-IN')} <span style="font-size:10px; color:var(--text-3)">($${minUsd})</span></td>
+            <td style="text-align:right; font-family:monospace">₹${maxInr.toLocaleString('en-IN')} <span style="font-size:10px; color:var(--text-3)">($${maxUsd})</span></td>
+          </tr>`;
+      }).join('');
+    } catch (e) {
+      console.warn('Could not load admin heleket services:', e);
+    }
+  };
 
   window.saveConfig = async function() {
     const cfg = {
       bharatpe: {
         enabled: document.getElementById('ui-bharatpe-enabled').checked,
-        merchant_id: document.getElementById('ui-bharatpe-merchant').value,
-        access_token: document.getElementById('ui-bharatpe-token').value,
-        upi_id: document.getElementById('ui-bharatpe-upi').value,
-        upi_name: document.getElementById('ui-bharatpe-name').value,
-        min_deposit: parseFloat(document.getElementById('ui-bharatpe-min-deposit').value) || 1
+        display_name: document.getElementById('ui-bharatpe-displayname').value.trim() || 'BharatPe',
+        merchant_id: document.getElementById('ui-bharatpe-merchant').value.trim(),
+        access_token: document.getElementById('ui-bharatpe-token').value.trim(),
+        upi_id: document.getElementById('ui-bharatpe-upi').value.trim(),
+        upi_name: document.getElementById('ui-bharatpe-name').value.trim(),
+        min_deposit: parseFloat(document.getElementById('ui-bharatpe-min-deposit').value) || 3,
+        commission_percent: parseFloat(document.getElementById('ui-bharatpe-commission').value) || 0,
+        bonus_enabled: document.getElementById('ui-bharatpe-bonus-enabled').checked,
+        bonus_type: document.getElementById('ui-bharatpe-bonus-type').value || 'percent',
+        bonus_value: parseFloat(document.getElementById('ui-bharatpe-bonus-value').value) || 0
       },
-      referral_bonus_percent: parseFloat(document.getElementById('ui-referral-bonus-percent').value) || 5
+      paytm: {
+        enabled: document.getElementById('ui-paytm-enabled').checked,
+        display_name: document.getElementById('ui-paytm-displayname').value.trim() || 'Paytm Business',
+        mid: document.getElementById('ui-paytm-mid').value.trim(),
+        token: document.getElementById('ui-paytm-token').value.trim(),
+        upi_id: document.getElementById('ui-paytm-upi').value.trim(),
+        upi_name: document.getElementById('ui-paytm-name').value.trim(),
+        min_deposit: parseFloat(document.getElementById('ui-paytm-min-deposit').value) || 1,
+        commission_percent: parseFloat(document.getElementById('ui-paytm-commission').value) || 0,
+        bonus_enabled: document.getElementById('ui-paytm-bonus-enabled').checked,
+        bonus_type: document.getElementById('ui-paytm-bonus-type').value || 'percent',
+        bonus_value: parseFloat(document.getElementById('ui-paytm-bonus-value').value) || 0
+      },
+      omnipay: {
+        enabled: document.getElementById('ui-omnipay-enabled').checked,
+        display_name: document.getElementById('ui-omnipay-displayname').value.trim() || 'OmniPay',
+        app_id: document.getElementById('ui-omnipay-appid').value.trim(),
+        app_secret: document.getElementById('ui-omnipay-secret').value.trim(),
+        api_base: document.getElementById('ui-omnipay-apibase').value.trim() || 'https://api.omnipay.global',
+        callback_url: document.getElementById('ui-omnipay-callback').value.trim(),
+        jump_url: document.getElementById('ui-omnipay-jump').value.trim(),
+        min_deposit: parseFloat(document.getElementById('ui-omnipay-min-deposit').value) || 10,
+        commission_percent: parseFloat(document.getElementById('ui-omnipay-commission').value) || 0,
+        bonus_enabled: document.getElementById('ui-omnipay-bonus-enabled').checked,
+        bonus_type: document.getElementById('ui-omnipay-bonus-type').value || 'percent',
+        bonus_value: parseFloat(document.getElementById('ui-omnipay-bonus-value').value) || 0
+      },
+      heleket: {
+        enabled: document.getElementById('ui-heleket-enabled').checked,
+        display_name: document.getElementById('ui-heleket-displayname').value.trim() || 'Crypto (USDT / BTC / ETH)',
+        merchant_id: document.getElementById('ui-heleket-merchant').value.trim(),
+        payment_key: document.getElementById('ui-heleket-paymentkey').value.trim(),
+        payout_key: document.getElementById('ui-heleket-payoutkey').value.trim(),
+        allow_currencies: "",
+        except_currencies: "",
+        lifetime: parseInt(document.getElementById('ui-heleket-lifetime').value) || 3600,
+        discount_percent: parseFloat(document.getElementById('ui-heleket-discount').value) || 0,
+        min_deposit: parseFloat(document.getElementById('ui-heleket-min-deposit').value) || 100,
+        commission_percent: parseFloat(document.getElementById('ui-heleket-commission').value) || 0,
+        bonus_enabled: document.getElementById('ui-heleket-bonus-enabled').checked,
+        bonus_type: document.getElementById('ui-heleket-bonus-type').value || 'percent',
+        bonus_value: parseFloat(document.getElementById('ui-heleket-bonus-value').value) || 0
+      },
+      eaglepay: {
+        enabled: document.getElementById('ui-eaglepay-enabled').checked,
+        display_name: document.getElementById('ui-eaglepay-displayname').value.trim() || 'Eagle Pay',
+        merchant_id: document.getElementById('ui-eaglepay-merchant').value.trim(),
+        api_key: document.getElementById('ui-eaglepay-apikey').value.trim(),
+        payout_key: document.getElementById('ui-eaglepay-payoutkey').value.trim(),
+        callback_url: document.getElementById('ui-eaglepay-callback').value.trim(),
+        return_url: document.getElementById('ui-eaglepay-return').value.trim(),
+        trade_type: document.getElementById('ui-eaglepay-tradetype').value || 'INRUPI',
+        currency: document.getElementById('ui-eaglepay-currency').value || 'INR',
+        min_deposit: parseFloat(document.getElementById('ui-eaglepay-min-deposit').value) || 100,
+        commission_percent: parseFloat(document.getElementById('ui-eaglepay-commission').value) || 0,
+        bonus_enabled: document.getElementById('ui-eaglepay-bonus-enabled').checked,
+        bonus_type: document.getElementById('ui-eaglepay-bonus-type').value || 'percent',
+        bonus_value: parseFloat(document.getElementById('ui-eaglepay-bonus-value').value) || 0
+      }
     };
-    
+
     try {
       await API.post('/api/admin/payment-config', cfg);
       toast('Payment configuration saved!', 'success');
       loadConfig();
-    } catch (e) { 
-      toast(e.message, 'error'); 
+    } catch (e) {
+      toast(e.message, 'error');
     }
-  }
+  };
 
   async function init() {
     if (!await requireAdmin()) return;
     loadConfig();
   }
-  
+
   init();
 }
 </script>
 
 </body>
 </html>
-
-
-

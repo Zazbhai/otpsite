@@ -1,6 +1,61 @@
 /**
  * Provider API integration based on Master Reference Guide
  */
+const fs = require('fs');
+const path = require('path');
+
+// Ensure data directory exists
+const DATA_DIR = path.join(__dirname, '..', 'onlinesim');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+const DUP_FILE = path.join(DATA_DIR, 'duplicate_number_block.json');
+const LOG_FILE = path.join(DATA_DIR, 'onlinesim_log.txt');
+
+// Memory cache for speed, backed by file for persistence
+let numberCache = new Map();
+const DUPLICATE_WINDOW = 3 * 60 * 1000; 
+
+// Load existing blocks on startup
+try {
+  if (fs.existsSync(DUP_FILE)) {
+    const data = JSON.parse(fs.readFileSync(DUP_FILE, 'utf8'));
+    const now = Date.now();
+    data.forEach(item => {
+      if (now - item.time < DUPLICATE_WINDOW) {
+        numberCache.set(item.number, item.time);
+      }
+    });
+  }
+} catch (e) {
+  console.error("[OnlineSim] Failed to load duplicate block file:", e.message);
+}
+
+function isDuplicate(number) {
+  const now = Date.now();
+  if (numberCache.has(number)) {
+    if (now - numberCache.get(number) < DUPLICATE_WINDOW) return true;
+  }
+  numberCache.set(number, now);
+  
+  // Persist to file
+  const cacheArr = [];
+  numberCache.forEach((time, num) => {
+    if (now - time < DUPLICATE_WINDOW) cacheArr.push({ number: num, time });
+  });
+  
+  try {
+    fs.writeFileSync(DUP_FILE, JSON.stringify(cacheArr));
+  } catch (e) {}
+
+  return false;
+}
+
+function logToProviderFile(msg) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  fs.appendFileSync(LOG_FILE, line);
+}
 
 function buildUrl(urlTemplate, { api_key, service, country, order_id }) {
   let url = urlTemplate || "";
@@ -26,10 +81,14 @@ async function callProvider(url, server, method = "GET") {
   console.log(`\n[DEBUG] === CALLING 3RD PARTY PROVIDER ===\nMETHOD: ${method}\nURL: ${url}\nHEADERS:`, options.headers, `\n`);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+
+  // Prevent any Node 18+ fetch caching issues
+  const sep = url.includes('?') ? '&' : '?';
+  const noCacheUrl = `${url}${sep}_t=${Date.now()}`;
 
   try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
+    const res = await fetch(noCacheUrl, { ...options, cache: 'no-store', signal: controller.signal });
     clearTimeout(timeoutId);
     const text = await res.text();
     let data;
@@ -43,7 +102,7 @@ async function callProvider(url, server, method = "GET") {
     clearTimeout(timeoutId);
     console.error("Provider API Error:", err.message);
     if (err.name === 'AbortError') {
-      return { ok: false, data: { error: "Provider request timed out" }, status: 504 };
+      return { ok: false, data: { error: "Provider request timed out" }, status: 408 };
     }
     return { ok: false, data: { error: err.message }, status: 500 };
   }
@@ -63,36 +122,71 @@ async function getNumber(server, serviceCode, countryCode) {
   let attempt = 0;
   let lastError = null;
 
-  while (attempt <= maxRetries) {
-    if (attempt > 0) console.log(`[RETRY] Attempt ${attempt}/${maxRetries} for getNumber...`);
+  while (attempt < maxRetries || attempt === 0) {
+    if (attempt > 0) console.log(`[RETRY] Attempt ${attempt}/${maxRetries - 1} for getNumber...`);
     
     const response = await callProvider(url, server);
+    logToProviderFile(`getNumber | URL=${url} | RESP=${response.data.text || JSON.stringify(response.data)}`);
     const text = response.data.text || "";
     console.log(`[DEBUG] Provider Response [Attempt ${attempt}]:`, text);
 
     // Standard Text Format: ACCESS_NUMBER:123456:919876543210
     if (text.startsWith("ACCESS_NUMBER:")) {
        const parts = text.split(":");
-       return { api_order_id: parts[1], phone: parts[2] };
+       const api_order_id = parts[1];
+       const phone = parts[2].replace(/\D/g, '');
+       
+       if (isDuplicate(phone)) {
+         console.log(`[DUPLICATE] Number ${phone} already assigned recently. Retrying...`);
+         attempt++;
+         if (attempt >= maxRetries && maxRetries > 0) break;
+         continue;
+       }
+       return { api_order_id, phone };
     }
     
-    // JSON Alternative: {"success": true, "id": "123456", "phone": "919876543210"}
+    // JSON Alternative
     if (response.data.id && response.data.phone) {
-       return { api_order_id: response.data.id.toString(), phone: response.data.phone.toString() };
+       const api_order_id = response.data.id.toString();
+       const phone = response.data.phone.toString().replace(/\D/g, '');
+       
+       if (isDuplicate(phone)) {
+         console.log(`[DUPLICATE] Number ${phone} already assigned recently. Retrying...`);
+         attempt++;
+         if (attempt >= maxRetries && maxRetries > 0) break;
+         continue;
+       }
+       return { api_order_id, phone };
     }
 
-    // Error responses: NO_NUMBERS, NO_BALANCE, BAD_SERVICE
-    if (text === "NO_NUMBERS" || text === "BAD_SERVICE" || text === "BANNED") return { error: "Number Not Available" };
-    if (text === "NO_BALANCE") return { error: "Provider account out of balance" };
+    // Error responses: NO_BALANCE, NO_MONEY (FATAL, don't retry)
+    if (text === "NO_BALANCE" || text === "NO_MONEY") {
+       return { error: "Provider account out of balance" };
+    }
 
-    lastError = text || "Invalid response from provider";
+    // Error responses that are retryable (NO_NUMBERS, BAD_SERVICE, etc.)
+    // Or unrecognized responses
+    
+    lastError = text || "Number Not Available";
     attempt++;
-    if (attempt <= maxRetries) {
-       await new Promise(r => setTimeout(r, 2000)); // wait 2s before retry
+    
+    // If no more retries allowed, exit loop
+    if (maxRetries > 0 && attempt >= maxRetries) {
+       console.log(`[RETRY_EXHAUSTED] Reached maximum attempts (${maxRetries})`);
+       break;
+    }
+
+    if (attempt > 0) {
+       console.log(`[RETRYABLE_ERROR] Provider returned: ${text || 'EMPTY'}. Attempting retry ${attempt}/${maxRetries - 1}`);
+       // Optional: Add a small delay between retries to avoid spamming the provider
+       await new Promise(r => setTimeout(r, 1000));
     }
   }
 
-  return { error: lastError, url };
+  // If we're here, it means we exhausted retries or hit an immediate non-retryable error
+  // Map any technical error string to user-friendly "Number Not Available"
+  const finalError = (lastError === "Provider request timed out") ? lastError : "Number Not Available";
+  return { error: finalError, originalError: lastError, url };
 }
 
 // 2. Check Status
@@ -105,6 +199,7 @@ async function checkStatus(server, api_order_id) {
   });
   
   const response = await callProvider(url, server);
+  logToProviderFile(`checkStatus | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
   const text = response.data.text || "";
 
   if (text === "STATUS_WAIT_CODE" || text === "TZ_NUM_WAIT") {
@@ -133,6 +228,7 @@ async function cancelOrder(server, api_order_id) {
   });
   
   const response = await callProvider(url, server);
+  logToProviderFile(`cancelOrder | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
   const text = response.data.text || "";
 
   if (text === "ACCESS_CANCEL" || text === "ACCESS_ACTIVATION_CANCELED") {
@@ -167,13 +263,14 @@ async function retryOrder(server, api_order_id) {
   });
 
   const response = await callProvider(url, server);
+  logToProviderFile(`retryOrder | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
   const text = response.data.text || "";
 
   if (text === "ACCESS_RETRY_GET" || text === "STATUS_READY") {
      return { success: true };
   }
 
-  return { success: false, error: text || "Retry failed" };
+  return { success: false, error: "Number Not Available", originalError: text || "Retry failed" };
 }
 
 module.exports = {

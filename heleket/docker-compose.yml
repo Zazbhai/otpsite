@@ -1,0 +1,42 @@
+services:
+  cli:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+    image: heleket-node-sdk:dev
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    working_dir: /app
+    env_file:
+      - .env
+    command: sh
+
+  webhook:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+    image: heleket-node-sdk:dev
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    working_dir: /app
+    env_file:
+      - .env
+    ports:
+      - '8000:8000'
+    command: node dist/examples/05-handle-webhook.js
+
+  qa:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+    image: heleket-node-sdk:dev
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    working_dir: /app
+    command: npm run qa

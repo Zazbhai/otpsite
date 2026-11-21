@@ -1,0 +1,85 @@
+{
+  "name": "@heleket-payment/sdk",
+  "version": "0.1.0",
+  "description": "Reference Node.js SDK for the Heleket cryptocurrency payment API. Typed in TypeScript, ships dual .js + .d.ts.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/src/index.cjs",
+  "module": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "require": "./dist/src/index.cjs"
+    },
+    "./webhook": {
+      "types": "./dist/src/webhook/index.d.ts",
+      "import": "./dist/src/webhook/index.js",
+      "require": "./dist/src/webhook/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "heleket-webhook-inspect": "./dist/bin/heleket-webhook-inspect.js"
+  },
+  "files": [
+    "dist/src",
+    "dist/bin",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "UPGRADING.md"
+  ],
+  "scripts": {
+    "build": "npm run build:esm && npm run build:cjs && npm run build:finalize",
+    "build:esm": "tsc -p tsconfig.build.json",
+    "build:cjs": "tsc -p tsconfig.build.cjs.json",
+    "build:finalize": "node scripts/build-cjs-finalize.mjs",
+    "build:watch": "tsc -p tsconfig.build.json --watch",
+    "test": "npm run build:esm && node --test --enable-source-maps $(find dist/test -name '*.test.js')",
+    "test:watch": "npm run build:esm && node --test --watch --enable-source-maps $(find dist/test -name '*.test.js')",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "qa": "npm run lint && npm run format:check && npm run test",
+    "clean": "rm -rf dist dist-cjs coverage",
+    "prepublishOnly": "npm run qa && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0"
+  },
+  "keywords": [
+    "heleket",
+    "crypto",
+    "cryptocurrency",
+    "payments",
+    "payouts",
+    "webhooks",
+    "sdk",
+    "api"
+  ],
+  "author": "Heleket (https://heleket.com)",
+  "homepage": "https://github.com/Heleket/nodejs-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Heleket/nodejs-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Heleket/nodejs-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

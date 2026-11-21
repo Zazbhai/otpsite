@@ -1,0 +1,1796 @@
+[
+  {
+    "name": "1MG",
+    "code": "1mg",
+    "price": 13,
+    "color": "#d92626"
+  },
+  {
+    "name": "51 Game",
+    "code": "51game",
+    "price": 13,
+    "color": "#26d95a"
+  },
+  {
+    "name": "567slots",
+    "code": "567slots",
+    "price": 13,
+    "color": "#8e26d9"
+  },
+  {
+    "name": "6 Club",
+    "code": "6club",
+    "price": 13,
+    "color": "#d9c326"
+  },
+  {
+    "name": "6 Profit",
+    "code": "6profit",
+    "price": 13,
+    "color": "#26bbd9"
+  },
+  {
+    "name": "91Club",
+    "code": "91club",
+    "price": 13,
+    "color": "#d92687"
+  },
+  {
+    "name": "91Rummy",
+    "code": "91rummy",
+    "price": 13,
+    "color": "#53d926"
+  },
+  {
+    "name": "99acres",
+    "code": "99acres",
+    "price": 13,
+    "color": "#2e26d9"
+  },
+  {
+    "name": "A Bet",
+    "code": "abet",
+    "price": 13,
+    "color": "#d96226"
+  },
+  {
+    "name": "A66game",
+    "code": "a66game",
+    "price": 13,
+    "color": "#26d996"
+  },
+  {
+    "name": "Aa Games",
+    "code": "aagames",
+    "price": 13,
+    "color": "#ca26d9"
+  },
+  {
+    "name": "Abcd",
+    "code": "abcd",
+    "price": 13,
+    "color": "#b3d926"
+  },
+  {
+    "name": "Agro Star",
+    "code": "agrostar",
+    "price": 13,
+    "color": "#267fd9"
+  },
+  {
+    "name": "Airtel",
+    "code": "airtel",
+    "price": 13,
+    "color": "#d9264b"
+  },
+  {
+    "name": "AJio",
+    "code": "ajio",
+    "price": 13,
+    "color": "#26d935"
+  },
+  {
+    "name": "Ak47",
+    "code": "ak47",
+    "price": 13,
+    "color": "#6a26d9"
+  },
+  {
+    "name": "Ak777",
+    "code": "ak777",
+    "price": 13,
+    "color": "#d99e26"
+  },
+  {
+    "name": "All5OTP",
+    "code": "all5otp",
+    "price": 13,
+    "color": "#26d9d2"
+  },
+  {
+    "name": "Almond",
+    "code": "almond",
+    "price": 13,
+    "color": "#d926ac"
+  },
+  {
+    "name": "Andy",
+    "code": "andy",
+    "price": 13,
+    "color": "#78d926"
+  },
+  {
+    "name": "Angel One",
+    "code": "angleone",
+    "price": 13,
+    "color": "#2644d9"
+  },
+  {
+    "name": "Apana Mart",
+    "code": "apanamart",
+    "price": 13,
+    "color": "#d93d26"
+  },
+  {
+    "name": "Apna Mart",
+    "code": "apnamart",
+    "price": 13,
+    "color": "#26d971"
+  },
+  {
+    "name": "Apple ID",
+    "code": "apple",
+    "price": 13,
+    "color": "#a526d9"
+  },
+  {
+    "name": "Asli Pundit",
+    "code": "pundit",
+    "price": 13,
+    "color": "#d8d926"
+  },
+  {
+    "name": "Bajaj Finance",
+    "code": "bajajfinance",
+    "price": 13,
+    "color": "#26a4d9"
+  },
+  {
+    "name": "Bajaj Market",
+    "code": "bajajmarket",
+    "price": 13,
+    "color": "#d92670"
+  },
+  {
+    "name": "BCASINO",
+    "code": "bacasino",
+    "price": 13,
+    "color": "#3cd926"
+  },
+  {
+    "name": "BharatPe",
+    "code": "bharatpe",
+    "price": 13,
+    "color": "#4526d9"
+  },
+  {
+    "name": "Bigbasket",
+    "code": "bigbasket",
+    "price": 13,
+    "color": "#d97926"
+  },
+  {
+    "name": "Bigcity",
+    "code": "bigcity",
+    "price": 13,
+    "color": "#26d9ad"
+  },
+  {
+    "name": "Bingo777",
+    "code": "bingo777",
+    "price": 13,
+    "color": "#d926d1"
+  },
+  {
+    "name": "Bizom",
+    "code": "bizom",
+    "price": 13,
+    "color": "#9cd926"
+  },
+  {
+    "name": "BlaBlaCar",
+    "code": "blablacar",
+    "price": 13,
+    "color": "#2668d9"
+  },
+  {
+    "name": "Blinkit",
+    "code": "blinkit",
+    "price": 13,
+    "color": "#d92634"
+  },
+  {
+    "name": "boAt",
+    "code": "boat",
+    "price": 13,
+    "color": "#26d94c"
+  },
+  {
+    "name": "Bonus Buddy",
+    "code": "bonusbuddy",
+    "price": 13,
+    "color": "#8026d9"
+  },
+  {
+    "name": "Book My Diamond",
+    "code": "bookmydiamond",
+    "price": 13,
+    "color": "#d9b426"
+  },
+  {
+    "name": "Boom97",
+    "code": "boom97",
+    "price": 13,
+    "color": "#26c9d9"
+  },
+  {
+    "name": "Bounty",
+    "code": "bounty",
+    "price": 13,
+    "color": "#d92695"
+  },
+  {
+    "name": "Brevistay",
+    "code": "brevistay",
+    "price": 13,
+    "color": "#61d926"
+  },
+  {
+    "name": "Brevo",
+    "code": "brevo",
+    "price": 13,
+    "color": "#262dd9"
+  },
+  {
+    "name": "Brskly",
+    "code": "brskly",
+    "price": 13,
+    "color": "#d95426"
+  },
+  {
+    "name": "Buggie",
+    "code": "buggie",
+    "price": 13,
+    "color": "#26d988"
+  },
+  {
+    "name": "Career 360",
+    "code": "career360",
+    "price": 13,
+    "color": "#bc26d9"
+  },
+  {
+    "name": "Cash Book",
+    "code": "cashbook",
+    "price": 13,
+    "color": "#c1d926"
+  },
+  {
+    "name": "CheQ",
+    "code": "cheq",
+    "price": 13,
+    "color": "#268dd9"
+  },
+  {
+    "name": "Cigna",
+    "code": "cigna",
+    "price": 13,
+    "color": "#d92659"
+  },
+  {
+    "name": "CIPLA",
+    "code": "cipla",
+    "price": 13,
+    "color": "#26d927"
+  },
+  {
+    "name": "Citykart",
+    "code": "citykart",
+    "price": 13,
+    "color": "#5b26d9"
+  },
+  {
+    "name": "CLBP",
+    "code": "clbp",
+    "price": 13,
+    "color": "#d99026"
+  },
+  {
+    "name": "Cleartrip",
+    "code": "cleartip",
+    "price": 13,
+    "color": "#26d9c4"
+  },
+  {
+    "name": "Connecto",
+    "code": "connecto",
+    "price": 13,
+    "color": "#d926ba"
+  },
+  {
+    "name": "Countandearn",
+    "code": "countandearn",
+    "price": 13,
+    "color": "#86d926"
+  },
+  {
+    "name": "Country Delight",
+    "code": "countrydelight",
+    "price": 13,
+    "color": "#2652d9"
+  },
+  {
+    "name": "Cred",
+    "code": "cred",
+    "price": 13,
+    "color": "#d92f26"
+  },
+  {
+    "name": "Cricmatch360",
+    "code": "cricmatch360",
+    "price": 13,
+    "color": "#26d963"
+  },
+  {
+    "name": "Crisscross",
+    "code": "crisscross",
+    "price": 13,
+    "color": "#9726d9"
+  },
+  {
+    "name": "Crore Play",
+    "code": "croreplay",
+    "price": 13,
+    "color": "#d9cb26"
+  },
+  {
+    "name": "Crystal Pay",
+    "code": "crystalpay",
+    "price": 13,
+    "color": "#26b2d9"
+  },
+  {
+    "name": "DBG Game",
+    "code": "dbggame",
+    "price": 13,
+    "color": "#d9267e"
+  },
+  {
+    "name": "DBT Agriculture",
+    "code": "dbtagriculture",
+    "price": 13,
+    "color": "#4ad926"
+  },
+  {
+    "name": "Dealshare",
+    "code": "dealshare",
+    "price": 13,
+    "color": "#3726d9"
+  },
+  {
+    "name": "Delhiveroo",
+    "code": "delhiveroo",
+    "price": 13,
+    "color": "#d96b26"
+  },
+  {
+    "name": "Delhivery",
+    "code": "delhivery",
+    "price": 13,
+    "color": "#26d99f"
+  },
+  {
+    "name": "Dermaco",
+    "code": "dermaco",
+    "price": 13,
+    "color": "#d326d9"
+  },
+  {
+    "name": "DG Game",
+    "code": "dggame",
+    "price": 13,
+    "color": "#abd926"
+  },
+  {
+    "name": "Dhoom Play",
+    "code": "dhoom",
+    "price": 13,
+    "color": "#2676d9"
+  },
+  {
+    "name": "Digialaya",
+    "code": "digialaya",
+    "price": 13,
+    "color": "#d92642"
+  },
+  {
+    "name": "Digicredit",
+    "code": "digicredit",
+    "price": 13,
+    "color": "#26d93e"
+  },
+  {
+    "name": "Digihaat",
+    "code": "digihaat",
+    "price": 13,
+    "color": "#7226d9"
+  },
+  {
+    "name": "Digital India",
+    "code": "digitalindia",
+    "price": 13,
+    "color": "#d9a626"
+  },
+  {
+    "name": "Digital Topup",
+    "code": "digitaltopup",
+    "price": 13,
+    "color": "#26d7d9"
+  },
+  {
+    "name": "Dish TV",
+    "code": "dishtv",
+    "price": 13,
+    "color": "#d926a3"
+  },
+  {
+    "name": "DKart",
+    "code": "dkart",
+    "price": 13,
+    "color": "#6fd926"
+  },
+  {
+    "name": "Dominos ",
+    "code": "domino",
+    "price": 13,
+    "color": "#263bd9"
+  },
+  {
+    "name": "Dot & Key",
+    "code": "dotandkey",
+    "price": 13,
+    "color": "#d94626"
+  },
+  {
+    "name": "Dove",
+    "code": "dove",
+    "price": 13,
+    "color": "#26d97a"
+  },
+  {
+    "name": "Dream Money",
+    "code": "dreammoneya",
+    "price": 13,
+    "color": "#ae26d9"
+  },
+  {
+    "name": "Drivebison",
+    "code": "drivebison",
+    "price": 13,
+    "color": "#cfd926"
+  },
+  {
+    "name": "Drop-D",
+    "code": "drop",
+    "price": 13,
+    "color": "#269bd9"
+  },
+  {
+    "name": "Dropit",
+    "code": "dropit",
+    "price": 13,
+    "color": "#d92667"
+  },
+  {
+    "name": "Dubaiexch247",
+    "code": "dubaiexch247",
+    "price": 13,
+    "color": "#33d926"
+  },
+  {
+    "name": "Eatclub",
+    "code": "eatclub",
+    "price": 13,
+    "color": "#4d26d9"
+  },
+  {
+    "name": "Eatsure",
+    "code": "eatsure",
+    "price": 13,
+    "color": "#d98126"
+  },
+  {
+    "name": "Empty",
+    "code": "jiomart",
+    "price": 10.2,
+    "color": "#26d9b6"
+  },
+  {
+    "name": "Facebook",
+    "code": "facebook",
+    "price": 13,
+    "color": "#d926c8"
+  },
+  {
+    "name": "Facebook2",
+    "code": "facebook2",
+    "price": 13,
+    "color": "#94d926"
+  },
+  {
+    "name": "Fastwin",
+    "code": "fastwin",
+    "price": 13,
+    "color": "#2660d9"
+  },
+  {
+    "name": "FIno",
+    "code": "fino",
+    "price": 13,
+    "color": "#d9262c"
+  },
+  {
+    "name": "First Cry",
+    "code": "firstcry",
+    "price": 13,
+    "color": "#26d955"
+  },
+  {
+    "name": "FLIPKART ",
+    "code": "flipkart",
+    "price": 13,
+    "color": "#8926d9"
+  },
+  {
+    "name": "Foxtale",
+    "code": "foxtale",
+    "price": 13,
+    "color": "#d9bd26"
+  },
+  {
+    "name": "Free Hit",
+    "code": "freehit",
+    "price": 13,
+    "color": "#26c0d9"
+  },
+  {
+    "name": "FreeRecharge",
+    "code": "freerecharge",
+    "price": 13,
+    "color": "#d9268c"
+  },
+  {
+    "name": "FRND",
+    "code": "frnd",
+    "price": 13,
+    "color": "#58d926"
+  },
+  {
+    "name": "Game Rummy",
+    "code": "gamerummy",
+    "price": 13,
+    "color": "#2926d9"
+  },
+  {
+    "name": "Game1",
+    "code": "game1",
+    "price": 13,
+    "color": "#d95d26"
+  },
+  {
+    "name": "Google",
+    "code": "google",
+    "price": 13,
+    "color": "#26d991"
+  },
+  {
+    "name": "Google Message",
+    "code": "googlemessage",
+    "price": 13,
+    "color": "#c526d9"
+  },
+  {
+    "name": "Google Pay",
+    "code": "googlepay",
+    "price": 13,
+    "color": "#b9d926"
+  },
+  {
+    "name": "Hamaramall",
+    "code": "hamaramall",
+    "price": 13,
+    "color": "#2685d9"
+  },
+  {
+    "name": "Hamramall",
+    "code": "hamramall",
+    "price": 13,
+    "color": "#d92650"
+  },
+  {
+    "name": "Happy Rummy",
+    "code": "happyrummy",
+    "price": 13,
+    "color": "#26d930"
+  },
+  {
+    "name": "Havells",
+    "code": "havells",
+    "price": 13,
+    "color": "#6426d9"
+  },
+  {
+    "name": "Hello BPCL",
+    "code": "bpcl",
+    "price": 13,
+    "color": "#d99826"
+  },
+  {
+    "name": "Hmrmal",
+    "code": "hmrmal",
+    "price": 13,
+    "color": "#26d9cc"
+  },
+  {
+    "name": "Housing.com",
+    "code": "housing",
+    "price": 13,
+    "color": "#d926b1"
+  },
+  {
+    "name": "HP Gas",
+    "code": "hpgas",
+    "price": 13,
+    "color": "#7dd926"
+  },
+  {
+    "name": "ICICI",
+    "code": "icici",
+    "price": 13,
+    "color": "#2649d9"
+  },
+  {
+    "name": "ICICI Mutual Fund",
+    "code": "icicimf",
+    "price": 13,
+    "color": "#d93826"
+  },
+  {
+    "name": "In99",
+    "code": "in99",
+    "price": 13,
+    "color": "#26d96c"
+  },
+  {
+    "name": "In999",
+    "code": "in999",
+    "price": 13,
+    "color": "#a026d9"
+  },
+  {
+    "name": "Incred",
+    "code": "incred",
+    "price": 13,
+    "color": "#d9d426"
+  },
+  {
+    "name": "Indiago",
+    "code": "indiago",
+    "price": 13,
+    "color": "#26a9d9"
+  },
+  {
+    "name": "Indiapolls",
+    "code": "indiapolls",
+    "price": 13,
+    "color": "#d92675"
+  },
+  {
+    "name": "Indusbet",
+    "code": "indusbet",
+    "price": 13,
+    "color": "#41d926"
+  },
+  {
+    "name": "InnoPay",
+    "code": "innopay",
+    "price": 13,
+    "color": "#3f26d9"
+  },
+  {
+    "name": "Instagram",
+    "code": "instagram",
+    "price": 13,
+    "color": "#d97326"
+  },
+  {
+    "name": "IOCL (Indane)",
+    "code": "iocl",
+    "price": 13,
+    "color": "#26d9a8"
+  },
+  {
+    "name": "IRCTC",
+    "code": "irctc",
+    "price": 13,
+    "color": "#d926d6"
+  },
+  {
+    "name": "Jalwa",
+    "code": "jalwa",
+    "price": 13,
+    "color": "#a2d926"
+  },
+  {
+    "name": "Jeetexch360",
+    "code": "jeetexch360",
+    "price": 13,
+    "color": "#266ed9"
+  },
+  {
+    "name": "Jeetwin",
+    "code": "jeetwin",
+    "price": 13,
+    "color": "#d9263a"
+  },
+  {
+    "name": "Jiffy",
+    "code": "jiffy",
+    "price": 13,
+    "color": "#26d947"
+  },
+  {
+    "name": "Jio Fiber",
+    "code": "jiofiber",
+    "price": 13,
+    "color": "#7b26d9"
+  },
+  {
+    "name": "Jiomart",
+    "code": "jiomart",
+    "price": 15,
+    "color": "#d9af26"
+  },
+  {
+    "name": "Jumbo",
+    "code": "jumbo",
+    "price": 13,
+    "color": "#26ced9"
+  },
+  {
+    "name": "Just Dial",
+    "code": "justdial",
+    "price": 13,
+    "color": "#d9269a"
+  },
+  {
+    "name": "JWIN",
+    "code": "jwin",
+    "price": 13,
+    "color": "#66d926"
+  },
+  {
+    "name": "Keenin",
+    "code": "keenin",
+    "price": 13,
+    "color": "#2632d9"
+  },
+  {
+    "name": "KGEN",
+    "code": "kgen",
+    "price": 13,
+    "color": "#d94f26"
+  },
+  {
+    "name": "Kheloboss",
+    "code": "kheloboss",
+    "price": 13,
+    "color": "#26d983"
+  },
+  {
+    "name": "KK789",
+    "code": "kk789",
+    "price": 13,
+    "color": "#b726d9"
+  },
+  {
+    "name": "Klydo",
+    "code": "klydo",
+    "price": 13,
+    "color": "#c7d926"
+  },
+  {
+    "name": "Kredbharat",
+    "code": "kredbharat",
+    "price": 13,
+    "color": "#2693d9"
+  },
+  {
+    "name": "Lendingplate",
+    "code": "lendingplate",
+    "price": 13,
+    "color": "#d9265f"
+  },
+  {
+    "name": "Lottery7",
+    "code": "lottery7",
+    "price": 13,
+    "color": "#2ad926"
+  },
+  {
+    "name": "Lotus365",
+    "code": "lotus365",
+    "price": 13,
+    "color": "#5626d9"
+  },
+  {
+    "name": "Magicpin",
+    "code": "magicpin",
+    "price": 13,
+    "color": "#d98a26"
+  },
+  {
+    "name": "Maha Luck",
+    "code": "mahaluck",
+    "price": 13,
+    "color": "#26d9be"
+  },
+  {
+    "name": "Mantrigame",
+    "code": "mantrigame",
+    "price": 13,
+    "color": "#d926bf"
+  },
+  {
+    "name": "Mantrishop",
+    "code": "mantrishop",
+    "price": 13,
+    "color": "#8bd926"
+  },
+  {
+    "name": "Master EDU",
+    "code": "master",
+    "price": 13,
+    "color": "#2657d9"
+  },
+  {
+    "name": "Matkax",
+    "code": "matkax",
+    "price": 13,
+    "color": "#d92a26"
+  },
+  {
+    "name": "Meesho",
+    "code": "meesho",
+    "price": 13,
+    "color": "#26d95e"
+  },
+  {
+    "name": "Mera Gao",
+    "code": "meragaao",
+    "price": 13,
+    "color": "#9226d9"
+  },
+  {
+    "name": "Microsoft",
+    "code": "microsoft",
+    "price": 13,
+    "color": "#d9c626"
+  },
+  {
+    "name": "Milkbasket",
+    "code": "milkbasket",
+    "price": 13,
+    "color": "#26b7d9"
+  },
+  {
+    "name": "mine",
+    "code": "jjh",
+    "price": 13,
+    "color": "#d92683"
+  },
+  {
+    "name": "MobiKwik",
+    "code": "mobi",
+    "price": 13,
+    "color": "#4fd926"
+  },
+  {
+    "name": "Mobile Connect",
+    "code": "mobileconnect",
+    "price": 13,
+    "color": "#3126d9"
+  },
+  {
+    "name": "Money Control",
+    "code": "moneycontrol",
+    "price": 13,
+    "color": "#d96526"
+  },
+  {
+    "name": "mPocket",
+    "code": "mpocket",
+    "price": 13,
+    "color": "#26d999"
+  },
+  {
+    "name": "Mr777",
+    "code": "mr777",
+    "price": 13,
+    "color": "#ce26d9"
+  },
+  {
+    "name": "Mreward",
+    "code": "mreward",
+    "price": 13,
+    "color": "#b0d926"
+  },
+  {
+    "name": "Mt Game",
+    "code": "mtgame",
+    "price": 13,
+    "color": "#267cd9"
+  },
+  {
+    "name": "My Jio",
+    "code": "myjio",
+    "price": 13,
+    "color": "#d92648"
+  },
+  {
+    "name": "My Mart",
+    "code": "mymart",
+    "price": 13,
+    "color": "#26d939"
+  },
+  {
+    "name": "My Wallet",
+    "code": "mywallet",
+    "price": 13,
+    "color": "#6d26d9"
+  },
+  {
+    "name": "Myntra ",
+    "code": "myntra",
+    "price": 13,
+    "color": "#d9a126"
+  },
+  {
+    "name": "NcFun",
+    "code": "ncfun",
+    "price": 13,
+    "color": "#26d9d5"
+  },
+  {
+    "name": "Nestle",
+    "code": "nielsenmore",
+    "price": 13,
+    "color": "#d926a8"
+  },
+  {
+    "name": "Netmeds",
+    "code": "netmeds",
+    "price": 13,
+    "color": "#74d926"
+  },
+  {
+    "name": "Nexsoft",
+    "code": "nexsoft",
+    "price": 13,
+    "color": "#2640d9"
+  },
+  {
+    "name": "Nielsen",
+    "code": "storm",
+    "price": 13,
+    "color": "#d94026"
+  },
+  {
+    "name": "Nova Mines",
+    "code": "novamines",
+    "price": 13,
+    "color": "#26d975"
+  },
+  {
+    "name": "Nykaa",
+    "code": "nykaa",
+    "price": 13,
+    "color": "#a926d9"
+  },
+  {
+    "name": "Okwin",
+    "code": "okwin",
+    "price": 13,
+    "color": "#d5d926"
+  },
+  {
+    "name": "Ola Cabs",
+    "code": "olacabs",
+    "price": 13,
+    "color": "#26a1d9"
+  },
+  {
+    "name": "Orgen",
+    "code": "orgen",
+    "price": 13,
+    "color": "#d9266d"
+  },
+  {
+    "name": "Orient Fame",
+    "code": "orientfame",
+    "price": 13,
+    "color": "#38d926"
+  },
+  {
+    "name": "Pantaloons",
+    "code": "panta",
+    "price": 13,
+    "color": "#4826d9"
+  },
+  {
+    "name": "Parbet",
+    "code": "parbet",
+    "price": 13,
+    "color": "#d97c26"
+  },
+  {
+    "name": "Paytm",
+    "code": "paytm",
+    "price": 13,
+    "color": "#26d9b0"
+  },
+  {
+    "name": "Perbet",
+    "code": "perbet",
+    "price": 13,
+    "color": "#d926cd"
+  },
+  {
+    "name": "Pharmarack",
+    "code": "pharmarack",
+    "price": 13,
+    "color": "#99d926"
+  },
+  {
+    "name": "PharmEasy",
+    "code": "pharmeasy",
+    "price": 13,
+    "color": "#2665d9"
+  },
+  {
+    "name": "PhonePe",
+    "code": "phonepe",
+    "price": 13,
+    "color": "#d92631"
+  },
+  {
+    "name": "Pincode",
+    "code": "pincode",
+    "price": 13,
+    "color": "#26d950"
+  },
+  {
+    "name": "Play Console",
+    "code": "playconsole",
+    "price": 13,
+    "color": "#8426d9"
+  },
+  {
+    "name": "Playkaro",
+    "code": "playkaro",
+    "price": 13,
+    "color": "#d9b826"
+  },
+  {
+    "name": "PMFBY",
+    "code": "pmfby",
+    "price": 13,
+    "color": "#26c6d9"
+  },
+  {
+    "name": "Point Matka",
+    "code": "pointmatka",
+    "price": 13,
+    "color": "#d92691"
+  },
+  {
+    "name": "Policy Bazaar",
+    "code": "policybazaar",
+    "price": 9,
+    "color": "#5dd926"
+  },
+  {
+    "name": "Poonawala Fincorp",
+    "code": "poonewala",
+    "price": 9,
+    "color": "#2629d9"
+  },
+  {
+    "name": "Praxo",
+    "code": "praxo",
+    "price": 13,
+    "color": "#d95726"
+  },
+  {
+    "name": "Private",
+    "code": "private",
+    "price": 9,
+    "color": "#26d98b"
+  },
+  {
+    "name": "Private -1",
+    "code": "private1",
+    "price": 9,
+    "color": "#bf26d9"
+  },
+  {
+    "name": "Punjab king",
+    "code": "punjabking",
+    "price": 13,
+    "color": "#bed926"
+  },
+  {
+    "name": "Quick Cilver",
+    "code": "quickcilver",
+    "price": 9,
+    "color": "#268ad9"
+  },
+  {
+    "name": "Quick TV",
+    "code": "quicktv",
+    "price": 9,
+    "color": "#d92656"
+  },
+  {
+    "name": "QwikCilver",
+    "code": "qwikcliver",
+    "price": 9,
+    "color": "#26d92b"
+  },
+  {
+    "name": "Rajagame",
+    "code": "rajagame",
+    "price": 13,
+    "color": "#5f26d9"
+  },
+  {
+    "name": "Rang Live",
+    "code": "ranglive",
+    "price": 9,
+    "color": "#d99326"
+  },
+  {
+    "name": "Rapido",
+    "code": "rapido",
+    "price": 13,
+    "color": "#26d9c7"
+  },
+  {
+    "name": "Razorpay",
+    "code": "razorpay",
+    "price": 9,
+    "color": "#d926b6"
+  },
+  {
+    "name": "Real Estate India",
+    "code": "realstate",
+    "price": 9,
+    "color": "#82d926"
+  },
+  {
+    "name": "Rebounce",
+    "code": "rebounce",
+    "price": 9,
+    "color": "#264ed9"
+  },
+  {
+    "name": "RedBus",
+    "code": "redbus",
+    "price": 9,
+    "color": "#d93226"
+  },
+  {
+    "name": "Reddybook",
+    "code": "reddybook",
+    "price": 9,
+    "color": "#26d967"
+  },
+  {
+    "name": "Repair Challenge",
+    "code": "repair",
+    "price": 9,
+    "color": "#9b26d9"
+  },
+  {
+    "name": "Research 360",
+    "code": "research360",
+    "price": 9,
+    "color": "#d9cf26"
+  },
+  {
+    "name": "Reward Media",
+    "code": "rewardmedia",
+    "price": 9,
+    "color": "#26afd9"
+  },
+  {
+    "name": "Ricklive",
+    "code": "ricklive",
+    "price": 9,
+    "color": "#d9267b"
+  },
+  {
+    "name": "Ricktick",
+    "code": "ricktick",
+    "price": 9,
+    "color": "#47d926"
+  },
+  {
+    "name": "Rockywin",
+    "code": "rockywin",
+    "price": 9,
+    "color": "#3a26d9"
+  },
+  {
+    "name": "Rohini",
+    "code": "rohini",
+    "price": 9,
+    "color": "#d96e26"
+  },
+  {
+    "name": "Rojdhan",
+    "code": "rojdhan",
+    "price": 9,
+    "color": "#26d9a2"
+  },
+  {
+    "name": "Roney Sensex",
+    "code": "roney",
+    "price": 9,
+    "color": "#d626d9"
+  },
+  {
+    "name": "Rosier (CarWale)",
+    "code": "rosier",
+    "price": 9,
+    "color": "#a7d926"
+  },
+  {
+    "name": "Royaljeet",
+    "code": "royaljeet",
+    "price": 9,
+    "color": "#2673d9"
+  },
+  {
+    "name": "Rummy Club",
+    "code": "rummyclub",
+    "price": 9,
+    "color": "#d9263f"
+  },
+  {
+    "name": "Rummy Club-1",
+    "code": "rummyclubb",
+    "price": 9,
+    "color": "#26d942"
+  },
+  {
+    "name": "Rummy East",
+    "code": "rummyeast",
+    "price": 9,
+    "color": "#7626d9"
+  },
+  {
+    "name": "Rummy Good",
+    "code": "rummygood",
+    "price": 9,
+    "color": "#d9aa26"
+  },
+  {
+    "name": "Rummy Grand",
+    "code": "rummygrand",
+    "price": 9,
+    "color": "#26d4d9"
+  },
+  {
+    "name": "Rummy Leader",
+    "code": "leader",
+    "price": 9,
+    "color": "#d926a0"
+  },
+  {
+    "name": "Rummy Mars",
+    "code": "rummymars",
+    "price": 9,
+    "color": "#6bd926"
+  },
+  {
+    "name": "Rummy Ola",
+    "code": "rummyola",
+    "price": 9,
+    "color": "#2637d9"
+  },
+  {
+    "name": "Rummy Paisa",
+    "code": "rummypaisa",
+    "price": 9,
+    "color": "#d94926"
+  },
+  {
+    "name": "Rummy Perfect",
+    "code": "rummyperfect",
+    "price": 9,
+    "color": "#26d97d"
+  },
+  {
+    "name": "Rummy Sweety",
+    "code": "rummysweety",
+    "price": 9,
+    "color": "#b126d9"
+  },
+  {
+    "name": "Rummy Yes",
+    "code": "rummyyes",
+    "price": 9,
+    "color": "#ccd926"
+  },
+  {
+    "name": "Rupiyo",
+    "code": "rupiyo",
+    "price": 13,
+    "color": "#2698d9"
+  },
+  {
+    "name": "Samridhi (Havells)",
+    "code": "samridhi",
+    "price": 9,
+    "color": "#d92664"
+  },
+  {
+    "name": "Shein",
+    "code": "shein",
+    "price": 13,
+    "color": "#30d926"
+  },
+  {
+    "name": "Shikhar (HUL)",
+    "code": "shikhar",
+    "price": 9,
+    "color": "#5126d9"
+  },
+  {
+    "name": "Shopflo",
+    "code": "shopflo",
+    "price": 9,
+    "color": "#d98526"
+  },
+  {
+    "name": "Shopsy",
+    "code": "shopsy",
+    "price": 9,
+    "color": "#26d9b9"
+  },
+  {
+    "name": "Shriram One",
+    "code": "shriramone",
+    "price": 9,
+    "color": "#d926c4"
+  },
+  {
+    "name": "Signal",
+    "code": "signal",
+    "price": 9,
+    "color": "#90d926"
+  },
+  {
+    "name": "Simple Pay",
+    "code": "simple",
+    "price": 9,
+    "color": "#265cd9"
+  },
+  {
+    "name": "Singham",
+    "code": "singham",
+    "price": 9,
+    "color": "#d92628"
+  },
+  {
+    "name": "Slot Winner",
+    "code": "slotwinner",
+    "price": 9,
+    "color": "#26d958"
+  },
+  {
+    "name": "SMS India Hub",
+    "code": "smsindiahub",
+    "price": 9,
+    "color": "#8d26d9"
+  },
+  {
+    "name": "Snapmint",
+    "code": "snapmint",
+    "price": 9,
+    "color": "#d9c126"
+  },
+  {
+    "name": "Spin101",
+    "code": "spin101",
+    "price": 13,
+    "color": "#26bdd9"
+  },
+  {
+    "name": "Spin567",
+    "code": "spin567",
+    "price": 9,
+    "color": "#d92689"
+  },
+  {
+    "name": "Spincrush",
+    "code": "spincrush",
+    "price": 13,
+    "color": "#55d926"
+  },
+  {
+    "name": "Spinkaro",
+    "code": "spinkaro",
+    "price": 9,
+    "color": "#2c26d9"
+  },
+  {
+    "name": "Stable Money",
+    "code": "stablemoney",
+    "price": 9,
+    "color": "#d96026"
+  },
+  {
+    "name": "Stan",
+    "code": "stan",
+    "price": 9,
+    "color": "#26d994"
+  },
+  {
+    "name": "Star777",
+    "code": "star777",
+    "price": 9,
+    "color": "#c826d9"
+  },
+  {
+    "name": "Starexch",
+    "code": "starexch",
+    "price": 9,
+    "color": "#b5d926"
+  },
+  {
+    "name": "Starp",
+    "code": "starp",
+    "price": 9,
+    "color": "#2681d9"
+  },
+  {
+    "name": "Story tv",
+    "code": "storytv",
+    "price": 13,
+    "color": "#d9264d"
+  },
+  {
+    "name": "Sudipta",
+    "code": "sudipta",
+    "price": 13,
+    "color": "#26d934"
+  },
+  {
+    "name": "Svip777",
+    "code": "svip777",
+    "price": 13,
+    "color": "#6826d9"
+  },
+  {
+    "name": "Swarail (RailOne)",
+    "code": "swarail",
+    "price": 13,
+    "color": "#d99c26"
+  },
+  {
+    "name": "Swiggy",
+    "code": "swiggy",
+    "price": 13,
+    "color": "#26d9d0"
+  },
+  {
+    "name": "T1game",
+    "code": "t1game",
+    "price": 13,
+    "color": "#d926ae"
+  },
+  {
+    "name": "Tabe",
+    "code": "tabe",
+    "price": 13,
+    "color": "#7ad926"
+  },
+  {
+    "name": "Tap Alam",
+    "code": "tapalam",
+    "price": 13,
+    "color": "#2645d9"
+  },
+  {
+    "name": "Tata Neu",
+    "code": "tataneu",
+    "price": 13,
+    "color": "#d93b26"
+  },
+  {
+    "name": "Teenpati Sona",
+    "code": "teenpatisona",
+    "price": 13,
+    "color": "#26d96f"
+  },
+  {
+    "name": "Teenpatti Nobel",
+    "code": "teenpattinobel",
+    "price": 13,
+    "color": "#a326d9"
+  },
+  {
+    "name": "Telegram",
+    "code": "telegram",
+    "price": 13,
+    "color": "#d9d726"
+  },
+  {
+    "name": "Test Service",
+    "code": "TEST",
+    "price": 13,
+    "color": "#26a6d9"
+  },
+  {
+    "name": "Testbook",
+    "code": "testbook",
+    "price": 13,
+    "color": "#d92672"
+  },
+  {
+    "name": "Tickmill",
+    "code": "tickmill",
+    "price": 13,
+    "color": "#3ed926"
+  },
+  {
+    "name": "Timesprime",
+    "code": "timesprime",
+    "price": 13,
+    "color": "#4326d9"
+  },
+  {
+    "name": "Tira Beauty",
+    "code": "tirabeauty",
+    "price": 13,
+    "color": "#d97726"
+  },
+  {
+    "name": "Tiranga",
+    "code": "tiranga",
+    "price": 13,
+    "color": "#26d9ab"
+  },
+  {
+    "name": "Truemeds",
+    "code": "trumeds",
+    "price": 13,
+    "color": "#d926d2"
+  },
+  {
+    "name": "Twilio",
+    "code": "twilio",
+    "price": 13,
+    "color": "#9ed926"
+  },
+  {
+    "name": "U Money",
+    "code": "umoney",
+    "price": 13,
+    "color": "#266ad9"
+  },
+  {
+    "name": "Uber",
+    "code": "uber",
+    "price": 13,
+    "color": "#d92636"
+  },
+  {
+    "name": "Uber Eats",
+    "code": "ubereat",
+    "price": 13,
+    "color": "#26d94a"
+  },
+  {
+    "name": "Ubgtl",
+    "code": "ubgtl",
+    "price": 13,
+    "color": "#7e26d9"
+  },
+  {
+    "name": "Ultra Game",
+    "code": "ultragame",
+    "price": 13,
+    "color": "#d9b326"
+  },
+  {
+    "name": "Unacademy",
+    "code": "unacademy",
+    "price": 13,
+    "color": "#26cbd9"
+  },
+  {
+    "name": "Upstox",
+    "code": "upstox",
+    "price": 13,
+    "color": "#d92697"
+  },
+  {
+    "name": "Urban Pro",
+    "code": "urbanpro",
+    "price": 13,
+    "color": "#63d926"
+  },
+  {
+    "name": "Viber",
+    "code": "viber",
+    "price": 13,
+    "color": "#262fd9"
+  },
+  {
+    "name": "VIP Gujarat",
+    "code": "gujarat",
+    "price": 13,
+    "color": "#d95226"
+  },
+  {
+    "name": "VIP-777",
+    "code": "vip777",
+    "price": 13,
+    "color": "#26d986"
+  },
+  {
+    "name": "Voyz",
+    "code": "voyz",
+    "price": 13,
+    "color": "#ba26d9"
+  },
+  {
+    "name": "Vrummy",
+    "code": "vrummy",
+    "price": 13,
+    "color": "#c3d926"
+  },
+  {
+    "name": "Wazirwin",
+    "code": "wazirwin",
+    "price": 13,
+    "color": "#268fd9"
+  },
+  {
+    "name": "WePlay",
+    "code": "weplay",
+    "price": 13,
+    "color": "#d9265b"
+  },
+  {
+    "name": "Win11",
+    "code": "win11",
+    "price": 13,
+    "color": "#27d926"
+  },
+  {
+    "name": "Winclash",
+    "code": "winclash",
+    "price": 13,
+    "color": "#5a26d9"
+  },
+  {
+    "name": "WIngo",
+    "code": "wingo",
+    "price": 13,
+    "color": "#d98e26"
+  },
+  {
+    "name": "Winmatch",
+    "code": "winmatch",
+    "price": 13,
+    "color": "#26d9c2"
+  },
+  {
+    "name": "Winmate",
+    "code": "winmate",
+    "price": 13,
+    "color": "#d926bc"
+  },
+  {
+    "name": "Winza",
+    "code": "winza",
+    "price": 13,
+    "color": "#88d926"
+  },
+  {
+    "name": "Wyse",
+    "code": "wyse",
+    "price": 13,
+    "color": "#2653d9"
+  },
+  {
+    "name": "Yo777",
+    "code": "yono777",
+    "price": 13,
+    "color": "#d92d26"
+  },
+  {
+    "name": "Yono Games",
+    "code": "yonogames",
+    "price": 13,
+    "color": "#26d961"
+  },
+  {
+    "name": "Yono King",
+    "code": "yonoking",
+    "price": 13,
+    "color": "#9526d9"
+  },
+  {
+    "name": "Yono Vip",
+    "code": "yonovip",
+    "price": 13,
+    "color": "#d9c926"
+  },
+  {
+    "name": "Your Rick",
+    "code": "yourrick",
+    "price": 13,
+    "color": "#26b4d9"
+  },
+  {
+    "name": "Zepto",
+    "code": "zepto",
+    "price": 13,
+    "color": "#d92680"
+  },
+  {
+    "name": "Zeptom",
+    "code": "zeptom",
+    "price": 13,
+    "color": "#4cd926"
+  },
+  {
+    "name": "Zerox",
+    "code": "zerox",
+    "price": 13,
+    "color": "#3526d9"
+  },
+  {
+    "name": "Zingoy",
+    "code": "zingoy",
+    "price": 13,
+    "color": "#d96926"
+  },
+  {
+    "name": "Zomato",
+    "code": "zomato",
+    "price": 13,
+    "color": "#26d99d"
+  },
+  {
+    "name": "Zubydo",
+    "code": "zubydo",
+    "price": 13,
+    "color": "#d126d9"
+  }
+]

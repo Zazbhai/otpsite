@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Servers — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
-  <link rel="stylesheet" href="/css/main.css" />
-  <script src="/js/preloader.js"></script>
+  <link rel="stylesheet" href="/css/main.css?v=1.0.2" />
+  <script src="/js/preloader.js?v=1.0.2"></script>
   <style>
-    .servers-page { max-width: 900px; margin: 0 auto; }
-    
+    .servers-page {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
     .page-header {
       display: flex;
       justify-content: space-between;
@@ -17,23 +23,44 @@
       margin-bottom: 28px;
       animation: slideDown 0.4s ease;
     }
+
     @media (max-width: 768px) {
-      .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
     }
+
     @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    
-    .page-title h1 { font-size: 24px; margin: 0; }
-    .page-title p { font-size: 14px; color: var(--text-3); margin: 4px 0 0; }
-    
+
+    .page-title h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+
+    .page-title p {
+      font-size: 14px;
+      color: var(--text-3);
+      margin: 4px 0 0;
+    }
+
     .server-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 16px;
     }
-    
+
     .server-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -43,24 +70,32 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     @keyframes scaleIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
-    
+
     .server-card:hover {
       border-color: var(--accent);
       transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(59,130,246,0.15);
+      box-shadow: 0 12px 32px rgba(59, 130, 246, 0.15);
     }
-    
+
     .server-header {
       display: flex;
       align-items: center;
       gap: 14px;
       margin-bottom: 16px;
     }
-    
+
     .server-icon {
       width: 48px;
       height: 48px;
@@ -70,13 +105,27 @@
       align-items: center;
       justify-content: center;
       font-size: 22px;
-      box-shadow: 0 4px 16px rgba(59,130,246,0.25);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
     }
-    
-    .server-info { flex: 1; }
-    .server-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
-    .server-country { font-size: 13px; color: var(--text-3); display: flex; align-items: center; gap: 4px; }
-    
+
+    .server-info {
+      flex: 1;
+    }
+
+    .server-name {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .server-country {
+      font-size: 13px;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     .server-status {
       padding: 4px 10px;
       border-radius: 20px;
@@ -85,38 +134,68 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .server-status.active { background: rgba(16,185,129,0.15); color: var(--success); }
-    .server-status.inactive { background: rgba(100,116,139,0.15); color: var(--text-3); }
-    
+
+    .server-status.active {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .server-status.inactive {
+      background: rgba(100, 116, 139, 0.15);
+      color: var(--text-3);
+    }
+
     .server-stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-bottom: 16px;
     }
-    
+
     .stat-item {
       background: var(--bg-2);
       border-radius: 10px;
       padding: 10px 12px;
     }
-    .stat-label { font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
-    .stat-value { font-size: 14px; font-weight: 600; }
-    
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
     .empty-state {
       text-align: center;
       padding: 80px 20px;
       grid-column: 1/-1;
     }
-    .empty-state .icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-    .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
-    .empty-state p { color: var(--text-3); margin-bottom: 24px; }
-    
+
+    .empty-state .icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      color: var(--text-3);
+      margin-bottom: 24px;
+    }
+
     /* Modal */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(8px);
       z-index: 1000;
       display: none;
@@ -125,9 +204,13 @@
       padding: 20px;
       overflow-y: auto;
     }
-    .modal-backdrop.open { display: flex; }
-    
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
     .modal {
+      position: relative;
       background: var(--bg-1);
       border: 1px solid var(--border-2);
       border-radius: 24px;
@@ -137,18 +220,31 @@
       animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       margin: auto;
     }
+
     @keyframes modalIn {
-      from { opacity: 0; transform: scale(0.9) translateY(20px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
-    
+
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 28px;
     }
-    .modal-header h3 { font-size: 20px; margin: 0; }
+
+    .modal-header h3 {
+      font-size: 20px;
+      margin: 0;
+    }
+
     .modal-close {
       width: 32px;
       height: 32px;
@@ -160,273 +256,800 @@
       font-size: 16px;
       transition: all 0.2s;
     }
-    .modal-close:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
-    
-    .modal-form { display: flex; flex-direction: column; gap: 18px; }
-    
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
-    
-    .form-input, .form-select {
-      padding: 12px 16px;
-      background: var(--bg-2);
-      border: 1px solid var(--border-2);
-      border-radius: 12px;
-      color: var(--text);
-      font-size: 14px;
-      transition: all 0.2s;
+
+    .modal-close:hover {
+      background: var(--danger);
+      border-color: var(--danger);
+      color:var(--on-surface);
     }
-    .form-input:focus, .form-select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+
+    .modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
     }
-    
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-    
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+
+    /* Form styles now handled globally in main.css */
+
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+
     .url-input {
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
     }
-    
+
     .modal-actions {
       display: flex;
       gap: 12px;
       margin-top: 8px;
     }
-    .modal-actions .btn { flex: 1; padding: 14px; }
-    
-    .btn { padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
-    .btn-primary { background: var(--grad-primary); color: #fff; box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59,130,246,0.4); }
-    .btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
-    .btn-danger:hover { background: rgba(239,68,68,0.25); }
-    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--surface-2); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-    
+
+    .modal-actions .btn {
+      flex: 1;
+      padding: 14px;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--grad-primary);
+      color:var(--on-surface);
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-2);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
     .spinner {
       width: 20px;
       height: 20px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
+      border: 2px solid var(--outline-variant);
+      border-top-color:var(--on-surface);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     @media (max-width: 640px) {
-      .form-row, .form-row-3 { grid-template-columns: 1fr; }
-      .server-grid { grid-template-columns: 1fr; }
+
+      .form-row,
+      .form-row-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .server-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: var(--bg-3, rgba(255, 255, 255, 0.05));
+      border: 1px solid var(--border-2);
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-3);
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: rgba(16, 185, 129, 0.2);
+      border-color: var(--success);
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(20px);
+      background-color: var(--success);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .toggle-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .toggle-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .toggle-desc {
+      font-size: 11px;
+      color: var(--text-3);
+    }
+
+    /* Redesigned Country Selector */
+    .country-selector-v2 {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .country-selector-v2.searching {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .selected-country-chip {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .selected-country-chip:hover {
+      background: var(--surface-2);
+    }
+
+    #country-search-container {
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .country-search-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 12px 16px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .country-list-v2 {
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .country-opt {
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .country-opt:hover {
+      background: var(--accent);
+      color:var(--on-surface);
+    }
+
+    .country-opt span {
+      font-size: 14px;
+    }
+
+    .country-opt small {
+      opacity: 0.6;
+      font-size: 11px;
+      margin-left: auto;
     }
   </style>
+
+
 </head>
-<body>
-<nav class="navbar">
-  <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
-    <div class="nav-links" id="nav-links">
-      <a href="/admin">Dashboard</a><a href="/admin/servers" class="active">Servers</a>
-      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+
+<body data-admin-route>
+  <nav class="navbar">
+    <div class="container">
+      <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span
+          style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+      <div class="nav-links" id="nav-links">
+        <a href="/admin">Dashboard</a><a href="/admin/servers" class="active">Servers</a>
+        <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+      </div>
+      <button class="nav-burger" id="nav-burger">☰</button>
     </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
+  </nav>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <a href="/admin" class="sidebar-item">📊 Dashboard</a>
+      <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
+      <div class="sidebar-divider"></div>
+      <a href="/admin/users" class="sidebar-item">👥 Users</a>
+      <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
+      <div class="sidebar-divider"></div>
+      <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+      <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
+      <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+      <a href="/admin/servers" class="sidebar-item active">🖥️ Servers</a>
+      <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
+      <div class="sidebar-divider"></div>
+      <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
+      <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
+      <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
+      <div class="sidebar-divider"></div>
+      <button onclick="logout()" class="sidebar-item"
+        style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
+    </aside>
+
+    <main class="main-content">
+      <div class="servers-page">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>🖥️ Manage Servers</h1>
+            <p>Configure OTP provider API endpoints</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px">
+            <div class="search-box" style="position:relative">
+              <span
+                style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.6">🔍</span>
+              <input type="text" id="server-search" placeholder="" onkeyup="filterServers()"
+                style="padding-left:36px" />
+            </div>
+
+            <button class="btn btn-secondary" onclick="openAutoAdd()"
+              style="background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; gap:8px">⚡
+              Auto</button>
+            <button class="btn btn-primary" onclick="openCreate()">+ Add Server</button>
+          </div>
+        </div>
+
+        <div id="servers-grid" class="server-grid">
+          <!-- Skeleton cards injected by JS -->
+        </div>
+      </div>
+    </main>
   </div>
-</nav>
 
-<div class="layout">
-  <aside class="sidebar">
-    <a href="/admin" class="sidebar-item">📊 Dashboard</a>
-    <a href="/admin/analytics" class="sidebar-item">📈 Analytics</a>
-    <div class="sidebar-divider"></div>
-    <a href="/admin/users" class="sidebar-item">👥 Users</a>
-    <a href="/admin/transactions" class="sidebar-item">💳 Transactions</a>
-    <div class="sidebar-divider"></div>
-    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
-    <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
-    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
-    <a href="/admin/servers" class="sidebar-item active">🖥️ Servers</a>
-    <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
-    <div class="sidebar-divider"></div>
-    <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
-    <a href="/admin/broadcast" class="sidebar-item">📢 Broadcast</a>
-    <a href="/admin/settings" class="sidebar-item">🔧 Settings</a>
-    <div class="sidebar-divider"></div>
-    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
-  </aside>
+  <!-- Server Modal -->
+  <div class="modal-backdrop" id="srv-modal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h3 id="srv-title">Add Server</h3>
+        <button class="modal-close" type="button" onclick="closeModal('srv-modal')">✕</button>
+      </div>
+      <form class="modal-form" onsubmit="event.preventDefault(); saveServer()">
+        <div class="modal-content-wrap">
+          <input type="hidden" id="srv-id" />
 
-  <main class="main-content">
-    <div class="servers-page">
-      <div class="page-header">
-        <div class="page-title">
-          <h1>OTP Servers</h1>
-          <p>Configure SMS provider APIs for receiving OTP</p>
+          <div class="form-group">
+            <label class="form-label">Server Name</label>
+            <input type="text" id="srv-name" class="form-input" placeholder="OnlineSim Pro" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Country</label>
+            <div class="country-selector-v2" id="country-selector">
+              <div class="selected-country-chip" onclick="toggleCountrySearch()">
+                <span id="country-display-text">Select Country</span>
+                <span style="opacity:0.5">▼</span>
+              </div>
+              <div id="country-search-container" style="display:none">
+                <input type="text" class="country-search-input" id="search-country-v2"
+                  placeholder="Type country name..." oninput="filterCountriesV2(this.value)">
+                <div class="country-list-v2" id="options-country-v2">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+            <input type="hidden" id="srv-country" />
+          </div>
+
+
+
+
+          <div class="form-group">
+            <label class="form-label">Get Number URL</label>
+            <input type="text" id="srv-get-url" class="form-input url-input"
+              placeholder="https://api.provider.com/?action=getNumber..." />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Check Status URL</label>
+            <input type="text" id="srv-check-url" class="form-input url-input"
+              placeholder="https://api.provider.com/?action=getStatus..." />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Cancel URL</label>
+            <input type="text" id="srv-cancel-url" class="form-input url-input"
+              placeholder="https://api.provider.com/?action=setStatus&status=8..." />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Retry (Next SMS) URL</label>
+            <input type="text" id="srv-retry-url" class="form-input url-input"
+              placeholder="https://api.provider.com/?action=setStatus&status=3..." />
+          </div>
+
+          <div class="form-row" style="grid-template-columns: 1fr 1fr">
+            <div class="form-group">
+              <label class="form-label">Auto-Cancel (min)</label>
+              <input type="number" id="srv-cancel-mins" class="form-input" value="20" min="1" max="999" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Polling Interval (Sec)</label>
+              <input type="number" id="srv-poll" class="form-input" value="3" min="1" max="60" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Min Cancel (min)</label>
+              <input type="number" id="srv-min-cancel" class="form-input" value="0" min="0" max="999" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Retries</label>
+              <input type="number" id="srv-retry-count" class="form-input" value="0" min="0" />
+            </div>
+          </div>
+
+          <div class="form-group"
+            style="flex-direction:row; align-items:center; gap:10px; background:rgba(59,130,246,0.05); padding:12px; border-radius:12px; margin-bottom: 8px">
+            <input type="checkbox" id="srv-multi-otp" style="width:18px; height:18px; cursor:pointer" />
+            <label for="srv-multi-otp"
+              style="font-size:14px; font-weight:700; color:var(--accent); cursor:pointer">Support Multiple OTPs</label>
+          </div>
+
+          <div class="form-group" id="auto-add-services-wrap"
+            style="flex-direction:column; gap:16px; background:var(--surface-container-low); padding:20px; border-radius:20px; border: 1px solid var(--border-2); margin-bottom: 8px">
+            <div class="toggle-row">
+              <div class="toggle-label">
+                <span class="toggle-title" style="color:var(--success)">Auto Add Services</span>
+                <span class="toggle-desc">Automatically populate services for this server</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="srv-auto-add" onchange="toggleAutoAddOptions()" />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div id="srv-auto-add-options"
+              style="display:none; width:100%; border-top:1px solid var(--border-2); padding-top:16px">
+              <div class="form-group">
+                <label class="form-label">Service Source</label>
+                <select class="form-input" id="srv-auto-source" onchange="window.toggleUrlInput()">
+                  <option value="json">Local services.json</option>
+                  <option value="url">Remote URL</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="srv-url-wrap" style="display:none; margin-top:16px">
+                <label class="form-label">Remote URL</label>
+                <input type="text" id="srv-auto-url" class="form-input url-input"
+                  placeholder="https://api.provider.com/services" />
+
+                <div class="toggle-row"
+                  style="margin-top:16px; background:rgba(59,130,246,0.05); padding:12px; border-radius:12px">
+                  <div class="toggle-label">
+                    <span class="toggle-title" style="font-size:13px">Merge Local Services</span>
+                    <span class="toggle-desc">Also include services from services.json</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="srv-include-local" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div id="srv-extra-wrap" style="margin-top:16px">
+                <label class="form-label">💰 Extra Profit (Markup)</label>
+                <input type="number" id="srv-extra" class="form-input" placeholder="e.g. 5" step="0.5" value="0" />
+                <p style="font-size:11px; opacity:0.6; margin-top:4px">This amount will be added to the fetched base
+                  price</p>
+              </div>
+            </div>
+          </div>
+
+
+
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
+            <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteServer()"
+              style="display:none">Delete Server</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('srv-modal')">Cancel</button>
+          </div>
         </div>
-        <button class="btn btn-primary" onclick="openCreate()">+ Add Server</button>
-      </div>
-      
-      <div id="servers-grid" class="server-grid">
-        <script>document.currentScript.outerHTML = skeletonCards(3);</script>
-      </div>
+      </form>
     </div>
-  </main>
-</div>
+  </div>
 
- <!-- Server Modal -->
-<div class="modal-backdrop" id="srv-modal">
-  <div class="modal" style="max-width:500px">
-    <div class="modal-header">
-      <h3 id="srv-title">Add Server</h3>
-      <button class="modal-close" type="button" onclick="closeModal('srv-modal')">✕</button>
-    </div>
-    <form class="modal-form" onsubmit="event.preventDefault(); saveServer()">
-      <div class="modal-content-wrap">
-        <input type="hidden" id="srv-id" />
-      
-      <div class="form-group">
-        <label class="form-label">Server Name</label>
-        <input type="text" id="srv-name" class="form-input" placeholder="OnlineSim Pro" required />
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">Country</label>
-        <select id="srv-country" class="form-select">
-          <option value="">Select Country</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">API Key</label>
-        <input type="text" id="srv-key" class="form-input" placeholder="your_api_key_123" />
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">Get Number URL</label>
-        <input type="text" id="srv-get-url" class="form-input url-input" placeholder="https://api.provider.com/?action=getNumber..." />
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">Check Status URL</label>
-        <input type="text" id="srv-check-url" class="form-input url-input" placeholder="https://api.provider.com/?action=getStatus..." />
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">Cancel URL</label>
-        <input type="text" id="srv-cancel-url" class="form-input url-input" placeholder="https://api.provider.com/?action=setStatus&status=8..." />
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">Retry (Next SMS) URL</label>
-        <input type="text" id="srv-retry-url" class="form-input url-input" placeholder="https://api.provider.com/?action=setStatus&status=3..." />
-      </div>
-      
-      <div class="form-row" style="grid-template-columns: 1fr 1fr">
-        <div class="form-group">
-          <label class="form-label">Auto-Cancel (min)</label>
-          <input type="number" id="srv-cancel-mins" class="form-input" value="20" min="1" max="999" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Polling Interval (Sec)</label>
-          <input type="number" id="srv-poll" class="form-input" value="3" min="1" max="60" />
-        </div>
-      </div>
 
-      <div class="form-row">
+  <!-- Auto Add Server Modal -->
+  <div class="modal-backdrop" id="auto-modal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h3>⚡ Auto Add Server</h3>
+        <button class="modal-close" type="button" onclick="closeModal('auto-modal')">✕</button>
+      </div>
+      <form class="modal-form" onsubmit="event.preventDefault(); saveAutoServer()">
         <div class="form-group">
-          <label class="form-label">Min Cancel (min)</label>
-          <input type="number" id="srv-min-cancel" class="form-input" value="0" min="0" max="999" />
+          <label class="form-label">Server Name</label>
+          <input type="text" id="auto-name" class="form-input" placeholder="e.g. SMS-Activate" required />
         </div>
+
         <div class="form-group">
-          <label class="form-label">Retries</label>
-          <input type="number" id="srv-retry-count" class="form-input" value="0" min="0" max="10" />
+          <label class="form-label">Country (Searchable)</label>
+          <div class="country-selector-v2" id="country-selector-auto">
+            <div class="selected-country-chip" onclick="toggleCountrySearchAuto()">
+              <span id="country-display-text-auto">Select Country</span>
+              <span style="opacity:0.5">▼</span>
+            </div>
+            <div id="country-search-container-auto" style="display:none">
+              <input type="text" class="country-search-input" id="search-country-auto"
+                placeholder="Type country name..." oninput="filterCountriesAuto(this.value)">
+              <div class="country-list-v2" id="options-country-auto">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="auto-country-id" />
         </div>
-      </div>
 
-      <div class="form-group" style="flex-direction:row; align-items:center; gap:10px; background:rgba(59,130,246,0.05); padding:12px; border-radius:12px; margin-bottom: 8px">
-        <input type="checkbox" id="srv-multi-otp" style="width:18px; height:18px; cursor:pointer" />
-        <label for="srv-multi-otp" style="font-size:14px; font-weight:700; color:var(--accent); cursor:pointer">Support Multiple OTPs</label>
-      </div>
+        <div class="form-group">
+          <label class="form-label">Country Code (Provider Value)</label>
+          <input type="text" id="auto-country-code" class="form-input" placeholder="e.g. 22 for India" required />
+        </div>
 
-      <div class="form-group" id="auto-add-services-wrap" style="align-items:center; gap:10px; background:rgba(16,185,129,0.05); padding:16px; border-radius:16px; margin-bottom: 8px">
-        <div style="display:flex; align-items:center; gap:10px; width:100%">
-           <input type="checkbox" id="srv-auto-add" style="width:18px; height:18px; cursor:pointer" onchange="toggleExtraPrice()" />
-           <label for="srv-auto-add" style="font-size:14px; font-weight:700; color:var(--success); cursor:pointer">Auto Add Services (from JSON)</label>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input type="text" id="auto-api-key" class="form-input" placeholder="Your API Key" required />
         </div>
-        <div id="srv-extra-wrap" style="display:none; margin-top:12px; border-top:1px solid rgba(16,185,129,0.1); padding-top:12px; width:100%">
-           <label class="form-label" style="color:var(--success)">💰 Extra Profit (Add to each service price)</label>
-           <input type="number" id="srv-extra" class="form-input" placeholder="e.g. 5" step="0.5" value="0" style="margin-top:4px" />
-           <p style="font-size:11px; opacity:0.6; margin-top:4px">This amount will be added to the base price in services.json</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Auto-Cancel (min)</label>
+            <input type="number" id="auto-cancel-mins" class="form-input" value="20" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Polling (Sec)</label>
+            <input type="number" id="auto-poll" class="form-input" value="3" />
+          </div>
         </div>
-      </div>
-      
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Min Cancel (min)</label>
+            <input type="number" id="auto-min-cancel" class="form-input" value="2" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Retries</label>
+            <input type="number" id="auto-retry-count" class="form-input" value="0" min="0" />
+          </div>
+        </div>
+
+        <div class="form-group"
+          style="flex-direction:row; align-items:center; gap:10px; background:rgba(59,130,246,0.05); padding:12px; border-radius:12px">
+          <input type="checkbox" id="auto-multi-otp" style="width:18px; height:18px; cursor:pointer" />
+          <label for="auto-multi-otp"
+            style="font-size:14px; font-weight:700; color:var(--accent); cursor:pointer">Support Multiple OTPs</label>
+        </div>
+
+        <div class="form-group" id="auto-services-wrap"
+          style="flex-direction:column; gap:16px; background:var(--surface-container-low); padding:20px; border-radius:20px; border: 1px solid var(--border-2); margin-bottom: 8px">
+          <div class="toggle-row">
+            <div class="toggle-label">
+              <span class="toggle-title" style="color:var(--success)">Auto Add Services</span>
+              <span class="toggle-desc">Automatically populate services for this server</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="auto-add-services" onchange="toggleAutoAddOptionsAuto()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div id="auto-add-options-area"
+            style="display:none; width:100%; border-top:1px solid var(--border-2); padding-top:16px">
+            <div class="form-group">
+              <label class="form-label">Service Source</label>
+              <select class="form-input" id="auto-service-source" onchange="window.toggleUrlInputAuto()">
+                <option value="json">Local services.json</option>
+                <option value="url">Remote URL</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="auto-url-input-wrap" style="display:none; margin-top:16px">
+              <label class="form-label">Remote URL</label>
+              <input type="text" id="auto-services-url" class="form-input url-input"
+                placeholder="https://api.provider.com/getPrices" />
+
+              <div class="toggle-row"
+                style="margin-top:16px; background:rgba(59,130,246,0.05); padding:12px; border-radius:12px">
+                <div class="toggle-label">
+                  <span class="toggle-title" style="font-size:13px">Merge Local Services</span>
+                  <span class="toggle-desc">Also include services from services.json</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="auto-merge-local" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:16px">
+              <label class="form-label">💰 Extra Profit (Markup)</label>
+              <input type="number" id="auto-extra" class="form-input" value="0" step="0.01" placeholder="0.00" />
+            </div>
+          </div>
+        </div>
+
         <div class="modal-actions">
-          <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
-          <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteServer()" style="display:none">Delete Server</button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal('srv-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="auto-save-btn">Create Server</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('auto-modal')">Cancel</button>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
 
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
-<script>
-  async function init() {
-    if (!await requireAdmin()) return;
-    loadData();
-  }
+  <script src="/js/main.js?v=1784210170377"></script>
   
-  let editingId = null;
-  let allCountries = [];
 
-  function toggleExtraPrice() {
-     const el = document.getElementById("srv-auto-add");
-     const wrap = document.getElementById("srv-extra-wrap");
-     if (el && wrap) wrap.style.display = el.checked ? "block" : "none";
-  }
-  
-  async function loadData() {
-    try {
-      const [servers, countries] = await Promise.all([
-        API.get("/api/admin/servers"),
-        API.get("/api/admin/countries")
-      ]);
-      allCountries = countries;
-      renderServers(servers);
-      populateCountryDropdown();
-    } catch (e) {
-      toast(e.message, "error");
+  <script>
+    async function init() {
+      // Show skeletons immediately if they exist in main.js
+      const grid = document.getElementById("servers-grid");
+      if (grid && typeof skeletonCards === 'function') {
+        grid.innerHTML = skeletonCards(3);
+      }
+
+      if (!await requireAdmin()) return;
+      loadData();
     }
-  }
-  
-  function populateCountryDropdown() {
-    const sel = document.getElementById("srv-country");
-    if (!sel) return;
-    sel.innerHTML = '<option value="">Select Country</option>' + 
-      allCountries.map(c => `<option value="${c._id}">${c.flag || ''} ${c.name} (${c.code})</option>`).join("");
-  }
-  
-  function renderServers(servers) {
-    const grid = document.getElementById("servers-grid");
-    if (!grid) return;
-    
-    if (!servers.length) {
-      grid.innerHTML = `
+
+    let editingId = null;
+    let allCountries = [];
+    let allServers = []; // Original list for filtering
+
+
+
+    window.toggleAutoAddOptions = function () {
+      const isChecked = document.getElementById("srv-auto-add").checked;
+      const opts = document.getElementById("srv-auto-add-options");
+      if (opts) opts.style.display = isChecked ? "block" : "none";
+    }
+
+    window.toggleAutoAddOptionsAuto = function () {
+      const isChecked = document.getElementById("auto-add-services").checked;
+      const opts = document.getElementById("auto-add-options-area");
+      if (opts) opts.style.display = isChecked ? "block" : "none";
+    }
+
+    window.toggleUrlInput = function () {
+      const source = document.getElementById("srv-auto-source").value;
+      const wrap = document.getElementById("srv-url-wrap");
+      if (wrap) wrap.style.display = (source === "url") ? "block" : "none";
+    }
+
+    window.toggleUrlInputAuto = function () {
+      const source = document.getElementById("auto-service-source").value;
+      const wrap = document.getElementById("auto-url-input-wrap");
+      if (wrap) wrap.style.display = (source === "url") ? "block" : "none";
+    }
+
+    async function loadData() {
+      try {
+        const [countries, servers] = await Promise.all([
+          API.get("/api/admin/countries"),
+          API.get("/api/admin/servers")
+        ]);
+        allCountries = countries;
+        allServers = servers;
+        renderServers(servers);
+        populateCountryDropdown();
+      } catch (e) {
+        toast(e.message, "error");
+      }
+    }
+
+    window.toggleCountrySearch = function () {
+      const container = document.getElementById("country-search-container");
+      const wrapper = document.getElementById("country-selector");
+      if (!container) return;
+      const isHidden = container.style.display === "none";
+      container.style.display = isHidden ? "block" : "none";
+      if (isHidden) {
+        wrapper.classList.add("searching");
+        document.getElementById("search-country-v2").focus();
+      } else {
+        wrapper.classList.remove("searching");
+      }
+    };
+
+    window.toggleCountrySearchAuto = function () {
+      const container = document.getElementById("country-search-container-auto");
+      const wrapper = document.getElementById("country-selector-auto");
+      if (!container) return;
+      const isHidden = container.style.display === "none";
+      container.style.display = isHidden ? "block" : "none";
+      if (isHidden) {
+        wrapper.classList.add("searching");
+        document.getElementById("search-country-auto").focus();
+      } else {
+        wrapper.classList.remove("searching");
+      }
+    };
+
+    function populateCountryDropdown() {
+      const containers = [
+        { id: "options-country-v2", cb: "selectCountryV2" },
+        { id: "options-country-auto", cb: "selectCountryAuto" }
+      ];
+
+      containers.forEach(conf => {
+        const el = document.getElementById(conf.id);
+        if (!el) return;
+        el.innerHTML = allCountries.map(c => `
+          <div class="country-opt" onclick="${conf.cb}('${c._id}', '${(c.flag || '')} ${c.name}')">
+            <span>${c.flag || ''} ${c.name}</span>
+            <small>${c.code}</small>
+          </div>`).join("");
+      });
+    }
+
+    window.selectCountryV2 = function (id, text) {
+      document.getElementById("srv-country").value = id;
+      document.getElementById("country-display-text").textContent = text;
+      document.getElementById("country-search-container").style.display = "none";
+      document.getElementById("country-selector").classList.remove("searching");
+    };
+
+    window.selectCountryAuto = function (id, text) {
+      document.getElementById("auto-country-id").value = id;
+      document.getElementById("country-display-text-auto").textContent = text;
+      document.getElementById("country-search-container-auto").style.display = "none";
+      document.getElementById("country-selector-auto").classList.remove("searching");
+    };
+
+    window.filterCountriesV2 = function (query) {
+      const q = query.toLowerCase();
+      const opts = document.querySelectorAll("#options-country-v2 .country-opt");
+      opts.forEach(opt => {
+        opt.style.display = opt.textContent.toLowerCase().includes(q) ? "flex" : "none";
+      });
+    };
+
+    window.filterCountriesAuto = function (query) {
+      const q = query.toLowerCase();
+      const opts = document.querySelectorAll("#options-country-auto .country-opt");
+      opts.forEach(opt => {
+        opt.style.display = opt.textContent.toLowerCase().includes(q) ? "flex" : "none";
+      });
+    };
+
+    window.selectSource = function (val, text) {
+      document.getElementById("srv-auto-source").value = val;
+      document.getElementById("selected-source-text").textContent = text;
+      window.closeAllDropdowns();
+      window.toggleUrlInput();
+    };
+
+
+    window.selectSourceAuto = function (val, text) {
+      document.getElementById("auto-service-source").value = val;
+      document.getElementById("selected-source-text-auto").textContent = text;
+      window.closeAllDropdowns();
+      window.toggleUrlInputAuto();
+    };
+
+
+    function renderServers(servers) {
+      const grid = document.getElementById("servers-grid");
+      if (!grid) return;
+
+      if (!servers.length) {
+        grid.innerHTML = `
         <div class="empty-state">
           <div class="icon">🖥️</div>
           <h3>No servers yet</h3>
           <p>Add OTP provider servers to start receiving numbers</p>
           <button class="btn btn-primary" onclick="openCreate()">+ Add Server</button>
         </div>`;
-      return;
-    }
-    
-    grid.innerHTML = servers.map((s, i) => {
-      const countryObj = (s.country_id && typeof s.country_id === 'object') ? s.country_id : allCountries.find(c => c._id == s.country_id);
-      return `
+        return;
+      }
+
+      grid.innerHTML = servers.map((s, i) => {
+        const countryObj = (s.country_id && typeof s.country_id === 'object') ? s.country_id : allCountries.find(c => c._id == s.country_id);
+        return `
         <div class="server-card" onclick="openEdit('${s._id}')" style="animation-delay: ${i * 50}ms">
           <div class="server-header">
             <div class="server-icon">🖥️</div>
@@ -448,54 +1071,96 @@
           </div>
           <button class="btn btn-secondary btn-sm w-full" onclick="event.stopPropagation(); openEdit('${s._id}')">Edit Server</button>
         </div>`;
-    }).join('');
-  }
-  
-  window.openCreate = function() {
-    if (!allCountries.length) {
-      toast("Add countries first in the Countries section", "error");
-      return;
+      }).join('');
     }
-    editingId = null;
-    const title = document.getElementById("srv-title");
-    if (title) title.textContent = "Add Server";
-    
-    const fields = ["srv-id","srv-name","srv-country","srv-key","srv-get-url","srv-check-url","srv-cancel-url","srv-retry-url","srv-cancel-mins","srv-min-cancel","srv-retry-count","srv-poll"];
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = (id === "srv-cancel-mins") ? "20" : 
-                         (id === "srv-poll") ? "3" :
-                         (id.includes("min") || id.includes("count") ? "0" : "");
-    });
 
-    const multiOtp = document.getElementById("srv-multi-otp");
-    if (multiOtp) multiOtp.checked = false;
+    window.openCreate = function () {
+      if (!allCountries.length) {
+        toast("Add countries first in the Countries section", "error");
+        return;
+      }
+      editingId = null;
+      const title = document.getElementById("srv-title");
+      if (title) title.textContent = "Add Server";
 
-    const autoAddWrap = document.getElementById("auto-add-services-wrap");
-    if (autoAddWrap) autoAddWrap.style.display = "flex";
-    const autoAdd = document.getElementById("srv-auto-add");
-    if (autoAdd) autoAdd.checked = false;
+      const fields = ["srv-id", "srv-name", "srv-country", "srv-get-url", "srv-check-url", "srv-cancel-url", "srv-retry-url", "srv-cancel-mins", "srv-min-cancel", "srv-retry-count", "srv-poll"];
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = (id === "srv-cancel-mins") ? "20" :
+          (id === "srv-poll") ? "3" :
+            (id === "srv-min-cancel") ? "2" :
+              (id.includes("min") || id.includes("count") ? "0" : "");
+      });
 
-    const delBtn = document.getElementById("delete-btn");
-    if (delBtn) delBtn.style.display = "none";
-    openModal("srv-modal");
-  };
-  
-  window.openEdit = async function(id) {
-    try {
-      const servers = await API.get("/api/admin/servers");
-      const s = servers.find(x => x._id === id);
-      if (!s) return;
-      
+      document.getElementById("country-display-text").textContent = "Select Country";
+      document.getElementById("country-search-container").style.display = "none";
+      document.getElementById("country-selector").classList.remove("searching");
+      document.getElementById("srv-auto-source").value = "json";
+      window.toggleUrlInput();
+
+
+      const multiOtp = document.getElementById("srv-multi-otp");
+      if (multiOtp) multiOtp.checked = false;
+
+      const autoAddWrap = document.getElementById("auto-add-services-wrap");
+      if (autoAddWrap) autoAddWrap.style.display = "flex";
+      const autoAdd = document.getElementById("srv-auto-add");
+      if (autoAdd) {
+        autoAdd.checked = false;
+        toggleAutoAddOptions();
+      }
+
+      const includeLocal = document.getElementById("srv-include-local");
+      if (includeLocal) includeLocal.checked = false;
+
+
+
+      const delBtn = document.getElementById("delete-btn");
+      if (delBtn) delBtn.style.display = "none";
+      openModal("srv-modal");
+    };
+
+    window.filterServers = function () {
+      const query = document.getElementById("server-search").value.toLowerCase();
+      const filtered = allServers.filter(s => {
+        const nameMatch = s.name.toLowerCase().includes(query);
+        const countryMatch = s.country_id && (
+          (typeof s.country_id === 'object' && s.country_id.name && s.country_id.name.toLowerCase().includes(query)) ||
+          (typeof s.country_id === 'string' && allCountries.find(c => c._id === s.country_id)?.name.toLowerCase().includes(query))
+        );
+        return nameMatch || countryMatch;
+      });
+      renderServers(filtered);
+    };
+
+    window.openEdit = function (id) {
+      if (!allServers || allServers.length === 0) {
+        toast("Data is still loading, please wait...", "info");
+        return;
+      }
+      const s = allServers.find(srv => srv._id == id);
+      if (!s) {
+        toast("Server not found", "error");
+        return;
+      }
+
       editingId = s._id;
       const title = document.getElementById("srv-title");
       if (title) title.textContent = "Edit Server";
-      
+
       const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
       setVal("srv-id", s._id);
       setVal("srv-name", s.name);
-      setVal("srv-country", (s.country_id && typeof s.country_id === 'object') ? (s.country_id._id || s.country_id.id) : (s.country_id || ""));
-      setVal("srv-key", s.api_key || "");
+
+      const countryVal = (s.country_id && typeof s.country_id === 'object') ? (s.country_id._id || s.country_id.id) : (s.country_id || "");
+      setVal("srv-country", countryVal);
+
+      const countryObj = allCountries.find(c => c._id == countryVal);
+      document.getElementById("country-display-text").textContent = countryObj ? `${countryObj.flag || ''} ${countryObj.name}` : "Select Country";
+      document.getElementById("country-search-container").style.display = "none";
+      document.getElementById("country-selector").classList.remove("searching");
+
+
       setVal("srv-get-url", s.api_get_number_url || "");
       setVal("srv-check-url", s.api_check_status_url || "");
       setVal("srv-cancel-url", s.api_cancel_url || "");
@@ -504,6 +1169,7 @@
       setVal("srv-min-cancel", s.min_cancel_minutes || 0);
       setVal("srv-retry-count", s.retry_count || 0);
       setVal("srv-poll", s.check_interval || 3);
+      setVal("srv-extra", s.extra_profit || 0);
 
       const multiOtp = document.getElementById("srv-multi-otp");
       if (multiOtp) multiOtp.checked = !!s.multi_otp_supported;
@@ -512,89 +1178,203 @@
       if (autoAddWrap) {
         autoAddWrap.style.display = "flex";
         const autoAddObj = document.getElementById("srv-auto-add");
-        if (autoAddObj) autoAddObj.checked = false; // default unchecked
+        if (autoAddObj) autoAddObj.checked = !!s.auto_add_services;
       }
-      const autoAdd = document.getElementById("srv-auto-add");
-      if (autoAdd) autoAdd.checked = !!s.auto_add_services;
-      toggleExtraPrice();
+
+      toggleAutoAddOptions();
+
+      const source = s.service_source || "json";
+      document.getElementById("srv-auto-source").value = source;
+      window.toggleUrlInput();
+
+      const urlInput = document.getElementById("srv-auto-url");
+      if (urlInput) urlInput.value = s.services_url || "";
+
+      const includeLocal = document.getElementById("srv-include-local");
+      if (includeLocal) includeLocal.checked = !!s.include_local_services;
 
       const delBtn = document.getElementById("delete-btn");
       if (delBtn) delBtn.style.display = "block";
-      
+
       openModal("srv-modal");
-    } catch (e) {
-      toast(e.message, "error");
-    }
-  };
-
-  window.saveServer = async function() {
-    const body = {
-      name: document.getElementById("srv-name").value.trim(),
-      country_id: document.getElementById("srv-country").value || null,
-      api_key: document.getElementById("srv-key").value.trim(),
-      api_get_number_url: document.getElementById("srv-get-url").value.trim(),
-      api_check_status_url: document.getElementById("srv-check-url").value.trim(),
-      api_cancel_url: document.getElementById("srv-cancel-url").value.trim(),
-      api_retry_url: document.getElementById("srv-retry-url").value.trim(),
-      auto_cancel_minutes: parseInt(document.getElementById("srv-cancel-mins").value) || 20,
-      min_cancel_minutes: parseInt(document.getElementById("srv-min-cancel").value) || 0,
-      retry_count: parseInt(document.getElementById("srv-retry-count").value) || 0,
-      check_interval: parseInt(document.getElementById("srv-poll").value) || 3,
-      multi_otp_supported: document.getElementById("srv-multi-otp").checked,
-      auto_add_services: document.getElementById("srv-auto-add").checked,
-      extra_profit: parseFloat(document.getElementById("srv-extra").value) || 0
     };
-    
-    if (!body.name) {
-      return toast("Server name is required", "error");
-    }
-    
-    const saveBtn = document.getElementById("save-btn");
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<div class="spinner"></div>';
-    
-    try {
-      if (editingId) {
-        await API.put(`/api/admin/servers/${editingId}`, body);
-        toast("Server updated!", "success");
-      } else {
-        await API.post("/api/admin/servers", body);
-        toast("Server added!", "success");
+
+    window.saveServer = async function () {
+      const body = {
+        name: document.getElementById("srv-name").value.trim(),
+        country_id: document.getElementById("srv-country").value || null,
+        api_get_number_url: document.getElementById("srv-get-url").value.trim(),
+        api_check_status_url: document.getElementById("srv-check-url").value.trim(),
+        api_cancel_url: document.getElementById("srv-cancel-url").value.trim(),
+        api_retry_url: document.getElementById("srv-retry-url").value.trim(),
+        auto_cancel_minutes: parseInt(document.getElementById("srv-cancel-mins").value) || 20,
+        min_cancel_minutes: parseInt(document.getElementById("srv-min-cancel").value) || 0,
+        retry_count: parseInt(document.getElementById("srv-retry-count").value) || 0,
+        check_interval: parseInt(document.getElementById("srv-poll").value) || 3,
+        multi_otp_supported: document.getElementById("srv-multi-otp").checked,
+        auto_add_services: document.getElementById("srv-auto-add").checked,
+        service_source: document.getElementById("srv-auto-source").value,
+        services_url: document.getElementById("srv-auto-url").value.trim(),
+        include_local_services: document.getElementById("srv-include-local").checked,
+        extra_profit: parseFloat(document.getElementById("srv-extra").value) || 0
+
+
+      };
+
+      if (!body.name) {
+        return toast("Server name is required", "error");
       }
+
+      const saveBtn = document.getElementById("save-btn");
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        if (editingId) {
+          await API.put(`/api/admin/servers/${editingId}`, body);
+          toast("Server updated!", "success");
+        } else {
+          await API.post("/api/admin/servers", body);
+          toast("Server added!", "success");
+        }
+        closeModal('srv-modal');
+        loadData();
+      } catch (e) {
+        toast(e.message, "error");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = "Save";
+      }
+    };
+
+    window.deleteServer = async function () {
       closeModal('srv-modal');
-      loadData();
-    } catch (e) {
-      toast(e.message, "error");
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = "Save";
-    }
-  };
-  
-  window.deleteServer = async function() {
-    if (!await uiConfirm("Delete this server? Orders using it may fail.")) return;
-    
-    const deleteBtn = document.getElementById("delete-btn");
-    deleteBtn.disabled = true;
-    deleteBtn.textContent = "Deleting...";
-    
-    try {
-      await API.del(`/api/admin/servers/${editingId}`);
-      toast("Server deleted", "success");
-      closeModal('srv-modal');
-      loadData();
-    } catch (e) {
-      toast(e.message, "error");
-    } finally {
-      deleteBtn.disabled = false;
-      deleteBtn.textContent = "Delete Server";
-    }
-  };
-  
-  loadData();
-</script>
+      if (!await uiConfirm("Delete this server? Orders using it may fail.")) {
+        openModal('srv-modal');
+        return;
+      }
+
+      const deleteBtn = document.getElementById("delete-btn");
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "Deleting...";
+
+      try {
+        await API.del(`/api/admin/servers/${editingId}`);
+        toast("Server deleted", "success");
+        closeModal('srv-modal');
+        loadData();
+      } catch (e) {
+        toast(e.message, "error");
+      } finally {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "Delete Server";
+      }
+    };
+
+    window.openAutoAdd = function () {
+      const fields = ["auto-name", "auto-api-key", "auto-country-code", "auto-country-id"];
+      fields.forEach(id => { if (document.getElementById(id)) document.getElementById(id).value = ""; });
+
+      document.getElementById("country-display-text-auto").textContent = "Select Country";
+      document.getElementById("country-search-container-auto").style.display = "none";
+      document.getElementById("country-selector-auto").classList.remove("searching");
+
+      document.getElementById("auto-cancel-mins").value = "20";
+      document.getElementById("auto-poll").value = "3";
+      document.getElementById("auto-min-cancel").value = "2";
+      document.getElementById("auto-multi-otp").checked = false;
+
+      const autoAdd = document.getElementById("auto-add-services");
+      if (autoAdd) {
+        autoAdd.checked = false;
+        window.toggleAutoAddOptionsAuto();
+      }
+      document.getElementById("auto-service-source").value = "json";
+      window.toggleUrlInputAuto();
+      document.getElementById("auto-merge-local").checked = false;
+      document.getElementById("auto-extra").value = "0";
+
+      // Set default OnlineSim URL in the input just in case they switch to Remote
+      const apiKey = document.getElementById("auto-api-key").value.trim();
+      const countryCode = document.getElementById("auto-country-code").value.trim() || "22";
+      document.getElementById("auto-services-url").value = `https://onlinesim.io/stubs/handler_api.php?api_key=${apiKey}&action=getPrices&country=${countryCode}`;
+
+      openModal("auto-modal");
+    };
+
+    window.updateAutoCountryId = function (val) {
+      const trimmedVal = val.trim().toLowerCase();
+      const found = allCountries.find(c => c.name.toLowerCase() === trimmedVal);
+      const status = document.getElementById("auto-country-match-status");
+      if (found) {
+        document.getElementById("auto-country-id").value = found._id || found.id;
+        if (status) {
+          status.style.display = "block";
+          status.style.color = "var(--success)";
+          status.textContent = "✅ " + found.name;
+        }
+      } else {
+        document.getElementById("auto-country-id").value = "";
+        if (status) status.style.display = "none";
+      }
+    };
+
+    window.saveAutoServer = async function () {
+      const name = document.getElementById("auto-name").value.trim();
+      const countryId = document.getElementById("auto-country-id").value;
+      const countryCode = document.getElementById("auto-country-code").value.trim();
+      const apiKey = document.getElementById("auto-api-key").value.trim();
+
+      if (!name || !countryId || !countryCode || !apiKey) {
+        return toast("All fields are required. Please select a valid country from the list.", "error");
+      }
+
+      // Default Base URL for OnlineSim as per request
+      const cleanBase = "https://onlinesim.io/stubs/handler_api.php";
+
+      // OnlineSim uses status=6 for cancel
+      const cancelStatus = "6";
+
+      const body = {
+        name,
+        country_id: countryId,
+        api_key: apiKey,
+        api_get_number_url: `${cleanBase}?api_key=${apiKey}&action=getNumber&service=$service&country=${countryCode}`,
+        api_check_status_url: `${cleanBase}?api_key=${apiKey}&action=getStatus&id=$id`,
+        api_cancel_url: `${cleanBase}?api_key=${apiKey}&action=setStatus&status=${cancelStatus}&id=$id`,
+        api_retry_url: `${cleanBase}?api_key=${apiKey}&action=setStatus&status=3&id=$id`,
+        auto_cancel_minutes: parseInt(document.getElementById("auto-cancel-mins").value) || 20,
+        min_cancel_minutes: parseInt(document.getElementById("auto-min-cancel").value) || 0,
+        retry_count: parseInt(document.getElementById("auto-retry-count").value) || 0,
+        check_interval: parseInt(document.getElementById("auto-poll").value) || 3,
+        multi_otp_supported: document.getElementById("auto-multi-otp").checked,
+        auto_add_services: document.getElementById("auto-add-services").checked,
+        service_source: document.getElementById("auto-service-source").value,
+        services_url: document.getElementById("auto-services-url").value || `${cleanBase}?api_key=${apiKey}&action=getPrices&country=$country`,
+        include_local_services: document.getElementById("auto-merge-local").checked,
+        extra_profit: parseFloat(document.getElementById("auto-extra").value) || 0,
+        provider_country_code: countryCode
+      };
+
+      const btn = document.getElementById("auto-save-btn");
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        await API.post("/api/admin/servers", body);
+        toast("Server created automatically!", "success");
+        closeModal("auto-modal");
+        loadData();
+      } catch (e) {
+        toast(e.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "Create Server";
+      }
+    };
+
+    init();
+  </script>
 </body>
+
 </html>
-
-
-

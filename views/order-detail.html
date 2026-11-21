@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Order Detail — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
-    .detail-page { max-width: 520px; margin: 0 auto; }
-    
+    .detail-page {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
     .detail-header {
       display: flex;
       justify-content: space-between;
@@ -16,11 +21,19 @@
       margin-bottom: 28px;
       animation: slideDown 0.4s ease;
     }
+
     @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    
+
     .detail-back {
       display: flex;
       align-items: center;
@@ -30,8 +43,11 @@
       text-decoration: none;
       transition: all 0.2s;
     }
-    .detail-back:hover { color: var(--accent); }
-    
+
+    .detail-back:hover {
+      color: var(--accent);
+    }
+
     .status-badge {
       display: inline-flex;
       align-items: center;
@@ -43,25 +59,93 @@
       letter-spacing: 0.5px;
       text-transform: uppercase;
     }
+
     .status-badge::before {
       content: '';
       width: 8px;
       height: 8px;
       border-radius: 50%;
     }
-    .status-badge.active { background: rgba(16,185,129,0.12); color: var(--success); }
-    .status-badge.active::before { background: var(--success); animation: pulse-badge 2s infinite; }
-    .status-badge.completed { background: rgba(59,130,246,0.12); color: var(--accent); }
-    .status-badge.completed::before { background: var(--accent); }
-    .status-badge.refunded { background: rgba(245,158,11,0.12); color: var(--warning); }
-    .status-badge.refunded::before { background: var(--warning); }
-    .status-badge.expired, .status-badge.cancelled { background: rgba(100,116,139,0.12); color: var(--text-3); }
-    
-    @keyframes pulse-badge {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.5); opacity: 0.5; }
+
+    .status-badge.active {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--success);
     }
-    
+
+    .status-badge.active::before {
+      background: var(--success);
+      animation: pulse-badge 2s infinite;
+    }
+
+    .status-badge.completed {
+      background: var(--accent-glow, rgba(59, 130, 246, 0.3));
+      color: var(--accent);
+    }
+
+    .status-badge.completed::before {
+      background: var(--accent);
+    }
+
+    .status-badge.refunded {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--warning);
+    }
+
+    .status-badge.refunded::before {
+      background: var(--warning);
+    }
+
+    .status-badge.expired,
+    .status-badge.cancelled {
+      background: rgba(100, 116, 139, 0.12);
+      color: var(--text-3);
+    }
+
+    /* Skeleton Loading */
+    .skeleton-shell {
+      animation: skeleton-shimmer 1.5s infinite linear;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--bg-1) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+    }
+
+    @keyframes skeleton-shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .skeleton-text {
+      height: 14px;
+      border-radius: 4px;
+      margin: 8px 0;
+      width: 60%;
+    }
+
+    .skeleton-title {
+      height: 24px;
+      width: 40%;
+      margin-bottom: 16px;
+      border-radius: 6px;
+    }
+
+    @keyframes pulse-badge {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.5);
+        opacity: 0.5;
+      }
+    }
+
     .phone-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -73,11 +157,19 @@
       overflow: hidden;
       animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     @keyframes scaleIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
-    
+
     .phone-card::before {
       content: '';
       position: absolute;
@@ -87,7 +179,7 @@
       height: 4px;
       background: var(--service-color, var(--grad-primary));
     }
-    
+
     .phone-icon {
       width: 64px;
       height: 64px;
@@ -98,14 +190,22 @@
       justify-content: center;
       margin: 0 auto 20px;
       font-size: 28px;
-      box-shadow: 0 8px 24px rgba(59,130,246,0.3);
+      box-shadow: 0 8px 24px var(--accent-glow, rgba(59, 130, 246, 0.3));
       animation: float 3s ease-in-out infinite;
     }
+
     @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-6px);
+      }
     }
-    
+
     .phone-label {
       font-size: 11px;
       font-weight: 600;
@@ -114,7 +214,7 @@
       color: var(--text-3);
       margin-bottom: 12px;
     }
-    
+
     .phone-number {
       font-family: 'JetBrains Mono', monospace;
       font-size: 26px;
@@ -125,17 +225,23 @@
       word-break: break-all;
       animation: fadeIn 0.6s ease 0.2s both;
     }
+
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
-    
+
     .phone-number.pending {
       color: var(--text-3);
       font-size: 16px;
       letter-spacing: 0;
     }
-    
+
     .copy-btn {
       display: inline-flex;
       align-items: center;
@@ -150,20 +256,25 @@
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
     .copy-btn:hover {
       background: var(--accent);
       border-color: var(--accent);
       color: #fff;
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(59,130,246,0.3);
+      box-shadow: 0 8px 20px var(--accent-glow, rgba(59, 130, 246, 0.3));
     }
+
     .copy-btn.copied {
       background: var(--success);
       border-color: var(--success);
       color: #fff;
     }
-    .copy-btn:active { transform: scale(0.95); }
-    
+
+    .copy-btn:active {
+      transform: scale(0.95);
+    }
+
     .otp-card-main {
       width: 100%;
       display: flex;
@@ -171,6 +282,7 @@
       align-items: center;
       margin-top: 20px;
     }
+
     .otp-card.jiggle {
       background: var(--surface-2);
       border: 1px solid var(--border-2);
@@ -182,9 +294,10 @@
       gap: 12px;
       width: 100%;
       max-width: 320px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
       margin: 0 auto;
     }
+
     .otp-card.prev {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -200,6 +313,7 @@
       max-width: 320px;
       margin: 8px auto 0;
     }
+
     .otp-text {
       font-size: 12px;
       line-height: 1.4;
@@ -208,6 +322,7 @@
       text-align: center;
       word-break: break-word;
     }
+
     .otp-label-mini {
       font-size: 11px;
       font-weight: 700;
@@ -215,16 +330,39 @@
       text-transform: uppercase;
       letter-spacing: 0.15em;
     }
+
     .prev-label {
       font-size: 10px;
       font-weight: 600;
       color: var(--text-3);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
       margin: 24px 0 8px;
       text-align: center;
     }
-    
+
+    .prev-messages-scroll {
+      width: 100%;
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 4px;
+      margin-bottom: 24px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .prev-messages-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .prev-messages-scroll::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 10px;
+    }
+
+
     .otp-label {
       font-size: 11px;
       font-weight: 600;
@@ -233,7 +371,7 @@
       color: var(--text-3);
       margin-bottom: 16px;
     }
-    
+
     .otp-code {
       font-family: 'JetBrains Mono', monospace;
       font-size: 24px;
@@ -243,29 +381,60 @@
       margin-bottom: 24px;
       animation: otpReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     @keyframes otpReveal {
-      from { opacity: 0; transform: scale(1.1); }
-      to { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(1.1);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
-    
+
     .jiggle {
       animation: jiggle 0.5s ease;
     }
+
     @keyframes jiggle {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-4px) rotate(-1deg); }
-      50% { transform: translateX(4px) rotate(1deg); }
-      75% { transform: translateX(-2px) rotate(-0.5deg); }
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-4px) rotate(-1deg);
+      }
+
+      50% {
+        transform: translateX(4px) rotate(1deg);
+      }
+
+      75% {
+        transform: translateX(-2px) rotate(-0.5deg);
+      }
     }
-    
+
     .otp-waiting {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 16px;
     }
-    .otp-waiting-text { color: var(--text-3); font-size: 15px; }
-    .otp-dots { display: flex; gap: 8px; }
+
+    .otp-waiting-text {
+      color: var(--text-3);
+      font-size: 15px;
+    }
+
+    .otp-dots {
+      display: flex;
+      gap: 8px;
+    }
+
     .otp-dots span {
       width: 10px;
       height: 10px;
@@ -273,14 +442,34 @@
       border-radius: 50%;
       animation: dotBounce 1.4s infinite ease-in-out;
     }
-    .otp-dots span:nth-child(1) { animation-delay: 0s; }
-    .otp-dots span:nth-child(2) { animation-delay: 0.16s; }
-    .otp-dots span:nth-child(3) { animation-delay: 0.32s; }
-    @keyframes dotBounce {
-      0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-      40% { transform: scale(1); opacity: 1; }
+
+    .otp-dots span:nth-child(1) {
+      animation-delay: 0s;
     }
-    
+
+    .otp-dots span:nth-child(2) {
+      animation-delay: 0.16s;
+    }
+
+    .otp-dots span:nth-child(3) {
+      animation-delay: 0.32s;
+    }
+
+    @keyframes dotBounce {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+        opacity: 0.3;
+      }
+
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
     .timer-card {
       display: flex;
       align-items: center;
@@ -292,23 +481,42 @@
       margin-bottom: 16px;
       animation: slideUp 0.4s ease 0.2s both;
     }
+
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    
-    .timer-info { display: flex; align-items: center; gap: 12px; }
+
+    .timer-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
     .timer-icon {
       width: 40px;
       height: 40px;
-      background: rgba(245,158,11,0.15);
+      background: rgba(245, 158, 11, 0.15);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 18px;
     }
-    .timer-text { font-size: 13px; color: var(--text-2); margin-bottom: 2px; }
+
+    .timer-text {
+      font-size: 13px;
+      color: var(--text-2);
+      margin-bottom: 2px;
+    }
+
     .timer-value {
       font-family: 'JetBrains Mono', monospace;
       font-size: 20px;
@@ -316,10 +524,10 @@
       color: var(--warning);
       letter-spacing: 2px;
     }
-    
+
     .cancel-lock-card {
-      background: rgba(245,158,11,0.08);
-      border: 1px solid rgba(245,158,11,0.25);
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
       border-radius: 16px;
       padding: 18px 24px;
       margin-bottom: 16px;
@@ -328,20 +536,36 @@
       gap: 14px;
       animation: slideUp 0.4s ease 0.2s both;
     }
+
     .lock-icon {
       width: 44px;
       height: 44px;
-      background: rgba(245,158,11,0.15);
+      background: rgba(245, 158, 11, 0.15);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 20px;
     }
-    .lock-text { flex: 1; }
-    .lock-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px; }
-    .lock-timer { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--warning); font-weight: 600; }
-    
+
+    .lock-text {
+      flex: 1;
+    }
+
+    .lock-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .lock-timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      color: var(--warning);
+      font-weight: 600;
+    }
+
     .info-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -350,7 +574,7 @@
       margin-bottom: 16px;
       animation: slideUp 0.4s ease 0.3s both;
     }
-    
+
     .info-row {
       display: flex;
       justify-content: space-between;
@@ -359,15 +583,39 @@
       border-bottom: 1px solid var(--border);
       transition: background 0.2s;
     }
-    .info-row:last-child { border-bottom: none; }
-    .info-row:hover { background: var(--surface-2); }
-    
-    .info-label { font-size: 13px; color: var(--text-3); display: flex; align-items: center; gap: 10px; }
-    .info-value { font-size: 14px; font-weight: 600; color: var(--text); }
-    .info-value.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); }
-    
-    .action-section { animation: slideUp 0.4s ease 0.4s both; }
-    
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-row:hover {
+      background: var(--surface-2);
+    }
+
+    .info-label {
+      font-size: 13px;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .info-value.mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .action-section {
+      animation: slideUp 0.4s ease 0.4s both;
+    }
+
     .action-btn {
       width: 100%;
       padding: 16px;
@@ -383,31 +631,43 @@
       border: none;
       margin-bottom: 12px;
     }
-    .action-btn:last-child { margin-bottom: 0; }
-    
+
+    .action-btn:last-child {
+      margin-bottom: 0;
+    }
+
     .action-btn.primary {
       background: var(--grad-primary);
       color: #fff;
-      box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
     }
+
     .action-btn.primary:hover:not(:disabled) {
       transform: translateY(-3px);
-      box-shadow: 0 12px 32px rgba(59,130,246,0.4);
+      box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
     }
-    
+
     .action-btn.danger {
-      background: rgba(239,68,68,0.1);
+      background: rgba(239, 68, 68, 0.1);
       color: var(--danger);
-      border: 1px solid rgba(239,68,68,0.3);
+      border: 1px solid rgba(239, 68, 68, 0.3);
     }
+
     .action-btn.danger:hover:not(:disabled) {
-      background: rgba(239,68,68,0.2);
+      background: rgba(239, 68, 68, 0.2);
       transform: translateY(-2px);
     }
-    
-    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-    .action-btn:active:not(:disabled) { transform: scale(0.98); }
-    
+
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .action-btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -416,6 +676,7 @@
       padding: 80px 20px;
       text-align: center;
     }
+
     .loading-spinner {
       width: 40px;
       height: 40px;
@@ -425,8 +686,13 @@
       animation: spin 0.8s linear infinite;
       margin-bottom: 16px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .error-container {
       display: flex;
       flex-direction: column;
@@ -435,534 +701,1873 @@
       padding: 80px 20px;
       text-align: center;
     }
-    .error-icon { font-size: 48px; margin-bottom: 16px; }
-    .error-message { color: var(--text-2); margin-bottom: 20px; }
-    
+
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .error-message {
+      color: var(--text-2);
+      margin-bottom: 20px;
+    }
+
+    .buy-new-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: rgba(var(--accent-rgb), 0.08);
+      border: 1px solid rgba(var(--accent-rgb), 0.15);
+      color: var(--accent);
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10;
+    }
+
+    .buy-new-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px var(--accent-glow, rgba(59, 130, 246, 0.3));
+    }
+
+    .buy-new-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
     @media (max-width: 640px) {
-      .phone-number { font-size: 20px; }
-      .otp-code { font-size: 36px; letter-spacing: 8px; }
-      .info-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+      .phone-number {
+        font-size: 20px;
+      }
+
+      .otp-code {
+        font-size: 36px;
+        letter-spacing: 8px;
+      }
+
+      .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+    }
+
+    /* Glassmorphism Active Orders Switcher */
+    .active-orders-bar {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      padding: 12px 6px 24px;
+      margin-bottom: 24px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      mask-image: linear-gradient(to right, black 85%, transparent 100%);
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      perspective: 1000px;
+    }
+
+    .active-orders-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .active-order-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 22px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 99px;
+      color: var(--text-2);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      scroll-snap-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: pillSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes pillSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(40px) rotateY(20deg) scale(0.8);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0) rotateY(0) scale(1);
+      }
+    }
+
+    .active-order-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(var(--accent-rgb, 59, 130, 246), 0.5);
+      color: var(--text);
+      transform: scale(1.08) translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .active-order-pill.current {
+      background: linear-gradient(135deg, rgba(var(--accent-rgb, 59, 130, 246), 0.25) 0%, rgba(var(--accent-rgb, 59, 130, 246), 0.1) 100%);
+      border: 1px solid rgba(var(--accent-rgb, 59, 130, 246), 0.4);
+      color: var(--accent);
+      box-shadow: 0 0 25px rgba(var(--accent-rgb, 59, 130, 246), 0.25), inset 0 0 15px rgba(var(--accent-rgb, 59, 130, 246), 0.1);
+      transform: scale(1.15) translateY(-2px);
+      z-index: 10;
+    }
+
+    .active-order-pill.current::before {
+      content: "";
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, transparent, rgba(var(--accent-rgb, 59, 130, 246), 0.4), transparent);
+      z-index: -1;
+      border-radius: inherit;
+      animation: pillGlowBorder 3s linear infinite;
+    }
+
+    @keyframes pillGlowBorder {
+      0% {
+        opacity: 0.3;
+      }
+
+      50% {
+        opacity: 0.8;
+      }
+
+      100% {
+        opacity: 0.3;
+      }
+    }
+
+    .active-order-pill .pill-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--success);
+      animation: pulse-indicator 2s infinite;
+    }
+
+    @keyframes pulse-indicator {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+
+      70% {
+        transform: scale(1.2);
+        opacity: 0.8;
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
+    .active-order-pill.current .pill-indicator {
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+    }
+
+    /* ─────────────────────────────────────────
+       Modern Card — UNIFIED styles for ALL states
+       (active, completed, refunded, expired, cancelled)
+       ───────────────────────────────────────── */
+    .modern-card-container {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 12px 14px;
+      margin-bottom: 24px;
+      /* Single neutral border — same for every status */
+      border: 1.5px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      opacity: 1;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+    }
+
+    /* Hover identical for all cards */
+    .modern-card-container:hover {
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+      transform: translateY(-2px);
+    }
+
+    @keyframes orderGlow {
+      0% { 
+        transform: scale(1);
+        border-color: var(--success);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.8), 0 0 15px rgba(16, 185, 129, 0.5);
+      }
+      15% { 
+        transform: scale(1.03);
+        border-color: var(--success);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 1), 0 0 25px rgba(16, 185, 129, 0.7);
+      }
+      85% { 
+        transform: scale(1.03);
+        border-color: var(--success);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 1), 0 0 25px rgba(16, 185, 129, 0.7);
+      }
+      100% { 
+        transform: scale(1);
+        border-color: var(--border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    .modern-card-container.otp-glow {
+      animation: orderGlow 3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      z-index: 10;
+    }
+
+    /* Cancelled / expired: black and white like classic */
+    .modern-card-container.cancelled,
+    [data-theme="dark"] .modern-card-container.cancelled {
+      background: #000 !important;
+      color: #fff !important;
+      border-color: #333 !important;
+      opacity: 0.85;
+    }
+
+    .modern-card-container.cancelled .modern-phone-section,
+    .modern-card-container.cancelled .modern-sms-item,
+    .modern-card-container.cancelled .modern-copy-btn,
+    .modern-card-container.cancelled .modern-sms-waiting,
+    [data-theme="dark"] .modern-card-container.cancelled .modern-phone-section,
+    [data-theme="dark"] .modern-card-container.cancelled .modern-sms-item,
+    [data-theme="dark"] .modern-card-container.cancelled .modern-copy-btn,
+    [data-theme="dark"] .modern-card-container.cancelled .modern-sms-waiting {
+      background: #111 !important;
+      border-color: #333 !important;
+      color: #fff !important;
+    }
+
+    .modern-card-container.cancelled .modern-country-name,
+    .modern-card-container.cancelled .modern-server-name,
+    .modern-card-container.cancelled .modern-phone-number,
+    .modern-card-container.cancelled .modern-phone-label,
+    .modern-card-container.cancelled .modern-amount-label,
+    .modern-card-container.cancelled .modern-amount-value,
+    .modern-card-container.cancelled .modern-sms-label,
+    .modern-card-container.cancelled .modern-service-name,
+    .modern-card-container.cancelled .modern-service-date,
+    [data-theme="dark"] .modern-card-container.cancelled .modern-country-name,
+    [data-theme="dark"] .modern-card-container.cancelled .modern-phone-number,
+    [data-theme="dark"] .modern-card-container.cancelled .modern-service-name {
+      color: #fff !important;
+    }
+
+    .modern-card-container.cancelled .modern-status-pill {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: #fff !important;
+      border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    /* Remove the heavy "off" override entirely — was causing the jarring visual split */
+    /* .modern-card-container.off { ... } — DELETED */
+
+    .modern-order-badge {
+      position: absolute;
+      top: -10px;
+      left: 12px;
+      background: var(--grad-primary);
+      color: white;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 8px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      z-index: 20;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .modern-copy-btn.buy-new-card-btn {
+      background: var(--grad-primary);
+      color: white;
+      border: none;
+      width: 22px;
+      height: 22px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      border-radius: 6px;
+    }
+
+    .modern-copy-btn.cancel-card-btn {
+      width: 22px;
+      height: 22px;
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      border-radius: 6px;
+    }
+
+    .modern-copy-btn.buy-new-card-btn:hover {
+      transform: scale(1.1) rotate(90deg);
+      background: var(--accent);
+    }
+
+    .modern-copy-btn.cancel-card-btn:hover {
+      background: var(--danger);
+      color: white;
+      transform: scale(1.1);
+    }
+
+    .modern-sms-history-label.cancelled-sep {
+      margin-top: 32px;
+      color: var(--danger);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modern-sms-history-label.cancelled-sep::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--danger);
+      opacity: 0.2;
+    }
+
+    .modern-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .modern-country-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modern-flag {
+      width: 38px;
+      height: 26px;
+      border-radius: 4px;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .modern-country-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modern-country-name {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .modern-server-name {
+      font-size: 13px;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+
+    .modern-status-pill {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 800;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Status pill colours per state */
+    .modern-status-pill.completed {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent);
+      border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .modern-status-pill.refunded {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.2);
+    }
+
+    .modern-status-pill.cancelled,
+    .modern-status-pill.expired {
+      background: rgba(100, 116, 139, 0.1);
+      color: var(--text-3);
+      border-color: rgba(100, 116, 139, 0.2);
+    }
+
+    .modern-phone-section {
+      background: var(--surface-2);
+      border: 1.5px dashed var(--border-2);
+      border-radius: 8px;
+      padding: 5px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modern-phone-label {
+      font-size: 8px;
+      font-weight: 700;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 1px;
+    }
+
+    .modern-phone-number {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: 0.5px;
+    }
+
+    .modern-copy-btn {
+      width: 26px;
+      height: 26px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-3);
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .modern-copy-btn.mini {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--surface-2);
+    }
+
+    .modern-copy-btn:hover {
+      background: var(--surface-2);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .modern-sms-item {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: border-color 0.2s;
+    }
+
+    .modern-sms-item:hover {
+      border-color: rgba(var(--accent-rgb, 59, 130, 246), 0.3);
+    }
+
+    .modern-sms-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .modern-otp-display {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 1px;
+    }
+
+    .modern-full-sms {
+      font-size: 12px;
+      color: var(--text-3);
+      font-weight: 500;
+      line-height: 1.4;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+
+    .modern-full-sms.visible {
+      display: block;
+    }
+
+    .modern-sms-toggle {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-3);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .modern-sms-toggle:hover {
+      color: var(--accent);
+    }
+
+    .modern-service-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .modern-service-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modern-service-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      font-size: 14px;
+      overflow: hidden;
+    }
+
+    .modern-service-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modern-service-name {
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .modern-service-date {
+      font-size: 10px;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .modern-amount-box {
+      text-align: right;
+    }
+
+    .modern-amount-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-3);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .modern-amount-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--success);
+    }
+
+    .modern-sms-section {
+      margin-top: 2px;
+    }
+
+    .modern-sms-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-3);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .modern-sms-history-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 12px 0 6px 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modern-sms-history-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .modern-sms-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .modern-sms-item.latest {
+      border-color: var(--accent);
+      background: rgba(var(--accent-rgb, 59, 130, 246), 0.03);
+      box-shadow: 0 4px 12px rgba(var(--accent-rgb, 59, 130, 246), 0.05);
+    }
+
+    .modern-latest-badge {
+      font-size: 9px;
+      font-weight: 900;
+      background: var(--accent);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-left: auto;
+      margin-right: 8px;
+    }
+
+    .modern-sms-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .modern-sms-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .modern-sms-list::-webkit-scrollbar-thumb {
+      background: var(--border-2);
+      border-radius: 10px;
+    }
+
+    .modern-sms-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+
+    .modern-sms-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid var(--border-2);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      background: var(--surface-2);
+    }
+
+    .modern-sms-waiting {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      font-style: italic;
+      font-weight: 500;
+    }
+
+    /* Inline Timers */
+    .modern-timers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .modern-timer-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modern-timer-icon {
+      font-size: 18px;
+    }
+
+    .modern-timer-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modern-timer-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .modern-timer-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Dark theme — only background/color, NOT border-color (let the unified border rule apply) */
+    [data-theme="dark"] .modern-card-container {
+      background: #1a1c1e;
+      color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .modern-phone-section {
+      background: #252729;
+      border-color: #3f4143;
+    }
+
+    [data-theme="dark"] .modern-phone-number,
+    [data-theme="dark"] .modern-country-name,
+    [data-theme="dark"] .modern-service-name {
+      color: #fff;
+    }
+
+    [data-theme="dark"] .modern-copy-btn {
+      background: #2d2f31;
+      color: #94a3b8;
+    }
+
+    [data-theme="dark"] .modern-sms-item {
+      background: #1a1c1e;
+      border-color: #2d2f31;
+      color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .modern-sms-waiting {
+      background: #1a1c1e;
+      border-color: #2d2f31;
+    }
+
+    /* Checker Button & Result Box */
+    .modern-copy-btn.checker-btn {
+      width: auto;
+      padding: 0 10px;
+      gap: 5px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+
+    .modern-copy-btn.checker-btn:hover {
+      background: #10b981;
+      color: #fff;
+      border-color: #10b981;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .modern-copy-btn.checker-btn.loading {
+      opacity: 0.75;
+      pointer-events: none;
+      cursor: wait;
+    }
+
+    [data-theme="dark"] .modern-copy-btn.checker-btn {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.35);
+    }
+
+    [data-theme="dark"] .modern-copy-btn.checker-btn:hover {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .checker-result-box {
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      animation: slideDown 0.3s ease;
+      margin-top: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .checker-result-box.registered {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    .checker-result-box.not_registered {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+    }
+
+    .checker-result-box.checking {
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #3b82f6;
+    }
+
+    .checker-result-box.error {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #f59e0b;
+    }
+
+    [data-theme="dark"] .checker-result-box.registered {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    [data-theme="dark"] .checker-result-box.not_registered {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .checker-spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    /* Fixed overlapping with bottom nav */
+    #modern-content {
+      padding-bottom: 160px;
+    }
+
+    .detail-page {
+      padding-bottom: 160px;
     }
   </style>
 </head>
-<body>
-<nav class="navbar">
-  <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-    <div class="nav-links" id="nav-links">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/dashboard/buy">Buy</a>
-      <a href="/dashboard/orders" class="active">Orders</a>
-      <a href="/dashboard/wallet">Wallet</a>
-    </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
-  </div>
-</nav>
 
-<div class="layout">
-  <main class="main-content">
-    <div class="detail-page">
-      <div class="detail-header">
-        <a href="/dashboard/buy" class="detail-back">← Back</a>
-        <div id="status-badge" class="status-badge active">
-          <span>Loading...</span>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}}</a>
+      <div class="nav-links" id="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/dashboard/buy">Buy</a>
+        <a href="/dashboard/orders" class="active">Orders</a>
+        <a href="/dashboard/wallet">Wallet</a>
+      </div>
+      <button class="nav-burger" id="nav-burger">☰</button>
+    </div>
+  </nav>
+
+  <div class="layout">
+    <main class="main-content">
+      <div class="detail-page">
+        <div id="active-orders-switcher" class="active-orders-bar" style="display: none;">
+          <!-- Active orders will be injected here -->
         </div>
-      </div>
-      
-      <div id="loading-state" class="loading-container">
-        <div class="loading-spinner"></div>
-        <div style="color: var(--text-3)">Loading order...</div>
-      </div>
-      
-      <div id="error-state" class="error-container" style="display: none;">
-        <div class="error-icon">⚠️</div>
-        <div id="error-message" class="error-message">Something went wrong</div>
-        <button class="btn btn-secondary" onclick="loadOrder()">Try Again</button>
-      </div>
-      
-      <div id="content" style="display: none;">
-        <div class="phone-card">
-          <div id="order-service-icon" class="phone-icon" style="overflow:hidden;margin:0 auto 20px">📱</div>
-          <div class="phone-label">Your Virtual Number</div>
-          <div id="phone-number" class="phone-number">+1 234 567 8900</div>
-          <button class="copy-btn" onclick="copyPhone()">
-            <span id="copy-icon">📋</span>
-            <span id="copy-phone-text">Copy Number</span>
-          </button>
-          <div id="cancel-btn-wrap" style="margin-top:8px"></div>
+
+        <div class="detail-header">
+          <a href="/dashboard/buy" class="detail-back">← Back</a>
+          <div id="status-badge" class="status-badge active">
+            <span>Loading...</span>
+          </div>
         </div>
-        
-        <div class="otp-card-main">
-          <div id="otp-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
-            <div class="otp-waiting">
-              <div class="otp-waiting-text">Waiting for SMS...</div>
-              <div class="otp-dots">
-                <span></span>
-                <span></span>
-                <span></span>
+
+        <div id="loading-state" class="loading-container">
+          <div class="loading-spinner"></div>
+          <div style="color: var(--text-3)">Loading order...</div>
+        </div>
+
+        <div id="error-state" class="error-container" style="display: none;">
+          <div class="error-icon">⚠️</div>
+          <div id="error-message" class="error-message">Something went wrong</div>
+          <button class="btn btn-secondary" onclick="loadOrder()">Try Again</button>
+        </div>
+
+        <div id="modern-content" style="display: none; margin-top: 10px;"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/ambient-bg.js"></script>
+
+  <script>
+    if (!requireLogin()) { }
+
+    let orderId = location.pathname.split('/').pop();
+    let orderData = null;
+    let countdownInterval = null;
+    let cancelLockInterval = null;
+
+    window.switchOrder = function (newId) {
+      if (newId === orderId) return;
+      clearAllIntervals();
+      orderId = newId;
+      orderData = null;
+      history.pushState(null, '', `/dashboard/orders/${newId}`);
+      loadOrder();
+    };
+
+    window.showLoading = function () {
+      const el = document.getElementById('loading-state');
+      const err = document.getElementById('error-state');
+      const con = document.getElementById('content');
+      const mod = document.getElementById('modern-content');
+      if (el) el.style.display = 'flex';
+      if (err) err.style.display = 'none';
+      if (con) con.style.display = 'none';
+      if (mod) mod.style.display = 'none';
+    }
+
+    window.showError = function (message) {
+      const el = document.getElementById('loading-state');
+      const err = document.getElementById('error-state');
+      const con = document.getElementById('content');
+      const mod = document.getElementById('modern-content');
+      if (el) el.style.display = 'none';
+      if (err) { err.style.display = 'flex'; const msg = document.getElementById('error-message'); if (msg) msg.textContent = message || 'Failed to load order'; }
+      if (con) con.style.display = 'none';
+      if (mod) mod.style.display = 'none';
+    }
+
+    window.showContent = function (isModern = false) {
+      const el = document.getElementById('loading-state');
+      const err = document.getElementById('error-state');
+      const con = document.getElementById('content');
+      const mod = document.getElementById('modern-content');
+
+      if (el) el.style.display = 'none';
+      if (err) err.style.display = 'none';
+
+      if (isModern) {
+        if (con) con.style.display = 'none';
+        if (mod) mod.style.display = 'block';
+      } else {
+        if (con) con.style.display = 'block';
+        if (mod) mod.style.display = 'none';
+      }
+    }
+
+    window.clearAllIntervals = function () {
+      if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+      if (cancelLockInterval) { clearInterval(cancelLockInterval); cancelLockInterval = null; }
+    }
+
+    window.updateUI = async function (o, activeOrdersPrefetched = null) {
+      if (!o) return;
+      orderData = o;
+
+      const modernContainer = document.getElementById('modern-content');
+
+      let activeOrders = activeOrdersPrefetched;
+      if (!activeOrders) {
+        try {
+          const res = await API.get('/api/user/orders?status=active&limit=100');
+          activeOrders = res.orders || [];
+        } catch (e) { activeOrders = []; }
+      }
+
+      const allToDisplay = [...activeOrders];
+      const exists = allToDisplay.find(x => String(x.order_id || x.id) === String(o.order_id));
+      if (!exists) {
+        allToDisplay.push(o);
+      } else {
+        const idx = allToDisplay.findIndex(x => String(x.order_id || x.id) === String(o.order_id));
+        allToDisplay[idx] = { ...allToDisplay[idx], ...o };
+      }
+
+      // Show Modern Grid exclusively
+      showContent(true);
+      if (modernContainer) {
+        modernContainer.style.display = 'block';
+        loadActiveOrders(activeOrders || null); // Pass prefetched list — avoids redundant API fetch
+      }
+
+      // Global status is now handled by loadActiveOrders to account for all orders
+    }
+
+    let orderIntervals = {};
+
+    window.clearAllOrderIntervals = function () {
+      Object.keys(orderIntervals).forEach(id => {
+        if (orderIntervals[id].countdown) clearInterval(orderIntervals[id].countdown);
+        if (orderIntervals[id].cancelLock) clearInterval(orderIntervals[id].cancelLock);
+      });
+      orderIntervals = {};
+    }
+
+    window.getModernUIHTML = function (o, index = null) {
+      const statusMap = { active: 'Active', completed: 'Completed', refunded: 'Refunded', expired: 'Cancelled', cancelled: 'Cancelled' };
+      const isActuallyCancelled = ['cancelled', 'expired', 'refunded', 'completed'].includes(o.status);
+      const statusLabel = `<div class="modern-status-pill ${o.status}">${statusMap[o.status] || 'Active'}</div>`;
+
+      const badgeHtml = index !== null ? `<div class="modern-order-badge">Order #${index + 1}</div>` : '';
+
+      const date = new Date(o.createdAt);
+      const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit', year: 'numeric' }) + ', ' +
+        date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+      let smsHtml = '';
+      const allMessages = [...new Set(((o.all_otps && o.all_otps.length) ? o.all_otps : [o.otp]).filter(x => !!x))];
+      const oid = o.order_id || o.id;
+      if (allMessages.length > 0) {
+        const reversed = [...allMessages].reverse();
+        smsHtml = reversed.map((m, i) => {
+          const extracted = extractOTP(m);
+          const hasFullText = m.length > extracted.length + 5;
+          const isLatest = i === 0;
+          const originalIndex = allMessages.indexOf(m) + 1;
+
+          let cardHtml = '';
+          if (i === 1) {
+            cardHtml += `<div class="modern-sms-history-label">Previous Messages</div>`;
+          }
+
+          cardHtml += `
+            <div class="modern-sms-item ${isLatest ? 'latest' : ''}">
+              <div class="modern-sms-top">
+                <span class="modern-sms-num">#${originalIndex}</span>
+                <span class="modern-otp-display" style="flex:1">${extracted}</span>
+                ${isLatest ? `<span class="modern-latest-badge">Latest</span>` : ''}
+                <div style="display:flex; gap: 4px;">
+                   ${hasFullText ? `<button class="modern-copy-btn mini" onclick="toggleFullSMS(this)" title="View Full SMS">
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                   </button>` : ''}
+                   <button class="modern-copy-btn mini" onclick="copyText('${extracted}', 'OTP')" title="Copy OTP">
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                   </button>
+                </div>
               </div>
+              ${hasFullText ? `<div class="modern-full-sms">${m}</div>` : ''}
+            </div>
+          `;
+          return cardHtml;
+        }).join('');
+      } else {
+        smsHtml = `
+          <div class="modern-sms-item modern-sms-waiting">
+            <span class="modern-sms-num">?</span>
+            <span>Waiting for SMS messages...</span>
+          </div>
+        `;
+      }
+
+      const serverName = o.server_name || 'Global Server';
+
+      let displayPhone = o.phone || 'Pending...';
+      if (displayPhone.startsWith('91') && !displayPhone.startsWith('+')) {
+        displayPhone = '+' + displayPhone;
+      }
+
+      const hasOtp = (o.all_otps && o.all_otps.length > 0) || !!o.otp;
+      const isLocked = !hasOtp && o.min_cancel_at && new Date(o.min_cancel_at) > new Date();
+
+      const hasChecker = isCheckerSupported(o.service_name);
+      const checkerCached = window._checkerCache && window._checkerCache[oid];
+      let checkerBoxHtml = '';
+      if (hasChecker) {
+        if (checkerCached) {
+          if (checkerCached.status === 'registered') {
+            checkerBoxHtml = `
+              <div id="checker-box-${oid}" class="checker-result-box registered">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="material-symbols-outlined" style="font-size:16px;">cancel</span>
+                  <span><strong>ALREADY REGISTERED</strong> on ${getCheckerDisplayName(o.service_name)}</span>
+                </div>
+                <button onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${o.service_name}')" style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.8;font-size:11px;display:flex;align-items:center;gap:2px;" title="Re-check">
+                  <span class="material-symbols-outlined" style="font-size:14px;">refresh</span>
+                </button>
+              </div>`;
+          } else if (checkerCached.status === 'not_registered') {
+            checkerBoxHtml = `
+              <div id="checker-box-${oid}" class="checker-result-box not_registered">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+                  <span><strong>NOT REGISTERED</strong> (Fresh for ${getCheckerDisplayName(o.service_name)})</span>
+                </div>
+                <button onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${o.service_name}')" style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.8;font-size:11px;display:flex;align-items:center;gap:2px;" title="Re-check">
+                  <span class="material-symbols-outlined" style="font-size:14px;">refresh</span>
+                </button>
+              </div>`;
+          } else {
+            checkerBoxHtml = `
+              <div id="checker-box-${oid}" class="checker-result-box error">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="material-symbols-outlined" style="font-size:16px;">error</span>
+                  <span>${checkerCached.error || 'Check failed'}</span>
+                </div>
+                <button onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${o.service_name}')" style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.8;font-size:11px;display:flex;align-items:center;gap:2px;" title="Retry">
+                  <span class="material-symbols-outlined" style="font-size:14px;">refresh</span> Retry
+                </button>
+              </div>`;
+          }
+        } else {
+          checkerBoxHtml = `<div id="checker-box-${oid}" class="checker-result-box" style="display:none;"></div>`;
+        }
+      }
+
+      return `
+      <div class="modern-card-container ${isActuallyCancelled ? 'cancelled' : ''}" id="modern-card-${oid}">
+        ${badgeHtml}
+        <div class="modern-card-header" onclick="switchOrder('${oid}')" style="cursor:pointer">
+          <div class="modern-country-box">
+            <div class="modern-service-icon" style="width:28px;height:28px;border-radius:7px;margin-right:6px">
+              ${getServiceIcon({ name: o.service_name, image_url: o.service_image, icon_color: o.service_color }, '20px')}
+            </div>
+            <div class="modern-country-info">
+              <span class="modern-country-name" style="font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span>${o.service_name} — ${o.server_country || o.country || 'Global'}</span>
+                ${typeof getCheckerBadgeHtml === 'function' ? getCheckerBadgeHtml(o.service_name, 'font-size:9px;padding:1px 5px;') : ''}
+              </span>
+              <span class="modern-server-name" style="font-size:11px">${o.server_name || 'Mapped Server'}</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${statusLabel}
+            <div id="cancel-action-${oid}">
+              ${o.status === 'active' ? `
+                <button class="modern-copy-btn cancel-card-btn" 
+                        id="cancel-btn-${oid}"
+                        ${isLocked ? 'disabled' : `onclick="event.stopPropagation(); cancelOrder('${oid}')"`}
+                        title="Cancel Order">
+                  ${isLocked ? `
+                    <span style="font-size:10px; font-weight:700;" id="cancel-lock-timer-${oid}">--:--</span>
+                  ` : `
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  `}
+                </button>
+              ` : ''}
             </div>
           </div>
         </div>
-        
-        <div id="timer-section"></div>
-        
-        <div class="info-card">
-          <div class="info-row">
-            <div class="info-label"><span>🆔</span> Order ID</div>
-            <div id="order-id" class="info-value mono">—</div>
+
+        <div class="modern-phone-section">
+          <div>
+            <div class="modern-phone-label">Phone Number</div>
+            <div class="modern-phone-number">${displayPhone}</div>
           </div>
-          <div class="info-row">
-            <div class="info-label"><span>📱</span> Service</div>
-            <div id="service-name" class="info-value">—</div>
-          </div>
-          <div class="info-row">
-            <div class="info-label"><span>🌍</span> Country</div>
-            <div id="country" class="info-value">—</div>
-          </div>
-          <div class="info-row">
-            <div class="info-label"><span>💰</span> Cost</div>
-            <div id="cost" class="info-value">—</div>
-          </div>
-          <div class="info-row">
-            <div class="info-label"><span>🕐</span> Created</div>
-            <div id="created" class="info-value">—</div>
+          <div style="display:flex; gap:6px; align-items: center;">
+            ${hasChecker && o.phone ? `
+              <button class="modern-copy-btn checker-btn" id="check-btn-${oid}" onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${o.service_name}')" title="Check if number is already registered on ${getCheckerDisplayName(o.service_name)}">
+                <span class="material-symbols-outlined" style="font-size:15px;">verified_user</span>
+                <span>Check</span>
+              </button>
+            ` : ''}
+            <button class="modern-copy-btn" onclick="copyText('${(o.phone || '').replace(/^\+?91/, '')}', 'Phone number')" title="Copy Number">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+            <button class="modern-copy-btn buy-new-card-btn" onclick="event.stopPropagation(); buyNewNumber('${o.service_id}')" title="Get New Number">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
           </div>
         </div>
-        
-        <div id="actions" class="action-section"></div>
-      </div>
-    </div>
-  </main>
-</div>
+        ${checkerBoxHtml}
 
+        <div class="modern-timers" id="timers-${oid}">
+          ${o.status === 'active' ? renderInitialModernTimers(o) : ''}
+        </div>
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
-<script>
-  if (!requireLogin()) {}
-
-  const orderId = location.pathname.split('/').pop();
-  let orderData = null;
-  let pollInterval = null;
-  let countdownInterval = null;
-  let cancelLockInterval = null;
-
-  window.showLoading = function() {
-    const el = document.getElementById('loading-state');
-    const err = document.getElementById('error-state');
-    const con = document.getElementById('content');
-    if (el) el.style.display = 'flex';
-    if (err) err.style.display = 'none';
-    if (con) con.style.display = 'none';
-  }
-
-  window.showError = function(message) {
-    const el = document.getElementById('loading-state');
-    const err = document.getElementById('error-state');
-    const con = document.getElementById('content');
-    if (el) el.style.display = 'none';
-    if (err) { err.style.display = 'flex'; const msg = document.getElementById('error-message'); if (msg) msg.textContent = message || 'Failed to load order'; }
-    if (con) con.style.display = 'none';
-  }
-
-  window.showContent = function() {
-    const el = document.getElementById('loading-state');
-    const err = document.getElementById('error-state');
-    const con = document.getElementById('content');
-    if (el) el.style.display = 'none';
-    if (err) err.style.display = 'none';
-    if (con) con.style.display = 'block';
-  }
-
-  window.clearAllIntervals = function() {
-    if (pollInterval) { clearTimeout(pollInterval); pollInterval = null; }
-    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-    if (cancelLockInterval) { clearInterval(cancelLockInterval); cancelLockInterval = null; }
-  }
-
-  /* ── Audio Notification System ───────────────────────── */
-  let audioCtx;
-  function initAudio() {
-    if (!audioCtx) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      audioCtx = new AudioContext();
-    }
-  }
-
-  function playOtpSound() {
-    initAudio();
-    if (!audioCtx) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-    osc.frequency.exponentialRampToValueAtTime(880.00, audioCtx.currentTime + 0.1); // A5
-    
-    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.5);
-  }
-
-  window.updateUI = function(o) {
-    if (!o) return;
-    orderData = o;
-
-    const statusEl = document.getElementById('status-badge');
-    if (statusEl) {
-      statusEl.className = `status-badge ${o.status || 'active'}`;
-      const statusMap = { active: 'Active', completed: 'Completed', refunded: 'Refunded', expired: 'Cancelled', cancelled: 'Cancelled' };
-      statusEl.innerHTML = `<span>${statusMap[o.status] || o.status || 'Active'}</span>`;
-    }
-
-    const card = document.querySelector('.phone-card');
-    if (card) {
-      const color = o.service_color || '#3b82f6';
-      card.style.setProperty('--service-color', color);
-      card.style.borderColor = `rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.3)`;
-    }
-
-    const iconEl = document.getElementById('order-service-icon');
-    if (iconEl) {
-      iconEl.innerHTML = getServiceIcon({
-        name: o.service_name,
-        image_url: o.service_image,
-        icon_color: o.service_color
-      }, '64px');
-      // Style adjustment for the wrapper
-      iconEl.style.background = 'transparent'; 
-      iconEl.style.boxShadow = 'none';
-      if (!o.service_image) {
-         iconEl.style.background = o.service_color || 'var(--grad-primary)';
-         iconEl.style.boxShadow = '0 8px 24px rgba(59,130,246,0.3)';
-      }
-    }
-
-    const phoneEl = document.getElementById('phone-number');
-    if (phoneEl) {
-      if (o.phone) {
-        let localPhone = o.phone.replace(/^\+\d{1,3}\s?/, '').replace(/\s/g, '').trim();
-        if (localPhone.startsWith('91') && localPhone.length > 10) {
-          localPhone = localPhone.substring(2);
-        }
-        phoneEl.textContent = localPhone;
-        phoneEl.classList.remove('pending');
-      } else {
-        phoneEl.textContent = 'Assigning...';
-        phoneEl.classList.add('pending');
-      }
-    }
-
-    const otpContent = document.getElementById('otp-content');
-    if (otpContent) {
-      if (o.otp || (o.all_otps && o.all_otps.length)) {
-        // Deduplicate and filter out empty strings
-        const all = [...new Set(((o.all_otps && o.all_otps.length) ? o.all_otps : [o.otp]).filter(x => !!x))];
-        const latestOTP = all[all.length - 1];
-        // Previous OTPs are all except the latest one
-        const prevOTPs = all.slice(0, -1);
-        
-        let html = `
-          <div class="otp-card jiggle">
-            <div class="otp-label-mini">Verification Code</div>
-            <div class="otp-text">${latestOTP}</div>
-            <button class="action-btn primary btn-sm w-full" style="margin-top:8px" onclick="copyOTP('${latestOTP.replace(/'/g, "\\'")}')">📋 Copy Full Message</button>
-          </div>`;
-        
-        if (prevOTPs.length) {
-          html += `<div class="prev-label">Previous Messages</div>`;
-          prevOTPs.forEach((code, i) => {
-            html += `<div class="otp-card prev">
-              <div class="otp-text" style="font-size:11px">${code}</div>
-              <div style="display:flex;justify-content:center">
-                <button onclick="copyOTP('${code.replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">📋 Copy</button>
-              </div>
-            </div>`;
-          });
-        }
-        
-        if (o.status === 'active' && o.multi_otp_enabled) {
-        }
-        html += `</div>`;
-        otpContent.innerHTML = html;
-      } else if (o.status === 'active') {
-        otpContent.innerHTML = `<div class="otp-waiting">
-          <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);border-radius:20px;padding:32px 48px;display:flex;flex-direction:column;align-items:center;gap:16px">
-            <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.1em">Awaiting SMS</div>
-            <div class="otp-dots"><span></span><span></span><span></span></div>
-            <div style="font-size:12px;color:var(--text-3)">Code will appear here automatically</div>
+        <div class="modern-service-section">
+          <div class="modern-service-info">
+            <div class="modern-service-details">
+              <span class="modern-service-date">${dateStr}</span>
+            </div>
           </div>
-        </div>`;
+          <div class="modern-amount-box">
+            <div class="modern-amount-label">Amount</div>
+            <div class="modern-amount-value">${fmtMoney(o.cost)}</div>
+          </div>
+        </div>
+
+        <div class="modern-sms-section">
+          <div class="modern-sms-label">
+            <span>SMS Messages</span>
+            <span>${allMessages.length} Message${allMessages.length === 1 ? '' : 's'}</span>
+          </div>
+          <div class="modern-sms-list">
+            ${smsHtml}
+          </div>
+        </div>
+
+        <div id="actions-${oid}" style="margin-top: 8px;">
+          <!-- Action buttons injected here -->
+        </div>
+      </div>
+    `;
+    };
+
+    window.initOrderTimer = function (o) {
+      const oid = o.order_id || o.id;
+      if (!orderIntervals[oid]) orderIntervals[oid] = { countdown: null, cancelLock: null };
+      const intervals = orderIntervals[oid];
+
+      const timerSection = document.getElementById(`timers-${oid}`);
+      if (timerSection) {
+        timerSection.innerHTML = renderInitialModernTimers(o);
+      }
+
+      if (o.status === 'active' && o.expires_at) {
+        if (!intervals.countdown) {
+          const expires = new Date(o.expires_at).getTime();
+          const tick = () => {
+            const timerEl = document.getElementById(`timer-${oid}`);
+            if (!timerEl) return;
+            const diff = expires - Date.now();
+            if (diff <= 0) { timerEl.textContent = '00:00'; return; }
+            const m = Math.floor(diff / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          };
+          tick();
+          intervals.countdown = setInterval(tick, 1000);
+        }
       } else {
-        otpContent.innerHTML = `<div style="color:var(--text-3);font-size:14px;font-weight:500;text-align:center;padding:24px">No OTP received</div>`;
+        if (intervals.countdown) { clearInterval(intervals.countdown); intervals.countdown = null; }
       }
-    }
 
-    const timerSection = document.getElementById('timer-section');
-    if (!timerSection) return;
-    timerSection.innerHTML = '';
+      const hasOtp = (o.all_otps && o.all_otps.length > 0) || !!o.otp;
 
-    if (o.status === 'active' && o.min_cancel_at) {
-      const lockTime = Math.ceil((new Date(o.min_cancel_at) - Date.now()) / 1000);
-      if (lockTime > 0) {
-        timerSection.innerHTML += `<div class="cancel-lock-card"><div class="lock-icon">🔒</div><div class="lock-text"><div class="lock-title">Cancel Locked</div><div class="lock-timer" id="cancel-lock-timer">${formatTime(lockTime)}</div></div></div>`;
-      }
-    }
-
-    if (o.status === 'active' && o.expires_at) {
-      const expTime = Math.ceil((new Date(o.expires_at) - Date.now()) / 1000);
-      if (expTime > 0) {
-        timerSection.innerHTML += `<div class="timer-card"><div class="timer-info"><div class="timer-icon">⏱️</div><div><div class="timer-text">Expires in</div><div id="timer" class="timer-value">--:--</div></div></div></div>`;
-      }
-    }
-
-    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-    if (cancelLockInterval) { clearInterval(cancelLockInterval); cancelLockInterval = null; }
-
-    if (o.status === 'active' && o.expires_at) {
-      const expires = new Date(o.expires_at).getTime();
-      const tick = () => {
-        const timerEl = document.getElementById('timer');
-        if (!timerEl) return;
-        const diff = expires - Date.now();
-        if (diff <= 0) { timerEl.textContent = '00:00'; loadOrder(); return; }
-        const m = Math.floor(diff / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-      };
-      tick();
-      countdownInterval = setInterval(tick, 1000);
-    }
-
-    if (o.status === 'active' && o.min_cancel_at) {
-      const minCancel = new Date(o.min_cancel_at).getTime();
-      const tick = () => {
-        const timerEl = document.getElementById('cancel-lock-timer');
-        if (!timerEl) return;
-        const diff = minCancel - Date.now();
-        if (diff <= 0) { loadOrder(); return; }
-        timerEl.textContent = formatTime(Math.ceil(diff / 1000));
-      };
-      tick();
-      cancelLockInterval = setInterval(tick, 1000);
-    }
-
-    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setText('order-id', o.order_id);
-    setText('service-name', o.service_name);
-    setText('country', o.server_country || o.country || '—');
-    setText('cost', fmtMoney(o.cost));
-    setText('created', fmtDate(o.createdAt));
-
-    const cancelWrap = document.getElementById('cancel-btn-wrap');
-    if (cancelWrap) {
-      let canCancel = o.status === 'active' && (!o.min_cancel_at || new Date(o.min_cancel_at) <= new Date());
-      if (o.status === 'active' && canCancel) {
-        cancelWrap.innerHTML = `<button class="action-btn danger" id="cancel-btn" onclick="cancelOrder()">❌ Cancel Order</button>`;
-      } else {
-        cancelWrap.innerHTML = '';
-      }
-    }
-  }
-
-  window.formatTime = function(seconds) {
-    if (seconds >= 60) {
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      return `${m}m ${String(s).padStart(2, '0')}s`;
-    }
-    return `${seconds}s`;
-  }
-
-  window.loadOrder = async function() {
-    // ONLY show loading overlay if we have absolutely NO data (first load)
-    const overlay = document.getElementById('loading-state');
-    const content = document.getElementById('content');
-    
-    if (!orderData && content.style.display === 'none') {
-      showLoading();
-    }
-    
-    clearAllIntervals();
-
-    try {
-      const data = await API.get(`/api/user/orders/${orderId}`);
-      orderData = data;
-      showContent();
-      updateUI(data);
-
-      if (pollInterval) { clearTimeout(pollInterval); pollInterval = null; }
-
-      if (data.status === 'active' || data.status === 'completed') {
-        const intervalMs = (data.check_interval || 3) * 1000;
-        const poll = async () => {
-          try {
-            const updated = await API.get(`/api/user/orders/${orderId}`);
-            const newsCount = (updated.all_otps?.length || 0);
-            const oldsCount = (orderData?.all_otps?.length || 0);
-            const hasNewOtp = (updated.otp && updated.otp !== orderData?.otp) || (newsCount > oldsCount);
-
-            if (hasNewOtp) playOtpSound();
-
-            const changed = updated.status !== orderData?.status || 
-                           updated.otp !== orderData?.otp || 
-                           updated.phone !== orderData?.phone ||
-                           (newsCount !== oldsCount);
-                           
-            if (changed) {
-              orderData = updated;
-              updateUI(updated);
+      if (o.status === 'active' && o.min_cancel_at && !hasOtp) {
+        if (!intervals.cancelLock) {
+          const minCancel = new Date(o.min_cancel_at).getTime();
+          const tick = () => {
+            const timerEl = document.getElementById(`cancel-lock-timer-${oid}`);
+            
+            const diff = minCancel - Date.now();
+            if (diff <= 0) { 
+              const actionsContainer = document.getElementById(`cancel-action-${oid}`);
+              if (actionsContainer) {
+                actionsContainer.innerHTML = `
+                  <button class="modern-copy-btn cancel-card-btn" onclick="event.stopPropagation(); cancelOrder('${oid}')" title="Cancel Order">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>`;
+              }
+              clearInterval(intervals.cancelLock);
+              intervals.cancelLock = null;
+              return; 
             }
-          } catch (e) {
-            console.warn('Poll error:', e.message); 
-          } finally {
-            if (orderData && (orderData.status === 'active' || orderData.status === 'completed')) {
-              pollInterval = setTimeout(poll, intervalMs);
+            if (timerEl) timerEl.textContent = formatTime(Math.ceil(diff / 1000));
+          };
+          tick();
+          intervals.cancelLock = setInterval(tick, 1000);
+        }
+      } else {
+        if (intervals.cancelLock) { clearInterval(intervals.cancelLock); intervals.cancelLock = null; }
+      }
+
+      const actionsSection = document.getElementById(`cancel-action-${oid}`);
+      if (actionsSection) {
+        let canCancel = o.status === 'active' && (hasOtp || !o.min_cancel_at || new Date(o.min_cancel_at) <= new Date());
+        if (o.status === 'active') {
+          if (canCancel) {
+            actionsSection.innerHTML = `
+              <button class="modern-copy-btn cancel-card-btn" onclick="event.stopPropagation(); cancelOrder('${oid}')" title="Cancel Order">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>`;
+          } else {
+            actionsSection.innerHTML = `<span style="font-size:10px; color:var(--text-3); font-weight:700; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; display:flex; align-items:center; gap:4px;">🔒 <span id="cancel-lock-timer-${oid}">--:--</span></span>`;
+          }
+        } else {
+          actionsSection.innerHTML = '';
+        }
+      }
+    };
+
+    window.extractOTP = function (text) {
+      if (!text) return '';
+      const pattern = /(?:is|code|otp|login|is:)\s*(\d{4,8})\b/i;
+      const match = text.match(pattern);
+      if (match) return match[1];
+      const allMatches = text.match(/\b\d{4,8}\b/g);
+      if (allMatches && allMatches.length > 0) {
+        const likely = allMatches.find(n => !n.startsWith('202'));
+        return likely || allMatches[0];
+      }
+      return text;
+    }
+
+    window.toggleFullSMS = function (btn) {
+      const item = btn.closest('.modern-sms-item');
+      const full = item.querySelector('.modern-full-sms');
+      if (full) {
+        full.classList.toggle('visible');
+        btn.style.color = full.classList.contains('visible') ? 'var(--accent)' : 'var(--text-3)';
+      }
+    }
+
+    window._checkerCache = window._checkerCache || {};
+
+    window.SUPPORTED_CHECKER_SERVICES = {
+      gosats: 'GoSats',
+      bigbasket: 'BigBasket',
+      meesho: 'Meesho',
+      plutos: 'Plutos',
+      starexch: 'StarExch',
+      swiggy: 'Swiggy',
+      flipkart: 'Flipkart',
+      shein: 'Shein',
+      myntra: 'Myntra',
+      oyo: 'OYO',
+      mantrimall: 'MantriMall',
+      blinkit: 'Blinkit',
+      brevistay: 'BreviStay',
+      ajio: 'Ajio',
+      amazon: 'Amazon',
+      jio: 'Jio',
+      crownit: 'Crownit',
+      telegram: 'Telegram',
+      whatsapp: 'WhatsApp',
+      habuildyoga: 'Habuild Yoga'
+    };
+
+    window.getCheckerKey = function(serviceName) {
+      if (!serviceName || typeof serviceName !== 'string') return null;
+      const s = serviceName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (window.SUPPORTED_CHECKER_SERVICES[s]) return s;
+      if (s.includes('gosats') || s === 'sats') return 'gosats';
+      if (s.includes('bigbasket') || s === 'bb') return 'bigbasket';
+      if (s.includes('meesho')) return 'meesho';
+      if (s.includes('plutos')) return 'plutos';
+      if (s.includes('starexch') || s.includes('starexchange')) return 'starexch';
+      if (s.includes('swiggy')) return 'swiggy';
+      if (s.includes('flipkart') || s === 'fk') return 'flipkart';
+      if (s.includes('shein')) return 'shein';
+      if (s.includes('myntra')) return 'myntra';
+      if (s.includes('oyo')) return 'oyo';
+      if (s.includes('mantrimall') || s === 'mantri') return 'mantrimall';
+      if (s.includes('blinkit') || s.includes('grofers')) return 'blinkit';
+      if (s.includes('brevistay') || s.includes('brevi')) return 'brevistay';
+      if (s.includes('ajio')) return 'ajio';
+      if (s.includes('amazon') || s === 'amz') return 'amazon';
+      // Strict Jio rule: Exclude jiomart, jiocinema, etc.
+      if (s.includes('jiomart') || s.includes('jiocinema') || s.includes('jiogames') || s.includes('jiomeet') || s.includes('jiopay')) {
+        return null;
+      }
+      if (s === 'jio' || s === 'myjio' || s === 'reliancejio' || s === 'jiosim') return 'jio';
+
+      if (s.includes('crownit')) return 'crownit';
+      if (s.includes('telegram') || s === 'tg') return 'telegram';
+      if (s.includes('whatsapp') || s === 'wa') return 'whatsapp';
+      if (s.includes('habuildyoga') || s.includes('habuild')) return 'habuildyoga';
+      return null;
+    };
+
+    window.isCheckerSupported = function(serviceName) {
+      return window.getCheckerKey(serviceName) !== null;
+    };
+
+    window.getCheckerDisplayName = function(serviceName) {
+      const key = window.getCheckerKey(serviceName);
+      if (key && window.SUPPORTED_CHECKER_SERVICES[key]) {
+        return window.SUPPORTED_CHECKER_SERVICES[key];
+      }
+      return serviceName || 'Service';
+    };
+
+    window.checkOrderRegistration = async function(oid, serviceName) {
+      const btn = document.getElementById(`check-btn-${oid}`);
+      const box = document.getElementById(`checker-box-${oid}`);
+      const serviceTitle = getCheckerDisplayName(serviceName);
+
+      if (btn) {
+        btn.classList.add('loading');
+        btn.innerHTML = `<div class="checker-spinner"></div><span>Checking...</span>`;
+      }
+
+      if (box) {
+        box.style.display = 'flex';
+        box.className = 'checker-result-box checking';
+        box.innerHTML = `
+          <div style="display:flex; align-items:center; gap:6px;">
+            <div class="checker-spinner"></div>
+            <span>Checking ${serviceTitle} registration status...</span>
+          </div>
+        `;
+      }
+
+      try {
+        const res = await API.post(`/api/user/orders/${oid}/check`);
+        const status = res.status; // 'registered' | 'not_registered' | 'error'
+        window._checkerCache[oid] = { status, time: Date.now(), error: res.error };
+
+        if (box) {
+          if (status === 'registered') {
+            box.className = 'checker-result-box registered';
+            box.innerHTML = `
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="material-symbols-outlined" style="font-size:16px;">cancel</span>
+                <span><strong>ALREADY REGISTERED</strong> on ${serviceTitle}</span>
+              </div>
+              <button onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${serviceName}')" style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.8;font-size:11px;display:flex;align-items:center;gap:2px;" title="Re-check">
+                <span class="material-symbols-outlined" style="font-size:14px;">refresh</span>
+              </button>
+            `;
+            toast(`⚠️ Number is ALREADY REGISTERED on ${serviceTitle}!`, 'warning');
+          } else if (status === 'not_registered') {
+            box.className = 'checker-result-box not_registered';
+            box.innerHTML = `
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+                <span><strong>NOT REGISTERED</strong> (Fresh number for ${serviceTitle})</span>
+              </div>
+              <button onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${serviceName}')" style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.8;font-size:11px;display:flex;align-items:center;gap:2px;" title="Re-check">
+                <span class="material-symbols-outlined" style="font-size:14px;">refresh</span>
+              </button>
+            `;
+            toast(`✅ Number is FRESH (Not registered on ${serviceTitle})!`, 'success');
+          } else {
+            box.className = 'checker-result-box error';
+            box.innerHTML = `
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="material-symbols-outlined" style="font-size:16px;">error</span>
+                <span>${res.error || 'Check failed'}</span>
+              </div>
+              <button onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${serviceName}')" style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.8;font-size:11px;display:flex;align-items:center;gap:2px;" title="Retry">
+                <span class="material-symbols-outlined" style="font-size:14px;">refresh</span> Retry
+              </button>
+            `;
+            toast(`Check failed: ${res.error || 'Server error'}`, 'error');
+          }
+        }
+      } catch (err) {
+        if (box) {
+          box.className = 'checker-result-box error';
+          box.innerHTML = `
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="material-symbols-outlined" style="font-size:16px;">error</span>
+              <span>Failed to connect to checker</span>
+            </div>
+            <button onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${serviceName}')" style="background:none;border:none;color:inherit;cursor:pointer;opacity:0.8;font-size:11px;display:flex;align-items:center;gap:2px;" title="Retry">
+              <span class="material-symbols-outlined" style="font-size:14px;">refresh</span> Retry
+            </button>
+          `;
+        }
+        toast('Checker error: ' + (err.message || 'Failed'), 'error');
+      } finally {
+        if (btn) {
+          btn.classList.remove('loading');
+          btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:15px;">verified_user</span><span>Check</span>`;
+        }
+      }
+    };
+
+    window.buyNewNumber = async function (serviceId) {
+      if (!serviceId || serviceId === 'undefined' || serviceId === 'null') return toast("Service info missing", "error");
+      if (window._isBuying) return;
+      window._isBuying = true;
+      const btn = event.currentTarget;
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loading-spinner" style="width:14px;height:14px;border-width:2px;"></div>';
+      toast("Allocating new number...", "info");
+      try {
+        const res = await API.post('/api/user/orders', { service_id: serviceId });
+        playOtpSound();
+        toast("New number allocated!", "success");
+        if (res.order && res.order.order_id) switchOrder(res.order.order_id);
+        else loadOrder();
+      } catch (e) { toast(e.message || "Allocation failed", "error"); }
+      finally { 
+        window._isBuying = false;
+        if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; } 
+      }
+    };
+
+    window.copyText = function (text, label = 'Text') {
+      window.copyToClipboard(text, null, `${label} copied!`);
+    }
+
+    window.copyPhone = function (num) { copyText((num || '').replace(/^\+91/, ''), 'Phone number'); }
+
+    window.formatTime = function (seconds) {
+      if (seconds >= 60) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}m ${s}s`;
+      }
+      return `${seconds}s`;
+    }
+
+    window.renderInitialModernTimers = function (order) {
+      return ''; // Removed timer cards as requested
+    }
+
+    window.__activeOrdersCache = [];
+
+    window.loadActiveOrders = async function (prefetched = null) {
+      try {
+        let orders = prefetched;
+        if (!orders) {
+          const res = await API.get('/api/user/orders?status=active&limit=100');
+          orders = res.orders || [];
+        }
+
+        const container = document.getElementById('modern-content');
+        if (!container) return;
+
+        // Start with a deep clone to prevent reference bleeding
+        let mergedList = orders.map(o => JSON.parse(JSON.stringify(o)));
+
+        // Ensure the "Current" order (if any) is included and up-to-date
+        if (orderData) {
+          const idx = mergedList.findIndex(o => String(o.order_id || o.id) === String(orderData.order_id || orderData.id));
+          if (idx !== -1) mergedList[idx] = { ...mergedList[idx], ...orderData };
+          else mergedList.push(JSON.parse(JSON.stringify(orderData)));
+        }
+
+        // Merge with existing cache to keep "Finished" orders on screen.
+        // Fresh API data wins for otp/all_otps so stale cache doesn't bleed into wrong orders.
+        window.__activeOrdersCache.forEach(cached => {
+          const cid = String(cached.order_id || cached.id);
+          const exists = mergedList.find(o => String(o.order_id || o.id) === cid);
+          if (!exists) {
+            // Keep finished/cached-only orders visible
+            mergedList.push(JSON.parse(JSON.stringify(cached)));
+          }
+          // If the order IS in the fresh list, fresh API data already takes priority — no override needed
+        });
+
+        // Update the master cache with a fresh deep clone
+        window.__activeOrdersCache = JSON.parse(JSON.stringify(mergedList));
+        const allToShow = mergedList;
+
+        if (allToShow.length > 0) {
+          // Separate current order from others
+          const currentOrderId = orderData ? String(orderData.order_id || orderData.id) : null;
+          let currentOrderObj = null;
+          let otherOrders = [];
+
+          allToShow.forEach(o => {
+            if (String(o.order_id || o.id) === currentOrderId) {
+              currentOrderObj = o;
+            } else {
+              otherOrders.push(o);
+            }
+          });
+
+          otherOrders.sort((a, b) => {
+            const aFinished = ['cancelled', 'expired', 'refunded', 'completed'].includes(a.status);
+            const bFinished = ['cancelled', 'expired', 'refunded', 'completed'].includes(b.status);
+
+            // Step A: Active (Incomplete) vs Finished
+            if (!aFinished && bFinished) return -1;
+            if (aFinished && !bFinished) return 1;
+
+            // Step B: Within Active, prioritize NO OTP (Waiting for first)
+            if (!aFinished && !bFinished) {
+              const aHasOtp = (a.all_otps && a.all_otps.length > 0) || a.otp;
+              const bHasOtp = (b.all_otps && b.all_otps.length > 0) || b.otp;
+              if (!aHasOtp && bHasOtp) return -1;
+              if (aHasOtp && !bHasOtp) return 1;
+            }
+
+            const dateA = new Date(a.createdAt || a.created_at || 0).getTime();
+            const dateB = new Date(b.createdAt || b.created_at || 0).getTime();
+            return dateB - dateA;
+          });
+
+          let html = '';
+          const totalCount = allToShow.length;
+
+          if (currentOrderObj) {
+            html += getModernUIHTML(currentOrderObj, null); // don't show badge for main order, or handle it
+            
+            const isCurrentFinished = ['cancelled', 'expired', 'refunded', 'completed'].includes(currentOrderObj.status);
+            const hasOtherActives = otherOrders.some(o => !['cancelled', 'expired', 'refunded', 'completed'].includes(o.status));
+            
+            if (isCurrentFinished && hasOtherActives) {
+              html += `<div style="display:flex; align-items:center; margin: 32px 0 16px 0;">
+                         <div style="flex:1; height:1px; background:var(--border);"></div>
+                         <div style="padding: 0 16px; font-size:12px; font-weight:800; color:var(--text-3); text-transform:uppercase; letter-spacing:1px;">Active Orders</div>
+                         <div style="flex:1; height:1px; background:var(--border);"></div>
+                       </div>`;
+            } else if (otherOrders.length > 0 && !isCurrentFinished) {
+              // Optionally add a separator if there are other orders and the current one is active
+               html += `<div style="display:flex; align-items:center; margin: 32px 0 16px 0;">
+                         <div style="flex:1; height:1px; background:var(--border);"></div>
+                         <div style="padding: 0 16px; font-size:12px; font-weight:800; color:var(--text-3); text-transform:uppercase; letter-spacing:1px;">Other Orders</div>
+                         <div style="flex:1; height:1px; background:var(--border);"></div>
+                       </div>`;
             }
           }
-        };
-        pollInterval = setTimeout(poll, intervalMs);
+
+          otherOrders.forEach((o, i) => { 
+            html += getModernUIHTML(o, totalCount - i - 1); 
+          });
+          
+          if (container.innerHTML !== html) {
+            container.innerHTML = html;
+          }
+          
+          allToShow.forEach(o => initOrderTimer(o));
+
+          // Update Global Status Badge and Auto-Redirect
+          const anyActive = allToShow.some(o => !['cancelled', 'expired', 'refunded', 'completed'].includes(o.status));
+          const globalStatus = document.getElementById('status-badge');
+          if (globalStatus) {
+            if (anyActive) {
+              window.__hadActiveOrders = true;
+              globalStatus.className = 'status-badge active';
+              globalStatus.innerHTML = '<span>Active</span>';
+            } else if (allToShow.length > 0) {
+              globalStatus.className = 'status-badge completed';
+              globalStatus.innerHTML = '<span>Completed</span>';
+              
+              if (window.__hadActiveOrders && !window.__redirecting) {
+                window.__redirecting = true;
+                setTimeout(() => {
+                  window.location.href = '/dashboard/buy';
+                }, 1000);
+              }
+            }
+          }
+        } else {
+          container.innerHTML = '';
+        }
+
+      } catch (e) { console.warn('Failed to load active orders:', e); }
+    }
+
+    window.loadOrder = async function () {
+      const modernContainer = document.getElementById('modern-content');
+      if (!orderData && modernContainer) {
+        modernContainer.style.display = 'block';
+        modernContainer.innerHTML = `
+          <div class="modern-card-container skeleton-shell" style="border-radius:24px; padding:24px;">
+            <div class="modern-card-header" style="display:flex; justify-content:space-between; margin-bottom:20px">
+              <div style="width:120px; height:24px; background:var(--border); border-radius:6px"></div>
+              <div style="width:60px; height:24px; background:var(--border); border-radius:12px"></div>
+            </div>
+            <div style="height:60px; background:var(--border); border-radius:12px; margin-bottom:15px"></div>
+            <div style="height:100px; background:var(--border); border-radius:12px"></div>
+          </div>`;
       }
-    } catch (e) {
-      console.warn('Silent load retry:', e.message);
-      // Auto-retry after 5s without changing the visible UI state
-      setTimeout(loadOrder, 5000);
-    }
-  }
-
-  // Handle browser audio policy - init on first click
-  document.addEventListener('click', () => initAudio(), { once: true });
-
-  /**
-   * Called by the global SSE client in main.js whenever the server
-   * pushes a real-time 'order' event for this specific order.
-   * Updates the UI instantly without making an extra HTTP fetch.
-   */
-  window.handleRealtimeOrderUpdate = function(data) {
-    if (!data || data.orderId !== orderId) return;
-    const prev = orderData;
-
-    // Merge new SSE data into the current order snapshot
-    const merged = { ...orderData, ...{
-      status:   data.status   || orderData?.status,
-      otp:      data.otp      || orderData?.otp,
-      all_otps: data.all_otps || orderData?.all_otps,
-    }};
-
-    // Play sound if new OTP arrived
-    const prevCount = prev?.all_otps?.length || (prev?.otp ? 1 : 0);
-    const newCount  = merged.all_otps?.length || (merged.otp ? 1 : 0);
-    if (newCount > prevCount) playOtpSound();
-
-    // Show content if still in loading state
-    showContent();
-    orderData = merged;
-    updateUI(merged);
-  };
-
-  window.copyPhone = async function() {
-    if (!orderData?.phone) return;
-    let phoneNum = orderData.phone.replace(/^\+\d{1,3}\s?/, '').replace(/\s/g, '').trim();
-    if (phoneNum.startsWith('91') && phoneNum.length > 10) {
-      phoneNum = phoneNum.substring(2);
-    }
-    try {
-      if (navigator.clipboard && window.clipboard) {
-        await navigator.clipboard.writeText(phoneNum);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = phoneNum;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      const btn = document.querySelector('.copy-btn');
-      const icon = document.getElementById('copy-icon');
-      const text = document.getElementById('copy-phone-text');
-      btn.classList.add('copied');
-      if (icon) icon.textContent = '✅';
-      if (text) text.textContent = 'Copied!';
-      setTimeout(() => {
-        btn.classList.remove('copied');
-        if (icon) icon.textContent = '📋';
-        if (text) text.textContent = 'Copy Number';
-      }, 2000);
-    } catch (e) {
-      toast('Failed to copy', 'error');
-    }
-  }
-
-  window.copyOTP = async function(code) {
-    try {
-      const otp = code || orderData?.otp || (orderData?.all_otps ? orderData.all_otps[orderData.all_otps.length - 1] : null);
-      if (!otp) { toast('No OTP to copy', 'error'); return; }
-      
-      if (navigator.clipboard && window.clipboard) {
-        await navigator.clipboard.writeText(otp);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = otp;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      toast('Copied!', 'success');
-    } catch (e) {
-      console.error('Copy failed:', e);
-      toast('Failed to copy', 'error');
-    }
-  }
-
-  window.cancelOrder = async function() {
-    if (!await uiConfirm('Cancel this order and refund to your wallet?')) return;
-    const btn = document.getElementById('cancel-btn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<div class="loading-spinner" style="width:16px;height:16px;border-width:2px;margin:0"></div>'; }
-    try {
-      await API.post(`/api/user/orders/${orderId}/cancel`);
-      toast('Order cancelled', 'success');
       clearAllIntervals();
-      loadOrder();
-    } catch (e) {
-      toast(e.message, 'error');
-      loadOrder();
+      try {
+        const [data, activeRes] = await Promise.all([
+          API.get(`/api/user/orders/${orderId}`),
+          API.get('/api/user/orders?status=active&limit=100').catch(() => ({ orders: [] }))
+        ]);
+        orderData = data;
+        const activeOrders = activeRes.orders || [];
+        updateUI(data, activeOrders);
+        if (data.status === 'active') {
+          if (window.__orderPollTimer) clearInterval(window.__orderPollTimer);
+          window.__orderPollTimer = setInterval(async () => {
+            if (document.hidden) return;
+            try {
+              const fresh = await API.get(`/api/user/orders/${orderId}`);
+              if (!fresh) return;
+              const prevOtpCount = orderData?.all_otps?.length || (orderData?.otp ? 1 : 0);
+              const newOtpCount = fresh.all_otps?.length || (fresh.otp ? 1 : 0);
+              if (fresh.status !== orderData?.status || newOtpCount > prevOtpCount) {
+                window.handleRealtimeOrderUpdate({ orderId: fresh.order_id, status: fresh.status, otp: fresh.otp, all_otps: fresh.all_otps });
+              }
+              if (fresh.status !== 'active') { clearInterval(window.__orderPollTimer); window.__orderPollTimer = null; }
+            } catch (_) { }
+          }, 3000);
+        } else {
+          if (window.__orderPollTimer) { clearInterval(window.__orderPollTimer); window.__orderPollTimer = null; }
+        }
+      } catch (e) {
+        console.warn("Order Load Error:", e.message);
+        if (!orderData) showError(e.message || "Failed to connect.");
+        else setTimeout(loadOrder, 10000);
+      }
     }
-  }
 
-  window.retrySMS = async function() {
-    if (!await uiConfirm('Request another SMS for this number?')) return;
-    const btn = document.getElementById('retry-btn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<div class="loading-spinner" style="width:16px;height:16px;border-width:2px;margin:0"></div>'; }
-    try {
-      await API.post(`/api/user/orders/${orderId}/retry`);
-      toast('SMS requested', 'success');
-      loadOrder();
-    } catch (e) {
-      toast(e.message, 'error');
-      loadOrder();
+    window.addEventListener('socket:order', (e) => {
+      console.log("👂 Order Detail Page received socket:order event", e.detail);
+      if (typeof window.handleRealtimeOrderUpdate === 'function') {
+        window.handleRealtimeOrderUpdate(e.detail);
+      }
+    });
+
+    window.handleRealtimeOrderUpdate = function (data) {
+      if (!data) return;
+      const oid = data.orderId || data.id;
+      console.log(`[Realtime] Update for ${oid}:`, data);
+
+      const cached = window.__activeOrdersCache.find(o => String(o.order_id || o.id) === oid);
+      const prevCount = (cached?.all_otps && cached.all_otps.length > 0) ? cached.all_otps.length : (cached?.otp ? 1 : 0);
+      const newCount = (data.all_otps && data.all_otps.length > 0) ? data.all_otps.length : (data.otp ? 1 : 0);
+
+      const cachedIdx = window.__activeOrdersCache.findIndex(o => String(o.order_id || o.id) === oid);
+      if (cachedIdx !== -1) {
+        window.__activeOrdersCache[cachedIdx] = { ...window.__activeOrdersCache[cachedIdx], ...data };
+      } else if (data.status === 'active') {
+        window.__activeOrdersCache.push({ ...data, order_id: oid });
+      }
+
+      if (newCount > prevCount) {
+        console.log(`[Realtime] New OTP detected for ${oid}!`);
+        playOtpSound();
+        setTimeout(() => {
+          const card = document.getElementById(`modern-card-${oid}`);
+          if (card) {
+            const badgeEl = card.querySelector('.modern-order-badge');
+            const orderNumStr = badgeEl ? badgeEl.innerText.toLowerCase() : '';
+            if (typeof toast === 'function') toast(`New Otp recived in ${orderNumStr}`, "success");
+            
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('otp-glow');
+            setTimeout(() => card.classList.remove('otp-glow'), 3000);
+          }
+        }, 100);
+      }
+
+      if (String(oid) === String(orderId)) {
+        console.log(`[Realtime] Current order ${oid} updated!`);
+        orderData = { ...orderData, ...data };
+        updateUI(orderData, window.__activeOrdersCache);
+      } else {
+        loadActiveOrders(window.__activeOrdersCache);
+      }
+    };
+
+    window.copyOTP = async function (code) {
+      try {
+        const otp = code || orderData?.otp || (orderData?.all_otps ? orderData.all_otps[orderData.all_otps.length - 1] : null);
+        if (!otp) { toast('No OTP to copy', 'error'); return; }
+        copyText(otp, 'OTP');
+      } catch (e) { toast('Failed to copy', 'error'); }
     }
-  }
 
-  window.addEventListener('beforeunload', clearAllIntervals);
-  loadOrder();
-</script>
-<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
+    window.cancelOrder = async function (id) {
+      if (window._isCancelling) return;
+      
+      const oid = id || orderId;
+      if (!await uiConfirm('Cancel this order and refund to your wallet?')) return;
+      
+      window._isCancelling = true;
+
+      // Disable the cancel button immediately to prevent double-clicks
+      const btn = document.getElementById(`cancel-btn-${oid}`);
+      if (btn) { btn.disabled = true; btn.innerHTML = '<div class="loading-spinner" style="width:14px;height:14px;border-width:2px;margin:0 auto"></div>'; }
+
+      try {
+        await API.post(`/api/user/orders/${oid}/cancel`);
+
+        // Show toast FIRST before any re-render
+        toast('Cancelled', 'success');
+
+        // Then update UI
+        const cachedIdx = (window.__activeOrdersCache || []).findIndex(o => String(o.order_id || o.id) === String(oid));
+        if (cachedIdx !== -1) {
+          window.__activeOrdersCache[cachedIdx].status = 'cancelled';
+          if (String(oid) === String(orderId) && orderData) orderData.status = 'cancelled';
+          loadActiveOrders(window.__activeOrdersCache);
+        }
+        loadOrder();
+      } catch (e) { 
+        toast(e.message || 'Failed to cancel order', 'error'); 
+        if (btn) { btn.disabled = false; btn.innerHTML = '✕'; }
+        loadOrder();
+      } finally {
+        window._isCancelling = false;
+      }
+    };
+
+    window.retrySMS = async function () {
+      if (!await uiConfirm('Request another SMS for this number?')) return;
+      const btn = document.getElementById('retry-btn');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<div class="loading-spinner" style="width:16px;height:16px;border-width:2px;margin:0"></div>'; }
+      try {
+        await API.post(`/api/user/orders/${orderId}/retry`);
+        toast('SMS requested', 'success');
+        loadOrder();
+      } catch (e) { toast(e.message, 'error'); loadOrder(); }
+    }
+
+    window.buyNewOrder = async function () {
+      const sid = orderData?.service_id || (typeof currentOrder !== 'undefined' ? currentOrder.service_id : null);
+      if (!sid || sid === 'undefined') { toast("Order details not ready", "error"); return; }
+      try {
+        if (typeof window.showPageLoader === 'function') window.showPageLoader();
+        const res = await API.post('/api/user/orders', { service_id: sid });
+        if (typeof window.hidePageLoader === 'function') window.hidePageLoader();
+        toast("Allocating new number...", "success");
+        SPA.navigate(`/dashboard/orders/${res.order.order_id}`);
+      } catch (e) {
+        if (typeof window.hidePageLoader === 'function') window.hidePageLoader();
+        toast(e.message || "Failed to buy new number", "error");
+      }
+    };
+
+    window.addEventListener('beforeunload', () => {
+      clearAllIntervals();
+      if (window.__orderPollTimer) { clearInterval(window.__orderPollTimer); window.__orderPollTimer = null; }
+    });
+    loadOrder();
+  </script>
+</body>
+
 </html>
-
-
-

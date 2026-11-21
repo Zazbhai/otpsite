@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Users — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
-  <link rel="stylesheet" href="/css/main.css" />
-  <script src="/js/preloader.js"></script>
+  <link rel="stylesheet" href="/css/main.css?v=1.0.2" />
+  <script src="/js/preloader.js?v=1.0.2"></script>
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a><a href="/admin/users" class="active">Users</a>
       <a href="/admin/orders">Orders</a><button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
@@ -47,15 +48,24 @@
     <div class="user-controls">
       <div class="search-bar">
         <span class="search-icon">🔍</span>
-        <input type="text" id="user-search" placeholder="Search ID, email, username..." oninput="debounceSearch()" />
+        <input type="text" id="user-search" class="form-input" placeholder="" oninput="debounceSearch()" />
+
       </div>
       <div class="filter-group">
-        <select id="ban-filter" onchange="loadUsers(1)">
-          <option value="">All Status</option>
-          <option value="false">Active Only</option>
-          <option value="true">Banned Only</option>
-        </select>
+        <div class="custom-select" id="select-ban">
+          <div class="select-trigger" onclick="toggleDropdown('ban')">
+            <span id="selected-ban-text" class="selected-text">All Status</span>
+            <div class="arrow"></div>
+          </div>
+          <div class="select-dropdown" style="padding: 6px;">
+            <div class="select-option" onclick="selectBanFilter('', 'All Status')">All Status</div>
+            <div class="select-option" onclick="selectBanFilter('false', 'Active Only')">Active Only</div>
+            <div class="select-option" onclick="selectBanFilter('true', 'Banned Only')">Banned Only</div>
+          </div>
+        </div>
+        <input type="hidden" id="ban-filter" value="" />
       </div>
+
     </div>
 
     <div class="card users-list-card">
@@ -96,18 +106,9 @@
   }
   .filter-group {
     flex-shrink: 0;
+    min-width: 160px;
   }
-  .filter-group select {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 16px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    min-width: 140px;
-    width: 100%;
-  }
+
 
   .users-list-card {
     padding: 0;
@@ -120,7 +121,7 @@
     border-collapse: collapse;
   }
   .premium-table th {
-    background: rgba(255,255,255,0.02);
+    background:var(--surface-container-low);
     padding: 16px 20px;
     font-size: 13px;
     text-transform: uppercase;
@@ -238,9 +239,12 @@
     <div class="modal-header"><h3>Add New User</h3><button class="modal-close" onclick="closeModal('add-modal')">✕</button></div>
     <div class="modal-content-wrap">
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="form-group"><label class="form-label">Username</label><input type="text" id="add-username" placeholder="Required" /></div>
-        <div class="form-group"><label class="form-label">Email</label><input type="email" id="add-email" placeholder="Required" /></div>
-        <div class="form-group"><label class="form-label">Password</label><input type="password" id="add-password" placeholder="Min 6 chars" /></div>
+        <div class="form-group"><label class="form-label">Username</label><input type="text" id="add-username" class="form-input" placeholder="Required" /></div>
+
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="add-email" class="form-input" placeholder="Required" /></div>
+
+        <div class="form-group"><label class="form-label">Password</label><input type="password" id="add-password" class="form-input" placeholder="Min 6 chars" /></div>
+
         <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:8px">
           <input type="checkbox" id="add-is-admin" style="width:18px;height:18px" />
           <label for="add-is-admin" style="font-weight:700;cursor:pointer">Give Admin Privileges 🛡️</label>
@@ -269,8 +273,9 @@
           <label class="form-label">Notes</label>
           <textarea id="edit-notes" rows="3" placeholder="Admin notes…"></textarea>
         </div>
-        <div style="display:flex;gap:10px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="saveUser()">Save</button>
+          <button class="btn btn-warning" onclick="openPasswordModal()">🔑 Password</button>
           <button class="btn btn-danger" id="ban-btn" onclick="toggleBan()">Ban</button>
           <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
         </div>
@@ -297,21 +302,53 @@
   </div>
 </div>
 
+<!-- Change Password Modal -->
+<div class="modal-backdrop" id="password-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Change Password</h3><button class="modal-close" onclick="closeModal('password-modal')">✕</button></div>
+    <div class="modal-content-wrap">
+      <input type="hidden" id="pass-uid" />
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" id="new-password" placeholder="Min 6 characters" />
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="doChangePassword()">Update Password</button>
+          <button class="btn btn-secondary" onclick="closeModal('password-modal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
+
+<script src="/js/main.js?v=1784210170382"></script>
+<script src="/js/admin-live.js?v=1"></script>
+
 
 <script>
   async function init() {
     if (!await requireAdmin()) return;
-    loadUsers();
+    await loadUsers();
+    subscribeAdminUpdates(() => loadUsers(currentPage, true));
   }
   
+  window.selectBanFilter = function(val, text) {
+    document.getElementById("ban-filter").value = val;
+    document.getElementById("selected-ban-text").textContent = text;
+    window.closeAllDropdowns();
+    loadUsers(1);
+  };
+
   let editUser = null, searchTimeout = null, currentUsers = [];
+  let currentPage = 1, usersRequest = 0;
 
   function debounceSearch() { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => loadUsers(1), 400); }
 
-  async function loadUsers(page = 1) {
+  async function loadUsers(page = currentPage, silent = false) {
+    currentPage = page;
+    const request = ++usersRequest;
     const q = document.getElementById("user-search").value.trim();
     const banned = document.getElementById("ban-filter").value;
     const params = new URLSearchParams({ page, limit: 30 });
@@ -322,10 +359,11 @@
     if (!tbody) return;
 
     // Show skeleton while loading
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px">${window.renderSkeleton ? renderSkeleton('list', 10) : 'Loading...'}</td></tr>`;
+    if (!silent) tbody.innerHTML = `<tr><td colspan="6" style="padding:20px">${window.renderSkeleton ? renderSkeleton('list', 10) : 'Loading...'}</td></tr>`;
     
     try {
       const data = await API.get(`/api/admin/users?${params}`);
+      if (request !== usersRequest) return;
       currentUsers = data.users || [];
       const countEl = document.getElementById("total-count");
       if (countEl) countEl.textContent = `(${data.total.toLocaleString()})`;
@@ -356,6 +394,7 @@
           <td style="text-align:right" onclick="event.stopPropagation()">
             <div style="display:flex;gap:6px;justify-content:flex-end">
               <button class="btn btn-secondary btn-sm" onclick="openDeposit('${u._id}')">💰 Add</button>
+              <button class="btn btn-secondary btn-sm" onclick="openPasswordModalDirect('${u._id}')" title="Change Password">🔑</button>
               <button class="btn btn-secondary btn-sm" onclick="openEditById('${u._id}')">✏️ Edit</button>
             </div>
           </td>
@@ -363,14 +402,14 @@
       
       renderPagination("pagination", data.page, data.pages, "loadUsers");
     } catch (e) { 
+      if (silent || request !== usersRequest) return;
       toast(e.message, "error"); 
       tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--danger)">Failed to load users</td></tr>`;
     }
   }
 
   function copyId(id) {
-    navigator.clipboard.writeText(id);
-    toast("User ID copied!", "success");
+    window.copyToClipboard(id, null, "User ID copied!");
   }
 
   async function openEditById(id) {
@@ -430,6 +469,34 @@
     } catch (e) { toast(e.message, "error"); }
   }
 
+  function openPasswordModal() {
+    const uid = document.getElementById("edit-uid").value;
+    document.getElementById("pass-uid").value = uid;
+    document.getElementById("new-password").value = "";
+    closeModal("edit-modal");
+    openModal("password-modal");
+  }
+
+  function openPasswordModalDirect(uid) {
+    document.getElementById("pass-uid").value = uid;
+    document.getElementById("new-password").value = "";
+    openModal("password-modal");
+  }
+
+  async function doChangePassword() {
+    const uid = document.getElementById("pass-uid").value;
+    const password = document.getElementById("new-password").value;
+    if (!password || password.length < 6) return toast("Password must be at least 6 characters", "error");
+    
+    try {
+      await API.patch(`/api/admin/users/${uid}`, { password });
+      toast("Password changed successfully", "success");
+      closeModal("password-modal");
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+
   async function addUser() {
     const username = document.getElementById("add-username").value.trim();
     const email = document.getElementById("add-email").value.trim();
@@ -468,6 +535,7 @@
 </script>
 </body>
 </html>
+
 
 
 

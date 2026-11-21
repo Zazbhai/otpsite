@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Settings — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
@@ -167,8 +168,7 @@
       content: '';
       position: absolute;
       left: 30px;
-      width: 20px;
-      height: 20px;
+      width: 20px; height: 20px;
       background: radial-gradient(circle, #a855f7 0%, transparent 70%);
       opacity: 0;
       transition: opacity 0.5s;
@@ -218,10 +218,10 @@
     }
   </style>
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container" id="nav-container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a><a href="/admin/settings" class="active">Settings</a>
       <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
@@ -241,7 +241,7 @@
     <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
     <a href="/admin/services" class="sidebar-item">⚙️ Services</a>
     <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
-    <a href="/admin/referrals" class="sidebar-item">🤝 Referrals</a>
+
     <a href="/admin/readymade" class="sidebar-item">🗂️ Readymade Accounts</a>
     <div class="sidebar-divider"></div>
     <a href="/admin/payments" class="sidebar-item">💰 Payments</a>
@@ -265,8 +265,9 @@
         <button class="nav-btn" data-target="sec-seo"><span>🔍</span> SEO & Meta Tags</button>
         <button class="nav-btn" data-target="sec-social"><span>📱</span> Social & Support</button>
         <button class="nav-btn" data-target="sec-maint"><span>🚧</span> Maintenance</button>
-        <button class="nav-btn" data-target="sec-referral"><span>🤝</span> Referral Program</button>
+
         <button class="nav-btn" data-target="sec-currency"><span>💱</span> Currency Rates</button>
+        <button class="nav-btn" data-target="sec-ui"><span>⚙️</span> Platform UI</button>
       </div>
 
       <!-- Main Form Container -->
@@ -279,12 +280,14 @@
             <div style="display:flex;flex-direction:column;gap:20px">
               <div class="form-group">
                 <label class="form-label">Website Name</label>
-                <input type="text" id="s-site-name" placeholder="{{SITE_NAME}}" oninput="updatePreview()" />
+                <input type="text" id="s-site-name" class="form-input" placeholder="{{SITE_NAME}}" oninput="updatePreview()" />
+
               </div>
               <div class="form-group">
                 <label class="form-label">Site Logo</label>
                 <div style="display:flex;gap:12px">
-                  <input type="text" id="s-site-logo" placeholder="https://..." oninput="updatePreview()" style="flex:1" />
+                  <input type="text" id="s-site-logo" class="form-input" placeholder="https://..." oninput="updatePreview()" style="flex:1" />
+
                   <input type="file" id="logo-upload" style="display:none" accept="image/*" onchange="handleLogoUpload(this)" />
                   <button class="btn btn-secondary btn-sm" onclick="document.getElementById('logo-upload').click()">Upload Logo</button>
                 </div>
@@ -292,7 +295,8 @@
               </div>
               <div class="form-group">
                 <label class="form-label">Favicon URL (.ico or .png)</label>
-                <input type="text" id="s-site-favicon" placeholder="https://..." />
+                <input type="text" id="s-site-favicon" class="form-input" placeholder="https://..." />
+
               </div>
             </div>
           </div>
@@ -329,19 +333,23 @@
             <div style="display:flex;flex-direction:column;gap:20px">
               <div class="form-group">
                 <label class="form-label">Default Page Title</label>
-                <input type="text" id="s-seo-title" placeholder="{{SITE_NAME}} — Instant Virtual Numbers for SMS Verification" />
+                <input type="text" id="s-seo-title" class="form-input" placeholder="{{SITE_NAME}} — Instant Virtual Numbers for SMS Verification" />
+
               </div>
               <div class="form-group">
                 <label class="form-label">Meta Description</label>
-                <textarea id="s-seo-desc" rows="3" placeholder="Get instant virtual phone numbers for {{SITE_NAME}}. Receive OTP online for WhatsApp, Telegram, and 500+ services. Reliable, fast, and secure virtual numbers globally."></textarea>
+                <textarea id="s-seo-desc" class="form-input" rows="3" style="padding:12px 16px" placeholder="Get instant virtual phone numbers for {{SITE_NAME}}. Receive OTP online for WhatsApp, Telegram, and 500+ services. Reliable, fast, and secure virtual numbers globally."></textarea>
+
               </div>
               <div class="form-group">
                 <label class="form-label">Keywords (Comma separated)</label>
-                <input type="text" id="s-seo-keys" placeholder="otp, sms verification, virtual numbers, {{SITE_NAME}}, receive sms online, burner number, private phone numbers, bypass otp" />
+                <input type="text" id="s-seo-keys" class="form-input" placeholder="otp, sms verification, virtual numbers, {{SITE_NAME}}, receive sms online, burner number, private phone numbers, bypass otp" />
+
               </div>
               <div class="form-group">
                  <label class="form-label">OG Image URL (Social Sharing)</label>
-                 <input type="text" id="s-seo-og" placeholder="/img/og-preview.png" />
+                 <input type="text" id="s-seo-og" class="form-input" placeholder="/img/og-preview.png" />
+
               </div>
             </div>
           </div>
@@ -354,19 +362,23 @@
             <div style="display:flex;flex-direction:column;gap:20px">
               <div class="form-group">
                 <label class="form-label">Support Telegram (@Username or Link)</label>
-                <input type="text" id="s-support" placeholder="https://t.me/yourname" />
+                <input type="text" id="s-support" class="form-input" placeholder="https://t.me/yourname" />
+
               </div>
               <div class="form-group">
                 <label class="form-label">Official Channel URL</label>
-                <input type="text" id="s-social-channel" placeholder="https://t.me/news" />
+                <input type="text" id="s-social-channel" class="form-input" placeholder="https://t.me/news" />
+
               </div>
               <div class="form-group">
                 <label class="form-label">Support Email</label>
-                <input type="email" id="s-support-email" placeholder="support@domain.com" />
+                <input type="email" id="s-support-email" class="form-input" placeholder="support@domain.com" />
+
               </div>
               <div class="form-group">
                 <label class="form-label">WhatsApp Number (with country code)</label>
-                <input type="text" id="s-social-wa" placeholder="919876543210" />
+                <input type="text" id="s-social-whatsapp" class="form-input" placeholder="919876543210" />
+
               </div>
             </div>
           </div>
@@ -388,25 +400,6 @@
           </div>
         </div>
 
-        <!-- Referral Program -->
-        <div class="settings-section" id="sec-referral">
-          <div class="card">
-            <h3 style="margin-bottom:24px">Referral Program</h3>
-            <div style="display:flex;flex-direction:column;gap:20px">
-              <div class="form-group">
-                <label class="form-label">Bonus Percentage (%)</label>
-                <input type="number" id="s-referral-bonus" placeholder="5" step="0.1" />
-                <p class="text-xs text-muted mt-1">Percentage of each user's deposit to give to their referrer.</p>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Fixed Bonus Amount (INR)</label>
-                <input type="number" id="s-referral-amount" placeholder="0" step="0.01" />
-                <p class="text-xs text-muted mt-1">Flat amount to give to referrer on each referral (one-time).</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Currency Rates -->
         <div class="settings-section" id="sec-currency">
           <div class="card">
@@ -418,23 +411,62 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
               <div class="form-group">
                 <label class="form-label">USD Rate ($)</label>
-                <input type="number" id="s-rate-usd" step="0.00001" value="0.012" />
+                <input type="number" id="s-rate-usd" class="form-input" step="0.00001" value="0.012" />
+
                 <small class="text-muted">Typical: 0.012 (1/83)</small>
               </div>
               <div class="form-group">
                 <label class="form-label">RUB Rate (₽)</label>
-                <input type="number" id="s-rate-rub" step="0.00001" value="1.1" />
+                <input type="number" id="s-rate-rub" class="form-input" step="0.00001" value="1.1" />
+
                 <small class="text-muted">Typical: 1.1</small>
               </div>
               <div class="form-group">
                 <label class="form-label">EUR Rate (€)</label>
-                <input type="number" id="s-rate-eur" step="0.00001" value="0.011" />
+                <input type="number" id="s-rate-eur" class="form-input" step="0.00001" value="0.011" />
+
                 <small class="text-muted">Typical: 0.011</small>
               </div>
               <div class="form-group">
                 <label class="form-label">USDT Rate (₮)</label>
-                <input type="number" id="s-rate-usdt" step="0.00001" value="0.012" />
+                <input type="number" id="s-rate-usdt" class="form-input" step="0.00001" value="0.012" />
+
                 <small class="text-muted">Stablecoin crypto rate</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Platform UI -->
+        <div class="settings-section" id="sec-ui">
+          <div class="card">
+            <h3 style="margin-bottom:24px">User Experience Controls</h3>
+            
+            <div style="display:flex;align-items:center;gap:15px;background:rgba(59,130,246,0.05);padding:20px;border-radius:15px">
+              <div class="toggle-wrap">
+                <input type="checkbox" id="s-disable-animation" style="width:24px;height:24px;cursor:pointer" />
+              </div>
+              <div>
+                <strong style="display:block;font-size:16px">Disable Immersive Allocation Animation</strong>
+                <p class="text-xs text-muted">When enabled, the 3D 'Getting Number' animation will be skipped. Instead, a simple toast with a loading bar will be shown.</p>
+              </div>
+            </div>
+
+            <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <h4 style="font-size:15px;margin:0;">Number Registration Checker (SuperAssets API)</h4>
+                <span class="badge badge-active" style="font-size:10px;background:rgba(59,130,246,0.15);color:var(--accent);">⚡ Multi-Key Pool</span>
+              </div>
+              <p class="text-xs text-muted" style="margin-bottom:14px">
+                SuperAssets enforces a <strong>1 request per 5 seconds</strong> limit per key. Add multiple API keys below to enable <strong>parallel requests</strong> for simultaneous user checks. The system automatically manages 5s key cooldowns and distributes load.
+              </p>
+              <div class="form-group">
+                <label class="form-label" style="display:flex;justify-content:space-between;">
+                  <span>SuperAssets API Keys (One per line or comma-separated)</span>
+                  <span class="text-xs text-muted" id="key-count-badge">0 keys detected</span>
+                </label>
+                <textarea id="s-checker-api-keys" class="form-input" rows="4" style="font-family:monospace;font-size:13px;resize:vertical;line-height:1.5;" placeholder="paste_api_key_1_here&#10;paste_api_key_2_here&#10;paste_api_key_3_here" oninput="updateKeyCountBadge()"></textarea>
+                <p class="text-xs text-muted mt-2">API Endpoint: <code>https://superassets.in/api/v1/check</code></p>
               </div>
             </div>
           </div>
@@ -467,7 +499,7 @@
             <button id="mock-btn" class="btn btn-primary w-full" style="pointer-events:none;box-shadow:0 4px 12px var(--accent)">Primary Action</button>
             <div style="margin-top:16px;display:flex;gap:8px">
                <div style="width:24px;height:24px;border-radius:50%;background:var(--accent);opacity:0.2"></div>
-               <div style="flex:1;height:8px;background:rgba(255,255,255,0.05);border-radius:10px;margin-top:8px">
+               <div style="flex:1;height:8px;background:var(--surface-container-low);border-radius:10px;margin-top:8px">
                  <div id="mock-line" style="height:100%;width:75%;background:var(--accent);border-radius:10px"></div>
                </div>
             </div>
@@ -491,8 +523,8 @@
   <button class="btn btn-primary btn-sm" onclick="saveSettings(event)" style="border-radius:12px; padding:12px 48px; white-space:nowrap; flex-shrink:0">Save Changes</button>
 </div>
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
+<script src="/js/main.js?v=1784210170379"></script>
+
 <script>
   let originalSettings = {};
   let currentTheme = 'dark';
@@ -524,10 +556,6 @@
 
     await loadSettings();
   }
-
-
-
-
 
   async function selectTheme(theme) {
     currentTheme = theme;
@@ -577,10 +605,8 @@
         's-seo-og': 'seo_og_image',
         's-social-channel': 'social_channel',
         's-support-email': 'support_email',
-        's-social-wa': 'social_whatsapp',
+        's-social-whatsapp': 'social_whatsapp',
         's-support': 'support_contact',
-        's-referral-bonus': 'referral_bonus_percent',
-        's-referral-amount': 'referral_bonus_fixed_amount',
       };
       
       for(let [id, key] of Object.entries(mapping)) {
@@ -599,6 +625,16 @@
         }
       }
 
+      const keyEl = document.getElementById("s-checker-api-keys");
+      if (keyEl) {
+        if (s.checker_api_keys) {
+          keyEl.value = s.checker_api_keys;
+        } else if (s.checker_api_key) {
+          keyEl.value = s.checker_api_key;
+        }
+        updateKeyCountBadge();
+      }
+
       const color = s.primary_color || '#3b82f6';
       document.getElementById("s-primary-color").value = color;
       document.getElementById("c-preview").style.backgroundColor = color;
@@ -607,8 +643,8 @@
       const maint = document.getElementById("s-maintenance");
       if (maint) maint.checked = s.maintenance_mode === true || s.maintenance_mode === "true";
 
-      const refBonus = document.getElementById("s-referral-bonus");
-      if (refBonus) refBonus.value = s.referral_bonus_percent || 5;
+      const anim = document.getElementById("s-disable-animation");
+      if (anim) anim.checked = s.disable_immersive_animation === true || s.disable_immersive_animation === "true";
 
       if (s.default_theme) selectTheme(s.default_theme);
       
@@ -674,12 +710,26 @@
       seo_og_image: document.getElementById("s-seo-og").value,
       social_channel: document.getElementById("s-social-channel").value,
       support_email: document.getElementById("s-support-email").value,
-      social_whatsapp: document.getElementById("s-social-wa").value,
-      referral_bonus_percent: document.getElementById("s-referral-bonus").value,
-      referral_bonus_fixed_amount: document.getElementById("s-referral-amount").value,
+      social_whatsapp: document.getElementById("s-social-whatsapp").value,
+
       exchange_rates: JSON.stringify(exchangeRates),
+
+      disable_immersive_animation: document.getElementById("s-disable-animation").checked,
+      checker_api_keys: document.getElementById("s-checker-api-keys") ? document.getElementById("s-checker-api-keys").value : "",
+      checker_api_key: document.getElementById("s-checker-api-keys") ? (document.getElementById("s-checker-api-keys").value.split(/[\r\n,]+/)[0]?.trim() || "") : "",
+
       theme: currentTheme
     };
+  }
+
+  function updateKeyCountBadge() {
+    const el = document.getElementById("s-checker-api-keys");
+    const badge = document.getElementById("key-count-badge");
+    if (!el || !badge) return;
+    const raw = el.value || "";
+    const keys = raw.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+    badge.innerText = `${keys.length} key${keys.length === 1 ? '' : 's'} in pool`;
+    badge.style.color = keys.length > 0 ? 'var(--accent)' : 'var(--text-3)';
   }
 
   function checkChanges() {
@@ -708,8 +758,6 @@
       saveBar.classList.remove("visible");
     }
   }
-
-
 
   async function discardChanges() {
     if (!await uiConfirm("Discard all unsaved changes?")) return;
@@ -751,11 +799,12 @@
       seo_description: document.getElementById("s-seo-desc").value,
       seo_keywords: document.getElementById("s-seo-keys").value,
       seo_og_image: document.getElementById("s-seo-og").value,
-      referral_bonus_percent: parseFloat(document.getElementById("s-referral-bonus").value || 0),
-      referral_bonus_fixed_amount: parseFloat(document.getElementById("s-referral-amount").value || 0),
       social_channel: document.getElementById("s-social-channel").value,
       support_email: document.getElementById("s-support-email").value,
-      social_whatsapp: document.getElementById("s-social-wa").value,
+      social_whatsapp: document.getElementById("s-social-whatsapp").value,
+
+      disable_immersive_animation: document.getElementById("s-disable-animation").checked,
+
       exchange_rates: JSON.stringify(exchangeRates)
     };
     
@@ -779,5 +828,3 @@
 </script>
 </body>
 </html>
-
-

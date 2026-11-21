@@ -1,288 +1,521 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — {{SITE_NAME}}</title>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>OtpGram - Dashboard</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
-  <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
-
+  <link rel="stylesheet" href="/css/main.css" />
   <style>
-    .main-content {
-      animation: slideInUp 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
     }
-
-    @keyframes slideInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes floatGlow {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-8px) scale(1.02); }
     }
-
-    .dashboard-hero { margin-bottom: 40px; }
-    .dashboard-hero h1 { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 8px; }
-    .dashboard-hero p { color: var(--text-3); font-size: 16px; }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 32px;
+    @keyframes pulseRing {
+        0% { transform: scale(0.95); opacity: 0.8; }
+        50% { transform: scale(1.15); opacity: 0.3; }
+        100% { transform: scale(0.95); opacity: 0.8; }
     }
-
-    .stat-item .stat-icon {
-      width: 44px;
-      height: 44px;
-      background: var(--surface-2);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
+    @keyframes slideUpFade {
+        from { opacity: 0; transform: translateY(18px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-
-    .stat-item .stat-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-3);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
+    @keyframes shimmerSweep {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(200%); }
     }
-
-    .stat-item .stat-value {
-      font-size: 28px;
-      font-weight: 800;
-      color: #fff;
+    .animate-float-glow {
+        animation: floatGlow 6s ease-in-out infinite;
     }
-
-    .stat-item .stat-value.success { color: var(--success); }
-    .stat-item .stat-value.accent { color: var(--accent); }
-
-    .action-grid {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 32px;
+    .animate-slide-1 { animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-slide-2 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
+    .animate-slide-3 { animation: slideUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
+    
+    .shimmer-btn {
+        position: relative;
+        overflow: hidden;
     }
-
-    .action-card {
-      padding: 14px 24px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      color: #fff;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-
-    .action-card:hover {
-      background: var(--grad-primary);
-      border-color: transparent;
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-    }
-
-    .table-card { margin-bottom: 40px; }
-    .table-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0 8px;
-    }
-
-    td {
-      padding: 16px;
-      background: rgba(255, 255, 255, 0.02);
-      color: #fff;
-      font-weight: 500;
-    }
-
-    td:first-child { border-radius: 12px 0 0 12px; }
-    td:last-child { border-radius: 0 12px 12px 0; }
-
-    tr:hover td {
-      background: rgba(255, 255, 255, 0.05);
-      cursor: pointer;
+    .shimmer-btn::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 50%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+        animation: shimmerSweep 3s infinite;
     }
   </style>
 </head>
-<body>
-<nav class="navbar">
-  <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-    <div class="nav-links" id="nav-links">
-      <a href="/dashboard" class="active">Dashboard</a>
-      <a href="/dashboard/buy">Buy Number</a>
-      <a href="/dashboard/orders">Orders</a>
-      <a href="/dashboard/wallet">Wallet</a>
-      <a href="/dashboard/profile">Profile</a>
-      <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+<body class="bg-background text-on-background font-body-md min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col bg-surface border-r border-outline-variant/30 py-6 z-50 shadow-sm">
+  <div class="px-6 mb-8 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+      <span class="material-symbols-outlined">lock</span>
     </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
+    <div>
+      <h1 class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">{{SITE_NAME}}</h1>
+      <p class="font-label-md text-label-md text-on-surface-variant">Secure OTP Service</p>
+    </div>
   </div>
+  <nav class="flex-1 px-4 space-y-2">
+    <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-primary bg-primary-container/10 border-l-4 border-primary rounded-r-lg transition-all duration-200 ease-in-out font-label-md text-label-md">
+      <span class="material-symbols-outlined">dashboard</span> Dashboard
+    </a>
+    <a href="/dashboard/wallet" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">account_balance_wallet</span> Wallet
+    </a>
+    <a href="/dashboard/buy" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">add_shopping_cart</span> Buy Number
+    </a>
+    <a href="/dashboard/accounts" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">folder_special</span> Accounts
+    </a>
+    <a href="/dashboard/orders" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">receipt_long</span> Orders
+    </a>
+    <a href="/dashboard/referrals" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">group</span> Referrals
+    </a>
+    <a href="/dashboard/profile" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">person</span> Profile
+    </a>
+  </nav>
+  <div class="px-4 mt-auto space-y-4">
+    <a href="/dashboard/buy" class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg shadow-sm hover:shadow-md transition-shadow flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">add</span> New Purchase
+    </a>
+    <div class="border-t border-outline-variant/30 pt-4 space-y-2">
+      <a href="/support" class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">support_agent</span> Support
+      </a>
+      <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-error hover:bg-error-container/20 transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen" style="min-width: 0;">
+  <!-- TopNavBar -->
+  <header class="bg-surface/80 backdrop-blur-md sticky top-0 w-full z-40 border-b border-outline-variant/30 shadow-sm flex justify-between items-center px-3 md:px-8 h-16 gap-2">
+    <div id="gnav-left" class="flex items-center gap-2 md:gap-3 min-w-0 flex-1 md:flex-initial overflow-hidden">
+      <a href="/dashboard" class="flex items-center gap-2 md:gap-2.5 text-decoration-none min-w-0 overflow-hidden">
+        <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-primary inline-block animate-pulse shadow-[0_0_8px_rgba(16,80,212,0.6)] flex-shrink-0"></span>
+        <h1 class="font-headline-sm text-[16px] sm:text-[18px] md:text-[22px] font-extrabold text-primary tracking-tight m-0 truncate">{{SITE_NAME}}</h1>
+      </a>
+    </div>
+    <div id="gnav-right" class="flex items-center gap-2 md:gap-3 flex-shrink-0">
+      <div id="gnav-wallet-pill" class="gnav-wallet-pill-wrapper">
+        <a href="/dashboard/wallet" class="gnav-wallet-bal" title="My Wallet">
+          <span class="wallet-icon-effect">💰</span>
+          <span id="nav-global-wallet-bal" class="font-bold">$0.00</span>
+        </a>
+        <a href="/dashboard/wallet" class="gnav-wallet-add" title="Add Funds">+</a>
+      </div>
+      <div id="gnav-avatar-container" class="relative flex-shrink-0">
+        <div id="gnav-avatar" class="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-primary bg-primary-container text-primary font-bold flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 transition-transform overflow-hidden">
+          <span class="material-symbols-outlined text-[18px]">person</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Animated Dashboard Command Center -->
+  <div class="p-3 sm:p-5 md:p-8 flex-1 space-y-6 max-w-container-max mx-auto w-full mb-20 md:mb-0">
+    
+    <!-- Hero Command Banner (Animated & Clean) -->
+    <section class="animate-slide-1 grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-8 bg-gradient-to-br from-primary via-primary-container to-accent rounded-2xl p-6 sm:p-8 text-on-primary shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[240px] animate-float-glow">
+        <div class="absolute -right-20 -top-20 w-72 h-72 bg-white/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-16 right-16 w-52 h-52 bg-secondary/25 rounded-full blur-2xl pointer-events-none"></div>
+        
+        <div class="relative z-10">
+          <div class="inline-flex items-center gap-2 bg-black/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-bold text-white/90 mb-4 border border-white/15 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-success inline-block relative">
+              <span class="absolute inset-0 rounded-full bg-success animate-ping opacity-75"></span>
+            </span>
+            <span>Live System Telemetry • V5.0 Active</span>
+          </div>
+          <h2 class="font-headline-lg text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2.5 tracking-tight text-white drop-shadow-sm" id="greeting">Welcome back to {{SITE_NAME}}</h2>
+          <p class="font-body-md text-xs sm:text-sm md:text-base text-white/80 max-w-lg leading-relaxed">Your instant verification gateway is primed. Access premium non-VoIP lines across 160+ countries with automated real-time delivery.</p>
+        </div>
+        
+        <div class="relative z-10 mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
+          <a href="/dashboard/buy" class="shimmer-btn bg-surface text-primary font-bold px-6 py-3 rounded-xl shadow-md hover:shadow-xl transition-all active:scale-95 text-xs sm:text-sm flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">bolt</span>
+            <span>Instant Buy Number</span>
+          </a>
+          <a href="/dashboard/wallet" class="bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 text-white font-bold px-5 py-3 rounded-xl transition-all active:scale-95 text-xs sm:text-sm flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">add_circle</span>
+            <span>Add Funds</span>
+          </a>
+          <button id="hero-install-btn" onclick="installRapidPWA()" class="bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 text-white font-bold px-5 py-3 rounded-xl transition-all active:scale-95 text-xs sm:text-sm flex items-center gap-2 hidden">
+            <span class="material-symbols-outlined text-[18px]">install_mobile</span>
+            <span>Install App</span>
+          </button>
+          <a href="/support" class="bg-transparent hover:bg-white/10 text-white/90 font-semibold px-4 py-3 rounded-xl transition-all text-xs sm:text-sm hidden sm:flex items-center gap-1.5 ml-auto">
+            <span class="material-symbols-outlined text-[18px]">support_agent</span>
+            <span>24/7 Support</span>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Live Stats & Telemetry Panel -->
+      <div class="lg:col-span-4 bg-surface border border-outline-variant/30 rounded-2xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-primary/40 transition-all">
+        <div class="absolute right-0 top-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px] text-primary">analytics</span>
+              <span>Your Account Stats</span>
+            </span>
+            <span class="bg-primary-container/30 text-primary text-[10px] font-extrabold px-2 py-0.5 rounded-full">REALTIME</span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 mb-4 shadow-inner">
+            <div>
+              <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-0.5">Total Orders</p>
+              <h3 class="text-xl sm:text-2xl font-black text-on-surface" id="stat-orders">0</h3>
+            </div>
+            <div class="border-l border-outline-variant/30 pl-4">
+              <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-0.5">Active Now</p>
+              <h3 class="text-xl sm:text-2xl font-black text-primary animate-pulse" id="stat-active">0</h3>
+            </div>
+          </div>
+        </div>
+        
+        <div class="space-y-3">
+          <div class="flex justify-between items-center bg-surface-container-low rounded-xl px-4 py-2.5 border border-outline-variant/20">
+            <span class="text-xs font-semibold text-on-surface-variant">Total Spent</span>
+            <span class="text-sm font-extrabold text-on-surface font-mono" id="stat-spent">$0.00</span>
+          </div>
+          <div class="flex justify-between items-center bg-surface-container-low rounded-xl px-4 py-2.5 border border-outline-variant/20">
+            <span class="text-xs font-semibold text-on-surface-variant">Delivery Avg</span>
+            <span class="text-xs font-extrabold text-success flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">speed</span> ~1.2s Fast
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sleek Navigation Hub (Replaced bulky Buy/History Clutter) -->
+    <section class="animate-slide-2 space-y-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <h3 class="font-headline-sm text-lg sm:text-xl font-extrabold text-on-surface">Quick Command Hub</h3>
+          <p class="text-xs text-on-surface-variant">Jump directly into your key actions and services</p>
+        </div>
+        <a href="/dashboard/buy" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+          <span>Explore All 1,160+ Services</span>
+          <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Hub Card 1: Buy Station -->
+        <a href="/dashboard/buy" class="bg-surface border border-outline-variant/30 rounded-2xl p-5 hover:border-primary hover:shadow-lg transition-all group flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/5 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-primary-container/20 text-primary flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              🛒
+            </div>
+            <span class="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all">arrow_forward</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-base text-on-surface mb-1">Launch Buy Station</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Instantly purchase verification numbers for WhatsApp, Telegram, Google & more.</p>
+          </div>
+        </a>
+
+        <!-- Hub Card 2: Orders & Active -->
+        <a href="/dashboard/orders" class="bg-surface border border-outline-variant/30 rounded-2xl p-5 hover:border-primary hover:shadow-lg transition-all group flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-tertiary/5 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-tertiary-container/20 text-tertiary flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              📜
+            </div>
+            <span class="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all">arrow_forward</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-base text-on-surface mb-1">Orders & History</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Check active sessions, copy incoming OTP codes instantly, or review archive.</p>
+          </div>
+        </a>
+
+        <!-- Hub Card 3: Wallet & Deposits -->
+        <a href="/dashboard/wallet" class="bg-surface border border-outline-variant/30 rounded-2xl p-5 hover:border-primary hover:shadow-lg transition-all group flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-success/5 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-success/15 text-success flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              💳
+            </div>
+            <span class="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all">arrow_forward</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-base text-on-surface mb-1">Wallet & Deposits</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Add funds via UPI QR, Crypto (USDT), or cards with 100% automated credit.</p>
+          </div>
+        </a>
+
+        <!-- Hub Card 4: API & Accounts -->
+        <a href="/dashboard/accounts" class="bg-surface border border-outline-variant/30 rounded-2xl p-5 hover:border-primary hover:shadow-lg transition-all group flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-secondary/5 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-secondary-container/20 text-secondary flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              ⚡
+            </div>
+            <span class="material-symbols-outlined text-outline group-hover:text-primary group-hover:translate-x-1 transition-all">arrow_forward</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-base text-on-surface mb-1">Accounts & API</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Manage saved accounts, get API keys for automated scripts, and earn referrals.</p>
+          </div>
+        </a>
+
+        <!-- Hub Card 5: Install App (hidden when already installed) -->
+        <button id="install-hub-card" onclick="installRapidPWA()" class="bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20 rounded-2xl p-5 hover:border-primary hover:shadow-lg transition-all group flex flex-col justify-between relative overflow-hidden cursor-pointer text-left w-full">
+          <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+              <span class="material-symbols-outlined text-[26px]">install_mobile</span>
+            </div>
+            <span class="bg-primary/10 text-primary text-[9px] font-extrabold px-2 py-1 rounded-full uppercase tracking-wide">Free</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-base text-on-surface mb-1">Install App</h4>
+            <p class="text-xs text-on-surface-variant leading-relaxed">Add to your home screen for instant access, offline support & push notifications.</p>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- System Telemetry & Live Channels Banner (Clean & High Aesthetic) -->
+    <section class="animate-slide-3 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl shrink-0">
+          🛰️
+        </div>
+        <div>
+          <h4 class="font-bold text-on-surface text-sm sm:text-base">Need instant assistance or custom bulk rates?</h4>
+          <p class="text-xs text-on-surface-variant">Our automated gateway monitors routing 24/7. Connect with live operators anytime.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 w-full md:w-auto shrink-0 justify-end">
+        <a href="/api-docs" class="bg-surface hover:bg-surface-container border border-outline-variant/50 text-on-surface px-4 py-2 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 w-full md:w-auto">
+          <span class="material-symbols-outlined text-[16px]">terminal</span>
+          <span>API Docs</span>
+        </a>
+        <a href="/support" class="bg-primary text-white px-5 py-2 rounded-xl font-bold text-xs shadow-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5 w-full md:w-auto">
+          <span class="material-symbols-outlined text-[16px]">support_agent</span>
+          <span>Open Support</span>
+        </a>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface/90 backdrop-blur-lg border-t border-outline-variant/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] shadow-lg flex justify-around items-center h-16 px-2 pb-safe">
+  <a class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-xl px-4 py-1 scale-95 transition-transform" href="/dashboard">
+    <span class="material-symbols-outlined">home</span>
+    <span class="font-label-md text-[10px] mt-1 font-bold">Home</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/buy">
+    <span class="material-symbols-outlined">add_shopping_cart</span>
+    <span class="font-label-md text-[10px] mt-1">Buy</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/orders">
+    <span class="material-symbols-outlined">history_edu</span>
+    <span class="font-label-md text-[10px] mt-1">History</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/accounts">
+    <span class="material-symbols-outlined">folder_special</span>
+    <span class="font-label-md text-[10px] mt-1">Accounts</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/wallet">
+    <span class="material-symbols-outlined">account_balance_wallet</span>
+    <span class="font-label-md text-[10px] mt-1">Wallet</span>
+  </a>
 </nav>
 
-<div class="layout">
-  <aside class="sidebar">
-    <div id="user-info" style="display:flex;align-items:center;gap:12px;padding:16px;background:rgba(255,255,255,0.03);border-radius:16px;margin-bottom:12px; border: 1px solid var(--glass-border)">
-      <div id="avatar-wrap"></div>
-      <div style="min-width:0">
-        <div id="user-name" class="font-bold truncate" style="font-size:15px; color:#fff"></div>
-        <div id="user-balance" class="text-sm font-bold" style="color:var(--success)"></div>
-      </div>
+<!-- PWA Corner Widget -->
+<div id="pwa-corner-widget" class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[9999] hidden transition-all duration-500 transform translate-y-4 opacity-0">
+  <div class="bg-surface-container-lowest/95 backdrop-blur-xl border border-primary/40 p-3 sm:p-4 rounded-2xl shadow-[0_12px_36px_rgba(16,80,212,0.25)] flex items-center gap-3 sm:gap-3.5 max-w-[320px] group hover:border-primary transition-all">
+    <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white text-xl shadow-md shrink-0 relative overflow-hidden">
+      <span>📱</span>
+      <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
     </div>
-    <div class="sidebar-label">Navigation</div>
-    <a href="/dashboard" class="sidebar-item active">🏠 Home</a>
-    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
-    <a href="/dashboard/accounts" class="sidebar-item">🗂️ Readymade Accounts</a>
-    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
-    <a href="/dashboard/referrals" class="sidebar-item">🤝 Referrals</a>
-    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
-    <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
-    <div class="sidebar-divider"></div>
-    <a href="https://t.me/RapidOTPbot" target="_blank" class="sidebar-item">🤖 Telegram Bot</a>
-    <a href="/support" class="sidebar-item">💬 Support</a>
-    <button onclick="logout()" class="sidebar-item" style="width:100%;text-align:left;color:var(--danger)">🚪 Logout</button>
-  </aside>
-
-  <main class="main-content">
-    <div class="dashboard-hero">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px">
-        <div>
-          <h1 id="greeting">Welcome back 👋</h1>
-          <p>Efficiently manage your virtual communications</p>
-        </div>
-        <div id="home-currency-selector"></div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-1.5 mb-0.5">
+        <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-primary">{{SITE_NAME}} App</span>
       </div>
+      <h4 class="font-bold text-on-surface text-xs sm:text-[13px] leading-tight truncate">Install {{SITE_NAME}}</h4>
+      <p class="text-[10px] text-on-surface-variant truncate">Fast access & instant alerts</p>
     </div>
-
-    <!-- Core Stats -->
-    <div class="stat-grid">
-      <div class="glass-card stat-item">
-        <div class="stat-icon">💰</div>
-        <div class="stat-label">Total Credits</div>
-        <div class="stat-value success" id="stat-balance"><div class="skeleton skeleton-text" style="width:80px;height:28px"></div></div>
-      </div>
-      <div class="glass-card stat-item">
-        <div class="stat-icon">📦</div>
-        <div class="stat-label">Orders Placed</div>
-        <div class="stat-value" id="stat-orders"><div class="skeleton skeleton-text" style="width:60px;height:28px"></div></div>
-      </div>
-      <div class="glass-card stat-item">
-        <div class="stat-icon">🔥</div>
-        <div class="stat-label">Currently Active</div>
-        <div class="stat-value accent" id="stat-active"><div class="skeleton skeleton-text" style="width:40px;height:28px"></div></div>
-      </div>
-      <div class="glass-card stat-item">
-        <div class="stat-icon">📈</div>
-        <div class="stat-label">Lifetime Spend</div>
-        <div class="stat-value" id="stat-spent"><div class="skeleton skeleton-text" style="width:80px;height:28px"></div></div>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="action-grid">
-      <div class="action-card" onclick="SPA.navigate('/dashboard/buy')">
-        <span>🛒</span> Buy New Number
-      </div>
-      <div class="action-card" onclick="SPA.navigate('/dashboard/accounts')">
-        <span>🗂️</span> Get Accounts
-      </div>
-      <div class="action-card" onclick="SPA.navigate('/dashboard/wallet')">
-        <span>💳</span> Add Credits
-      </div>
-      <div class="action-card" onclick="SPA.navigate('/dashboard/orders')">
-        <span>📋</span> View History
-      </div>
-    </div>
-
-    <!-- Recent Activity Table -->
-    <div class="glass-card table-card">
-      <div class="table-header">
-        <h3 style="font-size:18px; color:#fff">📋 Recent Activity</h3>
-        <button class="btn btn-secondary btn-sm" onclick="SPA.navigate('/dashboard/orders')">Full History</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>App/Service</th><th>Region</th><th>Phone Identity</th><th>Code</th><th>Status</th><th>Time</th>
-            </tr>
-          </thead>
-          <tbody id="recent-orders-body">
-            <tr><td colspan="6" style="text-align:center;padding:40px;opacity:0.5">Initializing secure link...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </main>
+    <button onclick="installRapidPWA()" class="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-sm transition-transform active:scale-95 shrink-0 flex items-center gap-1">
+      <span>Install</span>
+    </button>
+    <button onclick="dismissPWACorner()" class="w-6 h-6 bg-surface-container hover:bg-error hover:text-white border border-outline-variant/40 text-on-surface-variant rounded-full flex items-center justify-center text-[12px] transition-colors shrink-0 -mr-1" title="Dismiss">
+      <span class="material-symbols-outlined text-[14px]">close</span>
+    </button>
+  </div>
 </div>
 
-
 <script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-
-
 <script>
 {
   if (!requireLogin()) {}
-
+  
   window.initDashboard = async function() {
     const user = getUser();
     if (user) {
       const greetingEl = document.getElementById("greeting");
-      if (greetingEl) greetingEl.textContent = `Welcome back, ${user.first_name || user.username} 👋`;
-      const avatarWrap = document.getElementById("avatar-wrap");
-      if (avatarWrap) avatarWrap.innerHTML = userAvatar(user, 40);
-      const userNameEl = document.getElementById("user-name");
-      if (userNameEl) userNameEl.textContent = user.first_name || user.username;
+      if (greetingEl) greetingEl.textContent = `Welcome back, ${user.first_name || user.username}.`;
     }
 
     try {
       const data = await API.get("/api/user/dashboard");
       const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-      setSafe("stat-balance", fmtMoney(data.balance));
+      
+      setSafe("nav-wallet-bal", fmtMoney(data.balance));
       setSafe("stat-orders", data.total_orders);
       setSafe("stat-active", data.active_orders);
       setSafe("stat-spent", fmtMoney(data.total_spent));
-      setSafe("user-balance", fmtMoney(data.balance));
-      
-      const tbody = document.getElementById("recent-orders-body");
-      if (!tbody) return;
-
-      if (!data.recent_orders?.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-3)">Secure your first number now.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = data.recent_orders.map(o => `
-        <tr onclick="SPA.navigate('/dashboard/orders/${o.order_id}')">
-          <td>${o.service_name}</td>
-          <td>${o.server_country || o.country || "Global"}</td>
-          <td style="font-family:monospace">${o.phone || "Assigning..."}</td>
-          <td style="font-family:monospace">${o.otp || "—"}</td>
-          <td>${statusBadge(o.status)}</td>
-          <td style="color:var(--text-3); font-size:13px">${fmtDateShort(o.createdAt)}</td>
-        </tr>`).join("");
-    } catch (e) { toast(e.message, "error"); }
-  }
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  };
 
   initDashboard();
+
+  // ── PWA Corner Logic ──
+  let deferredPrompt = window.globalDeferredPrompt || null;
+  const pwaWidget = document.getElementById('pwa-corner-widget');
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    window.globalDeferredPrompt = e;
+    checkAndShowPWACorner();
+  });
+
+  function checkAndShowPWACorner() {
+    if (!pwaWidget) return;
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    
+    // Hide inline install buttons if already installed
+    if (isInstalled) {
+      const heroBtn = document.getElementById('hero-install-btn');
+      const hubCard = document.getElementById('install-hub-card');
+      if (heroBtn) heroBtn.style.display = 'none';
+      if (hubCard) hubCard.style.display = 'none';
+    } else {
+      const heroBtn = document.getElementById('hero-install-btn');
+      const hubCard = document.getElementById('install-hub-card');
+      if (heroBtn) heroBtn.classList.remove('hidden');
+      if (hubCard) hubCard.classList.remove('hidden');
+    }
+
+    const isDismissed = localStorage.getItem('pwa_corner_dismissed_v1');
+    if (!isInstalled && !isDismissed) {
+      pwaWidget.classList.remove('hidden');
+      setTimeout(() => {
+        pwaWidget.classList.remove('translate-y-4', 'opacity-0');
+      }, 100);
+    }
+  }
+
+  // Show widget fallback after 1.5s even on iOS / desktop without prompt event if not dismissed
+  setTimeout(() => {
+    deferredPrompt = window.globalDeferredPrompt || deferredPrompt;
+    checkAndShowPWACorner();
+  }, 1500);
+
+  window.installRapidPWA = async function() {
+    deferredPrompt = window.globalDeferredPrompt || deferredPrompt;
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        dismissPWACorner();
+      }
+      deferredPrompt = null;
+      window.globalDeferredPrompt = null;
+    } else {
+      // Show elegant instruction modal instead of a simple toast
+      const modal = document.getElementById('manual-install-modal');
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      
+      if (isIOS) {
+        document.getElementById('install-modal-icon').textContent = 'ios_share';
+        document.getElementById('install-modal-title').textContent = 'Install on iOS';
+        document.getElementById('install-modal-desc').innerHTML = 'To install the app, tap the <b>Share</b> icon at the bottom of your screen and select <br/><b>"Add to Home Screen"</b>.';
+      } else {
+        document.getElementById('install-modal-icon').textContent = 'install_desktop';
+        document.getElementById('install-modal-title').textContent = 'Install on Desktop';
+        document.getElementById('install-modal-desc').innerHTML = "To install the app, click the <b>App / Install icon</b> located on the right side of your browser's URL bar.";
+      }
+      
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.querySelector('.transform').classList.remove('scale-95', 'opacity-0');
+      }, 10);
+    }
+  };
+
+  window.closeInstallModal = function() {
+    const modal = document.getElementById('manual-install-modal');
+    modal.querySelector('.transform').classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+    }, 300);
+  };
+
+  window.dismissPWACorner = function() {
+    if (!pwaWidget) return;
+    localStorage.setItem('pwa_corner_dismissed_v1', 'true');
+    pwaWidget.classList.add('translate-y-4', 'opacity-0');
+    setTimeout(() => {
+      pwaWidget.classList.add('hidden');
+    }, 500);
+  };
 }
 </script>
-<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
+
+<!-- Manual Install Modal -->
+<div id="manual-install-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-4">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeInstallModal()"></div>
+  <!-- Modal Content -->
+  <div class="relative bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+    <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-primary/20 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="w-16 h-16 mx-auto bg-primary-container text-primary rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-primary/20">
+      <span id="install-modal-icon" class="material-symbols-outlined text-4xl">install_desktop</span>
+    </div>
+    
+    <div class="text-center">
+      <h3 id="install-modal-title" class="font-headline-sm text-xl font-extrabold text-on-surface mb-3">Install App</h3>
+      <p id="install-modal-desc" class="text-sm text-on-surface-variant leading-relaxed mb-8">
+        Follow the instructions to add this app to your device.
+      </p>
+      <button onclick="closeInstallModal()" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-xl shadow-md transition-transform active:scale-95">
+        Got it!
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
 </html>
-
-
-

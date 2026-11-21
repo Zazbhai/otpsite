@@ -21,7 +21,12 @@ if (DB_TYPE === "mysql") {
     multi_otp_supported: { type: DataTypes.BOOLEAN, defaultValue: false },
     check_interval: { type: DataTypes.INTEGER, defaultValue: 3 },
     auto_add_services: { type: DataTypes.BOOLEAN, defaultValue: false },
+    service_source: { type: DataTypes.STRING, defaultValue: "json" },
+    services_url: { type: DataTypes.STRING, defaultValue: "" },
+    include_local_services: { type: DataTypes.BOOLEAN, defaultValue: false },
     extra_profit: { type: DataTypes.FLOAT, defaultValue: 0 },
+
+
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
@@ -59,7 +64,12 @@ if (DB_TYPE === "mysql") {
       multi_otp_supported: { type: Boolean, default: false },
       check_interval: { type: Number, default: 3 },
       auto_add_services: { type: Boolean, default: false },
+      service_source: { type: String, default: "json" },
+      services_url: { type: String, default: "" },
+      include_local_services: { type: Boolean, default: false },
       extra_profit: { type: Number, default: 0 }
+
+
     },
     { timestamps: true }
   );

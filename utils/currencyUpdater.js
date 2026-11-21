@@ -44,7 +44,7 @@ async function updateCurrencyRates() {
       { value: newRates, label: "Currency Exchange Rates", group: "system" },
       { upsert: true }
     );
-    console.log("[Currency Updater] Global exchange rates automatically updated from live API.");
+    // console.log("[Currency Updater] Global exchange rates automatically updated from live API.");
   } catch (error) {
     console.error("[Currency Updater] Failed to update daily exchange rates:", error.message);
   }

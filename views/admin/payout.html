@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payouts & Bank Accounts — Admin</title>
+  {{THEME_INIT}}
+  <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="/js/preloader.js"></script>
+  <style>
+    .payout-container { max-width: 1140px; margin: 0 auto; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    .stat-card h4 { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px 0; }
+    .stat-card .val { font-size: 26px; font-weight: 900; color: var(--on-surface); line-height: 1.1; }
+    
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 500px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 24px; backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+    .card-title { font-size: 18px; font-weight: 800; color: var(--on-surface); margin: 0 0 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em; }
+    
+    .account-item {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+    .account-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .account-item .acc-name { font-weight: 800; font-size: 15px; color: var(--on-surface); }
+    .account-item .acc-detail { font-size: 12px; color: var(--text-3); font-family: monospace; margin-top: 4px; }
+
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+    .badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-failed { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+  </style>
+</head>
+<body data-admin-route>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="/dashboard/buy" class="nav-logo">⚡ Platform Control</a>
+    <div class="nav-links">
+      <a href="/admin">Analytics</a>
+      <a href="/admin/servers">Servers</a>
+      <a href="/admin/services">Services</a>
+      <a href="/admin/payments">Payments</a>
+      <a href="/admin/payout" class="active">Payouts</a>
+      <a href="/admin/users">Users</a>
+    </div>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Management</div>
+    <a href="/admin" class="sidebar-item">📊 Analytics</a>
+    <a href="/admin/users" class="sidebar-item">👥 Users</a>
+    <a href="/admin/orders" class="sidebar-item">📋 Orders</a>
+    <a href="/admin/servers" class="sidebar-item">🖥️ Servers</a>
+    <a href="/admin/services" class="sidebar-item">🏷️ Services</a>
+    <a href="/admin/countries" class="sidebar-item">🌍 Countries</a>
+
+    <a href="/admin/payments" class="sidebar-item">💳 Payment Settings</a>
+    <a href="/admin/payout" class="sidebar-item active">🏦 Payouts & Withdrawals</a>
+    <div class="sidebar-divider"></div>
+    <a href="/admin/settings" class="sidebar-item">⚙️ Site Engine</a>
+    <a href="/dashboard" class="sidebar-item">🔙 User Dashboard</a>
+    <button onclick="logout()" class="sidebar-item" style="width:100%;text-align:left;color:var(--danger)">🚪 Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div class="payout-container fade-in">
+      
+      <div style="margin-bottom: 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px">
+        <div>
+          <h1 style="font-size:24px;font-weight:900;margin:0;color:var(--on-surface)">Deposit Withdrawal & Payout Hub</h1>
+          <p style="color:var(--text-3); font-size:12px; margin:2px 0 0 0">Securely add admin bank accounts and withdraw collected user deposits via OmniPay.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadAllData()">🔄 Refresh Live Status</button>
+      </div>
+
+      <!-- Stats Grid (OmniPay / Bank Pool) -->
+      <div class="stats-grid" style="margin-bottom:12px">
+        <div class="stat-card">
+          <h4>OmniPay Deposits (-8% Fee)</h4>
+          <div class="val text-primary" id="stat-deposits">₹0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Total INR Withdrawn</h4>
+          <div class="val text-success" id="stat-withdrawn">₹0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Pending INR In-Transit</h4>
+          <div class="val text-warning" id="stat-pending">₹0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Available INR Pool Balance</h4>
+          <div class="val" id="stat-pool" style="color:var(--accent)">₹0</div>
+        </div>
+      </div>
+
+      <!-- Stats Grid (Heleket Crypto Pool) -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h4>Heleket Crypto Collected</h4>
+          <div class="val text-primary" id="stat-crypto-deposits">₹0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Crypto Withdrawn</h4>
+          <div class="val text-success" id="stat-crypto-withdrawn">₹0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Crypto Pending</h4>
+          <div class="val text-warning" id="stat-crypto-pending">₹0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Available Crypto Pool</h4>
+          <div class="val" id="stat-crypto-pool" style="color:#10b981">₹0</div>
+        </div>
+      </div>
+
+      <!-- Grid: Bank Accounts & Initiate Payout -->
+      <div class="grid-2">
+        <!-- Card 1: Initiate Payout -->
+        <div class="card">
+          <div class="card-title">
+            <span>💸 Initiate Withdrawal</span>
+            <div style="display:flex; gap:6px">
+              <button class="btn btn-sm btn-primary" id="tab-btn-omnipay" onclick="switchWithdrawalGateway('omnipay')">🏦 OmniPay Bank</button>
+              <button class="btn btn-sm btn-secondary" id="tab-btn-heleket" onclick="switchWithdrawalGateway('heleket')">⚡ Heleket Crypto</button>
+            </div>
+          </div>
+
+          <!-- OmniPay Bank Form -->
+          <div id="wd-form-omnipay">
+            <div class="form-group">
+              <label class="form-label">Select Saved Bank Account</label>
+              <select class="form-input" id="withdraw-account-select" onchange="onAccountSelectChange()">
+                <option value="">-- Or enter manual bank details below --</option>
+              </select>
+            </div>
+
+            <div class="grid-2" style="gap:12px; margin-bottom:0">
+              <div class="form-group">
+                <label class="form-label">Account Holder Name</label>
+                <input type="text" class="form-input" id="wd-name" placeholder="e.g. Rahul Sharma" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bank Account Number</label>
+                <input type="text" class="form-input" id="wd-number" placeholder="Enter A/c No." />
+              </div>
+            </div>
+
+            <div class="grid-2" style="gap:12px; margin-bottom:0">
+              <div class="form-group">
+                <label class="form-label">IFSC Code</label>
+                <input type="text" class="form-input" id="wd-ifsc" placeholder="e.g. SBIN0001234" style="text-transform:uppercase" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Withdrawal Amount (₹)</label>
+                <input type="number" class="form-input" id="wd-amount" placeholder="Min ₹100" />
+              </div>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%; height:48px; margin-top:8px; font-size:15px; font-weight:800" onclick="initiateWithdrawal('omnipay')" id="btn-withdraw-omnipay">
+              ⚡ Withdraw to Bank Account
+            </button>
+          </div>
+
+          <!-- Heleket Crypto Form -->
+          <div id="wd-form-heleket" style="display:none">
+            <div class="grid-2" style="gap:12px; margin-bottom:0">
+              <div class="form-group">
+                <label class="form-label">Coin / Currency</label>
+                <select class="form-input" id="wd-crypto-currency" onchange="updateCryptoNetworkOptions()">
+                  <option value="USDT">USDT (Tether)</option>
+                  <option value="BTC">BTC (Bitcoin)</option>
+                  <option value="ETH">ETH (Ethereum)</option>
+                  <option value="TRX">TRX (Tron)</option>
+                  <option value="LTC">LTC (Litecoin)</option>
+                  <option value="BNB">BNB (Binance Coin)</option>
+                  <option value="SOL">SOL (Solana)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Network / Chain</label>
+                <input type="text" class="form-input" id="wd-crypto-network" value="TRC20" placeholder="e.g. TRC20, ERC20, BEP20" style="text-transform:uppercase" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Recipient Crypto Wallet Address</label>
+              <input type="text" class="form-input" id="wd-crypto-address" placeholder="e.g. TBaCk... or 0x..." style="font-family:monospace" />
+            </div>
+
+            <div class="grid-2" style="gap:12px; margin-bottom:0">
+              <div class="form-group">
+                <label class="form-label">Withdrawal Amount</label>
+                <input type="number" step="any" class="form-input" id="wd-crypto-amount" placeholder="e.g. 50" />
+              </div>
+              <div class="form-group" style="display:flex; align-items:center; padding-top:22px">
+                <label style="font-size:12px; font-weight:700; color:var(--on-surface); cursor:pointer; display:flex; align-items:center; gap:8px">
+                  <input type="checkbox" id="wd-crypto-subtract" checked style="width:16px; height:16px" />
+                  <span>Subtract fee from payout amount</span>
+                </label>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%; height:48px; margin-top:8px; font-size:15px; font-weight:800; background:#10b981; border-color:#10b981" onclick="initiateWithdrawal('heleket')" id="btn-withdraw-heleket">
+              ⚡ Send Heleket Crypto Payout
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: Saved Bank Accounts -->
+        <div class="card">
+          <div class="card-title">
+            <span>🏦 Saved Admin Bank Accounts</span>
+            <button class="btn btn-secondary btn-sm" onclick="openAddAccountModal()">+ Add Account</button>
+          </div>
+
+          <div id="accounts-list" style="max-height:360px; overflow-y:auto">
+            <div style="text-align:center; padding:32px; color:var(--text-3); font-size:13px">Loading bank accounts...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Payout History Table -->
+      <div class="card">
+        <div class="card-title">
+          <span>📜 Withdrawal History & Tracking</span>
+          <span style="font-size:12px; font-weight:600; color:var(--text-3)">Showing last 100 requests</span>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border); color:var(--text-3); font-size:11px; text-transform:uppercase; letter-spacing:0.06em">
+                <th style="padding:12px 8px">Order ID</th>
+                <th style="padding:12px 8px">Account / Payee</th>
+                <th style="padding:12px 8px">Amount</th>
+                <th style="padding:12px 8px">Status</th>
+                <th style="padding:12px 8px">UTR / Reference</th>
+                <th style="padding:12px 8px">Remark</th>
+                <th style="padding:12px 8px">Time</th>
+                <th style="padding:12px 8px; text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="payout-history-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center; padding:32px; color:var(--text-3)">Loading withdrawal history...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Add Bank Account -->
+<div id="modal-add-acc" class="modal-backdrop">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h3>Add Admin Bank Account</h3>
+      <button class="modal-close" onclick="closeAddAccountModal()">✕</button>
+    </div>
+    <div class="modal-content-wrap">
+      <div class="form-group">
+        <label class="form-label">Account Holder Name</label>
+        <input type="text" class="form-input" id="acc-add-name" placeholder="e.g. Rapid OTP PVT LTD" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Account Number</label>
+        <input type="text" class="form-input" id="acc-add-num" placeholder="Enter bank account number" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">IFSC Code</label>
+        <input type="text" class="form-input" id="acc-add-ifsc" placeholder="e.g. HDFC0001234" style="text-transform:uppercase" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bank Name (Optional)</label>
+        <input type="text" class="form-input" id="acc-add-bank" placeholder="e.g. HDFC Bank" />
+      </div>
+      <button class="btn btn-primary" style="width:100%; height:46px; margin-top:12px" onclick="saveBankAccount()">💾 Save Account</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js?v=1784210170372"></script>
+<script>
+{
+  let accountsList = [];
+
+  window.openAddAccountModal = () => document.getElementById('modal-add-acc').classList.add('open');
+  window.closeAddAccountModal = () => document.getElementById('modal-add-acc').classList.remove('open');
+
+  window.loadAllData = async function() {
+    await loadAccounts();
+    await loadPayouts();
+  };
+
+  async function loadAccounts() {
+    try {
+      const res = await API.get('/api/admin/payouts/accounts');
+      accountsList = res.accounts || [];
+      
+      const select = document.getElementById('withdraw-account-select');
+      select.innerHTML = '<option value="">-- Or enter manual bank details below --</option>' +
+        accountsList.map(a => `<option value="${a._id || a.id}">${a.account_name} — ${a.account_number} (${a.ifsc})</option>`).join('');
+
+      const listEl = document.getElementById('accounts-list');
+      if (!accountsList.length) {
+        listEl.innerHTML = '<div style="text-align:center; padding:32px; color:var(--text-3); font-size:13px">No bank accounts saved yet. Click "+ Add Account" to add one.</div>';
+        return;
+      }
+
+      listEl.innerHTML = accountsList.map(a => `
+        <div class="account-item">
+          <div>
+            <div class="acc-name">${a.account_name}</div>
+            <div class="acc-detail">A/C: ${a.account_number} • IFSC: ${a.ifsc} ${a.bank_name ? `• ${a.bank_name}` : ''}</div>
+          </div>
+          <div style="display:flex; gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="quickSelectAccount('${a._id || a.id}')" title="Quick Select for Withdrawal">Use</button>
+            <button class="btn btn-sm" style="color:var(--danger); background:rgba(239,68,68,0.1); border:none" onclick="deleteAccount('${a._id || a.id}')" title="Delete Account">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) { toast(e.message || 'Failed to load accounts', 'error'); }
+  }
+
+  let currentWithdrawGateway = 'omnipay';
+
+  window.switchWithdrawalGateway = function(gw) {
+    currentWithdrawGateway = gw;
+    const btnOmni = document.getElementById('tab-btn-omnipay');
+    const btnHeleket = document.getElementById('tab-btn-heleket');
+    const formOmni = document.getElementById('wd-form-omnipay');
+    const formHeleket = document.getElementById('wd-form-heleket');
+
+    if (gw === 'omnipay') {
+      if (btnOmni) { btnOmni.className = 'btn btn-sm btn-primary'; }
+      if (btnHeleket) { btnHeleket.className = 'btn btn-sm btn-secondary'; }
+      if (formOmni) formOmni.style.display = 'block';
+      if (formHeleket) formHeleket.style.display = 'none';
+    } else {
+      if (btnOmni) { btnOmni.className = 'btn btn-sm btn-secondary'; }
+      if (btnHeleket) { btnHeleket.className = 'btn btn-sm btn-primary'; btnHeleket.style.background = '#10b981'; btnHeleket.style.borderColor = '#10b981'; }
+      if (formOmni) formOmni.style.display = 'none';
+      if (formHeleket) formHeleket.style.display = 'block';
+    }
+  };
+
+  window.updateCryptoNetworkOptions = function() {
+    const coin = document.getElementById('wd-crypto-currency').value;
+    const netEl = document.getElementById('wd-crypto-network');
+    if (!netEl) return;
+    if (coin === 'USDT') netEl.value = 'TRC20';
+    else if (coin === 'BTC') netEl.value = 'BITCOIN';
+    else if (coin === 'ETH') netEl.value = 'ERC20';
+    else if (coin === 'TRX') netEl.value = 'TRON';
+    else netEl.value = coin;
+  };
+
+  async function loadPayouts() {
+    try {
+      const res = await API.get('/api/admin/payouts');
+      if (res.stats) {
+        document.getElementById('stat-deposits').textContent = `₹${Number(res.stats.totalDeposits || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        document.getElementById('stat-withdrawn').textContent = `₹${Number(res.stats.totalWithdrawn || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        document.getElementById('stat-pending').textContent = `₹${Number(res.stats.pendingWithdrawals || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        document.getElementById('stat-pool').textContent = `₹${Number(res.stats.availablePool || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+
+        if (res.stats.crypto) {
+          const c = res.stats.crypto;
+          const elDep = document.getElementById('stat-crypto-deposits');
+          const elWd = document.getElementById('stat-crypto-withdrawn');
+          const elPend = document.getElementById('stat-crypto-pending');
+          const elPool = document.getElementById('stat-crypto-pool');
+          if (elDep) elDep.textContent = `₹${Number(c.totalDeposits || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+          if (elWd) elWd.textContent = `₹${Number(c.withdrawn || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+          if (elPend) elPend.textContent = `₹${Number(c.pending || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+          if (elPool) elPool.textContent = `₹${Number(c.availablePool || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        }
+      }
+
+      const payouts = res.payouts || [];
+      const tbody = document.getElementById('payout-history-tbody');
+      if (!payouts.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:32px; color:var(--text-3)">No withdrawals initiated yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = payouts.map(p => {
+        const st = (p.status || 'PENDING').toUpperCase();
+        let badgeCls = 'badge-pending';
+        if (st === 'SUCCESS' || st === 'COMPLETED') badgeCls = 'badge-success';
+        else if (st === 'FAILED' || st === 'REJECTED') badgeCls = 'badge-failed';
+
+        const isCrypto = p.gateway === 'heleket' || p.ifsc === 'CRYPTO' || String(p.order_no || '').startsWith('HEL-WD');
+        const gwBadge = isCrypto ? `<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); margin-top:2px">⚡ Crypto</span>` : `<span class="badge" style="background:rgba(59,130,246,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.3); margin-top:2px">🏦 OmniPay</span>`;
+
+        return `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:12px 8px; font-weight:700; font-family:monospace">${p.order_no}<br>${gwBadge}</td>
+            <td style="padding:12px 8px">
+              <div style="font-weight:700">${p.account_name}</div>
+              <div style="font-size:11px; color:var(--text-3); font-family:monospace">${p.account_number} ${isCrypto ? '' : `(${p.ifsc})`}</div>
+            </td>
+            <td style="padding:12px 8px; font-weight:800; color:var(--accent)">${isCrypto ? '' : '₹'}${p.amount}</td>
+            <td style="padding:12px 8px"><span class="badge ${badgeCls}">${st}</span></td>
+            <td style="padding:12px 8px; font-family:monospace; font-size:12px">${p.utr || p.trade_no || '—'}</td>
+            <td style="padding:12px 8px; font-size:12px; color:var(--text-3); max-width:160px; overflow:hidden; text-overflow:ellipsis">${p.remark || '—'}</td>
+            <td style="padding:12px 8px; font-size:11px; color:var(--text-3)">${new Date(p.createdAt || Date.now()).toLocaleString()}</td>
+            <td style="padding:12px 8px; text-align:right">
+              <button class="btn btn-secondary btn-sm" onclick="checkPayoutStatus('${p.order_no}')" title="Fetch real-time status from gateway">Check Status</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (e) { toast(e.message || 'Failed to load payout history', 'error'); }
+  }
+
+  window.quickSelectAccount = function(id) {
+    const acc = accountsList.find(a => (a._id || a.id) === id);
+    if (!acc) return;
+    document.getElementById('withdraw-account-select').value = id;
+    document.getElementById('wd-name').value = acc.account_name;
+    document.getElementById('wd-number').value = acc.account_number;
+    document.getElementById('wd-ifsc').value = acc.ifsc;
+    toast(`Selected account: ${acc.account_name}`, 'success');
+  };
+
+  window.onAccountSelectChange = function() {
+    const id = document.getElementById('withdraw-account-select').value;
+    if (id) {
+      quickSelectAccount(id);
+    } else {
+      document.getElementById('wd-name').value = '';
+      document.getElementById('wd-number').value = '';
+      document.getElementById('wd-ifsc').value = '';
+    }
+  };
+
+  window.saveBankAccount = async function() {
+    const name = document.getElementById('acc-add-name').value.trim();
+    const num = document.getElementById('acc-add-num').value.trim();
+    const ifsc = document.getElementById('acc-add-ifsc').value.trim();
+    const bank = document.getElementById('acc-add-bank').value.trim();
+
+    if (!name || !num || !ifsc) return toast('Name, Account Number, and IFSC required', 'error');
+
+    try {
+      await API.post('/api/admin/payouts/accounts', { account_name: name, account_number: num, ifsc, bank_name: bank });
+      toast('Bank account saved!', 'success');
+      closeAddAccountModal();
+      loadAccounts();
+    } catch (e) { toast(e.message || 'Error saving account', 'error'); }
+  };
+
+  window.deleteAccount = async function(id) {
+    if (!confirm('Delete this bank account from saved list?')) return;
+    try {
+      await API.delete(`/api/admin/payouts/accounts/${id}`);
+      toast('Account removed', 'success');
+      loadAccounts();
+    } catch (e) { toast(e.message || 'Error removing account', 'error'); }
+  };
+
+  window.initiateWithdrawal = async function(gwType) {
+    const gw = gwType || currentWithdrawGateway;
+
+    if (gw === 'heleket') {
+      const currency = document.getElementById('wd-crypto-currency').value;
+      const network = document.getElementById('wd-crypto-network').value.trim();
+      const address = document.getElementById('wd-crypto-address').value.trim();
+      const amount = parseFloat(document.getElementById('wd-crypto-amount').value);
+      const is_subtract = document.getElementById('wd-crypto-subtract').checked;
+
+      if (!amount || isNaN(amount) || amount <= 0) return toast('Enter valid crypto withdrawal amount', 'error');
+      if (!address) return toast('Recipient crypto wallet address is required', 'error');
+
+      if (!confirm(`Confirm Heleket crypto payout of ${amount} ${currency} (${network || ''}) to address: ${address}?`)) return;
+
+      const btn = document.getElementById('btn-withdraw-heleket');
+      const oldHtml = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Initiating Crypto Payout...'; }
+
+      try {
+        const res = await API.post('/api/admin/payouts/withdraw', {
+          gateway: 'heleket',
+          amount,
+          currency,
+          network,
+          address,
+          is_subtract
+        });
+        toast(`Crypto payout initiated! Order ID: ${res.payout?.order_no}`, 'success');
+        document.getElementById('wd-crypto-amount').value = '';
+        document.getElementById('wd-crypto-address').value = '';
+        loadAllData();
+      } catch (e) {
+        toast(e.message || 'Crypto withdrawal failed', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+      }
+      return;
+    }
+
+    const account_id = document.getElementById('withdraw-account-select').value;
+    const account_name = document.getElementById('wd-name').value.trim();
+    const account_number = document.getElementById('wd-number').value.trim();
+    const ifsc = document.getElementById('wd-ifsc').value.trim();
+    const amount = parseFloat(document.getElementById('wd-amount').value);
+
+    if (!amount || isNaN(amount) || amount < 100) return toast('Minimum withdrawal amount is ₹100', 'error');
+    if (!account_name || !account_number || !ifsc) return toast('Valid account details required', 'error');
+
+    if (!confirm(`Confirm withdrawal of ₹${amount} to account ${account_number} (${account_name}) via OmniPay?`)) return;
+
+    const btn = document.getElementById('btn-withdraw-omnipay') || document.getElementById('btn-withdraw');
+    const oldHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Sending Withdrawal Request...'; }
+
+    try {
+      const res = await API.post('/api/admin/payouts/withdraw', { gateway: 'omnipay', amount, account_id, account_name, account_number, ifsc });
+      toast(`Withdrawal initiated! Order ID: ${res.payout?.order_no}`, 'success');
+      document.getElementById('wd-amount').value = '';
+      loadAllData();
+    } catch (e) {
+      toast(e.message || 'Withdrawal failed', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+    }
+  };
+
+  window.checkPayoutStatus = async function(orderNo) {
+    try {
+      toast('Checking live status from OmniPay...', 'info');
+      const res = await API.post('/api/admin/payouts/check-status', { order_no: orderNo });
+      toast(`Status: ${res.payout?.status || 'UPDATED'}`, 'success');
+      loadPayouts();
+    } catch (e) { toast(e.message || 'Error checking status', 'error'); }
+  };
+
+  async function init() {
+    if (!await requireAdmin()) return;
+    loadAllData();
+  }
+  init();
+}
+</script>
+</body>
+</html>

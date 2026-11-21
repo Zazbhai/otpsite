@@ -1,0 +1,34 @@
+{
+  "name": "Rapid OTP",
+  "short_name": "Rapid OTP",
+  "description": "Instant OTP verification numbers at your fingertips.",
+  "start_url": "/dashboard/buy",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "192x192 512x512 any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Buy Number",
+      "short_name": "Buy",
+      "url": "/dashboard/buy",
+      "description": "Instantly buy a new OTP number"
+    },
+    {
+      "name": "My Orders",
+      "short_name": "Orders",
+      "url": "/dashboard/orders",
+      "description": "View active and past orders"
+    }
+  ]
+}

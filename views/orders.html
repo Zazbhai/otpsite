@@ -1,328 +1,432 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Orders — {{SITE_NAME}}</title>
+  <title>Purchase History — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
-  <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
-  <style>
-    .orders-page { max-width: 900px; margin: 0 auto; }
-    
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 32px;
-    }
-    .page-title h1 { font-size: 24px; font-weight: 700; margin: 0; }
-    .page-title p { font-size: 14px; color: var(--text-3); margin: 4px 0 0; }
-    
-    .filter-tabs {
-      display: flex;
-      gap: 4px;
-      background: var(--surface);
-      padding: 4px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
-    .filter-tab {
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-2);
-      background: none;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .filter-tab:hover { color: var(--text); background: var(--surface-2); }
-    .filter-tab.active { background: var(--accent); color: #fff; }
-    
-    .order-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px 24px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .order-card:hover {
-      border-color: var(--accent);
-      transform: translateX(4px);
-      box-shadow: 0 4px 20px rgba(59,130,246,0.1);
-    }
-    
-    .order-main { flex: 1; min-width: 0; }
-    .order-id {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: var(--text-3);
-      margin-bottom: 6px;
-    }
-    .order-service {
-      font-weight: 600;
-      font-size: 15px;
-      color: var(--text);
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .order-meta {
-      font-size: 13px;
-      color: var(--text-2);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .order-meta span { display: flex; align-items: center; gap: 4px; }
-    
-    .order-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-    }
-    .order-price {
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--text);
-    }
-    
-    .status-dot {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 20px;
-    }
-    .status-dot::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-    }
-    .status-dot.active { background: rgba(16,185,129,0.15); color: var(--success); }
-    .status-dot.active::before { background: var(--success); animation: pulse-dot 2s infinite; }
-    .status-dot.completed { background: rgba(59,130,246,0.15); color: var(--accent); }
-    .status-dot.completed::before { background: var(--accent); }
-    .status-dot.refunded { background: rgba(245,158,11,0.15); color: var(--warning); }
-    .status-dot.refunded::before { background: var(--warning); }
-    .status-dot.expired, .status-dot.cancelled { background: rgba(100,116,139,0.15); color: var(--text-3); }
-    .status-dot.expired::before, .status-dot.cancelled::before { background: var(--text-3); }
-    
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(1.3); }
-    }
-    
-    .otp-preview {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      color: var(--accent);
-      background: rgba(59,130,246,0.1);
-      padding: 4px 10px;
-      border-radius: 6px;
-      max-width: 120px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    
-    .empty-state {
-      text-align: center;
-      padding: 80px 20px;
-    }
-    .empty-state .icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-    .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
-    .empty-state p { font-size: 14px; color: var(--text-3); margin-bottom: 24px; }
-    
-    .pagination {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 32px;
-    }
-    .page-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text-2);
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .page-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    
-    @media (max-width: 768px) {
-      .page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
-      .filter-tabs { width: 100%; overflow-x: auto; }
-      .order-card { flex-direction: column; align-items: flex-start; }
-      .order-right { width: 100%; flex-direction: row; justify-content: space-between; align-items: center; }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/main.css" />
 </head>
-<body>
-<nav class="navbar">
-  <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-    <div class="nav-links" id="nav-links">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/dashboard/buy">Buy</a>
-      <a href="/dashboard/referrals">Referrals</a>
-      <a href="/dashboard/orders" class="active">Orders</a>
-      <a href="/dashboard/wallet">Wallet</a>
+<body class="bg-background text-on-background font-body-md min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col bg-surface border-r border-outline-variant/30 py-6 z-50 shadow-sm">
+  <div class="px-6 mb-8 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+      <span class="material-symbols-outlined">lock</span>
     </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
+    <div>
+      <h1 class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">{{SITE_NAME}}</h1>
+      <p class="font-label-md text-label-md text-on-surface-variant">Secure OTP Service</p>
+    </div>
   </div>
+    <nav class="flex-1 px-4 space-y-2">
+    <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">dashboard</span> Dashboard
+    </a>
+    <a href="/dashboard/wallet" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">account_balance_wallet</span> Wallet
+    </a>
+    <a href="/dashboard/buy" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">add_shopping_cart</span> Buy Number
+    </a>
+    <a href="/dashboard/accounts" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">folder_special</span> Accounts
+    </a>
+    <a href="/dashboard/orders" class="flex items-center gap-3 px-4 py-3 text-primary bg-primary-container/10 border-l-4 border-primary rounded-r-lg transition-all duration-200 ease-in-out font-label-md text-label-md">
+      <span class="material-symbols-outlined">receipt_long</span> Orders
+    </a>
+    <a href="/dashboard/referrals" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">group</span> Referrals
+    </a>
+    <a href="/dashboard/profile" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">person</span> Profile
+    </a>
+  </nav>
+  <div class="px-4 mt-auto space-y-4">
+    <a href="/dashboard/buy" class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg shadow-sm hover:shadow-md transition-shadow flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">add</span> New Purchase
+    </a>
+    <div class="border-t border-outline-variant/30 pt-4 space-y-2">
+      <a href="/support" class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">support_agent</span> Support
+      </a>
+      <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-error hover:bg-error-container/20 transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen relative pb-20 md:pb-0" style="min-width: 0;">
+  <!-- TopNavBar -->
+    <!-- TopNavBar -->
+    <!-- TopNavBar -->
+  <header class="bg-surface/80 backdrop-blur-md sticky top-0 w-full z-40 border-b border-outline-variant/30 shadow-sm flex justify-between items-center px-3 md:px-8 h-16 gap-2">
+    <div id="gnav-left" class="flex items-center gap-2 md:gap-3 min-w-0 flex-1 md:flex-initial overflow-hidden">
+      <a href="/dashboard" class="flex items-center gap-2 md:gap-2.5 text-decoration-none min-w-0 overflow-hidden">
+        <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-primary inline-block animate-pulse shadow-[0_0_8px_rgba(16,80,212,0.6)] flex-shrink-0"></span>
+        <h1 class="font-headline-sm text-[16px] sm:text-[18px] md:text-[22px] font-extrabold text-primary tracking-tight m-0 truncate">{{SITE_NAME}}</h1>
+      </a>
+    </div>
+    <div id="gnav-right" class="flex items-center gap-2 md:gap-3 flex-shrink-0">
+      <div id="gnav-wallet-pill" class="gnav-wallet-pill-wrapper">
+        <a href="/dashboard/wallet" class="gnav-wallet-bal" title="My Wallet">
+          <span class="wallet-icon-effect">💰</span>
+          <span id="nav-global-wallet-bal" class="font-bold">$0.00</span>
+        </a>
+        <a href="/dashboard/wallet" class="gnav-wallet-add" title="Add Funds">+</a>
+      </div>
+      <div id="gnav-avatar-container" class="relative flex-shrink-0">
+        <div id="gnav-avatar" class="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-primary bg-primary-container text-primary font-bold flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 transition-transform overflow-hidden">
+          <span class="material-symbols-outlined text-[18px]">person</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Content -->
+  <div class="p-margin-mobile md:p-margin-desktop flex-1 flex flex-col gap-stack-lg max-w-container-max mx-auto w-full pt-8">
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+      <div>
+        <h2 class="font-headline-lg text-[28px] font-bold text-on-background">Purchase History</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mt-1">Review your recent number purchases and OTP statuses.</p>
+      </div>
+      <div class="flex gap-3">
+        <a href="/dashboard/buy" class="bg-primary text-on-primary hover:bg-primary/90 px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 shadow-sm transition-colors">
+          <span class="material-symbols-outlined text-[20px]">add</span>
+          New Order
+        </a>
+      </div>
+    </div>
+
+    <!-- Main Data Table Container -->
+    <div class="bg-surface border border-outline-variant/30 rounded-xl shadow-sm overflow-hidden flex flex-col relative z-10">
+      
+      <!-- Filters & Search Bar -->
+      <div class="p-4 sm:p-6 border-b border-outline-variant/20 bg-surface/50 flex flex-col md:flex-row gap-3.5 md:gap-4 items-stretch md:items-center justify-between">
+        <div class="relative w-full md:w-80 lg:w-96">
+          <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+          <input class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl py-2.5 pl-10 pr-4 font-body-sm text-xs sm:text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-inner" placeholder="Search by service or number..." type="text" id="order-search" onkeyup="debounceOrderSearch()"/>
+        </div>
+        
+        <!-- Filter Tabs -->
+        <div class="flex gap-1.5 sm:gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 filter-tabs no-scrollbar" id="filter-tabs">
+          <button class="bg-primary text-on-primary px-3.5 py-2 rounded-xl font-label-md text-xs sm:text-[13px] font-bold transition-colors whitespace-nowrap filter-tab shadow-sm" onclick="setFilter('all')">All</button>
+          <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-3.5 py-2 rounded-xl font-label-md text-xs sm:text-[13px] font-bold transition-colors whitespace-nowrap filter-tab" onclick="setFilter('active')">Active</button>
+          <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-3.5 py-2 rounded-xl font-label-md text-xs sm:text-[13px] font-bold transition-colors whitespace-nowrap filter-tab" onclick="setFilter('completed')">Completed</button>
+          <button class="bg-surface-container hover:bg-surface-container-high text-on-surface px-3.5 py-2 rounded-xl font-label-md text-xs sm:text-[13px] font-bold transition-colors whitespace-nowrap filter-tab" onclick="setFilter('cancelled')">Cancelled</button>
+        </div>
+      </div>
+
+      <!-- Table & Mobile Card View Area -->
+      <div class="min-h-[400px] bg-surface">
+        <!-- Desktop Table -->
+        <div class="hidden md:block w-full overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-container-lowest border-b border-outline-variant/30">
+                <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Service</th>
+                <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Order ID</th>
+                <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Number / OTP</th>
+                <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Cost</th>
+                <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Status</th>
+                <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Date</th>
+              </tr>
+            </thead>
+            <tbody id="orders-list">
+              <!-- JS Populated -->
+            </tbody>
+          </table>
+        </div>
+        <!-- Mobile List -->
+        <div class="md:hidden flex flex-col divide-y divide-outline-variant/20" id="orders-mobile-list">
+          <!-- JS Populated -->
+        </div>
+      </div>
+
+      <div id="pagination" class="p-4 border-t border-outline-variant/20 flex justify-center bg-surface-container-lowest"></div>
+    </div>
+  </div>
+</main>
+
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface/90 backdrop-blur-lg border-t border-outline-variant/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] shadow-lg flex justify-around items-center h-16 px-2 pb-safe">
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard">
+    <span class="material-symbols-outlined">home</span>
+    <span class="font-label-md text-[10px] mt-1">Home</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/buy">
+    <span class="material-symbols-outlined">add_shopping_cart</span>
+    <span class="font-label-md text-[10px] mt-1">Buy</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-xl px-4 py-1 scale-95 transition-transform" href="/dashboard/orders">
+    <span class="material-symbols-outlined">history_edu</span>
+    <span class="font-label-md text-[10px] mt-1 font-bold">History</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/accounts">
+    <span class="material-symbols-outlined">folder_special</span>
+    <span class="font-label-md text-[10px] mt-1">Accounts</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/wallet">
+    <span class="material-symbols-outlined">account_balance_wallet</span>
+    <span class="font-label-md text-[10px] mt-1">Wallet</span>
+  </a>
 </nav>
 
-<div class="layout">
-  <aside class="sidebar">
-    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
-    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
-    <a href="/dashboard/orders" class="sidebar-item active">📋 My Orders</a>
-    <a href="/dashboard/referrals" class="sidebar-item">🤝 Referrals</a>
-    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
-    <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
-    <div class="sidebar-divider"></div>
-    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
-  </aside>
-  <main class="main-content">
-    <div class="orders-page">
-      <div class="page-header">
-        <div class="page-title">
-          <h1>My Orders</h1>
-          <p>Your virtual number purchases</p>
-        </div>
-        <a href="/dashboard/buy" class="btn btn-primary">+ New Order</a>
-      </div>
-      
-      <div class="filter-tabs" id="filter-tabs">
-        <button class="filter-tab active" onclick="setFilter('all')">All</button>
-        <button class="filter-tab" onclick="setFilter('active')">Active</button>
-        <button class="filter-tab" onclick="setFilter('completed')">Completed</button>
-        <button class="filter-tab" onclick="setFilter('cancelled')">Cancelled</button>
-      </div>
-      
-      <div id="orders-list" style="margin-top: 24px;">
-        <div style="padding:40px;text-align:center;opacity:0.5">Syncing with blockchain...</div>
-      </div>
-      
-      <div id="pagination"></div>
-    </div>
-  </main>
-</div>
-
-
 <script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
+
 <script>
 {
   if (!requireLogin()) {}
   
   let currentPage = 1, currentFilter = 'all';
+
+  async function updateBalanceHeader() {
+      try {
+        const { balance: b } = await API.get('/api/user/balance');
+        const navWallet = document.getElementById('nav-wallet-bal');
+        if (navWallet) navWallet.textContent = fmtMoney(b);
+      } catch(e) {}
+  }
   
   async function loadOrders(page = 1, isBackground = false) {
     currentPage = page;
     const list = document.getElementById('orders-list');
-    if (!list) return;
+    const mobileList = document.getElementById('orders-mobile-list');
+    if (!list || !mobileList) return;
+
     if (!isBackground) {
-       list.innerHTML = Array(5).fill(0).map(() => `
-          <div class="order-card" style="pointer-events:none">
-            <div class="skeleton skeleton-circle" style="width:40px;height:40px;flex-shrink:0"></div>
-            <div class="order-main">
-              <div class="skeleton skeleton-text" style="width:140px;height:16px;margin-bottom:8px"></div>
-              <div class="skeleton skeleton-text short" style="width:100px;height:12px"></div>
-            </div>
-            <div class="order-right">
-              <div class="skeleton skeleton-text" style="width:60px;height:18px"></div>
-              <div class="skeleton skeleton-text" style="width:80px;height:24px;border-radius:20px"></div>
-            </div>
-          </div>
+       const skelTable = Array(5).fill(0).map(() => `
+          <tr class="animate-pulse">
+            <td class="py-4 px-6"><div class="h-8 bg-surface-container rounded w-full max-w-[120px]"></div></td>
+            <td class="py-4 px-6"><div class="h-4 bg-surface-container rounded w-16"></div></td>
+            <td class="py-4 px-6"><div class="h-4 bg-surface-container rounded w-24"></div></td>
+            <td class="py-4 px-6"><div class="h-4 bg-surface-container rounded w-12"></div></td>
+            <td class="py-4 px-6"><div class="h-6 bg-surface-container rounded-full w-20"></div></td>
+            <td class="py-4 px-6"><div class="h-4 bg-surface-container rounded w-20"></div></td>
+          </tr>
         `).join('');
+       const skelMobile = Array(4).fill(0).map(() => `
+          <div class="p-4 space-y-3 animate-pulse">
+            <div class="flex justify-between items-center"><div class="h-6 bg-surface-container rounded w-32"></div><div class="h-5 bg-surface-container rounded w-16"></div></div>
+            <div class="h-5 bg-surface-container rounded w-44"></div>
+          </div>
+       `).join('');
+       list.innerHTML = skelTable;
+       mobileList.innerHTML = skelMobile;
     }
     
     try {
-      const data = await API.get(`/api/user/orders?status=${currentFilter}&page=${page}&limit=15`);
+      const q = document.getElementById('order-search').value.trim();
+      const qs = `status=${currentFilter}&page=${page}&limit=15` + (q ? `&q=${encodeURIComponent(q)}` : '');
+      const data = await API.get(`/api/user/orders?${qs}`);
       
       if (!data.orders.length) {
         list.innerHTML = `
-          <div class="empty-state">
-            <div class="icon">📭</div>
-            <h3>No orders yet</h3>
-            <p>Purchase a virtual number to get started</p>
-            <a href="/dashboard/buy" class="btn btn-primary">Buy Number</a>
+          <tr>
+            <td colspan="6" class="text-center py-20">
+              <div class="flex flex-col items-center gap-4">
+                <span class="material-symbols-outlined text-[64px] text-outline opacity-40">receipt_long</span>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface">No orders found</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">Purchase a virtual number to get started</p>
+                <a href="/dashboard/buy" class="mt-2 bg-primary hover:bg-primary/90 text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md transition-colors">Buy Number</a>
+              </div>
+            </td>
+          </tr>`;
+        mobileList.innerHTML = `
+          <div class="p-8 text-center flex flex-col items-center gap-3">
+            <span class="material-symbols-outlined text-4xl text-outline opacity-40">receipt_long</span>
+            <h3 class="font-bold text-base text-on-surface">No orders found</h3>
+            <p class="text-xs text-on-surface-variant">Purchase a virtual number to get started</p>
+            <a href="/dashboard/buy" class="mt-1 bg-primary hover:bg-primary/90 text-on-primary px-5 py-2 rounded-lg font-bold text-xs transition-colors">Buy Number</a>
           </div>`;
         const pagEl = document.getElementById('pagination');
         if (pagEl) pagEl.innerHTML = '';
         return;
       }
       
-      list.innerHTML = data.orders.map(o => `
-        <div class="order-card" onclick="SPA.navigate('/dashboard/orders/${o.order_id}')">
-          <div style="width:40px;height:40px;border-radius:10px;overflow:hidden;background:var(--bg-2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-             ${getServiceIcon({ name: o.service_name, image_url: o.service_image, icon_color: o.service_color }, '40px')}
-          </div>
-          <div class="order-main">
-            <div class="order-id">${o.order_id}</div>
-            <div class="order-service">
-              ${o.service_name}
-              ${o.otp ? `<span class="otp-preview">${o.otp}</span>` : ''}
+      // Render Desktop Table Rows
+      list.innerHTML = data.orders.map(o => {
+        let statusClass = "bg-surface-container text-on-surface-variant";
+        if(o.status === 'completed') statusClass = "bg-primary-container/20 text-primary border-primary/30";
+        else if(o.status === 'active' || o.status === 'pending') statusClass = "bg-success/10 text-success border-success/30";
+        else if(o.status === 'refunded' || o.status === 'cancelled' || o.status === 'expired') statusClass = "bg-error/10 text-error border-error/30";
+        
+        const statusText = o.status === 'expired' ? 'Cancelled' : (o.status.charAt(0).toUpperCase() + o.status.slice(1));
+        
+        return `
+        <tr class="hover:bg-surface-container-lowest transition-colors group cursor-pointer" onclick="SPA.navigate('/dashboard/orders/${o.order_id}')">
+          <td class="py-3 px-6">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0">
+                ${getServiceIcon({ name: o.service_name, image_url: o.service_image, icon_color: o.service_color }, '20px')}
+              </div>
+              <div class="flex flex-col">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-label-md text-[13px] text-on-background font-bold">${o.service_name}</span>
+                  ${typeof getCheckerBadgeHtml === 'function' ? getCheckerBadgeHtml(o.service_name, 'font-size:9px;padding:1px 5px;') : ''}
+                </div>
+                <span class="font-label-md text-[10px] text-on-surface-variant flex items-center gap-1">🌍 ${o.server_country || o.country || 'Global'}</span>
+              </div>
             </div>
-            <div class="order-meta">
-              <span>🌍 ${o.server_country || o.country || '—'}</span>
-              <span>📞 ${o.phone ? o.phone.replace(/(\d{2})\d{4}(\d{4})/, '$1****$2') : 'Pending'}</span>
-              <span>🕐 ${fmtDateShort(o.createdAt)}</span>
+          </td>
+          <td class="py-3 px-6">
+            <span class="font-mono text-[11px] text-on-surface-variant font-medium">${o.order_id}</span>
+          </td>
+          <td class="py-3 px-6">
+            <div class="flex flex-col">
+              <span class="font-label-md text-[13px] text-on-surface font-semibold">${o.phone ? o.phone.replace(/(\d{2})\d{4}(\d{4})/, '$1****$2') : 'Pending'}</span>
+              ${o.otp ? `
+                <span class="font-mono text-[10px] text-primary bg-primary/10 px-1.5 rounded mt-0.5 inline-block w-fit font-bold">${o.otp}</span>
+              ` : (o.status === 'active' || o.status === 'pending') ? `
+                <span class="font-label-md text-[10px] text-primary flex items-center gap-1 mt-0.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span> Listening...
+                </span>
+              ` : (o.status === 'completed') ? `
+                <span class="font-label-md text-[10px] text-success flex items-center gap-1 mt-0.5">
+                  <span class="material-symbols-outlined text-[12px]">check_circle</span> Verified
+                </span>
+              ` : `
+                <span class="font-label-md text-[10px] text-on-surface-variant flex items-center gap-1 mt-0.5 opacity-70">
+                  <span class="material-symbols-outlined text-[12px]">cancel</span> No OTP
+                </span>
+              `}
             </div>
+          </td>
+          <td class="py-3 px-6 font-label-md text-[13px] font-bold text-on-surface">${fmtMoney(o.cost)}</td>
+          <td class="py-3 px-6">
+            <span class="font-label-md text-[9px] font-bold tracking-wider px-2 py-1 rounded-md border ${statusClass} inline-block uppercase">${statusText}</span>
+          </td>
+          <td class="py-3 px-6 font-label-md text-[11px] text-on-surface-variant">${fmtDateShort(o.createdAt)}</td>
+        </tr>
+      `}).join('');
+
+      // Render Mobile Card Rows
+      mobileList.innerHTML = data.orders.map(o => {
+        let statusClass = "bg-surface-container text-on-surface-variant";
+        if(o.status === 'completed') statusClass = "bg-primary-container/20 text-primary border-primary/30";
+        else if(o.status === 'active' || o.status === 'pending') statusClass = "bg-success/10 text-success border-success/30";
+        else if(o.status === 'refunded' || o.status === 'cancelled' || o.status === 'expired') statusClass = "bg-error/10 text-error border-error/30";
+        
+        const statusText = o.status === 'expired' ? 'Cancelled' : (o.status.charAt(0).toUpperCase() + o.status.slice(1));
+        const phoneFormatted = o.phone ? o.phone.replace(/(\d{2})\d{4}(\d{4})/, '$1****$2') : 'Waiting for number...';
+        
+        return `
+        <div class="p-4 flex flex-col gap-3 hover:bg-surface-container-lowest transition-colors cursor-pointer group" onclick="SPA.navigate('/dashboard/orders/${o.order_id}')">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center overflow-hidden shrink-0 shadow-sm border border-outline-variant/20">
+                ${getServiceIcon({ name: o.service_name, image_url: o.service_image, icon_color: o.service_color }, '22px')}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h4 class="font-bold text-sm text-on-surface truncate">${o.service_name}</h4>
+                  ${typeof getCheckerBadgeHtml === 'function' ? getCheckerBadgeHtml(o.service_name, 'font-size:9px;padding:1px 5px;') : ''}
+                </div>
+                <p class="text-[11px] text-on-surface-variant flex items-center gap-1">🌍 ${o.server_country || o.country || 'Global'}</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${statusClass} shrink-0">${statusText}</span>
           </div>
-          <div class="order-right">
-            <div class="order-price">${fmtMoney(o.cost)}</div>
-            <div class="status-dot ${o.status}">${(o.status === 'expired' ? 'Cancelled' : (o.status.charAt(0).toUpperCase() + o.status.slice(1)))}</div>
+
+          <div class="bg-surface-container-low rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-outline-variant/30">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px] text-outline">call</span>
+              <span class="font-mono text-xs sm:text-sm font-bold text-on-surface">${phoneFormatted}</span>
+            </div>
+            ${o.otp ? `
+              <div class="font-mono text-xs font-extrabold text-primary bg-primary/15 border border-primary/30 px-2.5 py-1 rounded-lg flex items-center gap-1 w-fit shadow-sm">
+                <span>💬 OTP: ${o.otp}</span>
+              </div>
+            ` : (o.status === 'active' || o.status === 'pending') ? `
+              <span class="text-[11px] font-medium text-primary flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span> Listening...
+              </span>
+            ` : (o.status === 'completed') ? `
+              <span class="text-[11px] font-medium text-success flex items-center gap-1 bg-success/10 border border-success/20 px-2.5 py-1 rounded-lg">
+                <span class="material-symbols-outlined text-[14px]">check_circle</span> Verified
+              </span>
+            ` : `
+              <span class="text-[11px] font-medium text-on-surface-variant flex items-center gap-1 bg-surface-container px-2.5 py-1 rounded-lg opacity-75">
+                <span class="material-symbols-outlined text-[14px]">cancel</span> No OTP
+              </span>
+            `}
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-0.5">
+            <span class="font-mono">#${o.order_id}</span>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-on-surface text-xs">${fmtMoney(o.cost)}</span>
+              <span>•</span>
+              <span>${fmtDateShort(o.createdAt)}</span>
+            </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
       
       renderPagination('pagination', data.page, data.pages, "loadOrders");
     } catch (e) {
-      toast(e.message, 'error');
+      toast(e.message, "error");
+      list.innerHTML = `
+        <tr>
+          <td colspan="6" class="text-center py-10">
+            <div class="flex flex-col items-center gap-2">
+              <span class="material-symbols-outlined text-[40px] text-error">error</span>
+              <h3 class="font-headline-sm text-sm text-error">Failed to load orders</h3>
+              <p class="font-body-sm text-[12px] text-on-surface-variant">${e.message}</p>
+              <button class="mt-2 bg-surface-container hover:bg-surface-container-high px-4 py-2 rounded-lg text-[12px] font-bold text-on-surface" onclick="loadOrders(1)">Retry Connection</button>
+            </div>
+          </td>
+        </tr>`;
+      mobileList.innerHTML = `
+        <div class="p-8 text-center flex flex-col items-center gap-2">
+          <span class="material-symbols-outlined text-[40px] text-error">error</span>
+          <h3 class="font-bold text-sm text-error">Failed to load orders</h3>
+          <p class="text-[12px] text-on-surface-variant">${e.message}</p>
+          <button class="mt-2 bg-surface-container hover:bg-surface-container-high px-4 py-2 rounded-lg text-[12px] font-bold text-on-surface" onclick="loadOrders(1)">Retry Connection</button>
+        </div>`;
     }
   }
   
+  let searchTimeout;
+  window.debounceOrderSearch = function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => loadOrders(1), 500);
+  };
+
   window.setFilter = function(status) {
     currentFilter = status;
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    const btn = event.target;
+    document.querySelectorAll('.filter-tab').forEach(t => {
+       if (t === btn) {
+          t.className = "bg-primary text-on-primary px-3.5 py-2 rounded-xl font-label-md text-xs sm:text-[13px] font-bold transition-colors whitespace-nowrap filter-tab shadow-sm";
+       } else {
+          t.className = "bg-surface-container hover:bg-surface-container-high text-on-surface px-3.5 py-2 rounded-xl font-label-md text-xs sm:text-[13px] font-bold transition-colors whitespace-nowrap filter-tab";
+       }
+    });
     loadOrders(1);
   };
 
   window.loadOrders = loadOrders;
-  window.initOrders = () => loadOrders(currentPage, true);
-  loadOrders();
+  window.initOrders = () => {
+     loadOrders(currentPage, true);
+     updateBalanceHeader();
+  }
+  initOrders();
 
   const polling = setInterval(() => {
-    if (document.visibilityState === 'visible') loadOrders(currentPage, true);
+    if (document.visibilityState === 'visible') {
+        loadOrders(currentPage, true);
+        updateBalanceHeader();
+    }
   }, 10000);
   window.addEventListener('popstate', () => clearInterval(polling), { once: true });
 }
 </script>
-<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
+</body>
 </html>
-
-
-

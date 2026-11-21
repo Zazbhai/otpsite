@@ -3,13 +3,65 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Orders — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    @media (max-width: 768px) {
+      .main-content { padding: 16px; }
+      .table-wrap { overflow: visible; }
+      .card { background: transparent; border: none; box-shadow: none; padding: 0 !important; }
+      
+      table, thead, tbody, th, td, tr { display: block; }
+      thead tr { position: absolute; top: -9999px; left: -9999px; }
+      
+      tr {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 16px;
+        padding: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+      
+      td {
+        border: none !important;
+        position: relative;
+        padding: 8px 0 8px 45% !important;
+        text-align: right !important;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      
+      td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 40%;
+        text-align: left;
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-3);
+        letter-spacing: 0.5px;
+      }
+      
+      td:last-child {
+        margin-top: 12px;
+        padding-left: 0 !important;
+      }
+      
+      .btn-sm { padding: 10px 16px; font-size: 13px; }
+      .w-full-mobile { width: 100% !important; }
+    }
+  </style>
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a><a href="/admin/orders" class="active">Orders</a>
       <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
@@ -38,11 +90,16 @@
     <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
   </aside>
   <main class="main-content">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
       <h1 style="font-size:24px">Orders <span id="total-count" class="text-muted text-sm"></span></h1>
+      <div class="search-box" style="position:relative">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.6">🔍</span>
+        <input type="text" id="order-search" class="form-input" style="padding-left:36px" placeholder="" onkeyup="debounceSearch()" />
+      </div>
     </div>
+
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="filter-btns">
-      <button class="btn btn-primary btn-sm" onclick="setFilter('all',this)">All</button>
+      <button class="btn btn-primary btn-sm" onclick="setFilter('all',this)">🌍 All Orders</button>
       <button class="btn btn-secondary btn-sm" onclick="setFilter('active',this)">⚡ Active</button>
       <button class="btn btn-secondary btn-sm" onclick="setFilter('completed',this)">✅ Completed</button>
       <button class="btn btn-secondary btn-sm" onclick="setFilter('refunded',this)">💰 Refunded</button>
@@ -51,9 +108,9 @@
     <div class="card" style="padding:0;overflow:hidden">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Order ID</th><th>User</th><th>Service</th><th>Phone</th><th>OTP</th><th>Cost</th><th>Status</th><th>Date</th><th></th></tr></thead>
+          <thead><tr><th>Order ID</th><th>User</th><th>Service</th><th>Server</th><th>Phone</th><th>OTP</th><th>Cost</th><th>Status</th><th>Date</th><th></th></tr></thead>
           <tbody id="orders-body">
-            <tr><td colspan="9" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+            <tr><td colspan="10" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -62,68 +119,137 @@
   </main>
 </div>
 
-<!-- Order Edit Modal -->
+<!-- Order Detail Modal (Command Center style) -->
 <div class="modal-backdrop" id="order-modal">
-  <div class="modal">
-    <div class="modal-header"><h3>Edit Order</h3><button class="modal-close" onclick="closeModal('order-modal')">✕</button></div>
-    <input type="hidden" id="o-id" />
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="form-group">
-        <label class="form-label">Status</label>
-        <select id="o-status">
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
-          <option value="refunded">Refunded (auto-refunds balance)</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+  <div class="modal" style="max-width: 500px; padding: 0; overflow: hidden; border-radius: 24px;">
+    <div class="modal-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border); background: var(--surface);">
+      <h3 style="margin:0; font-size: 18px;">Order Command Center</h3>
+      <button class="modal-close" onclick="closeModal('order-modal')">✕</button>
+    </div>
+    
+    <div style="padding: 24px; max-height: 80vh; overflow-y: auto;">
+      <input type="hidden" id="o-id" />
+      
+      <!-- Order Info Header -->
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom: 24px; background: var(--surface); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
+        <div id="o-icon-box" style="width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;"></div>
+        <div style="flex:1">
+          <div id="o-service-name" style="font-weight:700; font-size:16px; color:var(--text);">—</div>
+          <div id="o-id-display" style="font-size:11px; color:var(--text-3); font-family: 'JetBrains Mono', monospace;">#ORD-XXXXXX</div>
+        </div>
+        <div id="o-status-badge"></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Set OTP (manual)</label>
-        <input type="text" id="o-otp" placeholder="e.g. 483291" />
+
+      <!-- SMS History Section -->
+      <div style="margin-bottom: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+          <h4 style="margin:0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color:var(--text-2);">SMS History</h4>
+          <span id="o-sms-count" style="font-size: 12px; color:var(--accent); font-weight: 700;">0 Messages</span>
+        </div>
+        <div id="o-sms-list" style="display:flex; flex-direction:column; gap:10px;">
+          <div style="text-align:center; padding: 20px; color:var(--text-3); font-size: 13px; background: rgba(0,0,0,0.1); border-radius: 12px;">No SMS received yet</div>
+        </div>
       </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-primary" onclick="saveOrder()">Save</button>
-        <button class="btn btn-secondary" onclick="closeModal('order-modal')">Cancel</button>
+
+      <!-- Admin Controls -->
+      <div style="background: var(--surface-2); padding: 20px; border-radius: 16px; border: 1px solid var(--border);">
+        <h4 style="margin:0 0 16px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color:var(--text-2);">Admin Controls</h4>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 12px;">Order Status</label>
+          <select id="o-status" class="form-select">
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="refunded">Refunded (Wallet + History)</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label" style="font-size: 12px;">Manual OTP Entry</label>
+          <div style="position:relative">
+            <input type="text" id="o-otp" class="form-input" placeholder="Enter manual OTP..." />
+            <span style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--text-3);">Optional</span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <button class="btn btn-primary" style="padding:12px" onclick="saveOrder()">Update Order</button>
+          <button class="btn btn-secondary" style="padding:12px" onclick="closeModal('order-modal')">Dismiss</button>
+        </div>
+      </div>
+
+      <!-- Secondary Info -->
+      <div style="margin-top: 24px; display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="padding:12px; background:var(--surface); border-radius:12px; border:1px solid var(--border);">
+          <div style="font-size:10px; color:var(--text-3); text-transform:uppercase; margin-bottom:4px;">User ID</div>
+          <div id="o-user-id" style="font-size:12px; font-weight:600; font-family: 'JetBrains Mono', monospace; word-break: break-all;">—</div>
+        </div>
+        <div style="padding:12px; background:var(--surface); border-radius:12px; border:1px solid var(--border);">
+          <div style="font-size:10px; color:var(--text-3); text-transform:uppercase; margin-bottom:4px;">Phone Number</div>
+          <div id="o-phone" style="font-size:13px; font-weight:700; color:var(--accent);">—</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
+<script src="/js/main.js?v=1784210170371"></script>
+<script src="/js/admin-live.js?v=1"></script>
+
+
 <script>
   async function init() {
     if (!await requireAdmin()) return;
-    window.loadOrders();
+    await window.loadOrders();
+    subscribeAdminUpdates(() => window.loadOrders(currentPage, true));
   }
   let currentFilter = "all";
+  let currentPage = 1;
+  let ordersRequest = 0;
 
-  window.loadOrders = async function(page = 1) {
+  window.loadOrders = async function(page = currentPage, silent = false) {
+    currentPage = page;
+    const request = ++ordersRequest;
     const tbody = document.getElementById("orders-body");
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+    if (!silent) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
     try {
-      const url = `/api/admin/orders?status=${currentFilter}&page=${page}&limit=30`;
-      console.log("Loading orders from:", url);
+      const q = document.getElementById("order-search").value.trim();
+      const url = `/api/admin/orders?status=${currentFilter}&page=${page}&limit=30&q=${encodeURIComponent(q)}`;
+
       const data = await API.get(url);
-      console.log("Orders response:", data);
+      if (request !== ordersRequest) return;
       document.getElementById("total-count").textContent = `(${data.total.toLocaleString()})`;
       tbody.innerHTML = data.orders.map(o => `
         <tr>
-          <td class="mono text-xs">${o.order_id}</td>
-          <td class="mono text-sm">${o.user_id}</td>
-          <td>${o.service_name}</td>
-          <td class="mono">${o.phone || "—"}</td>
-          <td class="mono font-bold" style="color:var(--accent)">${o.otp || "—"}</td>
-          <td>${fmtMoney(o.cost)}</td>
-          <td>${statusBadge(o.status)}</td>
-          <td class="text-muted text-sm">${fmtDateShort(o.createdAt)}</td>
-          <td><button class="btn btn-secondary btn-sm" onclick='openEdit(${JSON.stringify(o).replace(/'/g,"&#39;")})'>Edit</button></td>
-        </tr>`).join("") || `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-3)">No orders</td></tr>`;
+          <td data-label="Order ID" class="mono text-xs">${o.order_id}</td>
+          <td data-label="User" class="text-sm">
+            <a href="/admin/users/${o.user_id}" class="text-accent" style="font-weight:600; text-decoration:none;">
+              <div style="display:flex; flex-direction:column;">
+                <span>${o.user_name || "Unknown"}</span>
+                <span style="font-size:10px; opacity:0.6; font-family:monospace">${o.user_id}</span>
+              </div>
+            </a>
+          </td>
+          <td data-label="Service">${o.service_name}</td>
+          <td data-label="Server"><span class="badge" style="font-size:10px; background:var(--surface-2); padding:2px 6px">${o.server_name || "—"}</span></td>
+          <td data-label="Phone" class="mono">${o.phone || "—"}</td>
+          <td data-label="Latest OTP" class="mono font-bold" style="color:var(--accent)">${o.otp || "—"}</td>
+          <td data-label="Cost">${fmtMoney(o.cost)}</td>
+          <td data-label="Status">${statusBadge(o.status)}</td>
+          <td data-label="Date" class="text-muted text-sm">${fmtDateShort(o.createdAt)}</td>
+          <td data-label=""><button class="btn btn-secondary btn-sm w-full-mobile" onclick='openEdit(${JSON.stringify(o).replace(/'/g,"&#39;")})'>View Details</button></td>
+        </tr>`).join("") || `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text-3)">No orders</td></tr>`;
       renderPagination("pagination", data.page, data.pages, "window.loadOrders");
-    } catch (e) { toast(e.message, "error"); }
+    } catch (e) { if (!silent && request === ordersRequest) toast(e.message, "error"); }
+  }
+
+  let searchTimeout;
+  window.debounceSearch = function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => window.loadOrders(1), 500);
   }
 
   window.setFilter = function(s, btn) {
@@ -132,12 +258,66 @@
     btn.className = "btn btn-primary btn-sm";
     window.loadOrders(1);
   }
+
   window.openEdit = function(o) {
     document.getElementById("o-id").value = o.order_id;
+    document.getElementById("o-id-display").textContent = `#${o.order_id}`;
+    document.getElementById("o-service-name").textContent = o.service_name;
+    document.getElementById("o-user-id").textContent = o.user_id;
+    document.getElementById("o-phone").textContent = o.phone || "Assigning...";
     document.getElementById("o-status").value = o.status === "expired" ? "cancelled" : o.status;
     document.getElementById("o-otp").value = o.otp || "";
+    
+    // Icon and Color
+    const iconBox = document.getElementById("o-icon-box");
+    iconBox.style.background = o.service_color || "var(--accent)";
+    iconBox.innerHTML = getServiceIcon({ name: o.service_name, image_url: o.service_image, icon_color: o.service_color }, '24px');
+    
+    // Status Badge
+    document.getElementById("o-status-badge").innerHTML = statusBadge(o.status);
+
+    // SMS List
+    const smsList = document.getElementById("o-sms-list");
+    const smsCount = document.getElementById("o-sms-count");
+    const all = [...new Set(((o.all_otps && o.all_otps.length) ? o.all_otps : [o.otp]).filter(x => !!x))];
+    
+    smsCount.textContent = `${all.length} Message${all.length === 1 ? '' : 's'}`;
+    
+    if (all.length > 0) {
+      smsList.innerHTML = all.reverse().map((m, i) => {
+        const extracted = window.extractOTP ? window.extractOTP(m) : m;
+        const isLatest = i === 0;
+        return `
+          <div style="padding: 14px; background: var(--surface); border: 1px solid ${isLatest ? 'var(--accent)' : 'var(--border)'}; border-radius: 12px; position:relative;">
+            <div style="font-size: 10px; color:var(--text-3); margin-bottom: 6px; display:flex; justify-content:space-between;">
+               <span>MESSAGE #${all.length - i}</span>
+               ${isLatest ? '<span style="color:var(--accent); font-weight:700;">LATEST</span>' : ''}
+            </div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-weight: 800; color: ${isLatest ? 'var(--accent)' : 'var(--text)'}; font-size: 16px; margin-bottom: 4px;">${extracted}</div>
+            <div style="font-size: 11px; color: var(--text-2); line-height: 1.4; opacity: 0.8;">${m}</div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      smsList.innerHTML = `<div style="text-align:center; padding: 24px; color:var(--text-3); font-size: 13px; background: rgba(0,0,0,0.1); border-radius: 12px; border: 1px dashed var(--border);">Waiting for SMS...</div>`;
+    }
+
     openModal("order-modal");
   }
+
+  window.extractOTP = function(text) {
+    if (!text) return '';
+    const pattern = /(?:is|code|otp|login|is:)\s*(\d{4,8})\b/i;
+    const match = text.match(pattern);
+    if (match) return match[1];
+    const allMatches = text.match(/\b\d{4,8}\b/g);
+    if (allMatches) {
+      const likely = allMatches.find(n => !n.startsWith('202'));
+      return likely || allMatches[0];
+    }
+    return text;
+  }
+
   window.saveOrder = async function() {
     const id = document.getElementById("o-id").value;
     const status = document.getElementById("o-status").value;
@@ -151,6 +331,3 @@
 </script>
 </body>
 </html>
-
-
-

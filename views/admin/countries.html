@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Countries — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
@@ -93,10 +94,10 @@
     }
   </style>
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a>
       <a href="/admin/services">Services</a>
@@ -131,10 +132,18 @@
     <div class="countries-page">
       <div class="page-header">
         <div class="page-title">
-          <h1>Countries</h1>
+          <h1>🌍 Countries</h1>
           <p>Manage available countries for services</p>
         </div>
-        <button class="btn btn-primary" onclick="openCreate()">+ Add Country</button>
+        <div style="display:flex; align-items:center; gap:12px">
+           <div class="search-box" style="position:relative">
+             <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.6">🔍</span>
+             <input type="text" id="country-search" style="padding-left:36px" placeholder="" onkeyup="filterCountries()" />
+           </div>
+
+           <button class="btn btn-primary" onclick="openCreate()">+ Add Country</button>
+        </div>
+
       </div>
       
       <div id="countries-grid" class="country-grid">
@@ -151,7 +160,7 @@
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
       <h3 id="modal-title">Add Country</h3>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" type="button" onclick="closeModal('country-modal')">✕</button>
     </div>
     <form class="modal-form" onsubmit="event.preventDefault(); saveCountry()">
       <div class="modal-content-wrap">
@@ -175,7 +184,7 @@
         
         <div class="form-group">
           <label class="form-label">Status</label>
-          <select id="country-active" class="form-input">
+          <select id="country-active" class="form-select">
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
@@ -184,7 +193,7 @@
         <div class="modal-actions">
           <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
           <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteCountry()" style="display:none">Delete Country</button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('country-modal')">Cancel</button>
         </div>
       </div>
     </form>
@@ -192,9 +201,9 @@
 </div>
 
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
+<script src="/js/main.js?v=1784210170369"></script>
+
+
 <script>
   async function init() {
     if (!await requireAdmin()) return;
@@ -202,11 +211,28 @@
   }
   
   let editingId = null;
+  let allCountriesRaw = [];
+
   
   async function loadCountries() {
     try {
       const countries = await API.get("/api/admin/countries");
-      const grid = document.getElementById("countries-grid");
+      allCountriesRaw = countries;
+      renderCountries(countries);
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+
+  function filterCountries() {
+    const q = document.getElementById("country-search").value.toLowerCase();
+    const filtered = allCountriesRaw.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+    renderCountries(filtered);
+  }
+
+  function renderCountries(countries) {
+    const grid = document.getElementById("countries-grid");
+
       
       if (!countries.length) {
         grid.innerHTML = `
@@ -229,10 +255,8 @@
           <div class="country-status ${c.is_active ? 'active' : 'inactive'}">${c.is_active ? 'Active' : 'Inactive'}</div>
         </div>
       `).join('');
-    } catch (e) {
-      toast(e.message, "error");
-    }
   }
+
   
   function openCreate() {
     editingId = null;
@@ -243,7 +267,7 @@
     document.getElementById("country-name").value = "";
     document.getElementById("country-active").value = "true";
     document.getElementById("delete-btn").style.display = "none";
-    document.getElementById("country-modal").classList.add("open");
+    openModal("country-modal");
   }
   
   async function openEdit(id) {
@@ -260,15 +284,13 @@
       document.getElementById("country-name").value = c.name;
       document.getElementById("country-active").value = String(c.is_active);
       document.getElementById("delete-btn").style.display = "block";
-      document.getElementById("country-modal").classList.add("open");
+      openModal("country-modal");
     } catch (e) {
       toast(e.message, "error");
     }
   }
   
-  function closeModal() {
-    document.getElementById("country-modal").classList.remove("open");
-  }
+
   
   async function saveCountry() {
     const body = {
@@ -294,7 +316,7 @@
         await API.post("/api/admin/countries", body);
         toast("Country added!", "success");
       }
-      closeModal();
+      closeModal('country-modal');
       loadCountries();
     } catch (e) {
       toast(e.message, "error");
@@ -305,7 +327,11 @@
   }
   
   async function deleteCountry() {
-    if (!await uiConfirm("Delete this country? Servers using this country will be affected.")) return;
+    closeModal('country-modal');
+    if (!await uiConfirm("Delete this country? Servers using this country will be affected.")) {
+      openModal('country-modal');
+      return;
+    }
     
     const deleteBtn = document.getElementById("delete-btn");
     deleteBtn.disabled = true;
@@ -314,7 +340,7 @@
     try {
       await API.del(`/api/admin/countries/${editingId}`);
       toast("Country deleted", "success");
-      closeModal();
+      // Already closed before confirm
       loadCountries();
     } catch (e) {
       toast(e.message, "error");
@@ -324,14 +350,13 @@
     }
   }
   
-  document.addEventListener("click", (e) => {
-    if (e.target.classList.contains("modal-backdrop")) closeModal();
-  });
+
   
   init();
 </script>
 </body>
 </html>
+
 
 
 

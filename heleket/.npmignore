@@ -1,0 +1,16 @@
+src/
+test/
+examples/
+bin/
+docker/
+docker-compose.yml
+docs/
+tsconfig*.json
+eslint.config.js
+.prettierrc
+.prettierignore
+.gitignore
+.env*
+Makefile
+coverage/
+*.tsbuildinfo

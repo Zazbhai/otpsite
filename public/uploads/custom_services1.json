@@ -1,0 +1,3585 @@
+{
+  "1MG": [
+    {
+      "service_code": "1mg",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "1mg",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "51 Game": [
+    {
+      "service_code": "51game",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "51game",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "567slots": [
+    {
+      "service_code": "567slots",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "567slots",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "6 Club": [
+    {
+      "service_code": "6club",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "6club",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "6 Profit": [
+    {
+      "service_code": "6profit",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "6profit",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "91Club": [
+    {
+      "service_code": "91club",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "91club",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "91Rummy": [
+    {
+      "service_code": "91rummy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "91rummy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "99acres": [
+    {
+      "service_code": "99acres",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "99acres",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "A Bet": [
+    {
+      "service_code": "abet",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "abet",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "A66game": [
+    {
+      "service_code": "a66game",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "a66game",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Aa Games": [
+    {
+      "service_code": "aagames",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "aagames",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Abcd": [
+    {
+      "service_code": "abcd",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "abcd",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Agro Star": [
+    {
+      "service_code": "agrostar",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "agrostar",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Airtel": [
+    {
+      "service_code": "airtel",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "airtel",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "AJio": [
+    {
+      "service_code": "ajio",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "ajio",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Ak47": [
+    {
+      "service_code": "ak47",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "ak47",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Ak777": [
+    {
+      "service_code": "ak777",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "ak777",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "All5OTP": [
+    {
+      "service_code": "all5otp",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "all5otp",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Almond": [
+    {
+      "service_code": "almond",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "almond",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Andy": [
+    {
+      "service_code": "andy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "andy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Angel One": [
+    {
+      "service_code": "angleone",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "angleone",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Apana Mart": [
+    {
+      "service_code": "apanamart",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "apanamart",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Apna Mart": [
+    {
+      "service_code": "apnamart",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "apnamart",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Apple ID": [
+    {
+      "service_code": "apple",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "apple",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Asli Pundit": [
+    {
+      "service_code": "pundit",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "pundit",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Bajaj Finance": [
+    {
+      "service_code": "bajajfinance",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bajajfinance",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Bajaj Market": [
+    {
+      "service_code": "bajajmarket",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bajajmarket",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "BCASINO": [
+    {
+      "service_code": "bacasino",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bacasino",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "BharatPe": [
+    {
+      "service_code": "bharatpe",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bharatpe",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Bigbasket": [
+    {
+      "service_code": "bigbasket",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bigbasket",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Bigcity": [
+    {
+      "service_code": "bigcity",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bigcity",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Bingo777": [
+    {
+      "service_code": "bingo777",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bingo777",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Bizom": [
+    {
+      "service_code": "bizom",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bizom",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "BlaBlaCar": [
+    {
+      "service_code": "blablacar",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "blablacar",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Blinkit": [
+    {
+      "service_code": "blinkit",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "blinkit",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "boAt": [
+    {
+      "service_code": "boat",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "boat",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Bonus Buddy": [
+    {
+      "service_code": "bonusbuddy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bonusbuddy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Book My Diamond": [
+    {
+      "service_code": "bookmydiamond",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bookmydiamond",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Boom97": [
+    {
+      "service_code": "boom97",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "boom97",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Bounty": [
+    {
+      "service_code": "bounty",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bounty",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Brevistay": [
+    {
+      "service_code": "brevistay",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "brevistay",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Brevo": [
+    {
+      "service_code": "brevo",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "brevo",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Brskly": [
+    {
+      "service_code": "brskly",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "brskly",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Buggie": [
+    {
+      "service_code": "buggie",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "buggie",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Career 360": [
+    {
+      "service_code": "career360",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "career360",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Cash Book": [
+    {
+      "service_code": "cashbook",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "cashbook",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "CheQ": [
+    {
+      "service_code": "cheq",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "cheq",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Cigna": [
+    {
+      "service_code": "cigna",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "cigna",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "CIPLA": [
+    {
+      "service_code": "cipla",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "cipla",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Citykart": [
+    {
+      "service_code": "citykart",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "citykart",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "CLBP": [
+    {
+      "service_code": "clbp",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "clbp",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Cleartrip": [
+    {
+      "service_code": "cleartip",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "cleartip",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Connecto": [
+    {
+      "service_code": "connecto",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "connecto",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Countandearn": [
+    {
+      "service_code": "countandearn",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "countandearn",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Country Delight": [
+    {
+      "service_code": "countrydelight",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "countrydelight",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Cred": [
+    {
+      "service_code": "cred",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "cred",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Cricmatch360": [
+    {
+      "service_code": "cricmatch360",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "cricmatch360",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Crisscross": [
+    {
+      "service_code": "crisscross",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "crisscross",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Crore Play": [
+    {
+      "service_code": "croreplay",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "croreplay",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Crystal Pay": [
+    {
+      "service_code": "crystalpay",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "crystalpay",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "DBG Game": [
+    {
+      "service_code": "dbggame",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dbggame",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "DBT Agriculture": [
+    {
+      "service_code": "dbtagriculture",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dbtagriculture",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dealshare": [
+    {
+      "service_code": "dealshare",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dealshare",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Delhiveroo": [
+    {
+      "service_code": "delhiveroo",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "delhiveroo",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Delhivery": [
+    {
+      "service_code": "delhivery",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "delhivery",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dermaco": [
+    {
+      "service_code": "dermaco",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dermaco",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "DG Game": [
+    {
+      "service_code": "dggame",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dggame",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dhoom Play": [
+    {
+      "service_code": "dhoom",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dhoom",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Digialaya": [
+    {
+      "service_code": "digialaya",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "digialaya",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Digicredit": [
+    {
+      "service_code": "digicredit",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "digicredit",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Digihaat": [
+    {
+      "service_code": "digihaat",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "digihaat",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Digital India": [
+    {
+      "service_code": "digitalindia",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "digitalindia",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Digital Topup": [
+    {
+      "service_code": "digitaltopup",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "digitaltopup",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dish TV": [
+    {
+      "service_code": "dishtv",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dishtv",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "DKart": [
+    {
+      "service_code": "dkart",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dkart",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dominos ": [
+    {
+      "service_code": "domino",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "domino",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dot & Key": [
+    {
+      "service_code": "dotandkey",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dotandkey",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dove": [
+    {
+      "service_code": "dove",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dove",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dream Money": [
+    {
+      "service_code": "dreammoneya",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dreammoneya",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Drivebison": [
+    {
+      "service_code": "drivebison",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "drivebison",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Drop-D": [
+    {
+      "service_code": "drop",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "drop",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dropit": [
+    {
+      "service_code": "dropit",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dropit",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Dubaiexch247": [
+    {
+      "service_code": "dubaiexch247",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "dubaiexch247",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Eatclub": [
+    {
+      "service_code": "eatclub",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "eatclub",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Eatsure": [
+    {
+      "service_code": "eatsure",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "eatsure",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Empty": [
+    {
+      "service_code": "jiomart",
+      "server_code": "19",
+      "price": "10.20"
+    }
+  ],
+  "Facebook": [
+    {
+      "service_code": "facebook",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "facebook",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Facebook2": [
+    {
+      "service_code": "facebook2",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "facebook2",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Fastwin": [
+    {
+      "service_code": "fastwin",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "fastwin",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "FIno": [
+    {
+      "service_code": "fino",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "fino",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "First Cry": [
+    {
+      "service_code": "firstcry",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "firstcry",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "FLIPKART ": [
+    {
+      "service_code": "flipkart",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "flipkart",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Foxtale": [
+    {
+      "service_code": "foxtale",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "foxtale",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Free Hit": [
+    {
+      "service_code": "freehit",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "freehit",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "FreeRecharge": [
+    {
+      "service_code": "freerecharge",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "freerecharge",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "FRND": [
+    {
+      "service_code": "frnd",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "frnd",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Game Rummy": [
+    {
+      "service_code": "gamerummy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "gamerummy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Game1": [
+    {
+      "service_code": "game1",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "game1",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Google": [
+    {
+      "service_code": "google",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "google",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Google Message": [
+    {
+      "service_code": "googlemessage",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "googlemessage",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Google Pay": [
+    {
+      "service_code": "googlepay",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "googlepay",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Hamaramall": [
+    {
+      "service_code": "hamaramall",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "hamaramall",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Hamramall": [
+    {
+      "service_code": "hamramall",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "hamramall",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Happy Rummy": [
+    {
+      "service_code": "happyrummy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "happyrummy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Havells": [
+    {
+      "service_code": "havells",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "havells",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Hello BPCL": [
+    {
+      "service_code": "bpcl",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "bpcl",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Hmrmal": [
+    {
+      "service_code": "hmrmal",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "hmrmal",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Housing.com": [
+    {
+      "service_code": "housing",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "housing",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "HP Gas": [
+    {
+      "service_code": "hpgas",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "hpgas",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "ICICI": [
+    {
+      "service_code": "icici",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "icici",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "ICICI Mutual Fund": [
+    {
+      "service_code": "icicimf",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "icicimf",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "In99": [
+    {
+      "service_code": "in99",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "in99",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "In999": [
+    {
+      "service_code": "in999",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "in999",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Incred": [
+    {
+      "service_code": "incred",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "incred",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Indiago": [
+    {
+      "service_code": "indiago",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "indiago",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Indiapolls": [
+    {
+      "service_code": "indiapolls",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "indiapolls",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Indusbet": [
+    {
+      "service_code": "indusbet",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "indusbet",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "InnoPay": [
+    {
+      "service_code": "innopay",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "innopay",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Instagram": [
+    {
+      "service_code": "instagram",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "instagram",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "IOCL (Indane)": [
+    {
+      "service_code": "iocl",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "iocl",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "IRCTC": [
+    {
+      "service_code": "irctc",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "irctc",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Jalwa": [
+    {
+      "service_code": "jalwa",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "jalwa",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Jeetexch360": [
+    {
+      "service_code": "jeetexch360",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "jeetexch360",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Jeetwin": [
+    {
+      "service_code": "jeetwin",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "jeetwin",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Jiffy": [
+    {
+      "service_code": "jiffy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "jiffy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Jio Fiber": [
+    {
+      "service_code": "jiofiber",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "jiofiber",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Jiomart": [
+    {
+      "service_code": "jiomart",
+      "server_code": "49",
+      "price": "15.00"
+    },
+    {
+      "service_code": "jiomart",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Jumbo": [
+    {
+      "service_code": "jumbo",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "jumbo",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Just Dial": [
+    {
+      "service_code": "justdial",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "justdial",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "JWIN": [
+    {
+      "service_code": "jwin",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "jwin",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Keenin": [
+    {
+      "service_code": "keenin",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "keenin",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "KGEN": [
+    {
+      "service_code": "kgen",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "kgen",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Kheloboss": [
+    {
+      "service_code": "kheloboss",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "kheloboss",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "KK789": [
+    {
+      "service_code": "kk789",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "kk789",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Klydo": [
+    {
+      "service_code": "klydo",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "klydo",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Kredbharat": [
+    {
+      "service_code": "kredbharat",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "kredbharat",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Lendingplate": [
+    {
+      "service_code": "lendingplate",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "lendingplate",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Lottery7": [
+    {
+      "service_code": "lottery7",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "lottery7",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Lotus365": [
+    {
+      "service_code": "lotus365",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "lotus365",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Magicpin": [
+    {
+      "service_code": "magicpin",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "magicpin",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Maha Luck": [
+    {
+      "service_code": "mahaluck",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mahaluck",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Mantrigame": [
+    {
+      "service_code": "mantrigame",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mantrigame",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Mantrishop": [
+    {
+      "service_code": "mantrishop",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mantrishop",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Master EDU": [
+    {
+      "service_code": "master",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "master",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Matkax": [
+    {
+      "service_code": "matkax",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "matkax",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Meesho": [
+    {
+      "service_code": "meesho",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "meesho",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Mera Gao": [
+    {
+      "service_code": "meragaao",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "meragaao",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Microsoft": [
+    {
+      "service_code": "microsoft",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "microsoft",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Milkbasket": [
+    {
+      "service_code": "milkbasket",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "milkbasket",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "mine": [
+    {
+      "service_code": "jjh",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "jjh",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "MobiKwik": [
+    {
+      "service_code": "mobi",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mobi",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Mobile Connect": [
+    {
+      "service_code": "mobileconnect",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mobileconnect",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Money Control": [
+    {
+      "service_code": "moneycontrol",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "moneycontrol",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "mPocket": [
+    {
+      "service_code": "mpocket",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mpocket",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Mr777": [
+    {
+      "service_code": "mr777",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mr777",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Mreward": [
+    {
+      "service_code": "mreward",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mreward",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Mt Game": [
+    {
+      "service_code": "mtgame",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mtgame",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "My Jio": [
+    {
+      "service_code": "myjio",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "myjio",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "My Mart": [
+    {
+      "service_code": "mymart",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mymart",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "My Wallet": [
+    {
+      "service_code": "mywallet",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "mywallet",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Myntra ": [
+    {
+      "service_code": "myntra",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "myntra",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "NcFun": [
+    {
+      "service_code": "ncfun",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "ncfun",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Nestle": [
+    {
+      "service_code": "nielsenmore",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "nielsenmore",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Netmeds": [
+    {
+      "service_code": "netmeds",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "netmeds",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Nexsoft": [
+    {
+      "service_code": "nexsoft",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "nexsoft",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Nielsen": [
+    {
+      "service_code": "storm",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "storm",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Nova Mines": [
+    {
+      "service_code": "novamines",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "novamines",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Nykaa": [
+    {
+      "service_code": "nykaa",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "nykaa",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Okwin": [
+    {
+      "service_code": "okwin",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "okwin",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Ola Cabs": [
+    {
+      "service_code": "olacabs",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "olacabs",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Orgen": [
+    {
+      "service_code": "orgen",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "orgen",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Orient Fame": [
+    {
+      "service_code": "orientfame",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "orientfame",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Pantaloons": [
+    {
+      "service_code": "panta",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "panta",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Parbet": [
+    {
+      "service_code": "parbet",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "parbet",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Paytm": [
+    {
+      "service_code": "paytm",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "paytm",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Perbet": [
+    {
+      "service_code": "perbet",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "perbet",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Pharmarack": [
+    {
+      "service_code": "pharmarack",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "pharmarack",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "PharmEasy": [
+    {
+      "service_code": "pharmeasy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "pharmeasy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "PhonePe": [
+    {
+      "service_code": "phonepe",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "phonepe",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Pincode": [
+    {
+      "service_code": "pincode",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "pincode",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Play Console": [
+    {
+      "service_code": "playconsole",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "playconsole",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Playkaro": [
+    {
+      "service_code": "playkaro",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "playkaro",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "PMFBY": [
+    {
+      "service_code": "pmfby",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "pmfby",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Point Matka": [
+    {
+      "service_code": "pointmatka",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "pointmatka",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Policy Bazaar": [
+    {
+      "service_code": "policybazaar",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "policybazaar",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Poonawala Fincorp": [
+    {
+      "service_code": "poonewala",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "poonewala",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Praxo": [
+    {
+      "service_code": "praxo",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "praxo",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Private": [
+    {
+      "service_code": "private",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "private",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Private -1": [
+    {
+      "service_code": "private1",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "private1",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Punjab king": [
+    {
+      "service_code": "punjabking",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "punjabking",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Quick Cilver": [
+    {
+      "service_code": "quickcilver",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "quickcilver",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Quick TV": [
+    {
+      "service_code": "quicktv",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "quicktv",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "QwikCilver": [
+    {
+      "service_code": "qwikcliver",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "qwikcliver",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rajagame": [
+    {
+      "service_code": "rajagame",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "rajagame",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Rang Live": [
+    {
+      "service_code": "ranglive",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "ranglive",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rapido": [
+    {
+      "service_code": "rapido",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "rapido",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Razorpay": [
+    {
+      "service_code": "razorpay",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "razorpay",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Real Estate India": [
+    {
+      "service_code": "realstate",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "realstate",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rebounce": [
+    {
+      "service_code": "rebounce",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rebounce",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "RedBus": [
+    {
+      "service_code": "redbus",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "redbus",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Reddybook": [
+    {
+      "service_code": "reddybook",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "reddybook",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Repair Challenge": [
+    {
+      "service_code": "repair",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "repair",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Research 360": [
+    {
+      "service_code": "research360",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "research360",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Reward Media": [
+    {
+      "service_code": "rewardmedia",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rewardmedia",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Ricklive": [
+    {
+      "service_code": "ricklive",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "ricklive",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Ricktick": [
+    {
+      "service_code": "ricktick",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "ricktick",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rockywin": [
+    {
+      "service_code": "rockywin",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rockywin",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rohini": [
+    {
+      "service_code": "rohini",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rohini",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rojdhan": [
+    {
+      "service_code": "rojdhan",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rojdhan",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Roney Sensex": [
+    {
+      "service_code": "roney",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "roney",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rosier (CarWale)": [
+    {
+      "service_code": "rosier",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rosier",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Royaljeet": [
+    {
+      "service_code": "royaljeet",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "royaljeet",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Club": [
+    {
+      "service_code": "rummyclub",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummyclub",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Club-1": [
+    {
+      "service_code": "rummyclubb",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummyclubb",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy East": [
+    {
+      "service_code": "rummyeast",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummyeast",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Good": [
+    {
+      "service_code": "rummygood",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummygood",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Grand": [
+    {
+      "service_code": "rummygrand",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummygrand",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Leader": [
+    {
+      "service_code": "leader",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "leader",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Mars": [
+    {
+      "service_code": "rummymars",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummymars",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Ola": [
+    {
+      "service_code": "rummyola",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummyola",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Paisa": [
+    {
+      "service_code": "rummypaisa",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummypaisa",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Perfect": [
+    {
+      "service_code": "rummyperfect",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummyperfect",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Sweety": [
+    {
+      "service_code": "rummysweety",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummysweety",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rummy Yes": [
+    {
+      "service_code": "rummyyes",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "rummyyes",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Rupiyo": [
+    {
+      "service_code": "rupiyo",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "rupiyo",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Samridhi (Havells)": [
+    {
+      "service_code": "samridhi",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "samridhi",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Shein": [
+    {
+      "service_code": "shein",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "shein",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Shikhar (HUL)": [
+    {
+      "service_code": "shikhar",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "shikhar",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Shopflo": [
+    {
+      "service_code": "shopflo",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "shopflo",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Shopsy": [
+    {
+      "service_code": "shopsy",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "shopsy",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Shriram One": [
+    {
+      "service_code": "shriramone",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "shriramone",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Signal": [
+    {
+      "service_code": "signal",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "signal",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Simple Pay": [
+    {
+      "service_code": "simple",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "simple",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Singham": [
+    {
+      "service_code": "singham",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "singham",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Slot Winner": [
+    {
+      "service_code": "slotwinner",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "slotwinner",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "SMS India Hub": [
+    {
+      "service_code": "smsindiahub",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "smsindiahub",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Snapmint": [
+    {
+      "service_code": "snapmint",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "snapmint",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Spin101": [
+    {
+      "service_code": "spin101",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "spin101",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Spin567": [
+    {
+      "service_code": "spin567",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "spin567",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Spincrush": [
+    {
+      "service_code": "spincrush",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "spincrush",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Spinkaro": [
+    {
+      "service_code": "spinkaro",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "spinkaro",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Stable Money": [
+    {
+      "service_code": "stablemoney",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "stablemoney",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Stan": [
+    {
+      "service_code": "stan",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "stan",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Star777": [
+    {
+      "service_code": "star777",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "star777",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Starexch": [
+    {
+      "service_code": "starexch",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "starexch",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Starp": [
+    {
+      "service_code": "starp",
+      "server_code": "144",
+      "price": "9.00"
+    },
+    {
+      "service_code": "starp",
+      "server_code": "49",
+      "price": "13.00"
+    }
+  ],
+  "Story tv": [
+    {
+      "service_code": "storytv",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "storytv",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Sudipta": [
+    {
+      "service_code": "sudipta",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "sudipta",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Svip777": [
+    {
+      "service_code": "svip777",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "svip777",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Swarail (RailOne)": [
+    {
+      "service_code": "swarail",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "swarail",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Swiggy": [
+    {
+      "service_code": "swiggy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "swiggy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "T1game": [
+    {
+      "service_code": "t1game",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "t1game",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Tabe": [
+    {
+      "service_code": "tabe",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "tabe",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Tap Alam": [
+    {
+      "service_code": "tapalam",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "tapalam",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Tata Neu": [
+    {
+      "service_code": "tataneu",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "tataneu",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Teenpati Sona": [
+    {
+      "service_code": "teenpatisona",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "teenpatisona",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Teenpatti Nobel": [
+    {
+      "service_code": "teenpattinobel",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "teenpattinobel",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Telegram": [
+    {
+      "service_code": "telegram",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "telegram",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Test Service": [
+    {
+      "service_code": "TEST",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "TEST",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Testbook": [
+    {
+      "service_code": "testbook",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "testbook",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Tickmill": [
+    {
+      "service_code": "tickmill",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "tickmill",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Timesprime": [
+    {
+      "service_code": "timesprime",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "timesprime",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Tira Beauty": [
+    {
+      "service_code": "tirabeauty",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "tirabeauty",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Tiranga": [
+    {
+      "service_code": "tiranga",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "tiranga",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Truemeds": [
+    {
+      "service_code": "trumeds",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "trumeds",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Twilio": [
+    {
+      "service_code": "twilio",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "twilio",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "U Money": [
+    {
+      "service_code": "umoney",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "umoney",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Uber": [
+    {
+      "service_code": "uber",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "uber",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Uber Eats": [
+    {
+      "service_code": "ubereat",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "ubereat",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Ubgtl": [
+    {
+      "service_code": "ubgtl",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "ubgtl",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Ultra Game": [
+    {
+      "service_code": "ultragame",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "ultragame",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Unacademy": [
+    {
+      "service_code": "unacademy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "unacademy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Upstox": [
+    {
+      "service_code": "upstox",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "upstox",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Urban Pro": [
+    {
+      "service_code": "urbanpro",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "urbanpro",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Viber": [
+    {
+      "service_code": "viber",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "viber",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "VIP Gujarat": [
+    {
+      "service_code": "gujarat",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "gujarat",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "VIP-777": [
+    {
+      "service_code": "vip777",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "vip777",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Voyz": [
+    {
+      "service_code": "voyz",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "voyz",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Vrummy": [
+    {
+      "service_code": "vrummy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "vrummy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Wazirwin": [
+    {
+      "service_code": "wazirwin",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "wazirwin",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "WePlay": [
+    {
+      "service_code": "weplay",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "weplay",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Win11": [
+    {
+      "service_code": "win11",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "win11",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Winclash": [
+    {
+      "service_code": "winclash",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "winclash",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "WIngo": [
+    {
+      "service_code": "wingo",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "wingo",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Winmatch": [
+    {
+      "service_code": "winmatch",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "winmatch",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Winmate": [
+    {
+      "service_code": "winmate",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "winmate",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Winza": [
+    {
+      "service_code": "winza",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "winza",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Wyse": [
+    {
+      "service_code": "wyse",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "wyse",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Yo777": [
+    {
+      "service_code": "yono777",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "yono777",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Yono Games": [
+    {
+      "service_code": "yonogames",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "yonogames",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Yono King": [
+    {
+      "service_code": "yonoking",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "yonoking",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Yono Vip": [
+    {
+      "service_code": "yonovip",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "yonovip",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Your Rick": [
+    {
+      "service_code": "yourrick",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "yourrick",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Zepto": [
+    {
+      "service_code": "zepto",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "zepto",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Zeptom": [
+    {
+      "service_code": "zeptom",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "zeptom",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Zerox": [
+    {
+      "service_code": "zerox",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "zerox",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Zingoy": [
+    {
+      "service_code": "zingoy",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "zingoy",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Zomato": [
+    {
+      "service_code": "zomato",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "zomato",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ],
+  "Zubydo": [
+    {
+      "service_code": "zubydo",
+      "server_code": "49",
+      "price": "13.00"
+    },
+    {
+      "service_code": "zubydo",
+      "server_code": "144",
+      "price": "9.00"
+    }
+  ]
+}

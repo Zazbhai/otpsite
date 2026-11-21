@@ -1,2 +1,20 @@
 node_modules
 .env
+/src/
+brain/
+app.log
+build.js
+onlinesim/
+otpsite.zip
+payment_config.json
+.gemini
+
+# Local secrets, data and diagnostics
+.env.*
+!.env.example
+!**/.env.example
+middleware/.license.key
+/smscandy-backup/
+/converted_users.*
+/scratch/test_out.*
+*.tar.gz

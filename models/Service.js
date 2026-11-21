@@ -18,6 +18,7 @@ if (DB_TYPE === "mysql") {
     check_interval: { type: DataTypes.INTEGER, defaultValue: 3 },
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     is_auto: { type: DataTypes.BOOLEAN, defaultValue: false },
+    is_trending: { type: DataTypes.BOOLEAN, defaultValue: false },
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }
@@ -51,7 +52,8 @@ if (DB_TYPE === "mysql") {
       avg_time: { type: String, default: "3s" },
       check_interval: { type: Number, default: 3 },
       is_active: { type: Boolean, default: true },
-      is_auto: { type: Boolean, default: false }
+      is_auto: { type: Boolean, default: false },
+      is_trending: { type: Boolean, default: false }
     },
     { timestamps: true }
   );

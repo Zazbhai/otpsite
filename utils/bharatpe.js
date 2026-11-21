@@ -34,19 +34,20 @@ async function paymentChecker(utr) {
 
   if (!bharatpe.enabled) {
     console.log("❌ BharatPe is not enabled in payment_config.json");
-    return { success: false, amount: 0 };
+    return { success: false, amount: 0, reason: "unavailable" };
   }
 
   const { merchant_id, access_token, session_cookie } = bharatpe;
   if (!merchant_id || !access_token) {
     console.log("❌ BharatPe credentials not configured properly");
-    return { success: false, amount: 0 };
+    return { success: false, amount: 0, reason: "unavailable" };
   }
 
   const utrStr = utr.toString();
 
   // URL and parameters
-  const url = `https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions?module=PAYMENT_QR&merchantId=${merchant_id}`;
+  const url = new URL("https://payments-tesseract.bharatpe.in/api/v1/merchant/transactions");
+  url.search = new URLSearchParams({ module: "PAYMENT_QR", merchantId: merchant_id });
 
   const headers = {
     "token": access_token,
@@ -62,38 +63,38 @@ async function paymentChecker(utr) {
   try {
     const resp = await fetch(url, {
       method: 'GET',
-      headers: headers
+      headers,
+      redirect: "error",
+      signal: AbortSignal.timeout(8000)
     });
 
     if (!resp.ok) {
-      const text = await resp.text();
-      console.error(`❌ BharatPe HTTP Error: ${resp.status} - ${text}`);
-      return { success: false, amount: 0 };
+      console.error(`BharatPe verification returned HTTP ${resp.status}`);
+      return { success: false, amount: 0, reason: "unavailable" };
     }
 
     const data = await resp.json();
-    const transactions = data.data?.transactions || [];
-
-    const foundTxn = transactions.find(txn => 
-      txn.bankReferenceNo && txn.bankReferenceNo.toString() === utrStr
-    );
-
-    if (foundTxn) {
-      console.log("✅ Payment FOUND and CONFIRMED!");
-      return {
-        success: true,
-        amount: parseFloat(foundTxn.amount),
-        status: foundTxn.status,
-        payer: foundTxn.payerName,
-        upi: foundTxn.payerHandle
-      };
-    } else {
-      console.log("❌ Payment NOT FOUND with this UTR");
-      return { success: false, amount: 0 };
+    const transactions = data?.data?.transactions;
+    if (!Array.isArray(transactions)) {
+      console.error("BharatPe verification returned an invalid transaction list");
+      return { success: false, amount: 0, reason: "unavailable" };
     }
+
+    const matches = transactions.filter(txn => String(txn?.bankReferenceNo) === utrStr);
+    if (!matches.length) return { success: false, amount: 0, reason: "not_found" };
+
+    const confirmed = matches.find(txn => String(txn.status).trim().toUpperCase() === "SUCCESS");
+    if (!confirmed) return { success: false, amount: 0, reason: "not_confirmed" };
+
+    const amount = Number(confirmed.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      console.error("BharatPe verification returned an invalid payment amount");
+      return { success: false, amount: 0, reason: "unavailable" };
+    }
+    return { success: true, amount, status: confirmed.status };
   } catch (err) {
-    console.error("❌ BharatPe request failed:", err.message);
-    return { success: false, amount: 0 };
+    console.error("BharatPe verification request failed:", err.name);
+    return { success: false, amount: 0, reason: "unavailable" };
   }
 }
 

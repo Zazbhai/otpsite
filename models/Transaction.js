@@ -14,7 +14,7 @@ if (DB_TYPE === "mysql") {
     amount: { type: DataTypes.FLOAT, allowNull: false },
     balance_after: { type: DataTypes.FLOAT, defaultValue: 0 },
     description: { type: DataTypes.STRING, defaultValue: "" },
-    reference: { type: DataTypes.STRING, defaultValue: "" },
+    reference: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
     order_id: { type: DataTypes.STRING, defaultValue: "" },
     status: {
       type: DataTypes.ENUM("pending", "completed", "failed"),
@@ -27,7 +27,8 @@ if (DB_TYPE === "mysql") {
   }, {
     indexes: [
       { fields: ["user_id"] },
-      { fields: ["createdAt"] }
+      { fields: ["createdAt"] },
+      { fields: ["reference"], unique: true }
     ]
   });
 
@@ -44,7 +45,7 @@ if (DB_TYPE === "mysql") {
       amount:        { type: Number, required: true },
       balance_after: { type: Number, default: 0 },
       description:   { type: String, default: "" },
-      reference:     { type: String, default: "" },
+      reference:     { type: String, index: { unique: true, sparse: true } },
       order_id:      { type: String, default: "" },
       status: {
         type: String,

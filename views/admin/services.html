@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Services — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a><a href="/admin/services" class="active">Services</a>
       <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
@@ -40,43 +41,51 @@
   <main class="main-content">
     <div id="view-main">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:16px">
-        <h1 style="font-size:24px;margin:0">Services</h1>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <h1 style="font-size:24px;margin:0">⚙️ Services</h1>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+
+          <div class="search-box" style="position:relative">
+             <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.6">🔍</span>
+             <input type="text" id="filter-name" class="form-input" style="padding-left:36px" placeholder="" oninput="loadServices()" />
+          </div>
+
           <button class="btn btn-danger" onclick="openBulkDelete()">🗑️ Bulk Delete</button>
           <button class="btn btn-primary" onclick="openCreate()">+ Add Service</button>
         </div>
+
       </div>
-      <details style="margin-bottom:24px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.01); overflow:hidden; backdrop-filter:blur(10px)">
-        <summary style="padding:12px 18px; font-size:13px; font-weight:700; cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; user-select:none; background:rgba(255,255,255,0.03); border-bottom:1px solid transparent; transition:all 0.2s">
+      <details style="margin-bottom:24px; border:1px solid var(--border); border-radius:14px; background:var(--surface-container-low); overflow:hidden; backdrop-filter:blur(10px)">
+        <summary style="padding:12px 18px; font-size:13px; font-weight:700; cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; user-select:none; background:var(--surface-container-low); border-bottom:1px solid transparent; transition:all 0.2s">
            <span style="display:flex; align-items:center; gap:8px; color:var(--text-1)">🔍 Refine Catalog</span>
            <span style="font-size:10px; opacity:0.4; font-weight:500; text-transform:uppercase; letter-spacing:0.5px">Toggle Filters ▾</span>
         </summary>
         <div class="filter-grid" style="margin:0; border:none; border-top:1px solid var(--border); border-radius:0; background:rgba(0,0,0,0.1); padding:20px">
-          <div class="filter-item search">
-            <label class="filter-label">🔍 Search name/code</label>
-            <input type="text" id="filter-name" class="api-input" placeholder="Search..." oninput="loadServices()" />
-          </div>
+          <div class="filter-item">
+
           <div class="filter-item">
             <label class="filter-label">Server</label>
-            <select id="filter-server" class="api-input" onchange="loadServices()">
+            <select id="filter-server" class="form-select" onchange="loadServices()">
               <option value="">All Servers</option>
             </select>
           </div>
+
           <div class="filter-item">
             <label class="filter-label">₹ Price (Min - Max)</label>
             <div style="display:flex; gap:6px">
-               <input type="number" id="filter-min-price" class="api-input" placeholder="0" onchange="loadServices()" />
-               <input type="number" id="filter-max-price" class="api-input" placeholder="+" onchange="loadServices()" />
+               <input type="number" id="filter-min-price" class="form-input" placeholder="0" onchange="loadServices()" />
+               <input type="number" id="filter-max-price" class="form-input" placeholder="+" onchange="loadServices()" />
             </div>
           </div>
+
           <div class="filter-item">
             <label class="filter-label">Type</label>
-            <select id="filter-auto" class="api-input" onchange="loadServices()">
+            <select id="filter-auto" class="form-select" onchange="loadServices()">
               <option value="">Full Catalog</option>
               <option value="true">Bulk (Auto-Added)</option>
               <option value="false">Manual (Hand-Added)</option>
             </select>
           </div>
+
           <div class="filter-item" style="flex:0; min-width:80px">
             <button class="btn btn-secondary" style="height:44px; width:100%" onclick="resetFilters()">Reset</button>
           </div>
@@ -85,9 +94,9 @@
       <div class="card" style="padding:0;overflow:hidden">
         <div class="table-wrap" style="max-height: 400px; overflow-y: auto; position: relative">
           <table style="border-collapse: separate; border-spacing: 0">
-            <thead style="position: sticky; top: 0; background: var(--bg-2); z-index: 10; box-shadow: 0 1px 0 var(--border)"><tr><th>Name</th><th>Server</th><th>Service Code</th><th>Country</th><th>Price</th><th>Status</th><th></th></tr></thead>
+            <thead style="position: sticky; top: 0; background: var(--bg-2); z-index: 10; box-shadow: 0 1px 0 var(--border)"><tr><th>Name</th><th>Server</th><th>Service Code</th><th>Country</th><th>Price</th><th>Trending</th><th>Status</th><th></th></tr></thead>
             <tbody id="services-body">
-              <tr><td colspan="7" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -109,20 +118,22 @@
           
           <div class="form-group">
             <label class="form-label">1. Select Target Server</label>
-            <select id="bulk-del-server" class="api-input"></select>
+            <select id="bulk-del-server" class="form-select"></select>
           </div>
+
 
           <div class="form-group">
             <label class="form-label" style="font-size:12px">2. Choose What to Delete</label>
-            <select id="bulk-del-auto" class="api-input">
+            <select id="bulk-del-auto" class="form-select">
               <option value="true" selected>🛡️ Only Auto-Added (Safe)</option>
               <option value="false">✋ Only Manual-Added (Custom)</option>
               <option value="all">💥 EVERYTHING (Irreversible)</option>
             </select>
           </div>
 
+
           <div class="modal-actions">
-            <button class="btn btn-danger" style="flex:1" onclick="confirmBulkDelete()">🚀 Proceed with Deletion</button>
+            <button class="btn btn-danger" style="flex:1" onclick="confirmBulkDelete(event)">🚀 Proceed with Deletion</button>
             <button class="btn btn-secondary" onclick="closeModal('bulk-del-modal')">Cancel</button>
           </div>
        </div>
@@ -131,6 +142,21 @@
 </div>
 
 <!-- Service Modal -->
+<style>
+.modal-backdrop.open .modal {
+  transform: translateY(0) scale(1);
+}
+
+.modal-backdrop.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-backdrop.closing .modal {
+  transform: translateY(20px) scale(0.9);
+  opacity: 0;
+}
+</style>
 <div class="modal-backdrop" id="svc-modal">
   <div class="modal" style="max-width:500px">
     <div class="modal-header"><h3 id="svc-modal-title">Add Service</h3><button class="modal-close" onclick="closeModal('svc-modal')">✕</button></div>
@@ -141,34 +167,46 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div class="form-group">
             <label class="form-label">Service Name</label>
-            <input type="text" id="svc-name" placeholder="WhatsApp" oninput="updateSvcPreview()" />
+            <input type="text" id="svc-name" class="form-input" placeholder="WhatsApp" oninput="updateSvcPreview()" />
+
           </div>
           <div class="form-group">
             <label class="form-label">Price (₹)</label>
-            <input type="number" id="svc-price" step="0.5" placeholder="5.00" />
+            <input type="number" id="svc-price" class="form-input" step="0.5" placeholder="5.00" />
+
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Assigned Server</label>
-          <select id="svc-server"></select>
+          <select id="svc-server" class="form-select"></select>
+
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div class="form-group">
             <label class="form-label">Service Code</label>
-            <input type="text" id="svc-code" placeholder="wa" />
+            <input type="text" id="svc-code" class="form-input" placeholder="wa" />
+
           </div>
           <div class="form-group">
             <label class="form-label">Enabled</label>
-            <select id="svc-active">
+            <select id="svc-active" class="form-select">
               <option value="true">Yes, Active</option>
               <option value="false">No, Disabled</option>
             </select>
           </div>
         </div>
+
+        <div class="form-group">
+          <label class="form-label">Trending / Popular Status</label>
+          <select id="svc-trending" class="form-select">
+            <option value="false">☆ Normal Service</option>
+            <option value="true">🔥 Most Popular / Trending</option>
+          </select>
+        </div>
         
-        <div style="padding:16px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:16px">
+        <div style="padding:16px; background:var(--surface-container-low); border:1px solid var(--border); border-radius:16px">
            <div class="text-xs font-bold uppercase mb-3 text-muted">Brand & Identity</div>
            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px; align-items:end">
               <div class="form-group" style="margin:0">
@@ -202,7 +240,7 @@
 
         <div class="modal-actions">
           <button class="btn btn-primary" style="flex:1" onclick="saveService()">🚀 Save Service</button>
-          <button class="btn btn-danger" id="del-svc-btn" onclick="deleteService()" class="hidden">🗑️ Delete</button>
+          <button class="btn btn-danger hidden" id="del-svc-btn" onclick="deleteService()">🗑️ Delete</button>
           <button class="btn btn-secondary" onclick="closeModal('svc-modal')">Cancel</button>
         </div>
       </div>
@@ -233,9 +271,9 @@
   }
 </style>
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
+<script src="/js/main.js?v=1784210170378"></script>
+
+
 <script>
   (async () => {
     if (!(await requireAdmin())) return;
@@ -322,12 +360,27 @@
         <td class="mono text-sm">${s.service_code || "—"}</td>
         <td>${country ? `${country.flag || ''} ${country.name}` : '—'}</td>
         <td>₹${s.price || 0}</td>
+        <td>
+          <button class="btn ${s.is_trending ? 'btn-primary' : 'btn-secondary'} btn-sm" style="font-size:11px; padding:3px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px" onclick="toggleTrending('${s._id}', ${!s.is_trending})">
+            <span>${s.is_trending ? '🔥 Trending' : '☆ Normal'}</span>
+          </button>
+        </td>
         <td>${s.is_active ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-expired">Disabled</span>'}</td>
         <td style="text-align:right">
           <button class="btn btn-secondary btn-sm" onclick="openEdit('${s._id}')">Edit</button>
         </td>
       </tr>`
-    }).join("") || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No services yet. Add countries and servers first!</td></tr>`;
+    }).join("") || `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-3)">No services yet. Add countries and servers first!</td></tr>`;
+  }
+
+  async function toggleTrending(id, status) {
+    try {
+      await API.patch(`/api/admin/services/${id}/trending`, { is_trending: status });
+      toast(status ? "🔥 Marked as Trending!" : "Removed from Trending", "success");
+      loadServices();
+    } catch (e) {
+      toast(e.message, "error");
+    }
   }
 
   function openCreate() {
@@ -340,6 +393,7 @@
     document.getElementById("svc-color").value = "#3b82f6";
     document.getElementById("logo-preview-box").innerHTML = "";
     document.getElementById("svc-active").value = "true";
+    document.getElementById("svc-trending").value = "false";
     document.getElementById("del-svc-btn").classList.add("hidden");
     openModal("svc-modal");
   }
@@ -355,6 +409,7 @@
     document.getElementById("svc-code").value = s.service_code || "";
     document.getElementById("svc-price").value = s.price || 0;
     document.getElementById("svc-active").value = String(s.is_active);
+    document.getElementById("svc-trending").value = String(Boolean(s.is_trending));
     document.getElementById("svc-color").value = s.icon_color || "#3b82f6";
     document.getElementById("logo-preview-box").innerHTML = s.image_url ? `<img src="${s.image_url}" style="width:100%;height:100%;object-fit:cover;">` : "";
     document.getElementById("del-svc-btn").classList.remove("hidden");
@@ -368,6 +423,7 @@
     formData.append("service_code", document.getElementById("svc-code").value);
     formData.append("price", document.getElementById("svc-price").value || 0);
     formData.append("is_active", document.getElementById("svc-active").value);
+    formData.append("is_trending", document.getElementById("svc-trending").value);
     formData.append("icon_color", document.getElementById("svc-color").value);
     
     const fileInput = document.getElementById("svc-logo");
@@ -387,10 +443,14 @@
   }
 
   async function deleteService() {
-    if (!(await uiConfirm("Delete this service?"))) return;
+    closeModal("svc-modal");
+    if (!(await uiConfirm("Delete this service?"))) {
+      openModal("svc-modal");
+      return;
+    }
     try {
       await API.del(`/api/admin/services/${editingId}`);
-      toast("Deleted", "success"); closeModal("svc-modal"); loadServices();
+      toast("Deleted", "success"); loadServices();
     } catch (e) { toast(e.message, "error"); }
   }
 
@@ -417,7 +477,7 @@
     // Only update background color if NO image is in the preview box
     if (!box.querySelector("img")) {
        box.style.background = color;
-       box.innerHTML = `<span style="color:#fff;font-weight:800;font-size:18px">${name.charAt(0).toUpperCase()}</span>`;
+       box.innerHTML = `<span style="color:var(--on-surface);font-weight:800;font-size:18px">${name.charAt(0).toUpperCase()}</span>`;
     }
   }
 
@@ -437,7 +497,8 @@
     openModal("bulk-del-modal");
   }
 
-  async function confirmBulkDelete() {
+  async function confirmBulkDelete(e) {
+    const btn = e ? e.currentTarget : null;
     const server_id = document.getElementById("bulk-del-server").value;
     const isAuto = document.getElementById("bulk-del-auto").value;
     
@@ -447,21 +508,45 @@
     if (isAuto === "true") warnTxt = "Are you sure you want to delete ONLY auto-added services?\nManual ones stay safe.";
     if (isAuto === "false") warnTxt = "⚠️ ATTENTION: Are you sure you want to delete ONLY your Manual (Custom) services?\nAuto-added ones will stay.";
 
-    if (!(await uiConfirm(warnTxt))) return;
+    // Close the bulk-del-modal immediately when confirmation pops up
+    closeModal("bulk-del-modal");
+
+    if (!(await uiConfirm(warnTxt))) {
+      // If user cancels, reopen the modal
+      openModal("bulk-del-modal");
+      return;
+    }
     
+    let oldText = "";
+    if (btn) {
+      oldText = btn.innerHTML;
+      btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;margin-right:8px"></div> Deleting...';
+      btn.disabled = true;
+    }
+
     try {
-      const mode = isAuto === "all" ? "" : `is_auto=${isAuto}`;
-      await API.del(`/api/admin/services/bulk/${server_id}?${mode}`);
+      let url = `/api/admin/services/bulk/${server_id}`;
+      if (isAuto !== "all") url += `?is_auto=${isAuto}`;
+      
+      await API.del(url);
       toast("Success: Server Cleaned", "success");
       closeModal("bulk-del-modal");
       loadServices();
-    } catch (e) { toast(e.message, "error"); }
+    } catch (e) { 
+      toast(e.message, "error"); 
+    } finally {
+      if (btn) {
+        btn.innerHTML = oldText;
+        btn.disabled = false;
+      }
+    }
   }
 
   // loadInitialData is called via the auto-invoking async function above
 </script>
 </body>
 </html>
+
 
 
 

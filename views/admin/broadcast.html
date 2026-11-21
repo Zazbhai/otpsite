@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Broadcast — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a><a href="/admin/broadcast" class="active">Broadcast</a>
       <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
@@ -45,23 +46,27 @@
         <div style="display:flex;flex-direction:column;gap:16px">
           <div class="form-group">
             <label class="form-label">Target Audience</label>
-            <select id="bc-target">
+            <select id="bc-target" class="form-select">
               <option value="all">All Users</option>
               <option value="active">Active Users (ordered in last 30d)</option>
               <option value="whales">Whales ($10+ spent)</option>
             </select>
+
           </div>
           <div class="form-group">
             <label class="form-label">Message (supports Markdown)</label>
-            <textarea id="bc-text" rows="8" placeholder="🚀 *{{SITE_NAME}} Update*&#10;&#10;We've added new services! Check them out now." style="min-height:180px"></textarea>
+            <textarea id="bc-text" class="form-input" rows="8" placeholder="🚀 *{{SITE_NAME}} Update*&#10;&#10;We've added new services! Check them out now." style="min-height:180px; padding:16px"></textarea>
+
           </div>
           <div class="form-group">
             <label class="form-label">Button Label (optional)</label>
-            <input type="text" id="bc-btn-text" placeholder="Check it out" />
+            <input type="text" id="bc-btn-text" class="form-input" placeholder="Check it out" />
+
           </div>
           <div class="form-group">
             <label class="form-label">Button URL (optional)</label>
-            <input type="text" id="bc-btn-url" placeholder="https://t.me/RapidOTPbot" />
+            <input type="text" id="bc-btn-url" class="form-input" placeholder="https://t.me/RapidOTPbot" />
+
           </div>
           <button class="btn btn-primary" onclick="sendBroadcast()">📤 Send Broadcast</button>
         </div>
@@ -74,12 +79,22 @@
         </div>
       </div>
     </div>
+    
+    <div id="active-broadcast-wrap" style="margin-top:40px; display:none">
+       <h2 style="font-size:20px; margin-bottom:20px; display:flex; align-items:center; gap:10px">
+         <span>📚</span> Broadcast History
+       </h2>
+       <div id="broadcast-history-list" style="display:flex; flex-direction:column; gap:16px">
+          <!-- Loaded via JS -->
+       </div>
+    </div>
   </main>
+
 </div>
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
+<script src="/js/main.js?v=1784210170368"></script>
+
+
 <script>
   async function init() {
     if (!await requireAdmin()) return;
@@ -87,7 +102,10 @@
     textEl.addEventListener("input", updatePreview);
     btnTextEl.addEventListener("input", updatePreview);
     btnUrlEl.addEventListener("input", updatePreview);
+    
+    loadBroadcastHistory();
   }
+
   
   const textEl = document.getElementById("bc-text");
   const btnTextEl = document.getElementById("bc-btn-text");
@@ -115,7 +133,7 @@
     let html = `
       <div style="font-size:48px;margin-bottom:16px">📢</div>
       <h3 style="font-size:22px;margin-bottom:16px;color:var(--text)">Important Update</h3>
-      <div style="font-size:15px;color:var(--text-2);line-height:1.6;margin-bottom:28px;white-space:pre-wrap;text-align:left;background:rgba(255,255,255,0.03);padding:16px;border-radius:var(--r-md)">${cleanText}</div>
+      <div style="font-size:15px;color:var(--text-2);line-height:1.6;margin-bottom:28px;white-space:pre-wrap;text-align:left;background:var(--surface-container-low);padding:16px;border-radius:var(--r-md)">${cleanText}</div>
       <div style="display:flex;gap:12px;flex-direction:column">
     `;
     if (btnUrl) {
@@ -124,8 +142,6 @@
     html += `<button class="btn btn-secondary w-full" onclick="event.preventDefault()">Got it, thanks</button></div>`;
     prevEl.innerHTML = html;
   }
-
-
 
   async function sendBroadcast() {
     const text = textEl.value.trim();
@@ -139,18 +155,68 @@
       const res = await API.post("/api/admin/broadcast", {
          text, btn_text: btnText, btn_url: btnUrl
       });
-      toast("Broadcast is now live for all users!", "success");
+      toast("Broadcast sent!", "success");
       textEl.value = "";
       btnTextEl.value = "";
       btnUrlEl.value = "";
       updatePreview();
+      loadBroadcastHistory();
     } catch (e) {
       toast(e.message, "error");
     }
   }
+
+  async function loadBroadcastHistory() {
+    try {
+      const res = await API.get("/api/admin/broadcast");
+      const wrap = document.getElementById("active-broadcast-wrap");
+      const list = document.getElementById("broadcast-history-list");
+      
+      if (!res.active || !res.data || res.data.length === 0) {
+        wrap.style.display = "none";
+        return;
+      }
+      
+      wrap.style.display = "block";
+      list.innerHTML = res.data.map((d, index) => {
+        const date = d.createdAt ? new Date(d.createdAt).toLocaleString() : 'Recent';
+        return `
+          <div class="card" style="border:1px solid ${index === 0 ? 'var(--accent)' : 'var(--border)'}; background:${index === 0 ? 'rgba(59,130,246,0.02)' : 'var(--bg-1)'}">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px">
+              <div style="flex:1">
+                <div style="font-size:11px; color:var(--accent); font-weight:700; margin-bottom:8px">${index === 0 ? '🔥 LATEST BROADCAST' : 'PREVIOUS BROADCAST'} • ${date}</div>
+                <div style="font-size:14px; color:var(--text); line-height:1.6; white-space:pre-wrap">${d.text}</div>
+                ${d.btn_url ? `<div style="margin-top:12px; font-size:12px; color:var(--accent)">Button: <b>${d.btn_text || 'Check it out'}</b> → ${d.btn_url}</div>` : ''}
+              </div>
+              <div style="display:flex; gap:8px">
+                <button class="btn btn-secondary btn-sm" onclick="editBroadcast('${encodeURIComponent(JSON.stringify(d))}')">✏️ Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteBroadcast('${d.id}')">🗑️ Delete</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) { console.error(e); }
+  }
+
+  window.editBroadcast = function(dataJson) {
+    const d = JSON.parse(decodeURIComponent(dataJson));
+    textEl.value = d.text;
+    btnTextEl.value = d.btn_text || "";
+    btnUrlEl.value = d.btn_url || "";
+    updatePreview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.deleteBroadcast = async function(id) {
+    if (!(await uiConfirm("Remove this broadcast from history? Users will no longer see it in their notifications."))) return;
+    try {
+      await API.delete(`/api/admin/broadcast?id=${id}`);
+      toast("Broadcast removed", "success");
+      loadBroadcastHistory();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
 </script>
 </body>
 </html>
-
-
-

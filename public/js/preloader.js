@@ -1,88 +1,161 @@
-/* ── Robust Preloader Logic ── */
+/* ── Ultra-Smooth, Zero-Lag Modern Glass Preloader ── */
 (function() {
-  // 0. Immediate Theme Apply to prevent flicker
+  // 0. Immediate Theme Apply
   try {
-    // Use canonical key 'otp_theme'; migrate old 'theme_pref' if present
-    const savedTheme = localStorage.getItem('otp_theme') || localStorage.getItem('theme_pref') || 'dark';
+    const savedTheme = localStorage.getItem('otp_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    // Migrate old key if needed
-    if (!localStorage.getItem('otp_theme') && localStorage.getItem('theme_pref')) {
-      localStorage.setItem('otp_theme', localStorage.getItem('theme_pref'));
-    }
+    if (savedTheme === 'light') document.documentElement.className = 'light';
   } catch(e) {}
 
-  // 1. Inject CSS immediately. Use !important to override everything.
+  // 1. Inject Lightweight, High-Performance GPU-Only CSS
   const style = document.createElement("style");
   style.id = "preloader-css";
   style.innerHTML = `
     #initial-preloader {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--bg-1, #000); display: flex; align-items: center; justify-content: center;
-      z-index: 2147483647; transition: opacity 0.5s ease;
-      overflow: hidden; pointer-events: all;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--surface, #f8f9ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2147483647;
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s;
+      will-change: opacity;
     }
-    #initial-preloader.fade-out { opacity: 0 !important; pointer-events: none !important; }
-    
-    .cyber-orbital-scene { position: relative; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; }
-    .orbital-ring { position: absolute; border-radius: 50%; border: 2px solid transparent; animation: plOrbit linear infinite; }
-    .ring-1 { width: 90px; height: 90px; border-top-color: var(--accent, #3b82f6); border-bottom-color: var(--accent, #3b82f6); animation-duration: 2s; }
-    .ring-2 { width: 65px; height: 65px; border-left-color: var(--accent-2, #6366f1); border-right-color: var(--accent-2, #6366f1); animation-duration: 1.5s; animation-direction: reverse; }
-    .ring-3 { width: 45px; height: 45px; border-top-color: var(--text, #fff); border-left-color: var(--text, #fff); animation-duration: 1s; }
-    .orbital-core { width: 10px; height: 10px; background: var(--text, #fff); border-radius: 50%; box-shadow: 0 0 15px var(--accent, #3b82f6), 0 0 30px var(--accent, #3b82f6); }
-    .orbital-text { 
-      position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%); 
-      color: var(--accent, #3b82f6); font-family: sans-serif; font-size: 9px; font-weight: 800; 
-      letter-spacing: 3px; text-transform: uppercase; white-space: nowrap; 
+    html[data-theme="dark"] #initial-preloader,
+    :root[data-theme="dark"] #initial-preloader {
+      background: #050b14;
+    }
+    #initial-preloader.fade-out {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
     }
 
-    @keyframes plOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .loader-orb-wrapper {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Outer Spinning Gradient Ring */
+    .loader-ring-outer {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: var(--primary, #1050d4);
+      border-right-color: var(--secondary-container, #00c1fd);
+      animation: spin-smooth 1s linear infinite;
+      will-change: transform;
+    }
+
+    /* Inner Reverse Spinning Accent Ring */
+    .loader-ring-inner {
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-bottom-color: var(--success, #10b981);
+      border-left-color: var(--primary, #1050d4);
+      opacity: 0.8;
+      animation: spin-reverse 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      will-change: transform;
+    }
+
+    /* Center Breathing Core Mark */
+    .loader-core-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(16, 80, 212, 0.15), rgba(0, 193, 253, 0.15));
+      border: 1px solid rgba(16, 80, 212, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 16px rgba(16, 80, 212, 0.15);
+      animation: pulse-core 2s ease-in-out infinite;
+      will-change: transform;
+    }
+
+    @keyframes spin-smooth {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes spin-reverse {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    @keyframes pulse-core {
+      0%, 100% { transform: scale(0.94); opacity: 0.9; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
   `;
   document.head.appendChild(style);
 
-  // 2. Create Loader Element
+  // 2. Create Loader DOM
   const preloader = document.createElement("div");
   preloader.id = "initial-preloader";
   preloader.innerHTML = `
-    <div class="cyber-orbital-scene">
-      <div class="orbital-ring ring-1"></div><div class="orbital-ring ring-2"></div><div class="orbital-ring ring-3"></div>
-      <div class="orbital-core"></div><div class="orbital-text">LOADING</div>
+    <div class="loader-orb-wrapper">
+      <div class="loader-ring-outer"></div>
+      <div class="loader-ring-inner"></div>
+      <div class="loader-core-icon">⚡</div>
     </div>
   `;
 
-  // 3. Robust Insertion
+  // 3. Insertion
   function inject() {
     if (document.body) {
       document.body.appendChild(preloader);
-    } else if (document.documentElement) {
-      document.documentElement.appendChild(preloader);
     } else {
       setTimeout(inject, 5);
     }
   }
   inject();
 
-  // 4. Multiple Dismissal Failsafes
+  // 4. Dismissal logic
   let dismissed = false;
+
+  window.showPageLoader = function() {
+    dismissed = false;
+    preloader.classList.remove("fade-out");
+    if (!preloader.parentNode && document.body) {
+      document.body.appendChild(preloader);
+    }
+  };
+
   function dismiss() {
     if (dismissed) return;
     dismissed = true;
     preloader.classList.add("fade-out");
-    setTimeout(() => { if (preloader.parentNode) preloader.remove(); }, 600);
+    setTimeout(() => {
+      if (preloader.parentNode && dismissed) preloader.remove();
+    }, 350);
   }
 
-  // Trigger: Window ready
-  if (document.readyState === 'complete') {
+  window.hidePageLoader = function() {
     dismiss();
-  } else {
-    window.addEventListener('load', dismiss);
-    document.addEventListener('DOMContentLoaded', dismiss);
-  }
-  
-  // High-speed failsafe (1.5s)
-  setTimeout(dismiss, 1500);
+  };
 
-  // Trigger: If tab becomes visible 
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') dismiss();
-  });
+  // 5. Initial Trigger: Only hide once EVERYTHING on the page (images, fonts, stylesheets, scripts) has fully loaded
+  const handleFullLoad = () => {
+    // Add a short buffer after window.load so final layout calculations and API renders finish cleanly
+    setTimeout(dismiss, 350);
+  };
+
+  if (document.readyState === 'complete') {
+    handleFullLoad();
+  } else {
+    window.addEventListener('load', handleFullLoad);
+  }
+
+  // High failsafe (15s) in case of extreme network latency or blocked external scripts
+  setTimeout(dismiss, 15000);
 })();

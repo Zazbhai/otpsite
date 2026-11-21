@@ -1,0 +1,21 @@
+{
+  "bharatpe": {
+    "enabled": false,
+    "merchant_id": "",
+    "access_token": "",
+    "upi_id": "",
+    "upi_name": ""
+  },
+  "paytm": {
+    "enabled": false
+  },
+  "omnipay": {
+    "enabled": false
+  },
+  "heleket": {
+    "enabled": false
+  },
+  "eaglepay": {
+    "enabled": false
+  }
+}

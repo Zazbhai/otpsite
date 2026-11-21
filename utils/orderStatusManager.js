@@ -5,6 +5,14 @@ const Server = require("../models/Server");
 const providerApi = require("./providerApi");
 const mongoose = require("mongoose");
 const { emitToUser } = require("./realtimeEmitter");
+const { withTransaction } = require("./db");
+
+// In-memory cache to prevent concurrent parallel orders from accepting the exact same OTP before it hits the DB
+const recentlySeenOTPs = new Set();
+setInterval(() => recentlySeenOTPs.clear(), 5 * 60 * 1000); // Clear memory cache every 5 minutes
+
+
+const { acquireLock, releaseLock } = require("./orderLocks");
 
 
 /**
@@ -12,110 +20,251 @@ const { emitToUser } = require("./realtimeEmitter");
  * Used by both User routes and the Background Watcher.
  */
 async function syncOrder(orderIdOrDoc) {
-  let order;
+  let orderId;
   if (typeof orderIdOrDoc === 'string' || orderIdOrDoc instanceof mongoose.Types.ObjectId) {
-    order = await Order.findById(orderIdOrDoc);
+    orderId = String(orderIdOrDoc);
   } else {
-    order = orderIdOrDoc;
+    orderId = String(orderIdOrDoc._id || orderIdOrDoc.id);
   }
 
-  if (!order) return null;
+  if (!acquireLock(orderId)) {
+    // Return early to prevent overlapping concurrent updates on the same order
+    return null;
+  }
 
-  const serverConf = await Server.findOne({ name: order.server_name });
-
-  // 1. Handle Expiration
-  if (order.status === "active" && order.expires_at && order.expires_at < new Date()) {
-    const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
-    
-    if (hasOtp) {
-      // Has OTP: Mark as completed, no refund
-      order.status = "completed";
-      await order.save();
-      emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: "completed", otp: order.otp, all_otps: order.all_otps });
+  try {
+    let order;
+    if (typeof orderIdOrDoc === 'string' || orderIdOrDoc instanceof mongoose.Types.ObjectId) {
+      order = await Order.findById(orderIdOrDoc);
     } else {
-      // No OTP: Mark as expired and refund
-      order.status = "expired";
-      const user = await User.findById(order.user_id);
-      if (user) {
-        user.balance = parseFloat((user.balance + order.cost).toFixed(4));
-        await user.save();
-        await Transaction.create({
-          user_id: user._id, type: "refund", amount: order.cost,
-          balance_after: user.balance, description: `Refund expired order ${order.order_id} (no OTP)`, order_id: order.order_id
-        });
-        emitToUser(String(order.user_id), "balance", { balance: user.balance });
-      }
-      await order.save();
-      emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: "expired" });
+      order = orderIdOrDoc;
     }
-    return order;
-  }
 
-  // 2. Poll Provider for Updates
-  if (order.status === "active" && order.external_order_id && serverConf?.api_check_status_url) {
-    const now = new Date();
-    const lastCheck = order.last_check_at || new Date(0);
-    
-    if (now - lastCheck >= 2000) {
-      order.last_check_at = now;
-      const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
+    if (!order) return null;
+
+    const serverConf = await Server.findOne({ name: order.server_name });
+
+    // 1. Handle Expiration
+    if (order.status === "active" && order.expires_at && order.expires_at < new Date()) {
+      const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
       
-      if (!checkRes.error && checkRes.status !== "waiting") {
-        if (order.multi_otp_enabled && checkRes.status === "completed") {
-          // Multi-OTP: Stay active
-          order.status = "active";
-          if (checkRes.otp) {
-            const cleanOtp = checkRes.otp.trim();
-            if (!order.all_otps.includes(cleanOtp)) {
-              order.otp = cleanOtp;
-              order.all_otps = [...order.all_otps, cleanOtp];
-              // Request next OTP automatically
-              console.log(`[Multi-OTP] Auto-requesting next OTP for ${order.order_id}`);
-              providerApi.retryOrder(serverConf, order.external_order_id).catch(e => console.error("Auto-retry fail:", e.message));
-              await order.save();
-              // Push OTP update to user instantly
-              emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
-            }
-          }
-        } else {
-          // Standard: Complete or Cancel
-          order.status = checkRes.status;
-          if (checkRes.otp) {
-            const cleanOtp = checkRes.otp.trim();
-            order.otp = cleanOtp;
-            if (!order.all_otps.includes(cleanOtp)) {
-              order.all_otps = [...order.all_otps, cleanOtp];
-            }
-          }
-           
-          // ── Key business rule: OTP already received = order is COMPLETE ──
-          const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
+      if (hasOtp) {
+        // Has OTP: Mark as completed, no refund
+        order.status = "completed";
+        await order.save();
+        emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: "completed", otp: order.otp, all_otps: order.all_otps });
+      } else {
+        // Double-check: Group order status and user balance update in a single transaction
+        let refundSuccess = false;
+        await withTransaction(async (session) => {
+          const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
 
-          if (hasOtp && (order.status === "cancelled" || order.status === "refunded" || order.status === "expired")) {
-             // Change status to completed and DO NOT refund
-             order.status = "completed";
-          } else if (order.status === "cancelled" || order.status === "refunded" || order.status === "expired") {
-             // No OTP received, proceed with refund
-             const user = await User.findById(order.user_id);
-             if (user) {
-                user.balance = parseFloat((user.balance + order.cost).toFixed(4));
-                await user.save();
-                await Transaction.create({
-                  user_id: user._id, type: "refund", amount: order.cost,
-                  balance_after: user.balance, description: `Provider cancelled order ${order.order_id} (no OTP)`, order_id: order.order_id
-                });
-                emitToUser(String(order.user_id), "balance", { balance: user.balance });
-             }
+          // 1. Verify NO refund transaction exists yet (Double Check Layer 1)
+          const existingTx = await Transaction.findOne({ order_id: order.order_id, type: "refund" }, null, queryOptions);
+          if (existingTx) throw new Error("ALREADY_REFUNDED_TX");
+
+          // Double Check Layer 2: Verify fresh order state in DB
+          const freshOrder = process.env.DB_TYPE === "mysql"
+            ? await Order.findById(order._id, queryOptions)
+            : await Order.findById(order._id, null, queryOptions);
+          
+          if (!freshOrder || freshOrder.refund_issued || ["cancelled", "expired", "refunded"].includes(freshOrder.status)) {
+            throw new Error("ALREADY_REFUNDED_FLAG");
           }
-          await order.save();
-          // Push status + OTP update to user instantly
-          emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
+
+          // 2. Atomic Order Update (Double Check Layer 3)
+          const updatedOrder = await Order.findOneAndUpdate(
+            { _id: order._id, refund_issued: { $ne: true }, status: { $nin: ["cancelled", "expired", "refunded"] } },
+            { $set: { status: "expired", refund_issued: true } },
+            { ...queryOptions, new: true }
+          );
+          if (!updatedOrder) throw new Error("ALREADY_REFUNDED_FLAG");
+
+          // 3. Atomic User Balance Update
+          const updatedUser = await User.findOneAndUpdate(
+            { _id: order.user_id },
+            { $inc: { balance: order.cost } },
+            { ...queryOptions, new: true }
+          );
+          
+          if (updatedUser) {
+            await Transaction.create([{
+              user_id: updatedUser._id, type: "refund", amount: order.cost,
+              balance_after: updatedUser.balance, description: `Refund expired order ${order.order_id} (no OTP)`, order_id: order.order_id
+            }], queryOptions);
+            emitToUser(String(order.user_id), "balance", { balance: updatedUser.balance });
+          }
+          refundSuccess = true;
+        }).catch(err => {
+          if (err.message !== "ALREADY_REFUNDED_TX" && err.message !== "ALREADY_REFUNDED_FLAG") {
+            console.error("[syncOrder/Expiry] Refund Error:", err.message);
+          }
+        });
+
+        if (refundSuccess) {
+          // Cancel on provider to release the phone number (UX + provider costs defense)
+          if (serverConf && serverConf.api_cancel_url && order.external_order_id) {
+             providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
+          }
+          emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: "expired" });
+        }
+      }
+      return order;
+    }
+
+    // 2. Poll Provider for Updates
+    if (order.status === "active" && order.external_order_id && serverConf?.api_check_status_url) {
+      const now = new Date();
+      const lastCheck = order.last_check_at || new Date(0);
+      
+      if (now - lastCheck >= 2000) {
+        order.last_check_at = now;
+        const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
+        
+        if (!checkRes.error) {
+          if (checkRes.otp) {
+            const cleanOtp = checkRes.otp.trim();
+            if (order.otp !== cleanOtp || !order.all_otps.includes(cleanOtp)) {
+              
+              // NEW: Global OTP Isolation
+              // Prevent two different orders for the same service from receiving the exact same OTP (provider bug/stub recycling)
+              const OrderModel = require("../models/Order");
+              const isDuplicateGlobally = await OrderModel.exists({
+                all_otps: cleanOtp,
+                order_id: { $ne: order.order_id },
+                createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+              });
+
+              // Also check memory cache to prevent concurrent bypass
+              const cacheKey = cleanOtp; // Strict global uniqueness
+              const isConcurrentDuplicate = recentlySeenOTPs.has(cacheKey);
+
+              if (isDuplicateGlobally || isConcurrentDuplicate) {
+                console.log(`[SyncOrder] Ignored duplicate OTP ${cleanOtp} for ${order.order_id} (Already assigned to another order)`);
+                checkRes.status = "waiting"; // Force it to wait for a fresh OTP
+                checkRes.otp = null;
+              } else {
+                recentlySeenOTPs.add(cacheKey); // Mark it as seen in memory for concurrent locks
+                order.otp = cleanOtp;
+                if (!order.all_otps.includes(cleanOtp)) {
+                  order.all_otps = [...order.all_otps, cleanOtp];
+                }
+                order.refund_issued = true; // Lock refunds once OTP is received
+                
+                if (checkRes.status === "completed" && !order.multi_otp_enabled) {
+                  order.status = "completed";
+                }
+                await order.save();
+                emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
+              }
+            }
+          }
+
+          const cleanResOtp = checkRes.otp ? checkRes.otp.trim() : null;
+          const isSameOtp = cleanResOtp && order.all_otps.includes(cleanResOtp);
+          console.log(`[DEBUG SyncOrder] orderId: ${order.order_id}, providerOtp: ${cleanResOtp}, all_otps: ${JSON.stringify(order.all_otps)}, isSameOtp: ${isSameOtp}`);
+
+          if (checkRes.status === "waiting" || (checkRes.status === "completed" && isSameOtp)) {
+            // Reset verification count if provider returns to waiting state, or gives us an OTP we already processed
+            if (order.verification_count > 0) {
+              order.verification_count = 0;
+              await order.save();
+            }
+          } else {
+            // Increment verification count for non-waiting status
+            order.verification_count = (order.verification_count || 0) + 1;
+            console.log(`[SyncOrder] Triple-Check: ${order.order_id} verification ${order.verification_count}/3 (Status: ${checkRes.status})`);
+
+            if (order.verification_count >= 3) {
+              // PROCEED with final status update after 3 confirmations
+              if (order.multi_otp_enabled && checkRes.status === "completed") {
+                // Multi-OTP: Stay active but update OTPs
+                order.status = "active";
+                order.verification_count = 0; // Reset for next possible event
+                if (checkRes.otp) {
+                  const cleanOtp = checkRes.otp.trim();
+                  if (!order.all_otps.includes(cleanOtp)) {
+                    order.otp = cleanOtp;
+                    order.all_otps = [...order.all_otps, cleanOtp];
+                    console.log(`[Multi-OTP] Auto-requesting next OTP for ${order.order_id}`);
+                    providerApi.retryOrder(serverConf, order.external_order_id).catch(e => console.error("Auto-retry fail:", e.message));
+                  }
+                }
+              } else {
+                // Standard Handling
+                if (checkRes.otp) {
+                  const cleanOtp = checkRes.otp.trim();
+                  order.otp = cleanOtp;
+                  if (!order.all_otps.includes(cleanOtp)) {
+                    order.all_otps = [...order.all_otps, cleanOtp];
+                  }
+                }
+                 
+                const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
+                if (hasOtp && !order.refund_issued) {
+                  order.refund_issued = true;
+                }
+
+                if (hasOtp) {
+                  order.status = "active"; // Keep active until expiry or manual cancel
+                  order.verification_count = 0; // Reset
+                } else if (checkRes.status === "cancelled" || checkRes.status === "refunded" || checkRes.status === "expired") {
+                  // Triple-Verified DEAD status with no OTP — ISSUE REFUND
+                  await withTransaction(async (session) => {
+                    const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
+                    
+                    // Double Check Layer 1: Verify no refund transaction exists yet
+                    const existingTx = await Transaction.findOne({ order_id: order.order_id, type: "refund" }, null, queryOptions);
+                    if (existingTx) throw new Error("ALREADY_REFUNDED_TX");
+
+                    // Double Check Layer 2: Verify fresh order state in DB
+                    const freshOrder = process.env.DB_TYPE === "mysql"
+                      ? await Order.findById(order._id, queryOptions)
+                      : await Order.findById(order._id, null, queryOptions);
+                    
+                    if (!freshOrder || freshOrder.refund_issued || ["cancelled", "expired", "refunded"].includes(freshOrder.status)) {
+                      throw new Error("ALREADY_REFUNDED_FLAG");
+                    }
+
+                    // Double Check Layer 3: Atomic Lock & Mark Cancelled
+                    const refundable = await Order.findOneAndUpdate(
+                      { _id: order._id, refund_issued: { $ne: true }, status: { $nin: ["cancelled", "expired", "refunded"] } },
+                      { $set: { status: checkRes.status, refund_issued: true } },
+                      { ...queryOptions, new: true }
+                    );
+
+                    if (refundable) {
+                      const updatedUser = await User.findOneAndUpdate(
+                        { _id: order.user_id },
+                        { $inc: { balance: order.cost } },
+                        { ...queryOptions, new: true }
+                      );
+                      
+                      if (updatedUser) {
+                        await Transaction.create([{
+                          user_id: updatedUser._id, type: "refund", amount: order.cost,
+                          balance_after: updatedUser.balance, description: `Refund: Order ${order.order_id} confirmed ${checkRes.status} after 3 checks`, order_id: order.order_id
+                        }], queryOptions);
+                        emitToUser(String(order.user_id), "balance", { balance: updatedUser.balance });
+                      }
+                    }
+                  }).catch(err => console.error("[TripleCheck] Refund failed:", err.message));
+                }
+              }
+            }
+            
+            await order.save();
+            // Push status + OTP update to user instantly
+            emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
+          }
         }
       }
     }
-  }
 
-  return order;
+    return order;
+  } finally {
+    releaseLock(orderId);
+  }
 }
 
 module.exports = { syncOrder };

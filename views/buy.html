@@ -1,981 +1,520 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Buy Number — {{SITE_NAME}}</title>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Buy Number - OtpGram</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
-  <meta name="description" content="{{SEO_DESC}}" />
-  <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
-  <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
+  <link rel="stylesheet" href="/css/main.css" />
   <style>
-    .buy-container { width: 95%; max-width: 1400px; margin: 0 auto; }
-    .buy-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 0;
-      backdrop-filter: blur(12px);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+    @keyframes trendingGlow {
+      0%, 100% {
+        box-shadow: 0 0 4px rgba(255, 107, 0, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 10px rgba(255, 60, 0, 0.8);
+      }
     }
-    .buy-card-header {
-      padding: 24px 32px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(255,255,255,0.01);
+    @keyframes flameWiggle {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
     }
-    .buy-card-header h2 { font-size: 20px; font-weight: 800; margin: 0; color: #fff; }
-    
-    .mini-country-selector {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 14px;
-      background: var(--bg-2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      min-width: 140px;
-      position: relative;
+    .trending-badge {
+      background: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
+      color: #ffffff;
+      animation: trendingGlow 2s infinite ease-in-out;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    .mini-country-selector span#selected-country-name {
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .mini-country-selector:hover { border-color: var(--accent); background: var(--surface-2); }
-    
-    .services-main {
-      padding: 12px 24px 24px;
-    }
-    
-    .services-box {
-      background: var(--bg-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      margin-top: 16px;
-      max-height: 260px;
-      min-height: 100px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 12px;
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
-    }
-    .services-box::-webkit-scrollbar {
-      display: none; /* Hide scrollbar for Chrome, Safari and Opera */
-    }
-    
-    /* Custom Scrollbar for Services Box */
-    .services-box::-webkit-scrollbar { width: 6px; }
-    .services-box::-webkit-scrollbar-track { background: transparent; }
-    .services-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-    .services-box::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
-
-    
-    .buy-steps {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    .buy-step {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 99px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-3);
-      background: var(--surface-2);
-      transition: all 0.3s;
-    }
-    .buy-step.active {
-      background: var(--grad-primary);
-      color: #fff;
-    }
-    .buy-step.completed {
-      background: rgba(16,185,129,0.15);
-      color: var(--success);
-    }
-    .step-num {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-    }
-    .dropdown-group {
-      margin-bottom: 20px;
-    }
-    .dropdown-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-2);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .dropdown-label .icon { font-size: 16px; }
-    .custom-select {
-      position: relative;
-      width: 100%;
-    }
-    .select-trigger {
-      width: 100%;
-      padding: 14px 16px;
-      background: var(--bg-2);
-      border: 1px solid var(--border-2);
-      border-radius: var(--r-md);
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .select-trigger:hover {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-    }
-    .select-trigger.placeholder {
-      color: var(--text-3);
-    }
-    .select-trigger .arrow {
-      font-size: 12px;
-      transition: transform 0.2s;
-    }
-    .custom-select.open .select-trigger .arrow {
-      transform: rotate(180deg);
-    }
-    .select-dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      right: 0;
-      background: var(--bg-1);
-      border: 1px solid var(--border-2);
-      border-radius: var(--r-md);
-      box-shadow: var(--shadow-lg);
-      z-index: 100;
-      max-height: 280px;
-      overflow-y: auto;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: all 0.2s;
-    }
-    .custom-select.open .select-dropdown {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-    .select-option {
-      padding: 12px 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: background 0.15s;
-      border-bottom: 1px solid var(--border);
-    }
-    .select-option:last-child { border-bottom: none; }
-    .select-option:hover {
-      background: var(--surface-2);
-    }
-    .select-option.selected {
-      background: rgba(59,130,246,0.1);
-      border-left: 3px solid var(--accent);
-    }
-    .option-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .option-icon { font-size: 24px; }
-    .option-name {
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--text);
-    }
-    .option-detail {
-      font-size: 12px;
-      color: var(--text-3);
-    }
-    .option-price {
-      font-weight: 700;
-      color: var(--accent);
-      font-size: 14px;
-    }
-    .option-price.affordable { color: var(--success); }
-    .option-price.expensive { color: var(--danger); }
-    .search-input {
-      width: 100%;
-      padding: 12px 16px 12px 40px;
-      background: var(--bg-2);
-      border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      color: var(--text);
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-    .search-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-    }
-    .search-wrapper { position: relative; }
-    .search-wrapper .search-icon {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-3);
-    }
-    .buy-summary {
-      background: var(--bg-2);
-      border: 1px solid var(--border-2);
-      border-radius: var(--r-md);
-      padding: 20px;
-      margin-top: 24px;
-    }
-    .summary-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-2);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .summary-row:last-child { border-bottom: none; }
-    .summary-label { color: var(--text-2); font-size: 14px; }
-    .summary-value { font-weight: 600; color: var(--text); font-size: 14px; }
-    .summary-total {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 2px solid var(--border-2);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .summary-total .summary-label { font-weight: 700; font-size: 15px; color: var(--text); }
-    .summary-total .summary-value { font-size: 20px; font-weight: 900; color: var(--accent); }
-    .buy-btn {
-      width: 100%;
-      padding: 16px;
-      margin-top: 24px;
-      font-size: 16px;
-      font-weight: 700;
-      border: none;
-      border-radius: var(--r-md);
-      background: var(--grad-primary);
-      color: #fff;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .buy-btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(59,130,246,0.4);
-    }
-    .buy-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-    .buy-btn .spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-3);
-    }
-    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
-    .fade-in { animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--success);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(1.2); }
-    }
-    /* New Service Grid Style */
-    .service-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .service-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      min-width: 0;
-    }
-    .service-card:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: var(--accent);
-      transform: translateY(-2px);
-    }
-    .service-icon-box {
-      width: 38px;
-      height: 38px;
-      background: var(--bg-2);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
-    .service-icon-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .service-info {
-      flex-grow: 1;
-      min-width: 0;
-    }
-    .service-name {
-      font-size: 14.5px;
-      font-weight: 600;
-      color: #fff;
-      margin-bottom: 2px;
-      line-height: 1.2;
-    }
-    .service-price {
-      font-size: 14px;
-      font-weight: 800;
-      color: #f59e0b;
-    }
-    .service-arrow {
-      color: var(--text-3);
-      font-size: 10px;
-      opacity: 0.5;
+    .trending-badge .flame-icon {
+      animation: flameWiggle 1.5s infinite ease-in-out;
+      display: inline-block;
     }
 
-    .warning-alert {
-      background: rgba(120, 53, 15, 0.15);
-      border: 1px solid rgba(120, 53, 15, 0.3);
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      color: #f59e0b;
-      font-size: 13px;
-      font-weight: 500;
+    /* ── Immersive OTP Interception 3D Rig (THEMED) ── */
+    #allocation-overlay {
+        position: fixed; inset: 0; background: #000;
+        z-index: 1000000; display: none; justify-content: center; align-items: center;
+        overflow: hidden; perspective: 1200px; font-family: 'Inter', -apple-system, sans-serif;
     }
-    
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-      margin-top: 24px;
+    .back-btn-intercept {
+        position: fixed; top: 20px; left: 20px; display: flex; align-items: center;
+        gap: 8px; background: var(--surface-container); border: 1px solid var(--outline-variant);
+        color: var(--on-surface); padding: 8px 16px; border-radius: 50px; cursor: pointer;
+        text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.3s ease;
+        z-index: 1000; backdrop-filter: blur(10px);
     }
-    .section-title {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-3);
+    .back-btn-intercept:hover {
+        background: var(--surface-container-low); border-color: var(--accent);
+        color: var(--accent); box-shadow: var(--shadow); transform: translateX(-5px);
     }
-    .section-badge {
-      background: rgba(245, 158, 11, 0.15);
-      color: #f59e0b;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 700;
+    .back-btn-intercept svg { width: 16px; height: 16px; stroke: currentColor; }
+
+    .alloc-scene {
+        position: relative; width: 100%; height: 80vh;
+        display: flex; justify-content: center; align-items: center;
+        transform-style: preserve-3d;
+    }
+    .phone-3d {
+        position: relative; width: 80px; height: 145px;
+        transform-style: preserve-3d; transform: rotateX(25deg) rotateY(0deg);
+        animation: phone-vibrate 0.1s infinite linear, phone-float 4s infinite ease-in-out;
+        z-index: 1;
+    }
+    .phone-body {
+        position: absolute; width: 100%; height: 100%; background: #050505;
+        border: 1px solid #222; border-radius: 14px;
+        box-shadow: 0 0 50px rgba(var(--accent-rgb), 0.4);
+        display: flex; justify-content: center; align-items: center; transform: translateZ(0);
+    }
+    .phone-screen {
+        width: calc(100% - 10px); height: calc(100% - 10px);
+        background: #021108; border-radius: 10px; overflow: hidden;
+        position: relative; display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        border: 1px solid rgba(var(--accent-rgb), 0.1);
+    }
+    .matrix-display {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 10px; color: var(--accent); text-align: center;
+        text-shadow: 0 0 10px var(--accent); z-index: 2; line-height: 1; opacity: 0.8;
+    }
+    .phone-screen::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, transparent 50%, rgba(var(--accent-rgb), 0.05) 50%);
+        background-size: 100% 4px; pointer-events: none;
+    }
+    .emitter {
+        position: absolute; width: 100%; height: 100%;
+        transform: translateZ(10px); transform-style: preserve-3d;
+        pointer-events: none; z-index: 100;
+    }
+    .notification {
+        position: absolute; width: 280px; background: rgba(20, 20, 20, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid var(--accent);
+        border-radius: 12px; padding: 12px 16px; opacity: 0; display: flex; flex-direction: column; gap: 4px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8); will-change: transform, opacity;
+        pointer-events: none; transform: translate(-50%, -50%);
+    }
+    .notif-header {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 10px; font-weight: 900; text-transform: uppercase;
+        letter-spacing: 1px; color: var(--accent);
+    }
+    .notif-body { font-size: 13px; color: rgba(255, 255, 255, 0.95); line-height: 1.4; }
+    .otp-code {
+        font-family: monospace; font-weight: bold; color: #ffffff;
+        letter-spacing: 2px; background: rgba(255, 255, 255, 0.1);
+        padding: 2px 6px; border-radius: 4px; margin-top: 2px; display: inline-block;
+    }
+    .ui-tray-intercept { text-align: center; margin-bottom: 40px; z-index: 10; position: absolute; bottom: 40px; width: 100%; pointer-events: none; }
+    .label-intercept {
+        font-size: 11px; letter-spacing: 5px; text-transform: uppercase;
+        color: var(--accent); margin-bottom: 12px; font-weight: bold;
+        text-shadow: 0 0 10px var(--accent);
+    }
+    .bar-intercept { width: 200px; height: 1px; background: rgba(255, 255, 255, 0.1); margin: 0 auto; position: relative; overflow: hidden; }
+    .fill-intercept {
+        position: absolute; width: 60px; height: 100%; background: var(--accent);
+        box-shadow: 0 0 15px var(--accent); animation: loader-slide-intercept 2s infinite ease-in-out;
+    }
+    .percentage-display-intercept {
+        font-size: 48px; font-weight: 900; color: #fff;
+        text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+        margin-top: 10px; font-family: 'JetBrains Mono', monospace;
+    }
+    @keyframes phone-vibrate {
+        0%, 100% { transform: rotateX(25deg) translate(0, 0); }
+        50% { transform: rotateX(25deg) translate(1px, -1px); }
+    }
+    @keyframes phone-float { 0%, 100% { top: 0; } 50% { top: -10px; } }
+    @keyframes loader-slide-intercept { 0% { left: -100%; } 100% { left: 200%; } }
+    @keyframes throw-towards-user {
+        0% { opacity: 0; transform: translate(-50%, -50%) translateZ(0) scale(0.1) rotate(0deg); }
+        10% { opacity: 1; transform: translate(-50%, -50%) translateZ(50px) scale(0.5); }
+        100% { opacity: 0; transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) translateZ(1500px) scale(5) rotate(var(--tr)); }
     }
 
-    /* Updated Search Bar to match image */
-    .search-group {
-      position: relative;
-      margin-bottom: 16px;
+    /* ── Persistent Loading Bar ── */
+    #persistent-buy-loader {
+        position: sticky; top: 0; left: 0; width: 100%; height: 4px;
+        background: var(--surface-container-high); z-index: 50; display: none; overflow: hidden;
     }
-    .search-group .search-icon {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-3);
-      font-size: 16px;
+    #persistent-buy-loader .bar {
+        height: 100%; width: 30%; background: var(--primary);
+        box-shadow: 0 0 10px var(--primary); animation: persistent-slide 2s infinite ease-in-out;
     }
-    .new-search-input {
-      width: 100%;
-      background: var(--bg-2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px 14px 44px;
-      color: #fff;
-      font-size: 14px;
-      transition: all 0.2s;
+    #persistent-buy-status {
+        position: absolute; top: 10px; right: 24px; font-size: 10px; font-weight: 800;
+        color: var(--primary); text-transform: uppercase; letter-spacing: 1px;
+        display: none; align-items: center; gap: 8px; z-index: 51;
+        background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 6px; backdrop-filter: blur(4px);
     }
-    .new-search-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      background: var(--surface-2);
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    @keyframes persistent-slide {
+        0% { transform: translateX(-150%); }
+        100% { transform: translateX(400%); }
     }
     
-    @media (max-width: 768px) {
-      .buy-container { padding: 0 12px; }
-      .buy-card-header { padding: 16px 20px; flex-direction: column; align-items: stretch; gap: 12px; }
-      .mini-country-selector { width: 100%; min-width: 0; }
-      #select-country { width: 100% !important; }
-      #dropdown-country { width: 100% !important; left: 0 !important; right: 0 !important; }
-      .services-main { padding: 16px 20px 20px; }
-      .service-grid { grid-template-columns: 1fr; gap: 12px; }
-    }
-
-    /* Updated Modal & Server Options Style */
-    /* Unifed Genie Modal Style */
-    .modal-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      z-index: 9999;
-      display: flex; align-items: center; justify-content: center;
-      padding: 20px; transition: opacity 0.4s;
-    }
-    .modal-card {
-      background: #0a0a0a;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      width: 100%; max-width: 460px;
-      box-shadow: 0 50px 100px rgba(0,0,0,0.8);
-      position: relative; overflow: hidden;
-      transform-origin: bottom center;
-      animation: genieMaximize 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    /* MODAL ANIMATIONS */
+    @keyframes modalPop {
+      0% { transform: scale(0.95); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
     }
     .modal-card.closing {
-      animation: genieMinimize 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+      animation: genieMinimize 0.3s cubic-bezier(0.55, 0, 1, 0.45) forwards;
     }
     @keyframes genieMaximize { 
-      0% { transform: scale(0.3, 0.5) translateY(200px); opacity: 0; filter: blur(10px); }
-      40% { transform: scale(1.1, 0.9) translateY(-20px); opacity: 1; filter: blur(0); }
-      70% { transform: scale(0.98, 1.02) translateY(5px); }
+      0% { transform: scale(0.5, 0.5) translateY(200px); opacity: 0; }
       100% { transform: scale(1, 1) translateY(0); opacity: 1; }
     }
     @keyframes genieMinimize {
-      0% { transform: scale(1, 1) translateY(0); opacity: 1; filter: blur(0); }
-      30% { transform: scale(1.1, 0.8) translateY(-10px); }
-      100% { transform: scale(0.1, 0.4) translateY(500px); opacity: 0; filter: blur(20px); }
+      0% { transform: scale(1, 1) translateY(0); opacity: 1; }
+      100% { transform: scale(0.5, 0.5) translateY(200px); opacity: 0; }
     }
-    .modal-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-title-box { display: flex; align-items: center; gap: 12px; }
-    .modal-service-icon { font-size: 24px; color: var(--accent); }
-    .modal-title { font-size: 18px; font-weight: 700; color: #fff; }
-    .modal-close { background: none; border: none; font-size: 20px; color: var(--text-3); cursor: pointer; }
-    .modal-body { padding: 20px; }
-    .modal-subtitle { font-size: 14px; color: var(--text-3); margin-bottom: 20px; font-weight: 500; }
     
-    .server-option {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 12px;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .select-dropdown {
+      position: absolute;
+      top: 100%; right: 0; z-index: 50;
+      background: var(--surface-container-lowest);
+      border: 1px solid var(--outline-variant);
+      border-radius: 12px;
+      margin-top: 8px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      display: none;
     }
-    .server-option:hover {
-      background: rgba(59, 130, 246, 0.08);
-      border-color: var(--accent);
-      transform: scale(1.02);
-    }
-    .server-option:active { transform: scale(0.98); }
-    .server-main { display: flex; flex-direction: column; gap: 4px; }
-    .server-name { font-weight: 700; font-size: 14px; color: #fff; text-transform: uppercase; }
-    .server-stats { display: flex; gap: 12px; margin-top: 4px; }
-    .stat { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; }
-    .stat-success { color: var(--success); }
-    .stat-time { color: var(--text-3); }
-    .server-price { font-size: 16px; font-weight: 800; color: #f59e0b; }
-
-    @media (max-width: 640px) {
-      .buy-container { width: 100%; padding: 0 10px; }
-      .service-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-      .service-card { padding: 6px 8px; gap: 6px; border-radius: 8px; }
-      .service-icon-box { width: 24px; height: 24px; font-size: 14px; }
-      .service-name { font-size: 10.5px; }
-      .service-price { font-size: 10px; }
-    }
-
-    /* ── Secure OTP Extraction 3D Rig (UPGRADED) ── */
-    #allocation-overlay {
-        position: fixed; inset: 0; background: #000;
-        background-image: radial-gradient(circle at 50% 50%, #0a1118 0%, #000 80%);
-        z-index: 1000000; display: none; justify-content: center; align-items: center;
-        overflow: hidden; perspective: 1200px; font-family: 'Courier New', monospace;
-    }
-    .camera-rig {
-        transform-style: preserve-3d;
-        transform: translateZ(0px) rotateX(60deg) rotateZ(-20deg);
-        transition: transform 0.1s linear; 
-    }
-    .scene { position: relative; transform-style: preserve-3d; }
-    .phone {
-        width: clamp(240px, 45vmin, 340px); height: clamp(480px, 90vmin, 680px);
-        position: relative; transform-style: preserve-3d;
-        animation: floatPhone 4s ease-in-out infinite; 
-    }
-    @keyframes floatPhone {
-        0%, 100% { transform: translateY(0px) translateZ(0px); }
-        50% { transform: translateY(-10px) translateZ(10px); }
-    }
-    .phone-layer {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        border-radius: clamp(30px, 6vmin, 50px); background: #080808;
-        border: 2px solid #222; transform-style: preserve-3d;
-    }
-    .phone-layer.shadow-layer { 
-        transform: translateZ(-25px); background: #020202;
-        box-shadow: -30px 40px 60px rgba(0, 0, 0, 0.9), -10px 20px 40px rgba(var(--accent-rgb, 59, 130, 246), 0.1);
-    }
-    .phone-layer:nth-child(2) { transform: translateZ(-20px); }
-    .phone-layer:nth-child(3) { transform: translateZ(-15px); }
-    .phone-layer:nth-child(4) { transform: translateZ(-10px); }
-    .phone-layer:nth-child(5) { transform: translateZ(-5px); }
-    .phone-layer.front {
-        transform: translateZ(0px); background: #0a0a0a;
-        padding: clamp(8px, 2vmin, 15px);
-        box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.05);
-    }
-    .screen {
-        width: 100%; height: 100%; border-radius: clamp(20px, 4vmin, 35px);
-        position: relative; display: flex; flex-direction: column;
-        justify-content: center; align-items: center; transform-style: preserve-3d;
-        border: 1px solid rgba(var(--accent-rgb, 59, 130, 246), 0.2); box-shadow: inset 0 0 30px rgba(var(--accent-rgb, 59, 130, 246), 0.1);
-    }
-    .screen-bg {
-        position: absolute; inset: 0; border-radius: inherit;
-        background: repeating-linear-gradient(0deg,#000,#000 2px,#050a08 2px,#050a08 4px);
-        overflow: hidden; z-index: 0;
-    }
-    .screen-bg::after {
-        content: ''; position: absolute; inset: 0;
-        box-shadow: inset 0 0 20px rgba(var(--accent-rgb, 59, 130, 246), 0.2); border-radius: inherit;
-    }
-    .notch {
-        position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-        width: clamp(60px, 15vmin, 100px); height: clamp(15px, 4vmin, 25px);
-        background: #000; border-radius: 20px; z-index: 10;
-        box-shadow: inset 0 -2px 5px rgba(255,255,255,0.1);
-    }
-    .loading-ui {
-        text-align: center; z-index: 5; transform: translateZ(40px);
-        background: rgba(0, 10, 5, 0.85); padding: clamp(15px, 4vmin, 30px);
-        border-radius: 20px; backdrop-filter: blur(8px);
-        border: 1px solid rgba(var(--accent-rgb, 59, 130, 246), 0.2);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--accent-rgb, 59, 130, 246), 0.2);
-        width: 85%;
-    }
-    .percentage {
-        font-size: clamp(2rem, 8vmin, 3.5rem); font-weight: bold;
-        color: var(--accent); text-shadow: 0 0 15px var(--accent);
-        margin-bottom: 5px; font-family: monospace;
-    }
-    .status {
-        font-size: clamp(0.7rem, 2vmin, 1rem); color: #fff;
-        letter-spacing: 2px; opacity: 0.8; animation: glitchText 3s infinite;
-    }
-    @keyframes glitchText {
-        0%, 96%, 100% { opacity: 0.8; transform: skewX(0deg); }
-        97% { opacity: 1; transform: skewX(-10deg); text-shadow: -2px 0 var(--danger), 2px 0 var(--accent); }
-        98% { opacity: 0.5; transform: skewX(10deg); text-shadow: none; }
-        99% { opacity: 1; transform: skewX(0deg); text-shadow: 2px 0 var(--danger), -2px 0 var(--accent); }
-    }
-    .particles { position: absolute; top: 50%; left: 50%; width: 0; height: 0; transform-style: preserve-3d; z-index: 20; }
-    .sms-bubble {
-        position: absolute; background: rgba(0, 25, 15, 0.85); color: var(--accent);
-        padding: 10px 18px; border-radius: 8px; border-bottom-left-radius: 0;
-        font-size: clamp(12px, 2vmin, 16px); backdrop-filter: blur(4px);
-        white-space: nowrap; left: 50%; top: 50%; border: 1px solid var(--accent);
-        animation: blastOut var(--duration) ease-out forwards;
-        text-shadow: 0 0 5px var(--accent);
-    }
-    .number-particle {
-        position: absolute; font-weight: bold; font-size: clamp(18px, 4vmin, 28px);
-        color: #fff; text-shadow: 0 0 10px #fff; left: 50%; top: 50%;
-        animation: blastOut var(--duration) ease-out forwards;
-        font-family: monospace;
-    }
-    @keyframes blastOut {
-        0% { transform: translate3d(-50%, -50%, 0) scale(0.1) rotateX(0deg) rotateY(0deg) rotateZ(0deg); opacity: 0; }
-        10% { opacity: 1; }
-        100% { transform: translate3d(calc(-50% + var(--tx)), calc(-50% + var(--ty)), var(--tz)) scale(var(--read-scale)) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)); opacity: 0; }
-    }
+    .select-dropdown.open { display: block; }
   </style>
-  <script>document.body.style.overflowX = 'hidden';</script>
 </head>
-<body>
-<nav class="navbar">
-  <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-    <div class="nav-links" id="nav-links">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/dashboard/buy" class="active">Buy Number</a>
-      <a href="/dashboard/accounts">Accounts</a>
-      <a href="/dashboard/referrals">Referrals</a>
-      <a href="/dashboard/orders">Orders</a>
-      <a href="/dashboard/wallet">Wallet</a>
-      <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+<body class="bg-background text-on-background font-body-md min-h-screen flex overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col bg-surface border-r border-outline-variant/30 py-6 z-50 shadow-sm">
+  <div class="px-6 mb-8 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+      <span class="material-symbols-outlined">lock</span>
     </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
+    <div>
+      <h1 class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">{{SITE_NAME}}</h1>
+      <p class="font-label-md text-label-md text-on-surface-variant">Secure OTP Service</p>
+    </div>
   </div>
-</nav>
+    <nav class="flex-1 px-4 space-y-2">
+    <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">dashboard</span> Dashboard
+    </a>
+    <a href="/dashboard/wallet" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">account_balance_wallet</span> Wallet
+    </a>
+    <a href="/dashboard/buy" class="flex items-center gap-3 px-4 py-3 text-primary bg-primary-container/10 border-l-4 border-primary rounded-r-lg transition-all duration-200 ease-in-out font-label-md text-label-md">
+      <span class="material-symbols-outlined">add_shopping_cart</span> Buy Number
+    </a>
+    <a href="/dashboard/accounts" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">folder_special</span> Accounts
+    </a>
+    <a href="/dashboard/orders" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">receipt_long</span> Orders
+    </a>
+    <a href="/dashboard/referrals" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">group</span> Referrals
+    </a>
+    <a href="/dashboard/profile" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">person</span> Profile
+    </a>
+  </nav>
+  <div class="px-4 mt-auto space-y-4">
+    <a href="/dashboard/buy" class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg shadow-sm hover:shadow-md transition-shadow flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">add</span> New Purchase
+    </a>
+    <div class="border-t border-outline-variant/30 pt-4 space-y-2">
+      <a href="/support" class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">support_agent</span> Support
+      </a>
+      <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-error hover:bg-error-container/20 transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+      </button>
+    </div>
+  </div>
+</aside>
 
-<div class="layout">
-  <aside class="sidebar">
-    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
-    <a href="/dashboard/buy" class="sidebar-item active">🛒 Buy Number</a>
-    <a href="/dashboard/accounts" class="sidebar-item">🗂️ Readymade Accounts</a>
-    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
-    <a href="/dashboard/referrals" class="sidebar-item">🤝 Referrals</a>
-    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
-    <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
-    <div class="sidebar-divider"></div>
-    <a href="/support" class="sidebar-item">💬 Support</a>
-    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
-  </aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen relative" style="min-width:0;">
+  <!-- TopNavBar -->
+    <!-- TopNavBar -->
+    <!-- TopNavBar -->
+  <header class="bg-surface/80 backdrop-blur-md sticky top-0 w-full z-40 border-b border-outline-variant/30 shadow-sm flex justify-between items-center px-3 md:px-8 h-16 gap-2">
+    <div id="gnav-left" class="flex items-center gap-2 md:gap-3 min-w-0 flex-1 md:flex-initial overflow-hidden">
+      <a href="/dashboard" class="flex items-center gap-2 md:gap-2.5 text-decoration-none min-w-0 overflow-hidden">
+        <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-primary inline-block animate-pulse shadow-[0_0_8px_rgba(16,80,212,0.6)] flex-shrink-0"></span>
+        <h1 class="font-headline-sm text-[16px] sm:text-[18px] md:text-[22px] font-extrabold text-primary tracking-tight m-0 truncate">{{SITE_NAME}}</h1>
+      </a>
+    </div>
+    <div id="gnav-right" class="flex items-center gap-2 md:gap-3 flex-shrink-0">
+      <div id="gnav-wallet-pill" class="gnav-wallet-pill-wrapper">
+        <a href="/dashboard/wallet" class="gnav-wallet-bal" title="My Wallet">
+          <span class="wallet-icon-effect">💰</span>
+          <span id="nav-global-wallet-bal" class="font-bold">$0.00</span>
+        </a>
+        <a href="/dashboard/wallet" class="gnav-wallet-add" title="Add Funds">+</a>
+      </div>
+      <div id="gnav-avatar-container" class="relative flex-shrink-0">
+        <div id="gnav-avatar" class="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-primary bg-primary-container text-primary font-bold flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 transition-transform overflow-hidden">
+          <span class="material-symbols-outlined text-[18px]">person</span>
+        </div>
+      </div>
+    </div>
+  </header>
 
-  <main class="main-content">
-    <div class="buy-container">
-      <div class="buy-card fade-in">
-        <div class="buy-card-header">
-          <h2>🛒 Buy Virtual Number</h2>
+  <div id="persistent-buy-loader"><div class="bar"></div></div>
+  <div id="persistent-buy-status">🛰️ Getting Number...</div>
+
+  <!-- Buy Content -->
+  <div class="p-3 md:p-5 flex-1 space-y-4 max-w-container-max mx-auto w-full mb-20 md:mb-0">
+    <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl overflow-hidden shadow-sm">
+      <div class="p-4 md:p-5 border-b border-outline-variant/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 class="font-headline-sm text-[18px] md:text-[20px] font-bold text-on-surface">Find a Service</h2>
+          <p class="font-body-sm text-xs md:text-sm text-on-surface-variant mt-0.5">Select country and service to buy a number.</p>
+        </div>
+        
+        <div class="relative w-full sm:w-auto custom-select" id="select-country">
+          <button class="w-full sm:w-[220px] bg-surface border border-outline-variant/50 hover:border-primary/50 text-on-surface text-xs md:text-sm font-semibold px-3.5 py-2 rounded-lg flex justify-between items-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20" onclick="toggleDropdown('country')">
+            <span id="selected-country-name" class="truncate">Select Country</span>
+            <span class="material-symbols-outlined text-[18px] text-outline ml-2">expand_more</span>
+          </button>
           
-          <div class="custom-select" id="select-country" style="width: auto">
-            <div class="mini-country-selector" onclick="toggleDropdown('country')">
-              <span id="selected-country-name">Loading...</span>
-              <span style="font-size: 10px; opacity: 0.5">▼</span>
-            </div>
-            <div class="select-dropdown" id="dropdown-country" style="width: 240px; left: auto; right: 0;">
-              <div class="search-wrapper" style="padding: 10px; border-bottom: 1px solid var(--border);">
-                <input type="text" class="search-input" style="margin:0; padding-left:36px" placeholder="Search countries..." id="search-country" oninput="filterOptions('country')" />
-                <span class="search-icon" style="left:20px">🔍</span>
-              </div>
-              <div id="options-country" style="max-height: 300px; overflow-y: auto">
-                <div style="padding:20px; text-align:center; opacity:0.5">Fetching countries...</div>
+          <div class="select-dropdown w-full sm:w-[280px]" id="dropdown-country">
+            <div class="p-2 border-b border-outline-variant/30">
+              <div class="flex items-center bg-surface-container border border-outline-variant/30 focus-within:border-primary rounded-md px-2.5 py-1.5 gap-2">
+                <span class="font-bold text-[11px] text-on-surface-variant uppercase tracking-wider shrink-0 select-none">Search:</span>
+                <input type="text" autocomplete="off" class="w-full bg-transparent border-0 p-0 text-xs focus:outline-none focus:ring-0 text-on-surface placeholder:text-outline/70" placeholder="Country name..." id="search-country" oninput="filterOptions('country')">
               </div>
             </div>
-          </div>
-        </div>
-
-        <div class="services-main">
-          <!-- Search & Filter Area -->
-          <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
-             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em">Find Service</span>
-                <div class="section-badge" id="service-count" style="margin:0; background:var(--accent); color:#fff; font-size:10px">0 Available</div>
-             </div>
-             <div class="search-group" style="margin: 0">
-                <input type="text" class="new-search-input" id="search-service" style="border-radius:12px; height: 50px; padding-left: 20px" placeholder="Search service..." oninput="filterOptions('service')" />
-             </div>
-          </div>
-
-          <div class="services-box" id="options-service">
-             <div class="service-grid" id="service-skeletons" style="display: none">
-              <div class="service-card" style="pointer-events:none">
-                <div class="service-icon-box skeleton"></div>
-                <div class="service-info">
-                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
-                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
-                </div>
-              </div>
-              <div class="service-card" style="pointer-events:none">
-                <div class="service-icon-box skeleton"></div>
-                <div class="service-info">
-                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
-                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
-                </div>
-              </div>
-              <div class="service-card" style="pointer-events:none">
-                <div class="service-icon-box skeleton"></div>
-                <div class="service-info">
-                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
-                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
-                </div>
-              </div>
-              <div class="service-card" style="pointer-events:none">
-                <div class="service-icon-box skeleton"></div>
-                <div class="service-info">
-                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
-                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
-                </div>
-              </div>
-              <div class="service-card" style="pointer-events:none">
-                <div class="service-icon-box skeleton"></div>
-                <div class="service-info">
-                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
-                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
-                </div>
-              </div>
-              <div class="service-card" style="pointer-events:none">
-                <div class="service-icon-box skeleton"></div>
-                <div class="service-info">
-                  <div class="skeleton skeleton-text" style="width:70%;height:14px;margin-bottom:4px"></div>
-                  <div class="skeleton skeleton-text" style="width:30%;height:12px"></div>
-                </div>
-              </div>
-             </div>
-             <div id="services-list-container"></div>
-          </div>
-        </div>
-
-        <!-- Summary Footer (Optional/Hidden until selected) -->
-        <div id="buy-summary-footer" style="padding: 16px 32px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); display: none; align-items: center; justify-content: space-between;">
-           <div id="selection-preview" style="font-size: 14px; color: var(--text-2);"></div>
-           <button class="btn btn-primary" onclick="confirmPurchase()">Buy Now</button>
-        </div>
-
-        <!-- Modal for Server Selection -->
-        <div id="service-modal" class="modal-overlay" style="display: none;">
-          <div class="modal-card">
-            <div class="modal-header">
-              <div class="modal-title-box">
-                <div class="modal-service-icon" id="modal-title-icon" style="width:40px;height:40px;border-radius:10px;overflow:hidden;background:var(--surface-2);display:flex;align-items:center;justify-content:center">📱</div>
-                <div class="modal-title" id="modal-service-name">Service Name</div>
-              </div>
-              <button class="modal-close" onclick="closeServiceModal()">✕</button>
-            </div>
-            <div class="modal-body">
-              <p class="modal-subtitle">Choose a server provider for this service</p>
-              <div id="server-options-list" class="server-options-list">
-                <!-- Server variants here -->
-              </div>
+            <div id="options-country" class="max-h-[220px] overflow-y-auto p-1.5 space-y-1">
+              <div class="p-3 text-center text-on-surface-variant text-xs">Loading...</div>
             </div>
           </div>
         </div>
       </div>
+
+      <div class="p-4 md:p-5 bg-surface">
+        <div class="flex items-center bg-surface-container-low border border-outline-variant/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-xl px-3.5 py-2 mb-4 transition-all gap-2.5">
+          <span class="font-bold text-xs md:text-sm text-on-surface-variant uppercase tracking-wider shrink-0 select-none">Search:</span>
+          <input type="text" autocomplete="off" id="search-service" class="w-full bg-transparent border-0 p-0 text-xs md:text-sm text-on-surface placeholder:text-outline/70 focus:outline-none focus:ring-0" placeholder="WhatsApp, Telegram, Google..." oninput="filterOptions('service')">
+        </div>
+        
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-[11px] md:text-xs text-outline font-bold uppercase tracking-wider">Available Services</span>
+          <span class="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-bold" id="service-count">0 Services</span>
+        </div>
+
+        <div id="services-list-container" class="overflow-y-auto pr-1 pb-3 custom-scrollbar" style="max-height: 380px;">
+          <div id="service-skeletons" style="display:none" class="py-12 flex justify-center items-center">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
     </div>
-  </main>
+  </div>
+</main>
+
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface/90 backdrop-blur-lg border-t border-outline-variant/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] shadow-lg flex justify-around items-center h-16 px-2 pb-safe">
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard">
+    <span class="material-symbols-outlined">home</span>
+    <span class="font-label-md text-[10px] mt-1">Home</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-xl px-4 py-1 scale-95 transition-transform" href="/dashboard/buy">
+    <span class="material-symbols-outlined">add_shopping_cart</span>
+    <span class="font-label-md text-[10px] mt-1 font-bold">Buy</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/orders">
+    <span class="material-symbols-outlined">history_edu</span>
+    <span class="font-label-md text-[10px] mt-1">History</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/accounts">
+    <span class="material-symbols-outlined">folder_special</span>
+    <span class="font-label-md text-[10px] mt-1">Accounts</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/wallet">
+    <span class="material-symbols-outlined">account_balance_wallet</span>
+    <span class="font-label-md text-[10px] mt-1">Wallet</span>
+  </a>
+</nav>
+
+<!-- Allocation Overlay -->
+<div id="allocation-overlay">
+    <a href="javascript:void(0)" class="back-btn-intercept" onclick="hideAllocationOverlay()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back
+    </a>
+    <div class="alloc-scene">
+        <div class="phone-3d">
+            <div class="phone-body">
+                <div class="phone-screen">
+                    <div id="matrix" class="matrix-display">0000000000</div>
+                </div>
+            </div>
+            <div id="emitter" class="emitter"></div>
+        </div>
+    </div>
+    <div class="ui-tray-intercept">
+        <div class="label-intercept" id="alloc-status">Intercepting Signal_</div>
+        <div class="bar-intercept"><div class="fill-intercept"></div></div>
+        <div class="percentage-display-intercept" id="alloc-pct">0%</div>
+    </div>
 </div>
 
+<!-- Modal -->
+<div id="service-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000] hidden items-center justify-center p-4" onclick="if(event.target === this) closeServiceModal()">
+  <div class="modal-card bg-surface-container-lowest w-full max-w-[400px] rounded-2xl shadow-xl flex flex-col border border-outline-variant/30" style="animation: genieMaximize 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; transform-origin: center center;">
+    <div class="p-4 border-b border-outline-variant/30 flex justify-between items-center shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary text-lg" id="modal-title-icon">📱</div>
+        <h3 class="font-headline-sm text-[16px] font-bold text-on-surface" id="modal-service-name">Service Name</h3>
+      </div>
+      <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container text-outline hover:text-on-surface transition-colors" onclick="closeServiceModal()">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+    <div class="p-4 overflow-y-auto max-h-[320px] shrink custom-scrollbar">
+      <p class="modal-subtitle font-body-sm text-xs text-on-surface-variant mb-3">Choose a server provider for this service</p>
+      <div id="server-options-list" class="flex flex-col gap-2"></div>
+    </div>
+  </div>
+</div>
 
 <script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-
-
 <script>
 {
   if (!requireLogin()) {}
-
-  let allServices = [];
-  let allCountries = [];
-  let selectedService = null;
-  let selectedCountry = null;
+  
   let balance = 0;
+  let allCountries = [];
+  let allServers = [];
+  let allServices = [];
   let filteredServices = [];
-  let pollInterval = null;
+  let selectedCountry = null;
+  let selectedService = null;
 
-  async function refreshServicesSilent() {
-    if (!selectedCountry) return;
-    try {
-      const services = await API.get(`/api/user/services?country_id=${selectedCountry._id}`);
-      // Only re-render if data actually changed to avoid flicker
-      if (JSON.stringify(services) !== JSON.stringify(allServices)) {
-        allServices = services;
-        filteredServices = services;
-        
-        const countEl = document.getElementById('service-count');
-        if (countEl) {
-          const uniqueCount = new Set(filteredServices.map(s => s.name)).size;
-          countEl.textContent = uniqueCount + " Services Available";
-        }
-        
-        renderServiceOptions(filteredServices);
-      }
-    } catch (e) { console.error("Poll error:", e); }
-  }
-
-  async function refreshBalanceSilent() {
-    try {
-      const dash = await API.get("/api/user/dashboard");
-      if (dash && typeof dash.balance !== 'undefined') {
-        balance = dash.balance;
-        const balEl = document.getElementById('wallet-balance');
-        if (balEl) balEl.textContent = fmtMoney(balance);
-        updateSummary();
-      }
-    } catch (e) { console.error("Balance poll error:", e); }
-  }
-
-  function startPolling() {
-    if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(() => {
-      // Only poll if tab is active to save resources and prevent freezes
-      if (document.visibilityState === 'visible') {
-        refreshServicesSilent();
-        refreshBalanceSilent();
-      }
-    }, 10000);
-  }
+  let currentPage = 1;
+  let hasMoreServices = true;
+  let isLoadingServices = false;
+  let currentSearch = "";
+  const LIMIT = 30;
 
   window.initBuy = async function() {
     try {
-      const resp = await Promise.allSettled([
-        API.get("/api/user/dashboard"),
-        API.get("/api/user/countries")
-      ]);
-      
-      const dash = resp[0].status === 'fulfilled' ? resp[0].value : { balance: 0 };
-      const countries = resp[1].status === 'fulfilled' ? resp[1].value : [];
-
-      balance = dash.balance;
-      allCountries = countries;
-      
-      renderCountryOptions(allCountries);
-      
-      // Auto-select India as default if available
-      const india = allCountries.find(c => 
-        (c.name && c.name.toLowerCase().includes('india')) || 
-        (c.code && (c.code.toString() === '91' || c.code.toString().toUpperCase() === 'IN'))
-      );
-      if (india) {
-         await selectCountryOption(india.code);
-      } else if (allCountries.length) {
-         await selectCountryOption(allCountries[0].code);
+      const dbUrl = new URLSearchParams(window.location.search).get('q');
+      if (dbUrl) {
+         document.getElementById('search-service').value = dbUrl;
+         currentSearch = dbUrl.toLowerCase();
       }
+
+      const { user, balance: b } = await API.get('/api/user/balance');
+      balance = b;
+      const navWallet = document.getElementById('nav-wallet-bal');
+      if (navWallet) { navWallet.textContent = fmtMoney(balance); }
+
+      const cachedCountries = getCache('countries');
+      if (cachedCountries) {
+        allCountries = cachedCountries;
+      } else {
+        allCountries = await API.get('/api/user/countries');
+        setCache('countries', allCountries, 120);
+      }
+
+      try { allServers = await API.get('/api/user/servers'); } catch (e) { allServers = []; }
       
-      startPolling();
-    } catch (e) { toast(e.message, "error"); }
+      const savedCountryId = localStorage.getItem('last_country_id');
+      const qCountryId = new URLSearchParams(window.location.search).get('country');
+      
+      let targetCountry = allCountries.find(c => c._id === qCountryId || c.id === qCountryId);
+      if (!targetCountry && savedCountryId) targetCountry = allCountries.find(c => c._id === savedCountryId || c.id === savedCountryId);
+      if (!targetCountry && allCountries.length > 0) targetCountry = allCountries[0];
+      
+      window.renderCountryOptions();
+      
+      if (targetCountry) {
+        await window.selectCountry(targetCountry._id || targetCountry.id);
+      }
+    } catch (e) {
+      toast("Initialization failed: " + e.message, "error");
+    }
   };
 
+  // Reload services when admin updates discounts for this user
+  window.addEventListener('socket:price_update', () => {
+    if (selectedCountry) {
+      toast('Your pricing has been updated! Refreshing prices...', 'info');
+      currentPage = 1;
+      hasMoreServices = true;
+      allServices = [];
+      filteredServices = [];
+      const container = document.getElementById('services-list-container');
+      if (container) container.innerHTML = '';
+      loadMoreServices(true);
+    }
+  });
+
   window.toggleDropdown = function(type) {
-    const select = document.getElementById(`select-${type}`);
-    if (!select) return;
-    const wasOpen = select.classList.contains('open');
-    document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('open'));
-    if (!wasOpen) {
-      select.classList.add('open');
-      setTimeout(() => document.getElementById(`search-${type}`)?.focus(), 100);
+    const el = document.getElementById(`dropdown-${type}`);
+    if (el) {
+      const wasOpen = el.classList.contains('open');
+      window.closeAllDropdowns();
+      if (!wasOpen) el.classList.add('open');
     }
   };
 
   window.closeAllDropdowns = function() {
-    document.querySelectorAll('.custom-select').forEach(el => el.classList.remove('open'));
+    document.querySelectorAll('.select-dropdown').forEach(el => el.classList.remove('open'));
   };
-
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.custom-select')) window.closeAllDropdowns();
   });
 
-  function renderCountryOptions(countries) {
+  window.renderCountryOptions = function() {
     const container = document.getElementById('options-country');
     if (!container) return;
-    if (!countries.length) {
-      container.innerHTML = '<div class="empty-state"><p>No countries available</p></div>';
-      return;
-    }
-    container.innerHTML = countries.map(c => `
-      <div class="select-option" onclick="selectCountryOption('${c.code}')" data-search="${c.name.toLowerCase()}">
-        <div class="option-left">
-          <span class="option-icon">${c.flag || '🌍'}</span>
-          <div class="option-info">
-            <div class="option-name">${c.name}</div>
-            <div class="option-detail">Code: ${c.code}</div>
-          </div>
+    container.innerHTML = allCountries.map(c => `
+      <div class="select-option flex items-center justify-between p-3 hover:bg-surface-container rounded-lg cursor-pointer transition-colors" onclick="selectCountry('${c._id || c.id}')" data-search="${c.name.toLowerCase()}">
+        <div class="flex items-center gap-3">
+          <span class="text-[20px]">${c.flag || '🌍'}</span>
+          <span class="font-label-md text-label-md font-bold text-on-surface">${c.name}</span>
         </div>
+        <span class="font-label-md text-[10px] text-primary bg-primary-container/20 px-2 py-0.5 rounded-full">+${c.code || '?'}</span>
       </div>
     `).join('');
-  }
+  };
 
-  window.selectCountryOption = async function(countryCode) {
-    const country = allCountries.find(c => c.code === countryCode);
+  window.selectCountry = async function(id) {
+    const country = allCountries.find(c => c._id === id || c.id === id);
     if (!country) return;
     
     selectedCountry = country;
-    const trigger = document.getElementById('selected-country-name');
-    if (trigger) trigger.textContent = `${country.flag || '🌍'} ${country.name}`;
+    localStorage.setItem('last_country_id', id);
     window.closeAllDropdowns();
     
-    // Show loading state
-    const skeletons = document.getElementById('service-skeletons');
+    const display = document.getElementById('selected-country-name');
+    if (display) {
+      display.innerHTML = `<span class="mr-2">${country.flag || '🌍'}</span> ${country.name}`;
+    }
+
+    currentPage = 1;
+    hasMoreServices = true;
+    allServices = [];
+    filteredServices = [];
+    
     const container = document.getElementById('services-list-container');
-    if (skeletons) skeletons.style.display = 'grid';
     if (container) container.innerHTML = '';
     
+    const skeletons = document.getElementById('service-skeletons');
+    if (skeletons) skeletons.style.display = 'flex';
+    
     try {
-      // Fetch services for this country in Real-Time
-      const countryId = country._id || country.id;
-      const services = await API.get(`/api/user/services?country_id=${countryId}`);
-      allServices = services;
-      filteredServices = services;
-      
-      const countEl = document.getElementById('service-count');
-      if (countEl) {
-        const uniqueCount = new Set(filteredServices.map(s => s.name)).size;
-        countEl.textContent = uniqueCount + " Services Available";
-      }
-      
-      renderServiceOptions(filteredServices);
+      await loadMoreServices(true);
     } catch (e) {
       toast("Failed to load services", "error");
     } finally {
@@ -985,192 +524,291 @@
     selectedService = null;
   };
 
-  function renderServiceOptions(services) {
+  async function loadMoreServices(isInitial = false) {
+    if (isLoadingServices || (!hasMoreServices && !isInitial)) return;
+    if (!selectedCountry) return;
+
+    isLoadingServices = true;
+    const countryId = selectedCountry._id || selectedCountry.id;
+    
+    // Fetch pinned services
+    const pinned = JSON.parse(localStorage.getItem('pinnedServices') || '[]');
+    const pinnedQuery = pinned.length > 0 ? `&pinned=${encodeURIComponent(pinned.join(','))}` : '';
+    
+    try {
+      const url = `/api/user/services?country_id=${countryId}&page=${currentPage}&limit=${LIMIT}&q=${encodeURIComponent(currentSearch)}${pinnedQuery}`;
+      const data = await API.get(url);
+      
+      const newServices = data.services || [];
+      if (isInitial) {
+        allServices = newServices;
+      } else {
+        allServices = [...allServices, ...newServices];
+      }
+      
+      filteredServices = allServices;
+      hasMoreServices = data.page < data.pages;
+      currentPage = data.page + 1;
+
+      const countEl = document.getElementById('service-count');
+      if (countEl) countEl.textContent = `${data.unique_total || 0} Services`;
+
+      renderServiceOptions(newServices, isInitial);
+      setupInfiniteScroll();
+    } catch (e) {
+      console.error("Load more error:", e);
+    } finally {
+      isLoadingServices = false;
+    }
+  }
+
+  function setupInfiniteScroll() {
     const container = document.getElementById('services-list-container');
     if (!container) return;
-    if (!services.length) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)">No services available for this country.</div>';
+
+    let loader = document.getElementById('infinite-scroll-trigger');
+    if (!loader) {
+      loader = document.createElement('div');
+      loader.id = 'infinite-scroll-trigger';
+      loader.style.height = '20px';
+      loader.style.margin = '20px 0';
+      container.appendChild(loader);
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMoreServices && !isLoadingServices) {
+        loadMoreServices();
+      }
+    }, { threshold: 0.1 });
+
+    observer.observe(loader);
+  }
+
+  function renderServiceOptions(services, isInitial = false) {
+    const container = document.getElementById('services-list-container');
+    if (!container) return;
+    
+    if (isInitial && !services.length) {
+      container.innerHTML = '<div class="text-center p-10 text-on-surface-variant">No services available for this country.</div>';
       return;
     }
 
     const groups = {};
+    const groupNamesInOrder = [];
     services.forEach(s => {
-      if (!groups[s.name]) groups[s.name] = [];
+      if (!groups[s.name]) {
+        groups[s.name] = [];
+        groupNamesInOrder.push(s.name);
+      }
       groups[s.name].push(s);
     });
 
-    container.innerHTML = `<div class="service-grid">` + Object.keys(groups).sort().map(name => {
+    const pinned = JSON.parse(localStorage.getItem('pinnedServices') || '[]');
+    const html = groupNamesInOrder.map(name => {
       const groupItems = groups[name];
       const minPrice = Math.min(...groupItems.map(i => i.price));
       const s = groupItems.find(i => i.image_url) || groupItems[0];
       
-      return `
-        <div class="service-card" onclick="selectServiceGroup('${name.replace(/'/g, "\\'")}')" data-search="${name.toLowerCase()}">
-          <div class="service-icon-box">
-            ${getServiceIcon(s, '40px')}
+      const minPriceItem = groupItems.reduce((min, curr) => (curr.price < min.price ? curr : min), groupItems[0]);
+      const displayOriginal = (minPriceItem.original_price && minPriceItem.original_price > minPriceItem.price) ? minPriceItem.original_price : null;
+      const isPinned = pinned.includes(name);
+
+      const sortedVariants = [...groupItems].sort((a, b) => a.price - b.price);
+      const serversHtml = sortedVariants.map(v => {
+        const serverName = (v.server_id && typeof v.server_id === 'object') ? v.server_id.name : 
+            (Array.isArray(allServers) ? allServers.find(srv => (srv._id == v.server_id || srv.id == v.server_id))?.name : null) || v.server_name || 'Standard Server';
+        return `
+          <div class="flex items-center justify-between p-3 bg-surface-container-low border-b border-outline-variant/10 hover:bg-surface-container transition-colors pl-4 md:pl-12 group cursor-pointer" onclick="buyFromModal('${v._id}')">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 flex items-center justify-center rounded-full bg-surface-container-high text-[10px] font-bold text-on-surface-variant shrink-0">?</span>
+              <span class="font-label-md text-[13px] md:text-sm font-semibold text-on-surface">${serverName}</span>
+            </div>
+            <div class="flex items-center gap-3 md:gap-4">
+              <span class="font-bold text-[13px] md:text-sm text-on-surface">₹${v.price.toFixed(2)}</span>
+              <div class="flex gap-2">
+                <button class="bg-[#3b82f6] text-white font-bold text-xs px-3 py-1.5 md:px-4 md:py-1.5 rounded-md hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1" onclick="event.stopPropagation(); buyFromModal('${v._id}')">
+                   <span class="material-symbols-outlined text-[14px]">shopping_cart</span> Buy
+                </button>
+                <button class="bg-surface-container text-on-surface-variant font-bold text-xs px-2 py-1.5 rounded-md border border-outline-variant/30 hover:bg-surface-container-high hover:text-on-surface transition-colors shadow-sm" onclick="event.stopPropagation();">
+                   <span class="material-symbols-outlined text-[14px]">sync</span>
+                </button>
+              </div>
+            </div>
           </div>
-          <div class="service-info">
-            <div class="service-name">${name}</div>
-            <div class="service-price">${fmtMoney(minPrice)}</div>
+        `;
+      }).join('');
+
+      return `
+        <div class="service-accordion-item border border-outline-variant/30 rounded-xl mb-2 overflow-hidden bg-surface transition-all ${isPinned ? 'border-primary/40 shadow-sm' : ''}" data-search="${String(name).toLowerCase()}">
+          <div class="flex items-center justify-between p-3 md:p-4 cursor-pointer hover:bg-surface-container-lowest" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180')">
+            <div class="flex items-center gap-3 md:gap-4">
+              <button type="button" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors ${isPinned ? 'text-primary' : 'text-outline'}" onclick="togglePinService(event, '${String(name).replace(/'/g, "\\'")}')" title="Pin this service">
+                 <span class="material-symbols-outlined text-[20px]">${isPinned ? 'star' : 'star_border'}</span>
+              </button>
+              <div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface overflow-hidden shrink-0 font-bold">
+                ${getServiceIcon(s)}
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="font-bold text-on-surface text-[13px] md:text-[15px]">${name}</h4>
+                ${typeof getCheckerBadgeHtml === 'function' ? getCheckerBadgeHtml(name) : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-2 md:gap-3">
+              ${s.is_trending ? `
+              <span class="trending-badge text-[9px] font-bold tracking-normal uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+                 <span class="material-symbols-outlined text-[11px] flame-icon">local_fire_department</span> Trending
+              </span>` : ''}
+              <span class="material-symbols-outlined text-outline transition-transform duration-200 chevron">expand_more</span>
+            </div>
+          </div>
+          <div class="accordion-content hidden bg-surface-container-lowest">
+            ${serversHtml}
           </div>
         </div>
       `;
-    }).join('') + `</div>`;
+    }).join('');
+
+    if (isInitial) {
+      container.innerHTML = `<div class="flex flex-col w-full" id="service-grid">` + html + `</div>`;
+    } else {
+      const grid = container.querySelector('#service-grid');
+      if (grid) grid.insertAdjacentHTML('beforeend', html);
+    }
   }
 
-  window.selectServiceGroup = function(name) {
-    const items = filteredServices.filter(s => s.name === name);
-    window.showServiceModal(name, items);
-  };
+  window.togglePinService = function(e, name) {
+    if (e && e.stopPropagation) e.stopPropagation();
 
-  window.showServiceModal = function(name, variants) {
-    const modal = document.getElementById('service-modal');
-    if (!modal) return;
-    
-    const titleEl = document.getElementById('modal-service-name');
-    if (titleEl) titleEl.textContent = name;
-
-    const iconBox = document.getElementById('modal-title-icon');
-    if (iconBox) iconBox.innerHTML = getServiceIcon(variants[0]);
-    
-    const list = document.getElementById('server-options-list');
-    if (list) {
-      list.innerHTML = variants.map(v => `
-        <div class="server-option" onclick="buyFromModal('${v._id}')">
-          <div class="server-main">
-            <div class="server-name">${
-              (v.server_id && typeof v.server_id === 'object') ? v.server_id.name : 
-              (allServers.find(s => (s._id == v.server_id || s.id == v.server_id))?.name || v.server_name || 'Standard Server')
-            }</div>
-            <div class="server-stats">
-              <span class="stat stat-success">✓ ${v.success_rate || '95%'} Success</span>
-              <span class="stat stat-time">⏱ Avg ${v.avg_time || '3s'}</span>
-            </div>
-          </div>
-          <div class="server-price">${fmtMoney(v.price)}</div>
-        </div>
-      `).join('');
+    let pinned = JSON.parse(localStorage.getItem('pinnedServices') || '[]');
+    const isPinnedNow = !pinned.includes(name);
+    if (isPinnedNow) {
+      pinned.push(name);
+    } else {
+      pinned = pinned.filter(p => p !== name);
     }
+    localStorage.setItem('pinnedServices', JSON.stringify(pinned));
     
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    // Instant DOM Animation (No waiting for API!)
+    const searchKey = String(name).toLowerCase();
+    const item = document.querySelector(`.service-accordion-item[data-search="${searchKey}"]`);
+    if (!item) return;
+
+    const btn = item.querySelector('button[title="Pin this service"]');
+    if (btn) {
+      const icon = btn.querySelector('.material-symbols-outlined');
+      if (isPinnedNow) {
+        btn.classList.remove('text-outline');
+        btn.classList.add('text-primary');
+        if (icon) icon.textContent = 'star';
+        item.classList.add('border-primary/40', 'shadow-sm');
+      } else {
+        btn.classList.remove('text-primary');
+        btn.classList.add('text-outline');
+        if (icon) icon.textContent = 'star_border';
+        item.classList.remove('border-primary/40', 'shadow-sm');
+      }
+    }
+
+    const grid = document.querySelector('#service-grid');
+    if (!grid) return;
+
+    if (isPinnedNow) {
+      // Highlight & Pop Animation going up
+      item.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      item.style.transform = 'scale(1.03)';
+      item.style.borderColor = 'var(--primary)';
+      item.style.boxShadow = '0 8px 24px rgba(16, 80, 212, 0.25)';
+      item.style.zIndex = '10';
+
+      setTimeout(() => {
+        const items = Array.from(grid.querySelectorAll('.service-accordion-item'));
+        const firstUnpinned = items.find(el => {
+          const elName = el.getAttribute('data-search');
+          return el !== item && !pinned.some(p => String(p).toLowerCase() === elName);
+        });
+
+        if (firstUnpinned) {
+          grid.insertBefore(item, firstUnpinned);
+        } else {
+          grid.prepend(item);
+        }
+
+        const container = document.getElementById('services-list-container');
+        if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+
+        setTimeout(() => {
+          item.style.transform = 'scale(1)';
+          item.style.boxShadow = '';
+          item.style.zIndex = '';
+        }, 400);
+      }, 150);
+    } else {
+      // Unpin animation moving down
+      item.style.transition = 'all 0.3s ease';
+      item.style.opacity = '0.5';
+      setTimeout(() => {
+        const items = Array.from(grid.querySelectorAll('.service-accordion-item'));
+        const firstUnpinned = items.find(el => {
+          const elName = el.getAttribute('data-search');
+          return el !== item && !pinned.some(p => String(p).toLowerCase() === elName);
+        });
+        if (firstUnpinned && firstUnpinned.nextSibling) {
+          grid.insertBefore(item, firstUnpinned.nextSibling);
+        } else {
+          grid.appendChild(item);
+        }
+        item.style.opacity = '1';
+      }, 200);
+    }
   };
 
   window.closeServiceModal = function() {
-    const modal = document.getElementById('service-modal');
-    if (!modal) return;
-    
-    const card = modal.querySelector('.modal-card');
-    if (card) card.classList.add('closing');
-    modal.style.opacity = '0';
-    
-    setTimeout(() => {
-      modal.style.display = 'none';
-      modal.style.opacity = '1';
-      if (card) card.classList.remove('closing');
-      document.body.style.overflow = '';
-    }, 400);
+    // Left empty for backwards compatibility if needed
   };
 
   window.buyFromModal = async function(serviceId) {
     const service = allServices.find(s => s._id === serviceId);
     if (!service) return;
-    
     selectedService = service;
     window.closeServiceModal();
-    
     await window.placeOrder();
   };
-
-  window.selectServiceOption = function(serviceId) {
-    const service = allServices.find(s => s._id === serviceId);
-    if (!service) return;
-    
-    selectedService = service;
-    window.closeAllDropdowns();
-    
-    const groupSummary = document.getElementById('group-summary');
-    if (groupSummary) groupSummary.style.display = 'block';
-    
-    window.updateSummary();
-    window.updateSteps(3);
-  };
-
-  function getPriceClass(price) {
-    if (price <= balance * 0.3) return 'affordable';
-    if (price > balance) return 'expensive';
-    return '';
-  }
 
   let filterTimeout = null;
   window.filterOptions = function(type) {
     if (type === 'service') {
       clearTimeout(filterTimeout);
-      filterTimeout = setTimeout(() => _performFilter(type), 200);
+      filterTimeout = setTimeout(() => {
+        const searchTerm = document.getElementById('search-service').value.toLowerCase();
+        if (searchTerm === currentSearch) return;
+        currentSearch = searchTerm;
+        currentPage = 1;
+        hasMoreServices = true;
+        allServices = [];
+        filteredServices = [];
+        const container = document.getElementById('services-list-container');
+        if (container) container.innerHTML = '';
+        const skeletons = document.getElementById('service-skeletons');
+        if (skeletons) skeletons.style.display = 'flex';
+        loadMoreServices(true).finally(() => { if (skeletons) skeletons.style.display = 'none'; });
+      }, 400);
     } else {
-      _performFilter(type);
+      const searchTerm = document.getElementById(`search-${type}`).value.toLowerCase();
+      const container = document.getElementById(`options-${type}`);
+      if (!container) return;
+      let visibleCount = 0;
+      container.querySelectorAll('.select-option').forEach(opt => {
+        const searchText = opt.dataset.search || opt.textContent.toLowerCase();
+        const match = searchText.includes(searchTerm);
+        opt.style.display = match ? 'flex' : 'none';
+        if (match) visibleCount++;
+      });
     }
   };
 
-  function _performFilter(type) {
-    const searchTerm = document.getElementById(`search-${type}`).value.toLowerCase();
-    const container = document.getElementById(`options-${type}`);
-    if (!container) return;
-    
-    const selector = type === 'country' ? '.select-option' : '.service-card';
-    let visibleCount = 0;
-    
-    container.querySelectorAll(selector).forEach(opt => {
-      const searchText = opt.dataset.search || opt.textContent.toLowerCase();
-      const match = searchText.includes(searchTerm);
-      opt.style.display = match ? 'flex' : 'none';
-      if (match) visibleCount++;
-    });
-
-    if (type === 'service') {
-       const countEl = document.getElementById('service-count');
-       if (countEl) countEl.textContent = visibleCount + " Available";
-    }
-  }
-
-  window.updateSummary = function() {
-    const set = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
-    };
-    
-    set('summary-service', selectedService?.name || '—');
-    set('summary-country', selectedCountry ? `${selectedCountry.flag || '🌍'} ${selectedCountry.name}` : '—');
-    set('summary-server', selectedService?.server_id?.name || 'Default');
-    set('summary-balance', fmtMoney(balance));
-    set('summary-price', selectedService?.price ? fmtMoney(selectedService.price) : '—');
-    
-    const buyBtn = document.getElementById('buy-btn');
-    if (buyBtn) {
-      if (selectedService && selectedService.price > balance) {
-        buyBtn.disabled = true;
-        buyBtn.innerHTML = '<span>⚠️</span><span>Insufficient Balance</span>';
-      } else if (selectedService) {
-        buyBtn.disabled = false;
-        buyBtn.innerHTML = '<span>🚀</span><span>Buy Now</span>';
-      }
-    }
-  };
-
-  window.updateSteps = function(step) {
-    for (let i = 1; i <= 3; i++) {
-      const stepEl = document.getElementById(`step-${i}`);
-      if (stepEl) {
-        stepEl.classList.remove('active', 'completed');
-        if (i < step) stepEl.classList.add('completed');
-        if (i === step) stepEl.classList.add('active');
-      }
-    }
-  };
-
-  /* ── 3D Allocation Logic (UPGRADED) ── */
   let allocInterval;
   let particleInterval;
+  let matrixInterval;
   let audioCtx;
 
   function initAudio() {
@@ -1182,87 +820,110 @@
   }
 
   function playSuccessSound() {
-      if (!audioCtx) return;
-      const playTone = (freq, type, time, duration, vol) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + time);
-          gain.gain.setValueAtTime(vol, audioCtx.currentTime + time);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + time + duration);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(audioCtx.currentTime + time);
-          osc.stop(audioCtx.currentTime + time + duration);
-      };
-      playTone(523.25, 'sine', 0, 0.2, 0.2); 
-      playTone(659.25, 'sine', 0.1, 0.2, 0.2);
-      playTone(1046.50, 'sine', 0.2, 0.6, 0.2);
+    initAudio();
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+    osc.frequency.exponentialRampToValueAtTime(880.00, audioCtx.currentTime + 0.1); 
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
   }
 
-  function generateOTPMessage() {
-      const otp4 = Math.floor(1000 + Math.random() * 9000);
-      const otp6 = Math.floor(100000 + Math.random() * 900000);
-      const types = [
-          () => `Your Blinkit OTP: ${otp4}`,
-          () => `Login With ${otp4}`,
-          () => `Your Swiggy code is ${otp6}`,
-          () => `Amazon pay OTP: ${otp6}`,
-          () => `Zomato verification: ${otp4}`
-      ];
-      return types[Math.floor(Math.random() * types.length)]();
+  function playFailSound() {
+    initAudio();
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
   }
 
-  function createParticle() {
-      const container = document.getElementById('alloc-particles');
-      if (!container) return;
-      const el = document.createElement('div');
-      const isOTP = Math.random() > 0.88; 
-
-      if (isOTP) {
-          el.className = 'sms-bubble';
-          el.innerText = generateOTPMessage();
-          el.style.setProperty('--rx', (Math.random() - 0.5) * 15 + 'deg');
-          el.style.setProperty('--ry', (Math.random() - 0.5) * 15 + 'deg');
-          el.style.setProperty('--rz', (Math.random() - 0.5) * 15 + 'deg'); 
-          el.style.setProperty('--read-scale', Math.random() * 1.5 + 1.8);
-      } else {
-          el.className = 'number-particle';
-          const chars = '0123456789';
-          el.innerText = chars[Math.floor(Math.random() * chars.length)]; 
-          el.style.opacity = Math.random() * 0.7 + 0.3;
-          el.style.setProperty('--rx', (Math.random() - 0.5) * 720 + 'deg');
-          el.style.setProperty('--ry', (Math.random() - 0.5) * 720 + 'deg');
-          el.style.setProperty('--rz', (Math.random() - 0.5) * 360 + 'deg');
-          el.style.setProperty('--read-scale', Math.random() * 3 + 2);
-      }
-
-      el.style.setProperty('--tx', (Math.random() - 0.5) * 100 + 'vw'); 
-      el.style.setProperty('--ty', (Math.random() - 0.5) * 100 + 'vh'); 
-      el.style.setProperty('--tz', (Math.random() * 800 + 400) + 'px'); 
-      const duration = (Math.random() * 2.0 + 2.0) + 's'; 
-      el.style.setProperty('--duration', duration);
-
-      container.appendChild(el);
-      setTimeout(() => el.remove(), parseFloat(duration) * 1000);
-  }
+  const otpTemplates = [
+      { s: "Flipkart", m: "Your login OTP is ", c: true },
+      { s: "Swiggy", m: "Use code to verify: ", c: true },
+      { s: "Myntra", m: "Verify your Myntra account: ", c: true },
+      { s: "JioMart", m: "Verification code: ", c: true }
+  ];
 
   const allocStatuses = [
-      "GETTING NUMBER...", 
-      "GENERATING OTPS...", 
-      "SECURING CONNECTION...", 
-      "ALLOCATING DATA..."
+      "INTERCEPTING SIGNAL...", 
+      "DECRYPTING FREQUENCY...", 
+      "EXTRACTING PAYLOAD...", 
+      "BYPASSING SECURITY..."
   ];
+
+  function updateMatrix() {
+      const matrixEl = document.getElementById('matrix');
+      if (!matrixEl) return;
+      let str = "";
+      for(let i=0; i<10; i++) str += Math.floor(Math.random() * 10);
+      matrixEl.innerText = str;
+  }
+
+  function createNotification() {
+      const emitter = document.getElementById('emitter');
+      if (!emitter || emitter.children.length > 5) return;
+      const temp = otpTemplates[Math.floor(Math.random() * otpTemplates.length)];
+      const code = Math.floor(100000 + Math.random() * 900000);
+      const card = document.createElement('div');
+      card.className = 'notification';
+      card.innerHTML = `
+          <div class="notif-header">
+              <span>${temp.s}</span>
+              <span style="opacity:0.5; font-size:8px;">Now</span>
+          </div>
+          <div class="notif-body">
+              ${temp.m}<span class="otp-code">${code}</span>
+          </div>
+      `;
+      const startX = 10 + Math.random() * 80;
+      const startY = 10 + Math.random() * 80;
+      card.style.left = `${startX}%`;
+      card.style.top = `${startY}%`;
+      const throwX = (Math.random() * 2400 - 1200) + 'px';
+      const throwY = (Math.random() * 2400 - 1200) + 'px';
+      const throwRot = (Math.random() * 80 - 40) + 'deg';
+      const duration = 2.5 + Math.random() * 1.5;
+      card.style.setProperty('--tx', throwX);
+      card.style.setProperty('--ty', throwY);
+      card.style.setProperty('--tr', throwRot);
+      card.style.animation = `throw-towards-user ${duration}s cubic-bezier(0.1, 0, 0.3, 1) forwards`;
+      emitter.appendChild(card);
+      setTimeout(() => card.remove(), duration * 1000);
+  }
 
   window.startAllocation = function() {
     initAudio();
     const overlay = document.getElementById('allocation-overlay');
     const pct = document.getElementById('alloc-pct');
     const status = document.getElementById('alloc-status');
-    const camera = document.getElementById('alloc-camera');
-    const container = document.getElementById('alloc-particles');
+    const emitter = document.getElementById('emitter');
+    const pLoader = document.getElementById('persistent-buy-loader');
+    const pStatus = document.getElementById('persistent-buy-status');
     
-    if (container) container.innerHTML = '';
+    if (pLoader) pLoader.style.display = 'block';
+    if (pStatus) pStatus.style.display = 'flex';
+    
+    // Check if immersive animations disabled
+    const disableImmersive = localStorage.getItem('disable_immersive_animations') === 'true';
+    if (disableImmersive) return new Promise(r => setTimeout(r, 100));
+    
+    if (emitter) emitter.innerHTML = '';
     overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     
@@ -1270,158 +931,143 @@
     let statusIndex = 0;
     status.innerText = allocStatuses[0];
     pct.innerText = "0%";
-    pct.style.fontSize = "clamp(2rem, 8vmin, 3.5rem)";
-    pct.style.color = "var(--accent)";
-    pct.style.textShadow = "0 0 15px var(--accent)";
     
-    camera.style.transform = `translateZ(0px) rotateX(60deg) rotateZ(-20deg)`;
-    
-    particleInterval = setInterval(() => {
-        const burstCount = Math.floor(Math.random() * 3) + 2;
-        for(let i=0; i<burstCount; i++) createParticle();
-    }, 80);
+    matrixInterval = setInterval(updateMatrix, 80);
+    particleInterval = setInterval(createNotification, 1800);
+    setTimeout(createNotification, 500);
 
     return new Promise((resolve) => {
       allocInterval = setInterval(() => {
         if (progress < 95) {
-          progress += Math.random() * 1.5 + 1; // Faster progress
+          progress += Math.random() * 0.8 + 0.4;
           if (progress > 95) progress = 95;
           pct.innerText = Math.floor(progress) + "%";
-          
-          const eased = Math.pow(progress / 100, 2.5);
-          const isMobile = window.innerWidth < 600;
-          const maxZ = isMobile ? 250 : 500;
-          const currentRotX = 60 - (eased * 60);
-          const currentRotZ = -20 - (eased * -20);
-          const currentZ = eased * maxZ;
-          camera.style.transform = `translateZ(${currentZ}px) rotateX(${currentRotX}deg) rotateZ(${currentRotZ}deg)`;
-
           const nextThreshold = (statusIndex + 1) * 25;
           if (progress >= nextThreshold && statusIndex < allocStatuses.length - 1) {
               statusIndex++;
               status.innerText = allocStatuses[statusIndex];
           }
         }
-      }, 40);
+      }, 50);
       resolve();
     });
   };
 
   window.finishAllocation = function(number) {
     clearInterval(allocInterval);
+    clearInterval(particleInterval);
+    clearInterval(matrixInterval);
     playSuccessSound();
+
+    const pLoader = document.getElementById('persistent-buy-loader');
+    const pStatus = document.getElementById('persistent-buy-status');
+    if (pLoader) pLoader.style.display = 'none';
+    if (pStatus) pStatus.style.display = 'none';
+    
     const pct = document.getElementById('alloc-pct');
     const status = document.getElementById('alloc-status');
     
-    pct.innerText = "100%";
+    pct.innerText = number || "100%";
+    pct.style.color = "var(--primary)";
+    pct.style.textShadow = "0 0 20px var(--primary)";
+    status.innerText = "PAYLOAD_DECRYPTED_SUCCESS";
     
-    // Final burst
-    for(let i = 0; i < 30; i++) {
-        setTimeout(createParticle, i * 30);
+    for(let i = 0; i < 8; i++) {
+        setTimeout(createNotification, i * 50);
     }
-
-    setTimeout(() => {
-      pct.innerText = number;
-      pct.style.fontSize = "clamp(1.5rem, 5vmin, 2.5rem)";
-      pct.style.color = "#fff";
-      pct.style.textShadow = "0 0 20px #fff, 0 0 40px var(--accent)";
-      status.innerText = "ALLOCATION_SUCCESS";
-    }, 800);
   };
 
   window.failAllocation = function() {
     clearInterval(allocInterval);
     clearInterval(particleInterval);
+    clearInterval(matrixInterval);
+    playFailSound();
+
+    const pLoader = document.getElementById('persistent-buy-loader');
+    const pStatus = document.getElementById('persistent-buy-status');
+    if (pLoader) pLoader.style.display = 'none';
+    if (pStatus) pStatus.style.display = 'none';
+    
     const pct = document.getElementById('alloc-pct');
     const status = document.getElementById('alloc-status');
     
     pct.innerText = "FAIL";
-    pct.style.color = "var(--danger)";
-    pct.style.textShadow = "0 0 20px var(--danger)";
-    status.innerText = "NUMBER_ALLOCATION_FAILED";
+    pct.style.color = "var(--error)";
+    status.innerText = "SIGNAL_INTERRUPTION_FAILURE";
     
     setTimeout(() => {
+      window.hideAllocationOverlay();
+    }, 800);
+  };
+
+  let allocationController = null;
+  window.placeOrder = async function() {
+    if (!requireLogin()) return;
+    if (!selectedService || !selectedCountry) {
+      toast('Please select service and country', 'error');
+      return;
+    }
+    
+    allocationController = new AbortController();
+    window.startAllocation();
+    
+    try {
+      const res = await API.post('/api/user/orders', {
+        service_id: selectedService._id
+      }, { timeout: 60000, signal: allocationController.signal });
+      
+      window.finishAllocation(res.order.phone);
+      
       const overlay = document.getElementById('allocation-overlay');
+      if (overlay && overlay.style.display !== 'none') {
+        setTimeout(() => window.location.href = `/dashboard/orders/${res.order.order_id}`, 400);
+      } else {
+        window.location.href = `/dashboard/orders/${res.order.order_id}`;
+      }
+      
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+
+      const isNetworkError = e.message === 'Failed to fetch' || e.message === 'NetworkError when attempting to fetch resource.' || e.name === 'TypeError';
+
+      if (isNetworkError) {
+        // Server may have restarted mid-request, but the order could still have been saved.
+        // Wait a moment and then check for a recently created active order.
+        try {
+          await new Promise(r => setTimeout(r, 2000));
+          const recent = await API.get('/api/user/orders?status=active&limit=1');
+          const latestOrder = recent?.orders?.[0];
+          if (latestOrder && latestOrder.order_id) {
+            // Order was created successfully — navigate to it
+            window.finishAllocation(latestOrder.phone || '');
+            setTimeout(() => window.location.href = `/dashboard/orders/${latestOrder.order_id}`, 400);
+            return;
+          }
+        } catch (_) { /* ignore — fall through to failure */ }
+      }
+
+      const msg = e.message.includes('aborted') ? 'Number Not Available' : (e.message || 'Number Not Available');
+      toast(msg, 'error');
+      window.failAllocation();
+    } finally {
+      allocationController = null;
+    }
+  };
+
+  window.hideAllocationOverlay = function() {
+    const overlay = document.getElementById('allocation-overlay');
+    if (overlay) {
       overlay.style.opacity = '0';
       setTimeout(() => {
         overlay.style.display = 'none';
         overlay.style.opacity = '1';
         document.body.style.overflow = '';
       }, 500);
-    }, 2500);
-  };
-
-  window.placeOrder = async function() {
-    if (!selectedService || !selectedCountry) {
-      toast('Please select service and country', 'error');
-      return;
-    }
-    
-    const btn = document.getElementById('buy-btn');
-    if (btn) btn.disabled = true;
-
-    // Start 3D Animation
-    window.startAllocation();
-    
-    try {
-      // Extended timeout for purchase (60s) because provider APIs can be very slow
-      const res = await API.post('/api/user/orders', {
-        service_id: selectedService._id
-      }, { timeout: 60000 });
-      
-      // Complete animation with number
-      window.finishAllocation(res.order.phone);
-      
-      setTimeout(() => {
-        SPA.navigate(`/dashboard/orders/${res.order.order_id}`);
-      }, 2500);
-      
-    } catch (e) {
-      // Map timeout or generic abort errors to "Number Not Available" as requested
-      const msg = (e.name === 'AbortError' || e.message.includes('aborted')) 
-        ? "Number Not Available" 
-        : (e.message || "Number Not Available");
-        
-      toast(msg, 'error');
-      window.failAllocation();
-      if (btn) btn.disabled = false;
     }
   };
 
   window.initBuy();
 }
 </script>
-
-<!-- 3D Allocation Loader -->
-<div id="allocation-overlay">
-    <div class="camera-rig" id="alloc-camera">
-        <div class="scene">
-            <div class="phone">
-                <!-- 3D Phone Thickness Layers -->
-                <div class="phone-layer shadow-layer"></div>
-                <div class="phone-layer"></div>
-                <div class="phone-layer"></div>
-                <div class="phone-layer"></div>
-                <div class="phone-layer"></div>
-                <div class="phone-layer front">
-                    <div class="screen">
-                        <div class="screen-bg"></div>
-                        <div class="notch"></div>
-                        <div class="loading-ui">
-                            <div class="percentage" id="alloc-pct">0%</div>
-                            <div class="status" id="alloc-status">ALLOCATING_</div>
-                        </div>
-                        <div class="particles" id="alloc-particles"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
 </body>
 </html>
-
-
-

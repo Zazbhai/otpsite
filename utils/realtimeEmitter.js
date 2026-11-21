@@ -1,90 +1,98 @@
 /**
  * realtimeEmitter.js
  * ─────────────────────────────────────────────────
- * Singleton store for active SSE clients + helpers
+ * Singleton store for Socket.io instance and helpers
  * to emit events from anywhere in the server.
- *
- * Event types (string):
- *   "balance"   – user balance changed         { userId, balance }
- *   "order"     – order status/OTP updated     { userId, orderId, status, otp }
- *   "settings"  – site settings changed        {}
- *   "ping"      – keepalive (no data needed)   {}
  */
 
-const clients = new Map(); // userId (string) → Set<res>
-const anonClients = new Set(); // unauthenticated SSE connections
+let io = null;
 
 /**
- * Register an SSE client response object.
- * @param {string|null} userId
- * @param {import('express').Response} res
+ * Initialize Socket.io
+ * @param {import('socket.io').Server} socketIoInstance
  */
-function addClient(userId, res) {
-  if (userId) {
-    if (!clients.has(userId)) clients.set(userId, new Set());
-    clients.get(userId).add(res);
-  } else {
-    anonClients.add(res);
-  }
-}
+function init(socketIoInstance) {
+  io = socketIoInstance;
 
-/**
- * Remove an SSE client response object.
- */
-function removeClient(userId, res) {
-  if (userId) {
-    const set = clients.get(userId);
-    if (set) {
-      set.delete(res);
-      if (set.size === 0) clients.delete(userId);
+  io.on('connection', (socket) => {
+    // Verify the JWT token from the client handshake query, NOT raw userId
+    const token = socket.handshake.query.token;
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+        const verifiedUserId = String(decoded.user_id || decoded.id);
+        socket.join(`user:${verifiedUserId}`);
+        socket.__userId = verifiedUserId;
+      } catch {
+        // Invalid token — join anonymous room only, no order events
+        socket.join('anonymous');
+      }
+    } else {
+      socket.join('anonymous');
     }
-  } else {
-    anonClients.delete(res);
-  }
+
+    socket.on('disconnect', () => {
+      // Socket.io handles room cleanup automatically
+    });
+  });
 }
 
 /**
- * Send an SSE event to a specific user's connections.
- * @param {string} userId
- * @param {string} event
- * @param {object} data
+ * Send an event to a specific user's connections.
  */
 function emitToUser(userId, event, data = {}) {
-  const set = clients.get(String(userId));
-  if (!set) return;
-  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  set.forEach(res => {
-    try { res.write(payload); } catch (_) {}
-  });
+  if (["order", "balance", "wallet_update"].includes(event)) {
+    require("./adminRealtime").notifyAdminChange();
+  }
+  // 1. Socket.io
+  if (io) {
+    io.to(`user:${userId}`).emit(event, data);
+  }
+
+  // 2. SSE (Server-Sent Events) fallback
+  try {
+    const auth = require("../routes/auth");
+    if (auth && typeof auth.ssePush === "function") {
+      auth.ssePush(userId, event, data);
+    }
+  } catch (e) {
+    // auth route might not be loaded yet or cyclic dependency avoided by require() in fn
+  }
 }
 
 /**
- * Broadcast an event to ALL connected clients (auth + anon).
- * @param {string} event
- * @param {object} data
+ * Broadcast an event to ALL connected clients.
  */
 function emitToAll(event, data = {}) {
-  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  clients.forEach(set => set.forEach(res => {
-    try { res.write(payload); } catch (_) {}
-  }));
-  anonClients.forEach(res => {
-    try { res.write(payload); } catch (_) {}
-  });
+  // 1. Socket.io
+  if (io) {
+    io.emit(event, data);
+  }
+
+  // 2. SSE Fallback
+  try {
+    const auth = require("../routes/auth");
+    if (auth && typeof auth.ssePushAll === "function") {
+      auth.ssePushAll(event, data);
+    }
+  } catch (e) {
+    // Cyclic dependency guard
+  }
 }
 
 /**
  * Returns total connected client count (for debugging).
  */
-function clientCount() {
-  let n = anonClients.size;
-  clients.forEach(s => { n += s.size; });
-  return n;
+async function clientCount() {
+  if (!io) return 0;
+  const sockets = await io.fetchSockets();
+  return sockets.length;
 }
 
-// Keepalive ping every 20s to prevent proxy timeouts
+// Keepalive ping every 20s (Socket.io has built-in heartbeats, but this is for custom UI)
 setInterval(() => {
   emitToAll('ping', { t: Date.now() });
 }, 20000);
 
-module.exports = { addClient, removeClient, emitToUser, emitToAll, clientCount };
+module.exports = { init, emitToUser, emitToAll, clientCount };

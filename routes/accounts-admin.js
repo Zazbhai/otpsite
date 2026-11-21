@@ -3,6 +3,8 @@ const router   = express.Router();
 const { adminRequired } = require("../middleware/auth");
 const AccountCategory   = require("../models/AccountCategory");
 const ReadymadeAccount  = require("../models/ReadymadeAccount");
+const Setting          = require("../models/Setting");
+
 
 router.use(adminRequired);
 
@@ -70,9 +72,16 @@ router.get("/categories/:id/accounts", async (req, res) => {
   try {
     const catIdField = 'category_id';
     
-    const { page = 1, limit = 50, status } = req.query;
+    const { page = 1, limit = 50, status, q } = req.query;
     const filter = { [catIdField]: req.params.id };
     if (status) filter.status = status;
+    if (q) {
+      filter.$or = [
+        { credentials: new RegExp(q, "i") },
+        { notes: new RegExp(q, "i") }
+      ];
+    }
+
     const total    = await ReadymadeAccount.countDocuments(filter);
     const accounts = await ReadymadeAccount.find(filter)
       .sort({ createdAt: -1 })
@@ -116,7 +125,7 @@ router.delete("/accounts/:id", async (req, res) => {
 });
 
 /* ─── GLOBAL FEATURE TOGGLE ──────────────────────────────────── */
-const Setting = require("../models/Setting");
+
 const FEATURE_KEY = "readymade_accounts_enabled";
 
 router.get("/settings", async (req, res) => {

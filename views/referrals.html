@@ -1,245 +1,250 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Referral Program — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
-  <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
-
-  <style>
-    .main-content {
-      animation: slideInUp 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-    @keyframes slideInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .referral-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 32px;
-      margin-bottom: 32px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .referral-card::before {
-      content: '';
-      position: absolute;
-      top: -100px;
-      right: -100px;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
-      opacity: 0.1;
-      filter: blur(40px);
-    }
-
-    .link-box {
-      background: rgba(0,0,0,0.2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 24px;
-      flex-wrap: wrap; /* Added for responsiveness */
-    }
-
-    @media (max-width: 480px) {
-      .link-box {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .link-text {
-        text-align: center;
-        word-break: break-all;
-        white-space: normal;
-      }
-      .copy-btn {
-        width: 100%;
-      }
-    }
-
-    .link-text {
-      flex: 1;
-      font-family: monospace;
-      color: var(--accent);
-      font-weight: 700;
-      font-size: 16px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .copy-btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .copy-btn:hover { filter: brightness(1.1); transform: scale(1.05); }
-
-    .stat-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 32px;
-    }
-
-    .referred-list-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 24px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 8px;
-    }
-    th { text-align: left; padding: 12px 16px; color: var(--text-3); font-size: 12px; text-transform: uppercase; }
-    td { padding: 16px; background: rgba(255, 255, 255, 0.02); color: #fff; }
-    td:first-child { border-radius: 12px 0 0 12px; }
-    td:last-child { border-radius: 0 12px 12px 0; }
-  </style>
+  <link rel="stylesheet" href="/css/main.css" />
 </head>
-<body>
-<nav class="navbar">
-  <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-    <div class="nav-links">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/dashboard/buy">Buy Number</a>
-      <a href="/dashboard/referrals" class="active">Referrals</a>
-      <a href="/dashboard/wallet">Wallet</a>
-      <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+<body class="bg-background text-on-background font-body-md min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col bg-surface border-r border-outline-variant/30 py-6 z-50 shadow-sm">
+  <div class="px-6 mb-8 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+      <span class="material-symbols-outlined">lock</span>
+    </div>
+    <div>
+      <h1 class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">{{SITE_NAME}}</h1>
+      <p class="font-label-md text-label-md text-on-surface-variant">Secure OTP Service</p>
     </div>
   </div>
-</nav>
+    <nav class="flex-1 px-4 space-y-2">
+    <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">dashboard</span> Dashboard
+    </a>
+    <a href="/dashboard/wallet" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">account_balance_wallet</span> Wallet
+    </a>
+    <a href="/dashboard/buy" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">add_shopping_cart</span> Buy Number
+    </a>
+    <a href="/dashboard/accounts" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">folder_special</span> Accounts
+    </a>
+    <a href="/dashboard/orders" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">receipt_long</span> Orders
+    </a>
+    <a href="/dashboard/referrals" class="flex items-center gap-3 px-4 py-3 text-primary bg-primary-container/10 border-l-4 border-primary rounded-r-lg transition-all duration-200 ease-in-out font-label-md text-label-md">
+      <span class="material-symbols-outlined">group</span> Referrals
+    </a>
+    <a href="/dashboard/profile" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">person</span> Profile
+    </a>
+  </nav>
+  <div class="px-4 mt-auto space-y-4">
+    <a href="/dashboard/buy" class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg shadow-sm hover:shadow-md transition-shadow flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">add</span> New Purchase
+    </a>
+    <div class="border-t border-outline-variant/30 pt-4 space-y-2">
+      <a href="/support" class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">support_agent</span> Support
+      </a>
+      <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-error hover:bg-error-container/20 transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+      </button>
+    </div>
+  </div>
+</aside>
 
-<div class="layout">
-  <aside class="sidebar">
-    <div id="user-info" style="display:flex;align-items:center;gap:12px;padding:16px;background:rgba(255,255,255,0.03);border-radius:16px;margin-bottom:12px; border: 1px solid var(--glass-border)">
-      <div id="avatar-wrap"></div>
-      <div style="min-width:0">
-        <div id="user-name" class="font-bold truncate" style="font-size:15px; color:#fff"></div>
-        <div id="user-balance" class="text-sm font-bold" style="color:var(--success)"></div>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen relative pb-20 md:pb-0" style="min-width:0;overflow-x:hidden;" id="main-content">
+  <!-- TopNavBar -->
+    <!-- TopNavBar -->
+    <!-- TopNavBar -->
+  <header class="bg-surface/80 backdrop-blur-md sticky top-0 w-full z-40 border-b border-outline-variant/30 shadow-sm flex justify-between items-center px-3 md:px-8 h-16 gap-2">
+    <div id="gnav-left" class="flex items-center gap-2 md:gap-3 min-w-0 flex-1 md:flex-initial overflow-hidden">
+      <a href="/dashboard" class="flex items-center gap-2 md:gap-2.5 text-decoration-none min-w-0 overflow-hidden">
+        <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-primary inline-block animate-pulse shadow-[0_0_8px_rgba(16,80,212,0.6)] flex-shrink-0"></span>
+        <h1 class="font-headline-sm text-[16px] sm:text-[18px] md:text-[22px] font-extrabold text-primary tracking-tight m-0 truncate">{{SITE_NAME}}</h1>
+      </a>
+    </div>
+    <div id="gnav-right" class="flex items-center gap-2 md:gap-3 flex-shrink-0">
+      <div id="gnav-wallet-pill" class="gnav-wallet-pill-wrapper">
+        <a href="/dashboard/wallet" class="gnav-wallet-bal" title="My Wallet">
+          <span class="wallet-icon-effect">💰</span>
+          <span id="nav-global-wallet-bal" class="font-bold">$0.00</span>
+        </a>
+        <a href="/dashboard/wallet" class="gnav-wallet-add" title="Add Funds">+</a>
+      </div>
+      <div id="gnav-avatar-container" class="relative flex-shrink-0">
+        <div id="gnav-avatar" class="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-primary bg-primary-container text-primary font-bold flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 transition-transform overflow-hidden">
+          <span class="material-symbols-outlined text-[18px]">person</span>
+        </div>
       </div>
     </div>
-    <div class="sidebar-label">Navigation</div>
-    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
-    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
-    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
-    <a href="/dashboard/referrals" class="sidebar-item active">🤝 Referrals</a>
-    <a href="/dashboard/wallet" class="sidebar-item">💰 Wallet</a>
-    <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
-    <div class="sidebar-divider"></div>
-    <a href="/support" class="sidebar-item">💬 Support</a>
-    <button onclick="logout()" class="sidebar-item" style="width:100%;text-align:left;color:var(--danger)">🚪 Logout</button>
-  </aside>
+  </header>
 
-  <main class="main-content">
-    <header style="margin-bottom:40px">
-      <h1 style="font-size:32px; font-weight:800; color:#fff; margin-bottom:8px">Invite & Earn 🤝</h1>
-      <p style="color:var(--text-3)">Invite your friends and earn a lifetime commission from every deposit they make.</p>
-    </header>
+  <!-- Page Content -->
+  <div class="p-margin-mobile md:p-margin-desktop flex-1 flex flex-col max-w-container-max mx-auto w-full pt-8 pb-12 gap-8">
+    
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div>
+        <h2 class="font-headline-lg text-[28px] font-bold text-on-background">Invite & Earn 🤝</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mt-1">Invite your friends and earn a lifetime commission from every deposit they make.</p>
+      </div>
+    </div>
 
-    <div class="referral-card">
-      <div style="max-width:600px">
-        <h3 style="font-size:20px; color:#fff; margin-bottom:12px" id="reward-headline">Earn rewards for every friend!</h3>
-        <p style="color:var(--text-2); font-size:14px; line-height:1.6">Share your unique referral link with your friends. Once they sign up and complete a deposit, you'll instantly receive a bonus in your wallet.</p>
-        
-        <div class="link-box">
-          <span class="link-text" id="referral-link-display">https://{{SITE_NAME}}/register?ref=CODE</span>
-          <button class="copy-btn" id="copy-btn">📋 Copy</button>
+    <!-- Referral Info Card -->
+    <div class="bg-surface border border-outline-variant/30 rounded-2xl shadow-sm p-6 sm:p-8 relative overflow-hidden group">
+      <div class="absolute -right-20 -top-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-colors pointer-events-none"></div>
+      
+      <div class="relative z-10 max-w-2xl">
+        <h3 class="font-headline-md text-[22px] font-bold text-on-surface mb-2" id="reward-headline">
+          <div class="w-64 h-8 bg-surface-container rounded animate-pulse"></div>
+        </h3>
+        <p class="font-body-sm text-[14px] text-on-surface-variant leading-relaxed mb-6">
+          Share your unique referral link with your friends. Once they sign up and complete a deposit, you'll instantly receive a bonus in your wallet.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-surface-container border border-outline-variant/50 rounded-xl p-3 focus-within:border-primary transition-colors">
+          <div class="flex-1 px-3 overflow-hidden">
+            <span class="font-mono text-[14px] font-bold text-primary truncate block w-full" id="referral-link-display">
+              <div class="w-full h-5 bg-surface-container-high rounded animate-pulse"></div>
+            </span>
+          </div>
+          <button class="bg-primary hover:bg-primary/90 text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md font-bold transition-colors whitespace-nowrap flex items-center justify-center gap-2 shadow-sm" id="copy-btn">
+            <span class="material-symbols-outlined text-[18px]">content_copy</span> Copy
+          </button>
         </div>
       </div>
     </div>
 
-    <div class="stat-row">
-      <div class="glass-card stat-item">
-        <div class="stat-icon">👥</div>
-        <div class="stat-label">Total Referrals</div>
-        <div class="stat-value" id="stat-count">0</div>
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="bg-surface border border-outline-variant/30 rounded-xl p-6 shadow-sm flex items-center gap-4">
+        <div class="w-14 h-14 rounded-full bg-secondary-container/30 text-secondary flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[28px]">group</span>
+        </div>
+        <div>
+          <p class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wider font-bold mb-1">Total Referrals</p>
+          <p class="font-headline-md text-[24px] font-bold text-on-surface" id="stat-count">0</p>
+        </div>
       </div>
-      <div class="glass-card stat-item">
-        <div class="stat-icon">💰</div>
-        <div class="stat-label">Lifetime Earnings</div>
-        <div class="stat-value success" id="stat-earnings">₹0.00</div>
+      <div class="bg-surface border border-outline-variant/30 rounded-xl p-6 shadow-sm flex items-center gap-4">
+        <div class="w-14 h-14 rounded-full bg-success/10 text-success flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[28px]">payments</span>
+        </div>
+        <div>
+          <p class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wider font-bold mb-1">Lifetime Earnings</p>
+          <p class="font-headline-md text-[24px] font-bold text-success" id="stat-earnings">₹0.00</p>
+        </div>
       </div>
     </div>
 
-    <div class="referred-list-card">
-      <h3 style="font-size:18px; color:#fff; margin-bottom:20px">🤝 Your Referrals</h3>
-      <div class="table-wrap">
-        <table>
+    <!-- Referred Users Table -->
+    <div class="bg-surface border border-outline-variant/30 rounded-xl shadow-sm overflow-hidden flex flex-col mt-2 relative z-10">
+      
+      <div class="p-6 border-b border-outline-variant/20 bg-surface/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <h3 class="font-headline-sm text-[18px] font-bold text-on-surface shrink-0 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[20px]">handshake</span> Your Referrals
+        </h3>
+        
+        <div class="relative w-full sm:w-64">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+          <input class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-2 pl-9 pr-4 font-body-sm text-[13px] text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Search users..." type="text" id="ref-search" onkeyup="filterReferrals()"/>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto min-h-[250px]" style="-webkit-overflow-scrolling:touch;">
+        <table class="w-full text-left border-collapse">
           <thead>
-            <tr>
-              <th>User</th><th>Joined Date</th>
+            <tr class="bg-surface-container-lowest border-b border-outline-variant/30">
+              <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">User</th>
+              <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Joined Date</th>
             </tr>
           </thead>
-          <tbody id="referred-users-body">
-            <tr><td colspan="2" style="text-align:center;padding:40px;opacity:0.5">Invite your first friend to see them here!</td></tr>
+          <tbody id="referred-users-body" class="font-body-md text-sm text-on-background divide-y divide-outline-variant/20">
+            <!-- Skeletons -->
+            <tr class="animate-pulse"><td class="py-4 px-6"><div class="h-4 bg-surface-container rounded w-32"></div></td><td class="py-4 px-6"><div class="h-4 bg-surface-container rounded w-24"></div></td></tr>
+            <tr class="animate-pulse"><td class="py-4 px-6"><div class="h-4 bg-surface-container rounded w-32"></div></td><td class="py-4 px-6"><div class="h-4 bg-surface-container rounded w-24"></div></td></tr>
           </tbody>
         </table>
       </div>
     </div>
-  </main>
-</div>
 
+  </div>
+</main>
+
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface/90 backdrop-blur-lg border-t border-outline-variant/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] shadow-lg flex justify-around items-center h-16 px-2 pb-safe">
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard">
+    <span class="material-symbols-outlined">home</span>
+    <span class="font-label-md text-[10px] mt-1">Home</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/buy">
+    <span class="material-symbols-outlined">add_shopping_cart</span>
+    <span class="font-label-md text-[10px] mt-1">Buy</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/orders">
+    <span class="material-symbols-outlined">history_edu</span>
+    <span class="font-label-md text-[10px] mt-1">History</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/accounts">
+    <span class="material-symbols-outlined">folder_special</span>
+    <span class="font-label-md text-[10px] mt-1">Accounts</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-xl px-4 py-1 scale-95 transition-transform" href="/dashboard/wallet">
+    <span class="material-symbols-outlined">account_balance_wallet</span>
+    <span class="font-label-md text-[10px] mt-1 font-bold">Wallet</span>
+  </a>
+</nav>
 
 <script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
+
 <script>
 {
   if (!requireLogin()) {}
 
-  async function initReferrals() {
-    const user = getUser();
-    if (user) {
-        document.getElementById("avatar-wrap").innerHTML = userAvatar(user, 40);
-        document.getElementById("user-name").textContent = user.username;
-        document.getElementById("user-balance").textContent = fmtMoney(user.balance);
-    }
+  let allReferralsRaw = [];
 
+  async function initReferrals() {
     try {
+      const { balance: b } = await API.get('/api/user/balance');
+      const navWallet = document.getElementById('nav-wallet-bal');
+      if (navWallet) navWallet.textContent = fmtMoney(b);
+
       const data = await API.get("/api/user/referrals");
-      const settings = await API.get("/api/auth/settings"); // public settings
+      const settings = await API.get("/api/auth/settings");
       
       if (settings.referral_system_enabled === false || settings.referral_system_enabled === 'false') {
-          document.querySelector(".main-content").innerHTML = `
-            <div style="text-align:center; padding:100px 20px">
-              <div style="font-size:64px; margin-bottom:24px">🤝</div>
-              <h2 style="font-size:28px; font-weight:800; color:#fff; margin-bottom:12px">Referral Program Paused</h2>
-              <p style="color:var(--text-3); max-width:500px; margin:0 auto">The referral program is currently undergoing maintenance or has been disabled by the administrator. Check back later!</p>
-              <a href="/dashboard" class="btn btn-primary" style="margin-top:32px">Back to Dashboard</a>
+          document.getElementById("main-content").innerHTML = `
+            <div class="flex-1 flex items-center justify-center p-8">
+              <div class="text-center max-w-md">
+                <span class="material-symbols-outlined text-[64px] text-outline opacity-40 mb-4">groups</span>
+                <h2 class="font-headline-md text-[24px] font-bold text-on-surface mb-3">Referral Program Paused</h2>
+                <p class="font-body-sm text-[14px] text-on-surface-variant mb-6">The referral program is currently undergoing maintenance or has been disabled by the administrator. Check back later!</p>
+                <a href="/dashboard" class="bg-primary hover:bg-primary/90 text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md font-bold transition-colors inline-block">Back to Dashboard</a>
+              </div>
             </div>
           `;
           return;
       }
 
       const refLink = `${window.location.origin}/?ref=${data.referral_code}`;
-      document.getElementById("referral-link-display").textContent = refLink;
-      
+      const linkDisplay = document.getElementById("referral-link-display");
+      linkDisplay.textContent = refLink;
+
       let headline = "Earn ";
       if (data.bonus_fixed > 0 && data.bonus_percent > 0) {
-        headline += `<span style="color:var(--accent)">₹${data.bonus_fixed}</span> + <span style="color:var(--accent)">${data.bonus_percent}%</span>`;
+        headline += `<span class="text-primary">₹${data.bonus_fixed}</span> + <span class="text-primary">${data.bonus_percent}%</span>`;
       } else if (data.bonus_fixed > 0) {
-        headline += `<span style="color:var(--accent)">₹${data.bonus_fixed}</span>`;
+        headline += `<span class="text-primary">₹${data.bonus_fixed}</span>`;
       } else {
-        headline += `<span style="color:var(--accent)">${data.bonus_percent}%</span>`;
+        headline += `<span class="text-primary">${data.bonus_percent}%</span>`;
       }
       headline += " for every deposit!";
       document.getElementById("reward-headline").innerHTML = headline;
@@ -247,28 +252,42 @@
       document.getElementById("stat-count").textContent = data.referral_count || 0;
       document.getElementById("stat-earnings").textContent = fmtMoney(data.referral_earnings || 0);
 
-      document.getElementById("copy-btn").onclick = () => {
-        navigator.clipboard.writeText(refLink);
-        toast("Referral link copied!", "success");
+      document.getElementById("copy-btn").onclick = (e) => {
+        window.copyToClipboard(refLink, e.currentTarget, "Referral link copied!");
       };
 
-      const tbody = document.getElementById("referred-users-body");
-      if (data.referred_users?.length) {
-        tbody.innerHTML = data.referred_users.map(u => `
-          <tr>
-            <td>${u.username}</td>
-            <td style="color:var(--text-3); font-size:13px">${fmtDateShort(u.createdAt)}</td>
-          </tr>
-        `).join("");
-      }
+      allReferralsRaw = data.referred_users || [];
+      renderReferrals(allReferralsRaw);
     } catch (e) { toast(e.message, "error"); }
+  }
+
+  function filterReferrals() {
+    const q = document.getElementById("ref-search").value.toLowerCase();
+    const filtered = allReferralsRaw.filter(u => (u.username || '').toLowerCase().includes(q));
+    renderReferrals(filtered);
+  }
+
+  function renderReferrals(users) {
+    const tbody = document.getElementById("referred-users-body");
+    if (users.length) {
+      tbody.innerHTML = users.map(u => `
+        <tr class="hover:bg-surface-container-lowest transition-colors">
+          <td class="py-3 px-6 font-label-md text-[13px] font-bold text-on-surface flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-[12px] uppercase text-primary font-bold overflow-hidden">
+               ${(u.username || "?")[0]}
+            </span>
+            ${u.username || "Anonymous"}
+          </td>
+          <td class="py-3 px-6 text-[12px] text-on-surface-variant font-medium">${fmtDateShort(u.createdAt)}</td>
+        </tr>
+      `).join("");
+    } else {
+      tbody.innerHTML = `<tr><td colspan="2" class="py-10 text-center text-on-surface-variant text-[13px]">No referrals found.</td></tr>`;
+    }
   }
 
   initReferrals();
 }
 </script>
-<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
+</body>
 </html>
-
-
-

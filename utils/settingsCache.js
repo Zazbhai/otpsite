@@ -12,7 +12,8 @@ async function getCachedSettings() {
         const keys = [
             "default_theme", "site_name", "site_logo", "site_favicon", "primary_color",
             "seo_title", "seo_description", "seo_keywords", "seo_og_image",
-            "maintenance_mode", "exchange_rates", "support_contact", "support_email"
+            "maintenance_mode", "exchange_rates", "support_contact", "support_email",
+            "referral_system_enabled", "site_url", "branding_version", "checker_api_key", "checker_api_keys"
         ];
         const settings = await Setting.find({ key: { $in: keys } });
         const obj = {};

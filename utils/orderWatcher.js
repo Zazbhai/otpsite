@@ -65,7 +65,7 @@ function startWatcher() {
     } finally {
       isRunning = false;
     }
-  }, 10000); 
+  }, 3000); 
 }
 
 module.exports = { startWatcher };

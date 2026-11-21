@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>User Detail — Admin — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
@@ -42,12 +43,77 @@
       .resp-header > div { width: 100%; }
       #u-badge { margin-left: 0 !important; margin-top: 8px; }
     }
+    @keyframes pendingPulse {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
+    .pulse-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #f59e0b;
+      animation: pendingPulse 1.5s infinite ease-in-out;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      transition: all 0.2s ease;
+    }
+    .stat-box:hover {
+      border-color: var(--accent);
+    }
+    .stat-box.pending-highlight {
+      border-color: rgba(245, 158, 11, 0.5) !important;
+      background: rgba(245, 158, 11, 0.05) !important;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
+    }
+    .tx-tab-btn {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+    .tx-tab-btn.active {
+      background: var(--accent) !important;
+      color: #fff !important;
+      border-color: var(--accent) !important;
+      font-weight: 700;
+    }
+    .ref-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: monospace;
+      font-size: 11px;
+      background: var(--bg-1);
+      padding: 3px 7px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-3);
+    }
+    .ref-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
   </style>
 </head>
-<body>
+<body data-admin-route>
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
+    <a href="/dashboard/buy" class="nav-logo">⚡ {{SITE_NAME}} <span style="font-size:11px;color:var(--warning);font-weight:700;margin-left:4px">ADMIN</span></a>
     <div class="nav-links" id="nav-links">
       <a href="/admin">Dashboard</a><a href="/admin/users" class="active">Users</a>
       <a href="/admin/orders">Orders</a><button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
@@ -105,6 +171,8 @@
           <div style="display:flex;flex-direction:column;gap:10px">
             <button class="btn btn-primary w-full" onclick="loginAsUser()">🔑 Login As This User</button>
             <button class="btn btn-secondary w-full" onclick="openDepositModal()">💰 Add Balance</button>
+            <button class="btn btn-secondary w-full" onclick="openDeductModal()">💸 Deduct Balance</button>
+            <button class="btn btn-secondary w-full" onclick="openPasswordModal()">🔑 Change Password</button>
           </div>
         </div>
 
@@ -112,49 +180,110 @@
           <h3 style="margin-bottom:16px">Admin Notes</h3>
           <textarea id="u-notes" class="form-input" rows="4" placeholder="Private admin notes..." onchange="saveNotes()"></textarea>
         </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+            <h3 style="margin:0">Discounts</h3>
+            <button class="btn btn-primary btn-sm" onclick="addDiscountRow()">+ Add</button>
+          </div>
+          
+          <div id="discount-list" style="display:flex; flex-direction:column; gap:12px">
+            <!-- Rows injected by JS -->
+          </div>
+
+          <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border)">
+            <button class="btn btn-success w-full" id="save-discount-btn" onclick="saveDiscounts()">Save Discounts</button>
+          </div>
+        </div>
       </div>
 
       <!-- Right Column: Details & Tables -->
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:20px">
         
-        <!-- Info Grid -->
-        <div class="card info-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px">
-          <div>
-            <div class="text-sm text-muted">Email</div>
-            <div class="font-bold text-sm" id="u-email" style="word-break:break-all">—</div>
+        <!-- Info Grid (Enhanced with Distinct Financial Breakdown) -->
+        <div class="info-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+          <div class="card stat-box" style="margin:0">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Active Balance</div>
+            <div class="font-bold text-success" id="u-balance" style="font-size:22px;margin-top:4px">—</div>
           </div>
-          <div>
-            <div class="text-sm text-muted">Balance</div>
-            <div class="font-bold text-success" id="u-balance">—</div>
+          
+          <div class="card stat-box" style="margin:0;cursor:pointer" onclick="setTxTab('success_deposits')" title="Click to filter Successful Deposits">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Success Deposits</div>
+            <div class="font-bold text-success" id="u-success-deposits" style="font-size:22px;margin-top:4px">₹0.00</div>
+            <div class="text-xs text-muted" id="u-success-deposits-count" style="margin-top:2px">0 completed</div>
           </div>
-          <div>
-            <div class="text-sm text-muted">Total Spent</div>
-            <div class="font-bold text-danger" id="u-spent">—</div>
+
+          <div class="card stat-box" id="pending-deposits-card" style="margin:0;cursor:pointer" onclick="setTxTab('pending_deposits')" title="Click to filter Pending Deposits">
+            <div class="text-xs" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#d97706">Pending Deposits</div>
+            <div class="font-bold" id="u-pending-deposits" style="font-size:22px;margin-top:4px;color:#d97706">₹0.00</div>
+            <div class="text-xs text-muted" id="u-pending-deposits-count" style="margin-top:2px">0 pending</div>
           </div>
-          <div>
-            <div class="text-sm text-muted">Orders</div>
-            <div class="font-bold" id="u-orders">—</div>
+
+          <div class="card stat-box" style="margin:0">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Total Spent</div>
+            <div class="font-bold text-danger" id="u-spent" style="font-size:22px;margin-top:4px">—</div>
           </div>
-          <div>
-            <div class="text-sm text-muted">ID</div>
-            <div class="font-bold text-xs mono" id="u-id" style="word-break:break-all">—</div>
+
+          <div class="card stat-box" style="margin:0">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Total Orders</div>
+            <div class="font-bold" id="u-orders" style="font-size:22px;margin-top:4px">—</div>
           </div>
-            <div class="font-bold">Actions</div>
+
+          <div class="card stat-box" style="margin:0">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Email & ID</div>
+            <div class="font-bold text-xs" id="u-email" style="word-break:break-all;margin-top:4px">—</div>
+            <div class="text-xs mono text-muted" id="u-id" style="word-break:break-all;margin-top:2px">—</div>
+          </div>
+
+          <div class="card stat-box" style="margin:0;display:flex;flex-direction:column;justify-content:center">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Controls</div>
             <div style="display:flex; flex-direction:column; gap:6px">
-              <button id="ban-btn" class="btn btn-sm" onclick="toggleBan()" style="margin-top:4px"></button>
-              <button id="admin-btn" class="btn btn-sm" onclick="toggleAdmin()" style="margin-top:4px"></button>
+              <button id="ban-btn" class="btn btn-sm" onclick="toggleBan()"></button>
+              <button id="admin-btn" class="btn btn-sm" onclick="toggleAdmin()"></button>
             </div>
           </div>
         </div>
 
-        <!-- Recent Transactions -->
+        <!-- Pending Alert Banner (Shows when pending deposits exist) -->
+        <div id="pending-alert-banner" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:14px 18px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:24px">⏳</div>
+            <div>
+              <div style="font-weight:800;color:#d97706;font-size:14px">Pending Deposits Detected</div>
+              <div id="pending-alert-text" class="text-xs text-muted" style="margin-top:2px">This user has pending deposits waiting for payment or confirmation.</div>
+            </div>
+          </div>
+          <button class="btn btn-sm" style="background:#d97706;color:#fff;border:none;font-weight:700;padding:7px 14px" onclick="setTxTab('pending_deposits')">View Pending Deposits →</button>
+        </div>
+
+        <!-- Transactions & Deposits Card with Tabs -->
         <div class="card" style="padding:0;overflow:hidden">
-          <div class="tx-header">
-            <h3 style="margin:0">Recent Transactions</h3>
+          <div class="tx-header" style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <h3 style="margin:0;font-size:16px">Transactions & Deposits</h3>
+              <div class="text-xs text-muted" id="tx-subtitle" style="margin-top:2px">Breakdown of pending and completed deposits & activity</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm tx-tab-btn active" id="tab-btn-all" onclick="setTxTab('all', this)">All (<span id="count-all">0</span>)</button>
+              <button class="btn btn-secondary btn-sm tx-tab-btn" id="tab-btn-success_deposits" onclick="setTxTab('success_deposits', this)">✅ Success (<span id="count-success">0</span>)</button>
+              <button class="btn btn-secondary btn-sm tx-tab-btn" id="tab-btn-pending_deposits" onclick="setTxTab('pending_deposits', this)">⏳ Pending (<span id="count-pending">0</span>)</button>
+              <button class="btn btn-secondary btn-sm tx-tab-btn" id="tab-btn-purchases" onclick="setTxTab('purchases', this)">🛒 Purchases (<span id="count-purchases">0</span>)</button>
+              <button class="btn btn-secondary btn-sm tx-tab-btn" id="tab-btn-refunds" onclick="setTxTab('refunds', this)">↩️ Refunds (<span id="count-refunds">0</span>)</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table class="mobile-card-table">
-              <thead><tr><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                  <th>Reference / Note</th>
+                  <th>Balance After</th>
+                  <th>Date</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
               <tbody id="tx-body"></tbody>
             </table>
           </div>
@@ -162,8 +291,8 @@
 
         <!-- Recent Orders -->
         <div class="card" style="padding:0;overflow:hidden">
-          <div class="tx-header">
-            <h3 style="margin:0">Recent Orders</h3>
+          <div class="tx-header" style="padding:16px 20px;border-bottom:1px solid var(--border)">
+            <h3 style="margin:0;font-size:16px">Recent Orders</h3>
           </div>
           <div class="table-wrap">
             <table class="mobile-card-table">
@@ -182,31 +311,100 @@
 <div class="modal-backdrop" id="deposit-modal">
   <div class="modal">
     <div class="modal-header"><h3>Add Balance</h3><button class="modal-close" onclick="closeModal('deposit-modal')">✕</button></div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" id="dep-amount" step="0.01" min="0.01" /></div>
-      <div class="form-group"><label class="form-label">Note</label><input type="text" id="dep-note" placeholder="Reason…" /></div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-success" onclick="doDeposit()">Add Funds</button>
-        <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
+    <div class="modal-content-wrap">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group"><label class="form-label">Amount</label><input type="number" id="dep-amount" step="0.01" min="0.01" /></div>
+        <div class="form-group"><label class="form-label">Note</label><input type="text" id="dep-note" placeholder="Reason…" /></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-success" onclick="doDeposit()">Add Funds</button>
+          <button class="btn btn-secondary" onclick="closeModal('deposit-modal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Deduct Modal -->
+<div class="modal-backdrop" id="deduct-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Deduct Balance</h3><button class="modal-close" onclick="closeModal('deduct-modal')">✕</button></div>
+    <div class="modal-content-wrap">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group"><label class="form-label">Amount</label><input type="number" id="ded-amount" step="0.01" min="0.01" /></div>
+        <div class="form-group"><label class="form-label">Note</label><input type="text" id="ded-note" placeholder="Reason…" /></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-danger" onclick="doDeduct()">Deduct Funds</button>
+          <button class="btn btn-secondary" onclick="closeModal('deduct-modal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-backdrop" id="password-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Change Password</h3><button class="modal-close" onclick="closeModal('password-modal')">✕</button></div>
+    <div class="modal-content-wrap">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" id="new-password" placeholder="Min 6 characters" />
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="doChangePassword()">Update Password</button>
+          <button class="btn btn-secondary" onclick="closeModal('password-modal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Service Selector Modal for Discounts -->
+<div class="modal-backdrop" id="service-selector-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Select Service</h3>
+      <button class="modal-close" onclick="closeModal('service-selector-modal')">✕</button>
+    </div>
+    <div class="modal-content-wrap">
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label class="form-label" style="font-size:12px; margin-bottom:4px; display:block">1. Select Server (Optional)</label>
+          <select id="modal-server-selector" class="form-input text-sm" style="width:100%; padding:8px;">
+            <option value="all">🌍 All Servers</option>
+            <!-- Populated by JS -->
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size:12px; margin-bottom:4px; display:block">2. Search Service</label>
+          <input type="text" id="service-search" class="form-input" placeholder="Search by name..." oninput="filterServiceNames(this.value)" autocomplete="off">
+        </div>
+        <div id="service-names-list" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; margin-top:4px">
+          <!-- Populated by JS -->
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 
-<script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
+<script src="/js/main.js?v=1784210170381"></script>
+
+
 <script>
   async function init() {
     if (!await requireAdmin()) return;
-    loadUser();
+    await Promise.all([loadServiceNames(), loadServers()]);
+    await loadUser();
   }
   
   init();
   
   const userId = window.location.pathname.split("/").pop();
   let userObj = null;
+  let allUserTransactions = [];
+  let currentTxTab = 'all';
 
   function orderBadge(status) {
     if (status === "completed") return '<span class="badge badge-active">Completed</span>';
@@ -217,30 +415,149 @@
     return `<span class="badge">${status}</span>`;
   }
 
-  function txBadge(type) {
-    if (type === "deposit") return '<span class="badge badge-active">Deposit</span>';
-    if (type === "purchase") return '<span class="badge badge-pending">Purchase</span>';
-    if (type === "refund") return '<span class="badge badge-success">Refund</span>';
+  function txTypeBadge(type) {
+    if (type === "deposit") return '<span class="badge badge-deposit" style="font-weight:700">Deposit</span>';
+    if (type === "purchase") return '<span class="badge badge-purchase" style="font-weight:700">Purchase</span>';
+    if (type === "refund") return '<span class="badge badge-refund" style="font-weight:700">Refund</span>';
+    if (type === "bonus") return '<span class="badge badge-bonus" style="font-weight:700">Bonus</span>';
+    if (type === "deduction") return '<span class="badge badge-purchase" style="font-weight:700">Deduction</span>';
     return `<span class="badge">${type}</span>`;
+  }
+
+  function txStatusBadge(status, type) {
+    const s = (status || "completed").toLowerCase();
+    if (s === "pending") {
+      return '<span class="badge" style="background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.35);font-weight:700"><span class="pulse-dot"></span>Pending</span>';
+    }
+    if (s === "failed" || s === "cancelled") {
+      return '<span class="badge" style="background:rgba(239,68,68,0.12);color:#dc2626;border:1px solid rgba(239,68,68,0.3);font-weight:700">✕ Failed</span>';
+    }
+    return '<span class="badge badge-active" style="display:inline-flex;align-items:center;gap:3px;font-weight:700">✓ Success</span>';
+  }
+
+  function copyText(val, msg) {
+    if (!val) return;
+    navigator.clipboard.writeText(val);
+    toast(msg || "Copied to clipboard", "success");
+  }
+
+  function setTxTab(tab, btn) {
+    currentTxTab = tab;
+    document.querySelectorAll('.tx-tab-btn').forEach(b => {
+      b.classList.remove('active', 'btn-primary');
+      b.classList.add('btn-secondary');
+    });
+    
+    const targetBtn = btn || document.getElementById(`tab-btn-${tab}`);
+    if (targetBtn) {
+      targetBtn.classList.add('active', 'btn-primary');
+      targetBtn.classList.remove('btn-secondary');
+    }
+    
+    renderTransactionsTable(tab);
+  }
+
+  function renderTransactionsTable(tab) {
+    const txBody = document.getElementById("tx-body");
+    if (!txBody) return;
+
+    let filtered = allUserTransactions;
+    if (tab === 'success_deposits') {
+      filtered = allUserTransactions.filter(t => (t.type === 'deposit' || t.type === 'bonus') && (t.status || 'completed').toLowerCase() !== 'pending' && (t.status || '').toLowerCase() !== 'failed' && (t.status || '').toLowerCase() !== 'cancelled');
+    } else if (tab === 'pending_deposits') {
+      filtered = allUserTransactions.filter(t => (t.type === 'deposit' || t.type === 'bonus') && ((t.status || '').toLowerCase() === 'pending' || (t.description && t.description.toLowerCase().includes('pending'))));
+    } else if (tab === 'purchases') {
+      filtered = allUserTransactions.filter(t => t.type === 'purchase' || t.type === 'deduction');
+    } else if (tab === 'refunds') {
+      filtered = allUserTransactions.filter(t => t.type === 'refund');
+    }
+
+    if (!filtered || !filtered.length) {
+      const tabNames = {
+        all: 'transactions',
+        success_deposits: 'successful deposits',
+        pending_deposits: 'pending deposits',
+        purchases: 'purchases',
+        refunds: 'refunds'
+      };
+      txBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:32px">No ${tabNames[tab] || 'transactions'} found for this user</td></tr>`;
+      return;
+    }
+
+    txBody.innerHTML = filtered.map(t => {
+      const isPos = ["deposit", "refund", "bonus"].includes(t.type);
+      const isPending = (t.status || '').toLowerCase() === 'pending';
+      const amtStr = t.amount != null ? (isPos ? '+' + fmtMoney(t.amount) : fmtMoney(Math.abs(t.amount))) : '—';
+      const amtClass = isPending ? 'text-warning font-bold' : (isPos ? 'text-success font-bold' : 'text-danger font-bold');
+      const ref = t.reference || t.order_id;
+      const txId = t._id || t.id;
+
+      return `
+        <tr style="${isPending ? 'background:rgba(245,158,11,0.03)' : ''}">
+          <td data-label="Type">${txTypeBadge(t.type)}</td>
+          <td data-label="Status">${txStatusBadge(t.status, t.type)}</td>
+          <td data-label="Amount" class="mono ${amtClass}">${amtStr}</td>
+          <td data-label="Reference / Note">
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <span style="font-size:13px">${t.description || '—'}</span>
+              ${ref ? `<span class="ref-pill" onclick="copyText('${ref}', 'Copied Reference')" title="Click to copy">${ref} 📋</span>` : ''}
+            </div>
+          </td>
+          <td data-label="Balance After" class="mono text-sm">${t.balance_after != null && !isPending ? fmtMoney(t.balance_after) : '—'}</td>
+          <td data-label="Date" class="text-muted text-xs">${fmtDate(t.createdAt)}</td>
+          <td data-label="Actions" style="text-align:right">
+            ${isPending && t.type === 'deposit' ? `
+              <div style="display:inline-flex;gap:6px;justify-content:flex-end">
+                <button class="btn btn-success btn-sm" style="padding:4px 9px;font-size:11px" onclick="approveDeposit('${txId}', ${t.amount})" title="Approve & Credit Balance">✓ Approve</button>
+                <button class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:11px" onclick="rejectDeposit('${txId}')" title="Reject Deposit">✕</button>
+              </div>
+            ` : '<span class="text-muted text-xs">—</span>'}
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  async function approveDeposit(txId, amount) {
+    if (!(await uiConfirm(`Are you sure you want to approve this deposit of ${fmtMoney(amount)} and credit it to the user's balance?`))) return;
+    try {
+      await API.post(`/api/admin/transactions/${txId}/approve`);
+      toast("Deposit approved and credited successfully!", "success");
+      loadUser();
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+
+  async function rejectDeposit(txId) {
+    if (!(await uiConfirm(`Are you sure you want to reject this pending deposit?`))) return;
+    try {
+      await API.post(`/api/admin/transactions/${txId}/reject`);
+      toast("Deposit marked as rejected", "info");
+      loadUser();
+    } catch (e) {
+      toast(e.message, "error");
+    }
   }
 
   async function loadUser() {
     try {
       const data = await API.get(`/api/admin/users/${userId}`);
       userObj = data.user;
+      allUserTransactions = data.recent_transactions || [];
       
       document.getElementById("loader").style.display = "none";
       document.getElementById("u-content").style.display = "grid";
 
       // Left Col
-      document.getElementById("u-avatar").innerHTML = userAvatar({display_name: userObj.display_name, avatar_color: userObj.avatar_color}, 80);
+      document.getElementById("u-avatar").innerHTML = userAvatar(userObj, 80);
       document.getElementById("u-name").textContent = userObj.display_name || userObj.username;
       
       const un = document.getElementById("u-username");
       if (userObj.username) {
          un.innerHTML = `@${userObj.username}`;
       } else {
-         un.innerHTML = `No username`;
+         un.innerHTML = `<span class="text-muted italic">No username</span>`;
       }
       
       document.getElementById("u-mode").textContent = userObj.is_admin ? "👑 ADMIN" : "👤 USER";
@@ -250,10 +567,51 @@
 
       // Right Col Stats
       document.getElementById("u-email").textContent = userObj.email || "No email";
-      document.getElementById("u-id").textContent = userObj._id || userObj.telegram_id;
+      document.getElementById("u-id").innerHTML = `<span onclick="copyText('${userObj._id || userObj.telegram_id}', 'Copied ID')" style="cursor:pointer" title="Click to copy">${userObj._id || userObj.telegram_id} 📋</span>`;
       document.getElementById("u-balance").textContent = fmtMoney(userObj.balance);
       document.getElementById("u-spent").textContent = fmtMoney(userObj.total_spent);
-      document.getElementById("u-orders").textContent = userObj.total_orders;
+      document.getElementById("u-orders").textContent = `${userObj.total_orders || 0} orders`;
+
+      // Deposit Stats Breakdown (Pending vs Successful)
+      const depStats = data.deposit_stats || {};
+      const successAmt = depStats.successful_deposits || 0;
+      const successCount = depStats.successful_deposits_count || 0;
+      const pendingAmt = depStats.pending_deposits || 0;
+      const pendingCount = depStats.pending_deposits_count || 0;
+
+      document.getElementById("u-success-deposits").textContent = fmtMoney(successAmt);
+      document.getElementById("u-success-deposits-count").textContent = `${successCount} completed`;
+      document.getElementById("u-pending-deposits").textContent = fmtMoney(pendingAmt);
+      document.getElementById("u-pending-deposits-count").textContent = `${pendingCount} pending`;
+
+      // Pending card visual treatment & banner
+      const pendingCard = document.getElementById("pending-deposits-card");
+      const pendingBanner = document.getElementById("pending-alert-banner");
+      const pendingAlertText = document.getElementById("pending-alert-text");
+
+      if (pendingCount > 0) {
+        if (pendingCard) pendingCard.classList.add("pending-highlight");
+        if (pendingBanner) {
+          pendingBanner.style.display = "flex";
+          pendingAlertText.textContent = `This user has ${pendingCount} pending deposit(s) totaling ${fmtMoney(pendingAmt)}. Verify transaction references before crediting manually.`;
+        }
+      } else {
+        if (pendingCard) pendingCard.classList.remove("pending-highlight");
+        if (pendingBanner) pendingBanner.style.display = "none";
+      }
+
+      // Update Tab Counter Numbers
+      const countAll = allUserTransactions.length;
+      const countSuccess = allUserTransactions.filter(t => (t.type === 'deposit' || t.type === 'bonus') && (t.status || 'completed').toLowerCase() !== 'pending' && (t.status || '').toLowerCase() !== 'failed' && (t.status || '').toLowerCase() !== 'cancelled').length;
+      const countPending = allUserTransactions.filter(t => (t.type === 'deposit' || t.type === 'bonus') && ((t.status || '').toLowerCase() === 'pending' || (t.description && t.description.toLowerCase().includes('pending')))).length;
+      const countPurchases = allUserTransactions.filter(t => t.type === 'purchase' || t.type === 'deduction').length;
+      const countRefunds = allUserTransactions.filter(t => t.type === 'refund').length;
+
+      document.getElementById("count-all").textContent = countAll;
+      document.getElementById("count-success").textContent = countSuccess;
+      document.getElementById("count-pending").textContent = countPending;
+      document.getElementById("count-purchases").textContent = countPurchases;
+      document.getElementById("count-refunds").textContent = countRefunds;
 
       // Ban Button
       const banBtn = document.getElementById("ban-btn");
@@ -262,6 +620,8 @@
         banBtn.textContent = "Unban User";
         document.getElementById("u-badge").innerHTML = `<span class="badge badge-expired" style="vertical-align:middle;margin-left:8px">BANNED</span>`;
       } else {
+        banBtn.className = "btn btn-danger btn-sm w-full";
+        banBtn.textContent = "Ban User";
         document.getElementById("u-badge").innerHTML = ``;
       }
 
@@ -277,34 +637,31 @@
         adminBtn.style.color = "var(--accent)";
       }
 
-        // Transactions
-        const txBody = document.getElementById("tx-body");
-        if(!data.recent_transactions.length) {
-          txBody.innerHTML = `<tr><td colspan="3" class="text-center text-muted" style="padding:24px">No transactions</td></tr>`;
-        } else {
-          txBody.innerHTML = data.recent_transactions.map(t => `
-            <tr>
-              <td data-label="Type">${txBadge(t.type)}</td>
-              <td data-label="Amount" class="mono ${t.amount>0?'text-success':'text-danger'}">${t.amount > 0 ? '+'+fmtMoney(t.amount) : fmtMoney(Math.abs(t.amount))}</td>
-              <td data-label="Date" class="text-muted text-sm">${fmtDateShort(t.createdAt)}</td>
-            </tr>
-          `).join("");
-        }
-  
-        // Orders
-        const orBody = document.getElementById("orders-body");
-        if(!data.recent_orders.length) {
-          orBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No orders</td></tr>`;
-        } else {
-          orBody.innerHTML = data.recent_orders.map(o => `
-            <tr onclick="window.location.href='/admin/orders/${o._id}'" style="cursor:pointer">
-              <td data-label="Service">${o.service_name}</td>
-              <td data-label="Phone" class="mono font-bold">${o.phone || '—'}</td>
-              <td data-label="Cost" class="text-danger">-${fmtMoney(o.cost)}</td>
-              <td data-label="Status">${orderBadge(o.status)}</td>
-            </tr>
-          `).join("");
-        }
+      // Render Transactions
+      renderTransactionsTable(currentTxTab);
+
+      // Orders
+      const orBody = document.getElementById("orders-body");
+      if(!data.recent_orders || !data.recent_orders.length) {
+        orBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No orders</td></tr>`;
+      } else {
+        orBody.innerHTML = data.recent_orders.map(o => `
+          <tr onclick="window.location.href='/admin/orders/${o._id}'" style="cursor:pointer">
+            <td data-label="Service">${o.service_name}</td>
+            <td data-label="Phone" class="mono font-bold">${o.phone || '—'}</td>
+            <td data-label="Cost" class="text-danger">-${fmtMoney(o.cost)}</td>
+            <td data-label="Status">${orderBadge(o.status)}</td>
+          </tr>
+        `).join("");
+      }
+      
+      // Discounts
+      if (userObj.discounts && typeof userObj.discounts === 'string') {
+        try { userObj.discounts = JSON.parse(userObj.discounts); } catch { userObj.discounts = []; }
+      } else if (!userObj.discounts) {
+        userObj.discounts = [];
+      }
+      renderDiscounts(userObj.discounts);
 
     } catch (e) {
       toast("Error loading user details: " + e.message, "error");
@@ -337,6 +694,42 @@
     } catch (e) { toast(e.message, "error"); }
   }
 
+  function openDeductModal() {
+    document.getElementById("ded-amount").value = "";
+    document.getElementById("ded-note").value = "";
+    openModal("deduct-modal");
+  }
+  
+  async function doDeduct() {
+    const amount = parseFloat(document.getElementById("ded-amount").value);
+    const description = document.getElementById("ded-note").value;
+    if (!amount || amount <= 0) return toast("Invalid amount", "error");
+    try {
+      await API.post("/api/admin/transactions/deduct", { user_id: userId, amount, description });
+      toast(`Deducted balance successfully`, "success"); 
+      closeModal("deduct-modal"); 
+      loadUser();
+    } catch (e) { toast(e.message, "error"); }
+  }
+
+  function openPasswordModal() {
+    document.getElementById("new-password").value = "";
+    openModal("password-modal");
+  }
+
+  async function doChangePassword() {
+    const password = document.getElementById("new-password").value;
+    if (!password || password.length < 6) return toast("Password must be at least 6 characters", "error");
+    
+    try {
+      await API.patch(`/api/admin/users/${userId}`, { password });
+      toast("Password changed successfully", "success");
+      closeModal("password-modal");
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  }
+
   async function toggleBan() {
     try {
       await API.patch(`/api/admin/users/${userId}`, { is_banned: !userObj.is_banned });
@@ -352,6 +745,151 @@
       toast(userObj.is_admin ? "Admin status revoked" : "User promoted to Admin", "success");
       loadUser();
     } catch (e) { toast(e.message, "error"); }
+  }
+
+  let allServiceNames = [];
+  let allServers = [];
+  
+  async function loadServiceNames() {
+    try {
+      allServiceNames = await API.get("/api/admin/services/names");
+    } catch (e) {
+      console.error("Failed to load service names", e);
+    }
+  }
+
+  async function loadServers() {
+    try {
+      allServers = await API.get("/api/admin/servers");
+    } catch (e) {
+      console.error("Failed to load servers", e);
+    }
+  }
+
+  function renderDiscounts(discounts) {
+    const list = document.getElementById("discount-list");
+    list.innerHTML = "";
+    
+    let d = discounts || [];
+    if (typeof d === 'string') {
+      try { d = JSON.parse(d); } catch { d = []; }
+    }
+
+    if (!d.length) {
+       list.innerHTML = `<div class="text-muted text-sm italic">No active discounts</div>`;
+       return;
+    }
+
+    d.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "discount-row flex-col sm:flex-row";
+      row.style = "display:flex; gap:8px; align-items:center; background:var(--bg-2); padding:8px; border-radius:10px; flex-wrap: wrap;";
+      
+      const serverOptions = `<option value="all" ${item.server_id === 'all' || !item.server_id ? 'selected' : ''}>🌍 All Servers</option>` + 
+        allServers.map(s => `<option value="${s._id}" ${item.server_id === s._id ? 'selected' : ''}>${s.name}</option>`).join('');
+
+      row.innerHTML = `
+        <div style="flex:1; min-width: 150px; font-size:13px; font-weight:600; padding-left:8px">${item.service_name === 'all' ? '🌍 All Services' : item.service_name}</div>
+        <select class="form-input text-sm" onchange="updateDiscount(${index}, 'server_id', this.value); saveDiscounts();" style="width:140px; padding:6px; height: 36px;">
+          ${serverOptions}
+        </select>
+        <div style="position:relative; width:80px">
+          <input type="number" class="form-input text-sm" value="${item.percentage}" placeholder="%" min="0" max="100" oninput="updateDiscount(${index}, 'percentage', this.value)" style="padding-right:24px; height: 36px;">
+          <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); opacity:0.5; font-size:12px">%</span>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="removeDiscountRow(${index})" style="padding:6px 8px; height: 36px;">✕</button>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function addDiscountRow() {
+    const listEl = document.getElementById("service-names-list");
+    const searchInput = document.getElementById("service-search");
+    const serverSelect = document.getElementById("modal-server-selector");
+    
+    searchInput.value = "";
+    
+    // Populate modal server selector if not already done
+    if (serverSelect && serverSelect.options.length <= 1 && allServers.length > 0) {
+      serverSelect.innerHTML = `<option value="all">🌍 All Servers</option>` + 
+        allServers.map(s => `<option value="${s._id}">${s.name}</option>`).join('');
+    }
+    
+    const options = ["all", ...allServiceNames];
+    renderServiceOptions(options);
+    openModal("service-selector-modal");
+  }
+
+  function renderServiceOptions(options) {
+    const listEl = document.getElementById("service-names-list");
+    listEl.innerHTML = options.map(name => `
+      <div onclick="selectServiceForDiscount('${name}')" style="padding:10px 12px; cursor:pointer; border-radius:8px; background:var(--bg-3); font-size:13px; transition:0.2s" onmouseover="this.style.background='var(--accent)'" onmouseout="this.style.background='var(--bg-3)'">
+        ${name === 'all' ? '🌍 <strong>All Services</strong>' : name}
+      </div>
+    `).join("");
+  }
+
+  window.filterServiceNames = function(query) {
+    const q = query.toLowerCase();
+    const filtered = ["all", ...allServiceNames].filter(n => n.toLowerCase().includes(q));
+    renderServiceOptions(filtered);
+  };
+
+  window.selectServiceForDiscount = function(name) {
+    if (!userObj.discounts) userObj.discounts = [];
+    if (typeof userObj.discounts === 'string') {
+      try { userObj.discounts = JSON.parse(userObj.discounts); } catch { userObj.discounts = []; }
+    }
+    
+    const selectedServerId = document.getElementById("modal-server-selector").value || "all";
+    
+    // Check if already exists for this exact server
+    if (userObj.discounts.some(d => d.service_name === name && (d.server_id === selectedServerId || (!d.server_id && selectedServerId === 'all')))) {
+      toast("Discount for this service and server already exists", "info");
+      closeModal("service-selector-modal");
+      return;
+    }
+
+    userObj.discounts.push({ service_name: name, server_id: selectedServerId, percentage: 0 });
+    renderDiscounts(userObj.discounts);
+    closeModal("service-selector-modal");
+    saveDiscounts();
+  };
+
+  function removeDiscountRow(index) {
+    if (!Array.isArray(userObj.discounts)) {
+       // Fallback for safety
+       if (typeof userObj.discounts === 'string') {
+         try { userObj.discounts = JSON.parse(userObj.discounts); } catch { userObj.discounts = []; }
+       } else {
+         userObj.discounts = [];
+       }
+    }
+    userObj.discounts.splice(index, 1);
+    renderDiscounts(userObj.discounts);
+    saveDiscounts();
+  }
+
+  function updateDiscount(index, key, val) {
+    if (key === 'percentage') val = parseFloat(val) || 0;
+    userObj.discounts[index][key] = val;
+  }
+
+  async function saveDiscounts() {
+    const btn = document.getElementById("save-discount-btn");
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    
+    try {
+      await API.patch(`/api/admin/users/${userId}`, { discounts: userObj.discounts });
+      toast("Discounts updated successfully", "success");
+    } catch (e) {
+      toast(e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Save Discounts";
+    }
   }
 
   let notesTimeout;
@@ -371,6 +909,7 @@
 </script>
 </body>
 </html>
+
 
 
 

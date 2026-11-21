@@ -1,311 +1,847 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wallet — {{SITE_NAME}}</title>
+  {{THEME_INIT}}
   <link rel='icon' type='image/x-icon' href='{{SITE_FAVICON}}'>
-  <meta name="description" content="{{SEO_DESC}}" />
-  <link rel="icon" type="image/x-icon" href="{{SITE_FAVICON}}">
-  <link rel="stylesheet" href="/css/main.css" />
   <script src="/js/preloader.js"></script>
+  <link rel="stylesheet" href="/css/main.css" />
   <style>
-    .hidden { display: none !important; }
-    .modal-backdrop { position: fixed; inset: 0; background: #000000; backdrop-filter: blur(16px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 10000; padding: 20px; }
-    .modal-backdrop.visible { opacity: 1; pointer-events: all; }
-    .modal { background: #0a0a0a; border: 1px solid var(--border); border-radius: 24px; width: 100%; max-width: 440px; padding: 32px; transform: scale(0.9); transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto; overflow-x: hidden; position: relative; }
-    .modal-backdrop.visible .modal { transform: scale(1); }
-    
-    @media (max-width: 480px) {
-      .modal { padding: 24px 16px; border-radius: 20px; }
-      .utr-flex { flex-direction: column; }
-      .utr-flex button { width: 100%; }
+    .qr-container-wrapper { position: relative; width: 200px; height: 200px; margin: 0 auto; }
+    .qr-skeleton {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--surface-container);
+      animation: pulse 1.5s infinite;
+      border-radius: 12px; z-index: 2;
     }
-
-    .amount-chip { background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer; text-align: center; font-size: 13px; font-weight: 700; transition: 0.2s; }
-    .amount-chip:hover { border-color: var(--accent); background: rgba(59,130,246,0.1); }
-    .payment-method-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; margin-bottom: 12px; }
-    .payment-method-card:hover { transform: translateY(-2px); border-color: var(--accent); background: rgba(59,130,246,0.05); }
-    .method-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 20px; }
-    .method-badge { position: absolute; top: 0; right: 0; background: var(--success); color: #fff; font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 0 0 0 12px; text-transform: uppercase; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .5; }
+    }
   </style>
 </head>
-<body>
-<nav class="navbar">
-  <div class="container">
-    <a href="/" class="nav-logo">⚡ {{SITE_NAME}}</a>
-    <div class="nav-links" id="nav-links">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/dashboard/referrals">Referrals</a>
-      <a href="/dashboard/wallet" class="active">Wallet</a>
-      <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+<body class="bg-background text-on-background font-body-md min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col bg-surface border-r border-outline-variant/30 py-6 z-50 shadow-sm">
+  <div class="px-6 mb-8 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+      <span class="material-symbols-outlined">lock</span>
     </div>
-    <button class="nav-burger" id="nav-burger">☰</button>
+    <div>
+      <h1 class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight">{{SITE_NAME}}</h1>
+      <p class="font-label-md text-label-md text-on-surface-variant">Secure OTP Service</p>
+    </div>
   </div>
+    <nav class="flex-1 px-4 space-y-2">
+    <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">dashboard</span> Dashboard
+    </a>
+    <a href="/dashboard/wallet" class="flex items-center gap-3 px-4 py-3 text-primary bg-primary-container/10 border-l-4 border-primary rounded-r-lg transition-all duration-200 ease-in-out font-label-md text-label-md">
+      <span class="material-symbols-outlined">account_balance_wallet</span> Wallet
+    </a>
+    <a href="/dashboard/buy" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">add_shopping_cart</span> Buy Number
+    </a>
+    <a href="/dashboard/accounts" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">folder_special</span> Accounts
+    </a>
+    <a href="/dashboard/orders" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">receipt_long</span> Orders
+    </a>
+    <a href="/dashboard/referrals" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">group</span> Referrals
+    </a>
+    <a href="/dashboard/profile" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+      <span class="material-symbols-outlined">person</span> Profile
+    </a>
+  </nav>
+  <div class="px-4 mt-auto space-y-4">
+    <a href="/dashboard/buy" class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg shadow-sm hover:shadow-md transition-shadow flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">add</span> New Purchase
+    </a>
+    <div class="border-t border-outline-variant/30 pt-4 space-y-2">
+      <a href="/support" class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">support_agent</span> Support
+      </a>
+      <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-error hover:bg-error-container/20 transition-all duration-200 ease-in-out font-label-md text-label-md rounded-lg">
+        <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen pb-20 md:pb-0" style="min-width:0;overflow-x:hidden;">
+  <!-- TopNavBar -->
+    <!-- TopNavBar -->
+    <!-- TopNavBar -->
+  <header class="bg-surface/80 backdrop-blur-md sticky top-0 w-full z-40 border-b border-outline-variant/30 shadow-sm flex justify-between items-center px-3 md:px-8 h-16 gap-2">
+    <div id="gnav-left" class="flex items-center gap-2 md:gap-3 min-w-0 flex-1 md:flex-initial overflow-hidden">
+      <a href="/dashboard" class="flex items-center gap-2 md:gap-2.5 text-decoration-none min-w-0 overflow-hidden">
+        <span class="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-primary inline-block animate-pulse shadow-[0_0_8px_rgba(16,80,212,0.6)] flex-shrink-0"></span>
+        <h1 class="font-headline-sm text-[16px] sm:text-[18px] md:text-[22px] font-extrabold text-primary tracking-tight m-0 truncate">{{SITE_NAME}}</h1>
+      </a>
+    </div>
+    <div id="gnav-right" class="flex items-center gap-2 md:gap-3 flex-shrink-0">
+      <div id="gnav-wallet-pill" class="gnav-wallet-pill-wrapper">
+        <a href="/dashboard/wallet" class="gnav-wallet-bal" title="My Wallet">
+          <span class="wallet-icon-effect">💰</span>
+          <span id="nav-global-wallet-bal" class="font-bold">$0.00</span>
+        </a>
+        <a href="/dashboard/wallet" class="gnav-wallet-add" title="Add Funds">+</a>
+      </div>
+      <div id="gnav-avatar-container" class="relative flex-shrink-0">
+        <div id="gnav-avatar" class="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-primary bg-primary-container text-primary font-bold flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 transition-transform overflow-hidden">
+          <span class="material-symbols-outlined text-[18px]">person</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="p-margin-mobile md:p-margin-desktop flex-1 max-w-container-max mx-auto w-full flex flex-col gap-8" style="min-width:0;">
+    
+    <!-- Top Luxury Section: Add Funds / Deposit Flow (Prominently On Top) -->
+    <div class="bg-gradient-to-b from-surface to-surface-container-lowest border-2 border-primary/25 rounded-3xl shadow-2xl overflow-hidden relative">
+      <!-- Glow effects -->
+      <div class="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-secondary/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Header Bar -->
+      <div class="px-6 md:px-10 py-5 border-b border-outline-variant/30 flex flex-wrap items-center justify-between gap-4 bg-surface/80 backdrop-blur-md relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-primary/15 text-primary flex items-center justify-center shadow-inner">
+            <span class="material-symbols-outlined text-2xl font-bold">add_card</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-success/15 text-success font-label-md text-[10px] font-extrabold uppercase tracking-wider">
+                <span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse inline-block"></span> 0% Gateway Fee
+              </span>
+              <span class="text-xs text-on-surface-variant font-semibold hidden sm:inline">• Auto-Credit in Seconds</span>
+            </div>
+            <h2 id="deposit-card-title" class="font-headline-md text-xl sm:text-2xl font-extrabold text-on-surface tracking-tight mt-0.5">Add Funds to Wallet</h2>
+          </div>
+        </div>
+        <button class="hidden text-primary hover:bg-primary/10 transition-all text-sm font-bold flex items-center gap-1.5 px-4 py-2 rounded-xl border border-primary/20 bg-surface-container-lowest shadow-2xs" id="deposit-back-btn" onclick="showDepositMethod('amount-screen')">
+          <span class="material-symbols-outlined text-[18px]">arrow_back</span> Edit Amount
+        </button>
+      </div>
+
+      <!-- Add Funds Step Content Container -->
+      <div class="px-4 py-4 sm:px-6 sm:py-5 relative z-10">
+        <!-- Step 0: Amount Screen -->
+        <div id="deposit-amount-screen" class="transition-all duration-300 max-w-xl mx-auto w-full space-y-4">
+
+          <!-- Amount Input -->
+          <div class="bg-surface-container-lowest border-2 border-primary/30 rounded-2xl px-4 py-3 shadow-inner relative focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 transition-all flex items-center gap-3">
+            <span class="text-2xl font-black text-primary shrink-0">₹</span>
+            <input type="number" id="deposit-amount-input" class="w-full bg-transparent border-0 py-1 font-headline-lg text-2xl sm:text-3xl font-black text-on-surface outline-none tracking-tight" placeholder="0.00" value="100" min="1">
+          </div>
+          <p class="text-center text-xs text-error font-bold hidden bg-error/10 py-1.5 px-3 rounded-xl border border-error/20" id="min-dep-error">Please enter at least ₹1</p>
+
+          <!-- Quick Amount Chips -->
+          <div class="grid grid-cols-4 gap-2">
+            <button class="py-2.5 px-2 rounded-xl bg-surface-container/70 hover:bg-primary hover:text-on-primary border border-outline-variant/50 hover:border-primary font-bold text-sm transition-all active:scale-95" onclick="setDepositAmount(100)">₹100</button>
+            <button class="py-2.5 px-2 rounded-xl bg-surface-container/70 hover:bg-primary hover:text-on-primary border border-outline-variant/50 hover:border-primary font-bold text-sm transition-all active:scale-95" onclick="setDepositAmount(500)">₹500</button>
+            <button class="py-2.5 px-2 rounded-xl bg-surface-container/70 hover:bg-primary hover:text-on-primary border border-outline-variant/50 hover:border-primary font-bold text-sm transition-all active:scale-95" onclick="setDepositAmount(1000)">₹1,000</button>
+            <button class="py-2.5 px-2 rounded-xl bg-surface-container/70 hover:bg-primary hover:text-on-primary border border-outline-variant/50 hover:border-primary font-bold text-sm transition-all active:scale-95" onclick="setDepositAmount(2000)">₹2,000</button>
+          </div>
+
+          <!-- CTA -->
+          <div class="flex flex-col gap-2">
+            <button class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary-container text-on-primary py-3 px-6 rounded-xl font-bold text-sm hover:opacity-95 transition-all active:scale-95 shadow-md shadow-primary/20" onclick="nextToSelection()" id="deposit-continue-btn">
+              <span class="material-symbols-outlined text-[18px]">bolt</span> Proceed to Payment
+              <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </button>
+            <div class="flex items-center justify-center gap-4 text-[11px] font-semibold text-on-surface-variant">
+              <span class="flex items-center gap-1"><span class="material-symbols-outlined text-success text-[14px]">verified_user</span> Secure UPI</span>
+              <span class="flex items-center gap-1"><span class="material-symbols-outlined text-primary text-[14px]">flash_on</span> Instant Credit</span>
+              <span id="min-dep-hint" class="hidden sm:inline opacity-70">Min: ₹1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Balances & Promo Code Grid Below Add Funds -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 mt-2" style="min-width:0;">
+      <!-- Total Balance Card (Stitch Hero Card) -->
+      <div class="md:col-span-6 flex flex-col">
+        <div class="relative overflow-hidden bg-primary text-on-primary rounded-3xl p-8 shadow-2xl shadow-primary/30 group flex-1 flex flex-col justify-between">
+          <!-- Background pattern overlays -->
+          <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-110 duration-700 pointer-events-none"></div>
+          <div class="absolute bottom-0 left-0 w-32 h-32 bg-secondary-container/20 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none"></div>
+          
+          <div class="relative z-10">
+            <div class="flex items-center justify-between mb-6">
+              <span class="font-label-md text-label-md opacity-80 uppercase tracking-widest font-bold">Total Balance</span>
+              <span class="material-symbols-outlined text-3xl opacity-70">payments</span>
+            </div>
+            <h2 class="font-headline-lg text-[32px] sm:text-[36px] font-extrabold tracking-tight mb-6" id="wallet-balance"><div class="w-36 h-10 bg-surface-container/20 rounded-lg animate-pulse"></div></h2>
+            
+            <!-- Preserved Total Deposited & Total Spent -->
+            <div class="grid grid-cols-2 gap-4 pt-6 border-t border-white/20">
+              <div>
+                <p class="font-label-md text-[11px] text-on-primary/70 uppercase tracking-wider mb-1 font-semibold">Total Deposited</p>
+                <p class="font-headline-sm text-lg text-tertiary-fixed font-bold" id="total-deposited">₹0.00</p>
+              </div>
+              <div>
+                <p class="font-label-md text-[11px] text-on-primary/70 uppercase tracking-wider mb-1 font-semibold">Total Spent</p>
+                <p class="font-headline-sm text-lg text-error-container font-bold" id="total-spent">₹0.00</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8 relative z-10">
+            <button onclick="document.getElementById('deposit-amount-input')?.focus(); window.scrollTo({top: 0, behavior: 'smooth'})" class="w-full bg-white text-primary font-headline-sm text-sm font-bold py-3.5 px-4 rounded-xl hover:bg-surface-bright active:scale-95 transition-all shadow-lg shadow-black/10 flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-[20px]">add_circle</span> Quick Top-Up Now
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Promo Code Section -->
+      <div class="md:col-span-6 flex flex-col">
+        <div class="bg-surface border border-outline-variant/60 rounded-3xl p-8 shadow-sm relative overflow-hidden flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3.5 mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-secondary-container/25 text-secondary flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-2xl font-bold">local_activity</span>
+              </div>
+              <div>
+                <h3 class="font-headline-sm text-xl font-bold text-on-surface">Redeem Voucher</h3>
+                <p class="font-body-sm text-xs sm:text-sm text-on-surface-variant">Instant credit boost via promo code or gift voucher</p>
+              </div>
+            </div>
+            <p class="text-sm text-on-surface-variant mb-6 leading-relaxed">Have a promotional discount code or special reward voucher? Enter it below to immediately claim extra funds into your wallet balance.</p>
+          </div>
+          
+          <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <input type="text" id="promo-input" class="flex-1 bg-surface-container-lowest border-2 border-outline-variant/60 rounded-2xl px-5 py-3.5 text-sm uppercase font-bold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all placeholder:text-outline-variant tracking-wider" placeholder="e.g. EXTRA50">
+            <button class="bg-primary hover:bg-primary/90 text-on-primary px-7 py-3.5 rounded-2xl font-headline-sm text-sm font-extrabold transition-all active:scale-95 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 shrink-0" onclick="redeemPromo()">
+              <span class="material-symbols-outlined text-[18px]">redeem</span> Redeem
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Luxury Payment Gateway & UPI Modal Popup -->
+    <div id="deposit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md hidden transition-all duration-300">
+      <div class="bg-surface border-2 border-primary/30 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-outline-variant/30 flex items-center justify-between bg-surface-container-lowest/90 sticky top-0 z-20 backdrop-blur-md">
+          <div class="flex items-center gap-3">
+            <button class="text-primary hover:bg-primary/10 transition-all text-xs sm:text-sm font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/20 bg-surface shadow-2xs" id="deposit-modal-back-btn" onclick="showDepositMethod('amount-screen')">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span> Edit Amount
+            </button>
+            <h3 id="deposit-modal-title" class="font-headline-sm text-lg sm:text-xl font-extrabold text-on-surface">Select Payment Gateway</h3>
+          </div>
+          <button onclick="closeDepositModal()" class="w-9 h-9 rounded-xl bg-surface-container hover:bg-error/15 hover:text-error text-on-surface-variant flex items-center justify-center transition-colors shadow-2xs active:scale-95" title="Close">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <!-- Modal Body containing Step 1 (#deposit-selection) and Step 2 (#deposit-upi) -->
+        <div class="p-6 sm:p-8 relative z-10">
+          <!-- Step 1: Selection Screen -->
+          <div id="deposit-selection" class="transition-all duration-300 w-full space-y-6">
+            <!-- Editable Target Recharge Amount Card -->
+            <div class="bg-primary/10 border-2 border-primary/30 rounded-3xl p-5 shadow-inner transition-all">
+              <div class="flex justify-between items-center">
+                <div class="flex-1 mr-4">
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="font-label-md text-xs text-on-surface-variant uppercase tracking-wider font-extrabold">Target Recharge Amount</p>
+                    <span class="text-[11px] font-bold text-primary flex items-center gap-1 cursor-pointer" onclick="document.getElementById('edit-selection-amount').focus()">
+                      <span class="material-symbols-outlined text-xs">edit</span> Edit Amount
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-1 mt-1">
+                    <span class="font-headline-lg text-2xl sm:text-3xl font-black text-primary">₹</span>
+                    <input type="number" id="edit-selection-amount" class="font-headline-lg text-2xl sm:text-3xl font-black text-primary bg-transparent border-b-2 border-primary/40 focus:border-primary outline-none w-40 sm:w-48 px-1 transition-all" placeholder="0" min="1" step="any" oninput="updateSelectionAmount(this.value)" />
+                    <!-- Hidden span for backward compatibility -->
+                    <span id="display-deposit-amount" class="hidden">₹0</span>
+                  </div>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-md shrink-0 cursor-pointer hover:scale-105 transition-transform" onclick="document.getElementById('edit-selection-amount').focus()" title="Click to edit recharge amount">
+                  <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
+                </div>
+              </div>
+
+              <!-- Quick Adjustment Chips on Gateway Selection Page -->
+              <div class="flex items-center gap-1.5 overflow-x-auto pt-3 mt-3 border-t border-primary/20 no-scrollbar">
+                <span class="text-[10px] font-black text-on-surface-variant uppercase tracking-wider shrink-0 mr-1">Quick Sets:</span>
+                <button type="button" onclick="setSelectionAmount(100)" class="px-2.5 py-1 rounded-xl bg-surface text-on-surface text-xs font-extrabold border border-outline-variant/60 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all shrink-0 cursor-pointer">₹100</button>
+                <button type="button" onclick="setSelectionAmount(500)" class="px-2.5 py-1 rounded-lg bg-surface text-on-surface text-xs font-extrabold border border-outline-variant/60 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all shrink-0 cursor-pointer">₹500</button>
+                <button type="button" onclick="setSelectionAmount(1000)" class="px-2.5 py-1 rounded-lg bg-surface text-on-surface text-xs font-extrabold border border-outline-variant/60 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all shrink-0 cursor-pointer">₹1,000</button>
+                <button type="button" onclick="setSelectionAmount(2000)" class="px-2.5 py-1 rounded-lg bg-surface text-on-surface text-xs font-extrabold border border-outline-variant/60 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all shrink-0 cursor-pointer">₹2,000</button>
+                <button type="button" onclick="setSelectionAmount(5000)" class="px-2.5 py-1 rounded-lg bg-surface text-on-surface text-xs font-extrabold border border-outline-variant/60 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all shrink-0 cursor-pointer">₹5,000</button>
+                <button type="button" onclick="setSelectionAmount(10000)" class="px-2.5 py-1 rounded-lg bg-surface text-on-surface text-xs font-extrabold border border-outline-variant/60 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all shrink-0 cursor-pointer">₹10,000</button>
+              </div>
+            </div>
+
+            <p class="font-label-md text-xs text-on-surface-variant uppercase tracking-wider font-bold">Select Payment Gateway</p>
+            
+            <div class="grid grid-cols-1 gap-4">
+              <!-- UPI (BharatPe) -->
+              <div class="border-2 border-outline-variant/60 rounded-3xl p-5 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer flex items-center gap-4 sm:gap-5 relative overflow-hidden group active:scale-[0.99] shadow-sm hover:shadow-xl hover:shadow-primary/10" id="method-upi" onclick="showDepositMethod('upi', 'bharatpe')">
+                <div id="badge-method-bharatpe" class="absolute top-0 right-0 bg-success text-on-primary text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">Instant Credit • 0% Fee</div>
+                <div class="w-16 h-16 rounded-2xl bg-white border border-outline-variant/40 flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                  <img src="/images/bharatpe.png" class="w-full h-full object-contain" alt="BharatPe">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-headline-sm text-base sm:text-lg font-extrabold text-on-surface group-hover:text-primary transition-colors truncate" id="label-method-bharatpe">BharatPe</h4>
+                  <p class="text-xs mt-1 font-semibold" id="fee-method-bharatpe"><span class="text-success">&#10003; No surcharge</span></p>
+                </div>
+                <span class="material-symbols-outlined ml-auto text-outline group-hover:text-primary group-hover:translate-x-1.5 transition-all text-2xl shrink-0">chevron_right</span>
+              </div>
+
+              <!-- Paytm -->
+              <div class="border-2 border-outline-variant/60 rounded-3xl p-5 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer flex items-center gap-4 sm:gap-5 relative overflow-hidden group active:scale-[0.99] shadow-sm hover:shadow-xl hover:shadow-primary/10" id="method-paytm" onclick="showDepositMethod('upi', 'paytm')">
+                <div id="badge-method-paytm" class="absolute top-0 right-0 bg-success text-on-primary text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">Instant Credit • 0% Fee</div>
+                <div class="w-16 h-16 rounded-2xl bg-white border border-outline-variant/40 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                  <img src="/images/paytm.jpg" class="w-full h-full object-cover scale-110" alt="Paytm">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-headline-sm text-base sm:text-lg font-extrabold text-on-surface group-hover:text-primary transition-colors truncate" id="label-method-paytm">Paytm Business</h4>
+                  <p class="text-xs mt-1 font-semibold" id="fee-method-paytm"><span class="text-success">&#10003; No surcharge</span></p>
+                </div>
+                <span class="material-symbols-outlined ml-auto text-outline group-hover:text-primary group-hover:translate-x-1.5 transition-all text-2xl shrink-0">chevron_right</span>
+              </div>
+
+              <!-- OmniPay -->
+              <div class="border-2 border-outline-variant/60 rounded-3xl p-5 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer flex items-center gap-4 sm:gap-5 relative overflow-hidden group active:scale-[0.99] shadow-sm hover:shadow-xl hover:shadow-primary/10" id="method-omnipay" onclick="showDepositMethod('omnipay')">
+                <div id="badge-method-omnipay" class="absolute top-0 right-0 bg-primary text-on-primary text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">Instant Intent • Auto Verify</div>
+                <div class="w-16 h-16 rounded-2xl bg-white border border-outline-variant/40 flex items-center justify-center overflow-hidden p-1 shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                  <img src="/images/bhim.jpg" class="w-full h-full object-contain" alt="OmniPay Logo">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-headline-sm text-base sm:text-lg font-extrabold text-on-surface group-hover:text-primary transition-colors truncate" id="label-method-omnipay">OmniPay (Instant UPI Intent)</h4>
+                  <p class="text-xs mt-1 font-semibold" id="fee-method-omnipay"><span class="text-success">&#10003; No surcharge</span></p>
+                </div>
+                <span class="material-symbols-outlined ml-auto text-outline group-hover:text-primary group-hover:translate-x-1.5 transition-all text-2xl shrink-0">chevron_right</span>
+              </div>
+
+              <!-- Heleket Crypto -->
+              <div class="border-2 border-outline-variant/60 rounded-3xl p-5 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer flex items-center gap-4 sm:gap-5 relative overflow-hidden group active:scale-[0.99] shadow-sm hover:shadow-xl hover:shadow-primary/10" id="method-heleket" onclick="showDepositMethod('heleket')">
+                <div id="badge-method-heleket" class="absolute top-0 right-0 bg-primary text-on-primary text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">Global Crypto • Auto Verify</div>
+                <div class="w-16 h-16 rounded-2xl bg-white border border-outline-variant/40 flex items-center justify-center overflow-hidden p-1 shrink-0 group-hover:scale-105 transition-transform shadow-sm text-2xl">
+                  ⚡
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-headline-sm text-base sm:text-lg font-extrabold text-on-surface group-hover:text-primary transition-colors truncate" id="label-method-heleket">Crypto (USDT / BTC / ETH)</h4>
+                  <p class="text-xs mt-1 font-semibold" id="fee-method-heleket"><span class="text-success">&#10003; No surcharge</span></p>
+                </div>
+                <span class="material-symbols-outlined ml-auto text-outline group-hover:text-primary group-hover:translate-x-1.5 transition-all text-2xl shrink-0">chevron_right</span>
+              </div>
+
+              <!-- Eagle Pay -->
+              <div class="border-2 border-outline-variant/60 rounded-3xl p-5 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer flex items-center gap-4 sm:gap-5 relative overflow-hidden group active:scale-[0.99] shadow-sm hover:shadow-xl hover:shadow-primary/10" id="method-eaglepay" onclick="showDepositMethod('eaglepay')">
+                <div id="badge-method-eaglepay" class="absolute top-0 right-0 bg-primary text-on-primary text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm">Instant UPI • Auto Verify</div>
+                <div class="w-16 h-16 rounded-2xl bg-white border border-outline-variant/40 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform shadow-sm text-3xl">
+                  🦅
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-headline-sm text-base sm:text-lg font-extrabold text-on-surface group-hover:text-primary transition-colors truncate" id="label-method-eaglepay">Eagle Pay</h4>
+                  <p class="text-xs mt-1 font-semibold" id="fee-method-eaglepay"><span class="text-success">&#10003; No surcharge</span></p>
+                </div>
+                <span class="material-symbols-outlined ml-auto text-outline group-hover:text-primary group-hover:translate-x-1.5 transition-all text-2xl shrink-0">chevron_right</span>
+              </div>
+            </div>
+            
+            <!-- Commission / Bonus Breakdown Banner (shown when a gateway is selected) -->
+            <div id="commission-breakdown-banner" class="hidden mt-4 rounded-2xl border-2 border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <span class="material-symbols-outlined text-primary text-2xl shrink-0" id="banner-icon">info</span>
+              <div class="flex-1 text-sm">
+                <p class="font-bold text-on-surface" id="banner-title">Deposit Summary</p>
+                <p class="text-on-surface-variant mt-0.5" id="banner-text">
+                  Pay <strong id="banner-pay-amount" class="text-on-surface">₹0</strong>
+                  &nbsp;→&nbsp;
+                  <strong id="banner-credit-amount" class="text-success font-extrabold">₹0</strong> credited to your wallet.
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-1.5 shrink-0" id="banner-badges">
+                <span id="banner-commission-badge" class="hidden font-extrabold text-warning text-xs bg-warning/20 px-2.5 py-1 rounded-xl">+0% fee</span>
+                <span id="banner-bonus-badge" class="hidden font-extrabold text-emerald-600 bg-emerald-500/20 px-2.5 py-1 rounded-xl">🎁 Bonus</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: UPI View (Responsive & Dynamic 2-Phase Flow) -->
+          <div id="deposit-upi" class="hidden transition-all duration-300 w-full space-y-6">
+            
+            <!-- PHASE 1: Scan & Pay (Instant-Visibility Layout) -->
+            <div id="upi-phase-qr" class="animate-in fade-in duration-200">
+              <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+                
+                <!-- Compact Header -->
+                <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-outline-variant/30">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-primary animate-ping inline-block"></span>
+                    <h3 class="font-headline-sm text-base sm:text-lg font-extrabold text-on-surface" id="display-upi-name">Scan & Pay</h3>
+                  </div>
+                  <div class="px-3 py-1 rounded-xl bg-primary/10 text-primary font-bold text-xs sm:text-sm">
+                    <span id="display-upi-pay-amount">Scan &amp; pay <strong class="target-amount-text font-black">₹0</strong></span>
+                  </div>
+                </div>
+
+                <!-- Side-by-Side Compact Body (QR on left, Action Button & Copy on right) -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+                  
+                  <!-- Left: QR Code Box -->
+                  <div class="sm:col-span-5 flex flex-col items-center justify-center">
+                    <div class="p-3 bg-white rounded-2xl shadow-md border-2 border-primary/20 shrink-0">
+                      <div id="qr-container" class="qr-container-wrapper w-[165px] h-[165px] relative">
+                         <div id="upi-qr-skeleton" class="qr-skeleton"></div>
+                         <div id="upi-qr" class="w-full h-full flex items-center justify-center text-sm font-bold text-on-surface">Loading QR...</div>
+                      </div>
+                    </div>
+                    <p class="text-[11px] text-on-surface-variant mt-2 text-center font-medium">Scan with GPay, PhonePe, Paytm</p>
+                  </div>
+
+                  <!-- Right: ACTION BUTTON RIGHT ON TOP (100% INSTANT VISIBILITY, ZERO SCROLL) -->
+                  <div class="sm:col-span-7 flex flex-col justify-center gap-3">
+                    
+                    <!-- Prominent YES I HAVE PAID Button ALWAYS #1 ON TOP -->
+                    <!-- Prominent YES I HAVE PAID Button ALWAYS #1 ON TOP (Compact & Sleek) -->
+                    <button class="w-full py-2.5 px-4 rounded-xl font-headline-sm text-xs sm:text-sm font-bold transition-all active:scale-95 flex items-center justify-center gap-2 group animate-pulse hover:animate-none cursor-pointer" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.25); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);" onclick="showUPIPhase('utr')" id="btn-i-paid">
+                      <span class="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">check_circle</span> Yes, I Have Paid <strong id="btn-i-paid-amount">₹0</strong> <span class="material-symbols-outlined text-[16px] ml-auto group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </button>
+
+                    <p class="text-[11px] text-center sm:text-left text-on-surface-variant font-semibold">
+                      👉 Click the green button right above as soon as you pay to enter your 12-digit UTR.
+                    </p>
+
+                    <!-- Copy / Download Buttons immediately right below the button -->
+                    <div class="flex gap-2.5 pt-1">
+                       <button class="flex-1 bg-surface-container hover:bg-surface-container-high border border-outline-variant/60 py-2 px-3 rounded-xl font-label-md text-xs font-bold text-on-surface transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer" onclick="copyUPILink()">
+                         <span class="material-symbols-outlined text-[15px]">content_copy</span> Copy UPI ID
+                       </button>
+                       <button class="flex-1 bg-surface-container hover:bg-surface-container-high border border-outline-variant/60 py-2 px-3 rounded-xl font-label-md text-xs font-bold text-on-surface transition-all flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer" onclick="downloadQRCode()">
+                         <span class="material-symbols-outlined text-[15px]">download</span> Save QR
+                       </button>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+
+            <!-- PHASE 2: UTR Verification & Submit -->
+            <div id="upi-phase-utr" class="hidden space-y-6 animate-in fade-in zoom-in-95 duration-200">
+              <div class="bg-surface-container-lowest border-2 border-primary/30 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-outline-variant/40">
+                  <div>
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/15 text-success font-label-md text-xs font-bold uppercase tracking-wider mb-2">
+                      <span class="material-symbols-outlined text-sm">check</span> Step 2 of 2: UTR Verification
+                    </div>
+                    <h4 class="font-headline-sm text-lg sm:text-xl font-extrabold text-on-surface">Submit 12-Digit Reference Number</h4>
+                  </div>
+                  <button class="text-xs font-bold text-primary hover:bg-primary/10 transition-all px-3 py-1.5 rounded-xl border border-primary/20 flex items-center gap-1 bg-surface cursor-pointer" onclick="showUPIPhase('qr')">
+                    <span class="material-symbols-outlined text-sm">arrow_back</span> Back to QR Code
+                  </button>
+                </div>
+
+                <p class="text-xs sm:text-sm text-on-surface-variant mb-6 leading-relaxed">
+                  We are ready to credit <strong class="target-amount-text text-primary font-bold">₹0</strong> to your wallet. Please enter the exact 12-digit UTR / UPI Reference number from your payment receipt below.
+                </p>
+
+                <!-- Compact & Sleek VIP UTR Input -->
+                <div class="space-y-2.5">
+                  <label class="font-label-md text-xs text-primary uppercase tracking-widest block font-extrabold">Enter 12-Digit UTR / Reference ID</label>
+                  <div class="flex flex-col sm:flex-row gap-2.5">
+                    <input type="text" id="utr-input" placeholder="e.g. 401234567890" class="flex-1 bg-surface border-2 border-primary/40 rounded-xl px-4 py-3 text-sm sm:text-base font-mono font-bold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all tracking-wider text-center sm:text-left placeholder:tracking-normal placeholder:font-sans placeholder:text-xs" maxlength="12">
+                    <button class="px-6 py-3 rounded-xl font-headline-sm text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center justify-center active:scale-95 gap-2 shrink-0 cursor-pointer" style="background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 14px rgba(16, 80, 212, 0.35);" onclick="verifyPayment()" id="verify-btn">
+                      <span class="material-symbols-outlined text-[18px]">verified</span> Verify & Credit Now
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Where to find UTR guide -->
+                <div class="mt-8 pt-6 border-t border-outline-variant/40">
+                  <p class="font-label-md text-xs font-bold text-on-surface uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-primary text-base">help</span> Where to find your 12-digit UTR / Reference Number?
+                  </p>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="bg-surface-container-low p-3.5 rounded-2xl border border-outline-variant/30">
+                      <p class="font-bold text-xs text-on-surface mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Google Pay</p>
+                      <p class="text-[11px] text-on-surface-variant leading-tight">Open transaction history → Tap payment → Copy 12-digit <strong>UPI Ref No.</strong></p>
+                    </div>
+                    <div class="bg-surface-container-low p-3.5 rounded-2xl border border-outline-variant/30">
+                      <p class="font-bold text-xs text-on-surface mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span> PhonePe</p>
+                      <p class="text-[11px] text-on-surface-variant leading-tight">Go to History → Select payment → Look for 12-digit <strong>UTR</strong> under transfer details</p>
+                    </div>
+                    <div class="bg-surface-container-low p-3.5 rounded-2xl border border-outline-variant/30">
+                      <p class="font-bold text-xs text-on-surface mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-500"></span> Paytm</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div> <!-- End of deposit-upi -->
+
+            <!-- Step 2b: OmniPay View -->
+            <div id="deposit-omnipay" class="hidden transition-all duration-300 w-full space-y-6">
+              <div class="bg-surface-container-lowest border-2 border-primary/30 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-outline-variant/40">
+                  <div>
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/15 text-primary font-label-md text-xs font-bold uppercase tracking-wider mb-2">
+                      <span class="material-symbols-outlined text-sm">flash_on</span> Instant Payment Verification
+                    </div>
+                    <h4 class="font-headline-sm text-lg sm:text-xl font-extrabold text-on-surface" id="label-view-omnipay">Pay via OmniPay Gateway</h4>
+                  </div>
+                </div>
+
+                <div id="omnipay-init-box" class="space-y-4 text-center py-4">
+                  <p class="text-sm text-on-surface-variant">Click below to generate your unique UPI payment link for <strong class="target-amount-text font-black text-primary">₹0</strong>.</p>
+                  <button class="w-full py-3.5 px-6 rounded-2xl font-headline-sm text-sm font-bold bg-primary text-on-primary shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer" onclick="initiateOmniPayOrder()" id="btn-init-omnipay">
+                    <span class="material-symbols-outlined">bolt</span> Generate UPI Payment Link
+                  </button>
+                </div>
+
+                <div id="omnipay-active-box" class="hidden space-y-6 animate-in fade-in duration-200">
+                  <div class="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                      <p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Order Reference Number</p>
+                      <p class="text-base font-black text-primary font-mono select-all" id="omnipay-display-order">OMNI-...</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                      <a id="omnipay-pay-link" href="#" target="_blank" class="flex-1 sm:flex-initial px-4 py-2.5 bg-success text-on-primary rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md hover:bg-success/90 transition-all">
+                        <span class="material-symbols-outlined text-[16px]">open_in_new</span> Open Payment Page
+                      </a>
+                      <a id="omnipay-upi-link" href="#" class="hidden flex-1 sm:flex-initial px-4 py-2.5 bg-blue-600 text-on-primary rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md hover:bg-blue-700 transition-all">
+                        <span class="material-symbols-outlined text-[16px]">qr_code_scanner</span> Pay via UPI App
+                      </a>
+                      <button onclick="copyOmniPayOrder()" class="px-3.5 py-2.5 bg-surface-container hover:bg-surface-container-high rounded-xl text-xs font-bold text-on-surface flex items-center gap-1 border border-outline-variant/40">
+                        <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy Ref
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="omnipay-qr-section" class="hidden p-4 bg-surface-container-lowest border border-outline-variant/60 rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-5">
+                    <div class="p-2.5 bg-white rounded-xl border border-outline-variant/40 shadow-sm shrink-0 w-[160px] h-[160px] flex items-center justify-center" id="omnipay-qr-box">
+                      <div class="text-xs text-on-surface-variant font-bold">Loading QR...</div>
+                    </div>
+                    <div class="text-center sm:text-left">
+                      <p class="font-bold text-sm text-on-surface">Scan to Pay Instantly</p>
+                      <p class="text-xs text-on-surface-variant mt-1">Open GPay, PhonePe, or Paytm and scan this QR code to complete your deposit.</p>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3 pt-2 border-t border-outline-variant/30">
+                    <label class="block font-label-md text-xs font-bold text-on-surface uppercase tracking-wider">Step 2: Verify & Credit</label>
+                    <p class="text-xs text-on-surface-variant">Once you complete the payment, click the verify button below to check status and credit your balance immediately.</p>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                      <input type="text" id="omnipay-lookup-input" placeholder="Enter 12-digit UTR or Order Number" class="flex-1 bg-surface border-2 border-outline-variant/60 rounded-2xl px-4 py-3 font-headline-sm text-sm text-on-surface focus:border-primary focus:outline-none transition-all placeholder:text-outline/60">
+                      <button class="py-3 px-6 rounded-2xl font-headline-sm text-sm font-bold bg-primary text-on-primary shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 shrink-0 cursor-pointer" onclick="verifyOmniPay()" id="btn-verify-omnipay">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span> Check Status & Credit
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div> <!-- End of deposit-omnipay -->
+
+            <!-- Step 2c: Heleket Crypto View -->
+            <div id="deposit-heleket" class="hidden transition-all duration-300 w-full space-y-6">
+              <div class="bg-surface-container-lowest border-2 border-primary/30 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-outline-variant/40">
+                  <div>
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/15 text-primary font-label-md text-xs font-bold uppercase tracking-wider mb-2">
+                      <span class="material-symbols-outlined text-sm">currency_bitcoin</span> Instant Crypto Payment
+                    </div>
+                    <h4 class="font-headline-sm text-lg sm:text-xl font-extrabold text-on-surface" id="label-view-heleket">Pay with Cryptocurrency</h4>
+                  </div>
+                </div>
+
+                <p class="text-xs sm:text-sm text-on-surface-variant mb-6 leading-relaxed">
+                  You are depositing <strong class="target-amount-text text-primary font-bold">₹0</strong>. When you click below, a secure Heleket checkout window will open where you can select your preferred cryptocurrency (USDT, BTC, ETH, TRX, etc.) and complete the payment.
+                </p>
+
+                <div class="bg-surface p-4 rounded-2xl border border-outline-variant/40 mb-6">
+                  <div class="flex items-center justify-between text-xs sm:text-sm font-bold mb-2">
+                    <span class="text-on-surface-variant">Amount to Credit:</span>
+                    <span class="text-primary font-black target-amount-text">₹0</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs sm:text-sm font-bold">
+                    <span class="text-on-surface-variant">Supported Coins:</span>
+                    <span class="text-on-surface font-semibold" id="heleket-coins-display">USDT, BTC, ETH & more</span>
+                  </div>
+                </div>
+
+                <!-- Supported Crypto Services & Deposit Limits Table -->
+                <div class="mb-6 bg-surface-container-low p-5 rounded-3xl border border-outline-variant/60 shadow-xs">
+                  <button type="button" onclick="toggleHeleketServicesTable()" class="w-full flex items-center justify-between text-xs font-extrabold text-primary hover:text-primary/80 transition-colors py-1 cursor-pointer">
+                    <span class="flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-sm">bar_chart</span>
+                      View Supported Crypto Services & Min/Max Deposit Limits
+                    </span>
+                    <span class="material-symbols-outlined text-base transition-transform duration-200" id="heleket-services-arrow">expand_more</span>
+                  </button>
+
+                  <div id="heleket-services-table-box" class="hidden mt-3.5 bg-surface rounded-2xl border border-outline-variant/60 overflow-hidden shadow-2xs">
+                    <div class="px-3.5 py-2 bg-primary/10 border-b border-primary/20 flex items-center justify-between text-[11px] font-bold text-primary">
+                      <span>Available Gateway Services & Limits (USD/Equivalent)</span>
+                      <span id="heleket-services-source-badge" class="px-2 py-0.5 rounded-full bg-primary/15 text-[10px] font-extrabold">Loaded</span>
+                    </div>
+                    <div class="max-h-56 overflow-y-auto no-scrollbar">
+                      <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-surface-container-low text-[10px] font-black text-on-surface-variant uppercase tracking-wider sticky top-0">
+                          <tr>
+                            <th class="py-2 px-3 border-b border-outline-variant/40">Coin / Network</th>
+                            <th class="py-2 px-3 border-b border-outline-variant/40 text-right">Min Deposit</th>
+                            <th class="py-2 px-3 border-b border-outline-variant/40 text-right">Max Deposit</th>
+                          </tr>
+                        </thead>
+                        <tbody id="heleket-services-tbody" class="divide-y divide-outline-variant/30 text-on-surface font-semibold">
+                          <tr>
+                            <td colspan="3" class="py-4 text-center text-on-surface-variant">Loading services data...</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Checkout Actions -->
+                <div class="space-y-3" id="heleket-step-init">
+                  <button class="w-full py-3.5 px-6 rounded-2xl font-headline-sm text-sm sm:text-base font-extrabold transition-all active:scale-95 flex items-center justify-center gap-2.5 shadow-lg shadow-primary/25 cursor-pointer bg-primary text-on-primary" onclick="initiateHeleketPayment()" id="btn-heleket-pay">
+                    <span class="material-symbols-outlined text-[20px]">bolt</span> Proceed to Crypto Checkout <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                  </button>
+                </div>
+
+                <!-- Active Payment Verification Area -->
+                <div class="hidden space-y-4 pt-4 border-t border-outline-variant/40" id="heleket-step-verify">
+                  <div class="p-4 bg-primary/10 rounded-2xl border border-primary/30 flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-primary animate-ping"></div>
+                    <div class="text-xs sm:text-sm">
+                      <span class="font-bold text-on-surface block">Payment Window Opened!</span>
+                      <span class="text-on-surface-variant">Complete your deposit on the Heleket page, then click below to verify and credit your wallet.</span>
+                    </div>
+                  </div>
+                  
+                  <div class="flex flex-col sm:flex-row gap-3">
+                    <button class="flex-1 py-3 px-5 rounded-xl font-headline-sm text-xs sm:text-sm font-bold transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer bg-success text-on-primary shadow-md" onclick="verifyHeleketPayment()">
+                      <span class="material-symbols-outlined text-[18px]">verified</span> Check Payment Status
+                    </button>
+                    <button class="py-3 px-5 rounded-xl font-label-md text-xs sm:text-sm font-bold bg-surface-container border border-outline-variant/60 text-on-surface flex items-center justify-center gap-1.5 cursor-pointer" onclick="reopenHeleketLink()">
+                      <span class="material-symbols-outlined text-[16px]">open_in_new</span> Reopen Invoice
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Step: Eagle Pay -->
+            <div id="deposit-eaglepay" class="hidden transition-all duration-300 w-full space-y-6">
+              <div class="p-5 rounded-2xl border border-outline-variant/60 bg-surface-container-low space-y-5">
+
+                <!-- Amount display -->
+                <div class="flex items-center justify-between p-4 bg-primary/8 rounded-xl border border-primary/20">
+                  <div class="text-sm font-bold text-on-surface-variant">You are depositing</div>
+                  <div class="text-xl font-extrabold text-primary target-amount-text">₹0</div>
+                </div>
+
+                <!-- Init area -->
+                <div id="eaglepay-init-box" class="space-y-4">
+                  <div class="flex items-center gap-3 p-4 bg-surface-container rounded-xl border border-outline-variant/40">
+                    <span class="text-3xl">🦅</span>
+                    <div>
+                      <div class="font-bold text-on-surface text-sm" id="label-view-eaglepay">Pay via Eagle Pay</div>
+                      <div class="text-xs text-on-surface-variant mt-0.5">You will be redirected to Eagle Pay to complete the payment. Return here after paying.</div>
+                    </div>
+                  </div>
+                  <button id="btn-eaglepay-pay" onclick="initiateEaglePayOrder()" class="w-full py-3.5 px-6 rounded-xl font-headline-sm text-sm font-extrabold transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer bg-primary text-on-primary shadow-lg shadow-primary/30">
+                    <span class="material-symbols-outlined text-[20px]">open_in_new</span>
+                    Pay with Eagle Pay
+                  </button>
+                </div>
+
+                <!-- Active area (after redirect) -->
+                <div id="eaglepay-active-box" class="hidden space-y-4 pt-4 border-t border-outline-variant/40">
+                  <div class="p-4 bg-success/10 rounded-2xl border border-success/30 text-sm">
+                    <div class="font-bold text-on-surface mb-1">✅ Payment Initiated!</div>
+                    <div class="text-on-surface-variant text-xs">Order: <span id="eaglepay-display-order" class="font-mono font-bold">—</span></div>
+                    <div class="text-on-surface-variant text-xs mt-1">Complete payment on the Eagle Pay page and return here.</div>
+                  </div>
+                  <div class="p-3 bg-primary/10 rounded-xl border border-primary/30 flex items-center gap-3">
+                    <div class="w-2.5 h-2.5 rounded-full bg-primary animate-ping"></div>
+                    <span class="text-xs text-on-surface-variant">Waiting for payment confirmation…</span>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-3">
+                    <a id="eaglepay-pay-link" href="#" target="_blank" class="flex-1 py-3 px-5 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 flex items-center justify-center gap-2 bg-primary text-on-primary shadow-md no-underline">
+                      <span class="material-symbols-outlined text-[18px]">open_in_new</span> Reopen Payment
+                    </a>
+                    <button onclick="verifyEaglePayOrder()" class="flex-1 py-3 px-5 rounded-xl font-bold text-xs sm:text-sm bg-success text-on-primary shadow-md flex items-center justify-center gap-2">
+                      <span class="material-symbols-outlined text-[18px]">verified</span> Check Status
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div> <!-- End of p-6 sm:p-8 -->
+        </div> <!-- End of modal dialog -->
+      </div> <!-- End of max-w-xl -->
+    </div> <!-- End of deposit-modal -->
+
+    <!-- Transaction History Section (Stitch Bento Design) -->
+    <div class="space-y-6 mt-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h3 class="font-headline-sm text-[22px] font-bold text-on-surface">Recent Transactions</h3>
+        
+        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div class="relative w-full sm:w-64">
+            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+            <input class="w-full bg-surface-container-lowest border border-outline-variant/60 rounded-xl py-2.5 pl-10 pr-4 font-body-sm text-[13px] text-on-background focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant" placeholder="Search transactions..." type="text" id="tx-search" onkeyup="debounceTxSearch()">
+          </div>
+          <div class="flex gap-2 tx-filters shrink-0 overflow-x-auto pb-1 sm:pb-0">
+            <button class="bg-primary text-on-primary px-4 py-2.5 rounded-xl font-label-md text-xs font-bold transition-all whitespace-nowrap shadow-sm" onclick="setTxFilter('all',this)">All</button>
+            <button class="bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container-low text-on-surface px-4 py-2.5 rounded-xl font-label-md text-xs font-bold transition-all whitespace-nowrap shadow-sm" onclick="setTxFilter('deposit',this)">Deposits</button>
+            <button class="bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container-low text-on-surface px-4 py-2.5 rounded-xl font-label-md text-xs font-bold transition-all whitespace-nowrap shadow-sm" onclick="setTxFilter('purchase',this)">Purchases</button>
+            <button class="bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container-low text-on-surface px-4 py-2.5 rounded-xl font-label-md text-xs font-bold transition-all whitespace-nowrap shadow-sm" onclick="setTxFilter('refund',this)">Refunds</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-surface border border-outline-variant/60 rounded-3xl shadow-sm overflow-hidden flex flex-col">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-container-low border-b border-outline-variant/30">
+                <th class="py-4 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Type</th>
+                <th class="py-4 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Description</th>
+                <th class="py-4 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Amount</th>
+                <th class="py-4 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Balance After</th>
+                <th class="py-4 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider text-right">Date</th>
+              </tr>
+            </thead>
+            <tbody id="tx-body" class="font-body-md text-sm text-on-background divide-y divide-outline-variant/20">
+              <!-- Loading Skeleton -->
+              <tr class="animate-pulse"><td class="py-5 px-6"><div class="h-5 bg-surface-container rounded w-20"></div></td><td class="py-5 px-6"><div class="h-5 bg-surface-container rounded w-40"></div></td><td class="py-5 px-6"><div class="h-5 bg-surface-container rounded w-16"></div></td><td class="py-5 px-6"><div class="h-5 bg-surface-container rounded w-16"></div></td><td class="py-5 px-6"><div class="h-5 bg-surface-container rounded w-28 ml-auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="pagination" class="p-4 border-t border-outline-variant/30 flex justify-center bg-surface-container-lowest"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Ad/Info Card (Stitch Security Banner) -->
+    <div class="mt-8 p-8 rounded-3xl bg-surface-container-high border border-outline-variant/60 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+      <div class="flex-1 space-y-4 relative z-10">
+        <span class="bg-primary text-on-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm inline-block">Security</span>
+        <h4 class="font-headline-md text-[22px] md:text-[24px] font-extrabold text-on-surface">Secure Your Account & Wallet</h4>
+        <p class="text-on-surface-variant font-body-md text-sm md:text-base max-w-xl">Enable biometric authentication, strong account security, and keep track of all transactions with real-time audit logs.</p>
+        <a href="/dashboard/profile" class="text-primary font-label-md text-sm font-bold inline-flex items-center gap-2 hover:translate-x-1 transition-transform">
+          Setup Security Settings <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+        </a>
+      </div>
+      <div class="w-full md:w-64 h-40 bg-white/50 dark:bg-surface/50 rounded-2xl border border-dashed border-outline-variant flex items-center justify-center relative z-10 overflow-hidden shadow-sm">
+        <img class="w-full h-full object-cover rounded-2xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfvn4ci5qQH785EF4Wiu4OnM0_jOm6zQkxk-sFQ-gw58js-1SM5rpbpxlrRdiN1HAaQAVU5jx2i8abX5uyGDI80USxpr8AsBEUphACULiCeYaDO-x0cXo1aWAl6Cs0f03kLIDPgc123NIWv8A5VkTE0-FNQjMKZdKDt2sKbix_lwTPDwZUMrcj56aP-6SiodtnPRAva4IQ2-6v80r2s-1opbBudkuzUpoYDDB969FS3kU__No_H9StpA" alt="Security Illustration">
+      </div>
+      <!-- Artistic background blob -->
+      <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-primary-fixed-dim/30 rounded-full blur-3xl pointer-events-none"></div>
+    </div>
+  </div>
+</main>
+
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface/90 backdrop-blur-lg border-t border-outline-variant/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] shadow-lg flex justify-around items-center h-16 px-2 pb-safe">
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard">
+    <span class="material-symbols-outlined">home</span>
+    <span class="font-label-md text-[10px] mt-1">Home</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/buy">
+    <span class="material-symbols-outlined">add_shopping_cart</span>
+    <span class="font-label-md text-[10px] mt-1">Buy</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/orders">
+    <span class="material-symbols-outlined">history_edu</span>
+    <span class="font-label-md text-[10px] mt-1">History</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant active:bg-surface-container scale-95 active:scale-90 transition-transform px-4 py-1 rounded-xl" href="/dashboard/accounts">
+    <span class="material-symbols-outlined">folder_special</span>
+    <span class="font-label-md text-[10px] mt-1">Accounts</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-xl px-4 py-1 scale-95 transition-transform" href="/dashboard/wallet">
+    <span class="material-symbols-outlined">account_balance_wallet</span>
+    <span class="font-label-md text-[10px] mt-1 font-bold">Wallet</span>
+  </a>
 </nav>
 
-<div class="layout">
-  <aside class="sidebar">
-    <a href="/dashboard" class="sidebar-item">🏠 Home</a>
-    <a href="/dashboard/buy" class="sidebar-item">🛒 Buy Number</a>
-    <a href="/dashboard/orders" class="sidebar-item">📋 My Orders</a>
-    <a href="/dashboard/referrals" class="sidebar-item">🤝 Referrals</a>
-    <a href="/dashboard/wallet" class="sidebar-item active">💰 Wallet</a>
-    <a href="/dashboard/profile" class="sidebar-item">👤 Profile</a>
-    <div class="sidebar-divider"></div>
-    <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
-  </aside>
-
-  <main class="main-content" style="padding-bottom: 120px">
-    <h1 style="font-size:24px;margin-bottom:32px">Wallet</h1>
-
-    <!-- Balance Card -->
-    <div class="wallet-grid">
-      <div class="card" style="text-align:center;padding:36px;background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(99,102,241,0.1));border-color:rgba(59,130,246,0.3)">
-        <div style="font-size:13px;margin-bottom:8px;color:var(--text-2)">Available Balance</div>
-        <div style="font-size:42px;font-weight:900;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="wallet-balance"><div class="skeleton skeleton-text" style="width:140px;height:42px;margin:0 auto"></div></div>
-        <button class="btn btn-primary mt-8 w-full" onclick="openModal('deposit-modal')">+ Add Funds</button>
-      </div>
-      <div class="card" style="padding:28px">
-        <h3 style="margin-bottom:16px">Wallet Summary</h3>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Deposited</span><span id="total-deposited" class="text-success"><div class="skeleton skeleton-text" style="width:60px"></div></span></div>
-          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Spent</span><span id="total-spent" class="text-danger"><div class="skeleton skeleton-text" style="width:60px"></div></span></div>
-          <div style="display:flex;justify-content:space-between"><span class="text-muted">Total Refunds</span><span id="total-refunds" class="text-success"><div class="skeleton skeleton-text" style="width:60px"></div></span></div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Redeem Promo Card -->
-    <div class="card" style="margin-top:24px;background:rgba(59,130,246,0.05);border-style:dashed">
-      <h3 style="margin-bottom:12px;font-size:16px">🎟️ Redeem Promo Code</h3>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="promo-input" placeholder="Enter code (e.g. EXTRA50)" style="text-transform:uppercase" />
-        <button class="btn btn-primary" id="redeem-btn" onclick="redeemPromo()">Redeem</button>
-      </div>
-      <p class="text-xs text-muted mt-3">Enter a special code to get instant wallet credits.</p>
-    </div>
-
-    <!-- Transactions -->
-    <div class="card" style="padding:0;overflow:hidden">
-      <div class="tx-header">
-        <h3>Transaction History</h3>
-        <div class="tx-filters">
-          <button class="btn btn-primary btn-sm" onclick="setTxFilter('all',this)">All</button>
-          <button class="btn btn-secondary btn-sm" onclick="setTxFilter('deposit',this)">Deposits</button>
-          <button class="btn btn-secondary btn-sm" onclick="setTxFilter('purchase',this)">Purchases</button>
-          <button class="btn btn-secondary btn-sm" onclick="setTxFilter('refund',this)">Refunds</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Type</th><th>Description</th><th>Amount</th><th>Balance After</th><th>Date</th></tr>
-          </thead>
-          <tbody id="tx-body">
-            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
-            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
-            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
-            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
-            <tr><td colspan="5"><div class="skeleton skeleton-text"></div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div id="pagination" class="mt-4"></div>
-  </main>
-</div>
-
-<!-- Deposit Modal -->
-<div id="deposit-modal" class="modal-backdrop">
-  <div class="modal" style="max-width:440px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <h2 style="font-size:22px" id="deposit-modal-title">Deposit Funds</h2>
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('deposit-modal')">✕</button>
-    </div>
-    
-    <!-- Step 0: Amount Screen -->
-    <div id="deposit-amount-screen" class="fade-in">
-      <p class="text-sm text-muted" style="margin-bottom:20px">Enter the amount you wish to add to your wallet (₹):</p>
-      
-      <div style="text-align:center; margin-bottom: 24px;">
-        <div style="position:relative; display:inline-block; width:100%">
-          <span style="position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:24px; font-weight:900; color:var(--accent)">₹</span>
-          <input type="number" id="deposit-amount-input" class="form-input" 
-                 style="font-size:32px; font-weight:900; text-align:center; padding: 20px; border-radius: 20px; background: rgba(255,255,255,0.03)" 
-                 placeholder="0.00" value="100" />
-        </div>
-        <p class="text-xxs mt-2" id="min-dep-hint" style="color:var(--text-3)">Minimum deposit: ₹1</p>
-        <p class="text-xxs mt-1 hidden" id="min-dep-error" style="color:var(--danger); font-weight:700">Please enter at least ₹1</p>
-      </div>
-
-      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:24px">
-        <div class="amount-chip" onclick="document.getElementById('deposit-amount-input').value=100">₹100</div>
-        <div class="amount-chip" onclick="document.getElementById('deposit-amount-input').value=500">₹500</div>
-        <div class="amount-chip" onclick="document.getElementById('deposit-amount-input').value=1000">₹1k</div>
-        <div class="amount-chip" onclick="document.getElementById('deposit-amount-input').value=2000">₹2k</div>
-      </div>
-      
-      <button class="btn btn-primary w-full" style="padding:16px; font-size:16px; font-weight:bold" onclick="nextToSelection()">Continue to Payment ❯</button>
-    </div>
-
-    <!-- Step 1: Selection Screen -->
-    <div id="deposit-selection" class="hidden fade-in">
-      <div style="background:var(--surface); border-radius:16px; padding:12px 16px; margin-bottom:24px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center">
-        <div>
-           <div class="text-xxs text-muted uppercase font-bold mb-1">Total Amount</div>
-           <div class="font-black text-xl" id="display-deposit-amount">₹0</div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="showDepositMethod('amount-screen')" style="border-radius:10px">Edit</button>
-      </div>
-
-      <p class="text-xs text-muted font-bold mb-4 uppercase letter-spacing-1">Select Payment Method</p>
-      
-      <div style="display:flex;flex-direction:column;gap:4px">
-        <!-- Option: UPI -->
-        <div class="payment-method-card" id="method-upi" onclick="showDepositMethod('upi')">
-          <div class="method-badge">Instant</div>
-          <div class="method-icon" style="color:#ff4b2b">🇮🇳</div>
-          <div class="method-info">
-            <div class="method-name">UPI Payment</div>
-            <div class="method-desc">PhonePe, GPay, Paytm, Any UPI App</div>
-          </div>
-          <span style="opacity:0.3">❯</span>
-        </div>
-
-
-        <!-- Option: Promo -->
-        <div class="payment-method-card" onclick="showDepositMethod('promo')">
-          <div class="method-icon" style="color:var(--accent)">🎟️</div>
-          <div class="method-info">
-            <div class="method-name">Redeem Voucher</div>
-            <div class="method-desc">Use gift card or promo codes</div>
-          </div>
-          <span style="opacity:0.3">❯</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 2: UPI View -->
-    <div id="deposit-upi" class="hidden fade-in">
-      <button class="btn btn-secondary btn-sm mb-4" onclick="showDepositMethod('selection')">← Back</button>
-      
-      <div style="text-align: center; background: var(--surface); border-radius: 24px; padding: 32px 20px; border: 1px solid var(--border); margin-bottom: 20px;">
-        <h3 style="margin-bottom: 8px;" id="display-upi-name">Scan & Pay</h3>
-        <p class="text-xs text-muted mb-6">Pay exactly <strong class="target-amount-text" style="color:var(--accent)">₹0</strong> to avoid delays</p>
-
-        <div class="qr-glow-border qr-pulse" style="display:inline-block; margin-bottom: 20px;">
-          <div id="qr-container" class="qr-container-wrapper">
-             <div id="upi-qr" style="width:200px; height:200px; display:flex; align-items:center; justify-content:center; color:#000; font-weight:bold;">Loading QR...</div>
-          </div>
-        </div>
-
-        <div style="display:flex; justify-content:center; gap:10px; margin-bottom: 24px;">
-           <button class="btn btn-secondary btn-sm" onclick="downloadQRCode()" style="background: rgba(255,255,255,0.05)">
-             <span style="margin-right:6px">⬇️</span> Download QR
-           </button>
-           <button class="btn btn-secondary btn-sm" onclick="copyUPILink()" style="background: rgba(255,255,255,0.05)">
-             <span style="margin-right:6px">🔗</span> Copy UPI ID
-           </button>
-        </div>
-
-        <!-- UTR Entry - Moved here -->
-        <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 18px; border: 1px solid var(--border); margin-bottom: 24px;">
-          <label class="text-xxs text-muted uppercase font-bold mb-3 block" style="text-align:left">Enter 12-Digit UTR Number</label>
-          <div class="utr-flex" style="display:flex;gap:10px">
-            <input type="text" id="utr-input" placeholder="e.g. 401234567890" class="form-input" maxlength="12" style="background:rgba(0,0,0,0.2)" />
-            <button class="btn btn-primary" onclick="verifyBharatPe()" id="verify-bp-btn">Verify Now</button>
-          </div>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:12px; text-align: left; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 16px; border: 1px dashed var(--border)">
-          <div style="display:flex; gap:12px; align-items:center">
-            <span style="width:24px; height:24px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold">1</span>
-            <span class="text-xs">Scan the QR with any UPI App (GPay, PhonePe, etc.)</span>
-          </div>
-          <div style="display:flex; gap:12px; align-items:center">
-            <span style="width:24px; height:24px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold">2</span>
-            <span class="text-xs">Complete payment of <strong class="target-amount-text">₹0</strong></span>
-          </div>
-          <div style="display:flex; gap:12px; align-items:center">
-            <span style="width:24px; height:24px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold">3</span>
-            <span class="text-xs">Enter the 12-digit UTR below to verify</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- Step 2: Promo View -->
-    <div id="deposit-promo" class="hidden fade-in">
-      <button class="btn btn-secondary btn-sm mb-4" onclick="showDepositMethod('selection')">← Back</button>
-      <div class="card p-4">
-        <div class="form-group">
-          <label class="form-label">Gift Card / Promo Code</label>
-          <div style="display:flex;gap:10px">
-            <input type="text" id="promo-code" placeholder="ENTER CODE" class="form-input" style="text-transform:uppercase" />
-            <button class="btn btn-primary" onclick="redeemPromo()" id="redeem-btn">Redeem</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-
 <script src="/js/main.js"></script>
-<script src="/js/ambient-bg.js"></script>
-`n
+
 <script>
 (function() {
+  if (!requireLogin()) return;
+
   let walletData = { balance: 0, transactions: [], page: 1, pages: 1 };
   let currentFilter = 'all';
   let paymentConfig = {};
   let depositAmount = 0;
+  let selectedMethod = 'bharatpe';
 
-  async function loadWallet(page = 1) {
+  async function loadWallet(page = 1, isBackground = false) {
     try {
       walletData.page = page;
       const tbody = document.getElementById('tx-body');
-      if (tbody) tbody.innerHTML = skeletonTable(5, 8);
       
-      const resp = await API.get(`/api/user/wallet?page=${page}&limit=10&type=${currentFilter}`);
+      const q = document.getElementById('tx-search').value.trim();
+      const qs = `page=${page}&limit=10&type=${currentFilter}` + (q ? `&q=${encodeURIComponent(q)}` : '');
+      const resp = await API.get(`/api/user/wallet?${qs}`);
+
       if (resp.error) throw new Error(resp.error);
 
-      // Merge response into walletData
       walletData.balance = resp.balance || 0;
       walletData.transactions = resp.transactions || [];
       walletData.pages = resp.pages || 1;
       
       const balEl = document.getElementById('wallet-balance');
       if (balEl) balEl.textContent = fmtMoney(walletData.balance);
+      const navWallet = document.getElementById('nav-wallet-bal');
+      if (navWallet) navWallet.textContent = fmtMoney(walletData.balance);
 
       if (resp.summary) {
         const depEl = document.getElementById('total-deposited');
         const spentEl = document.getElementById('total-spent');
-        const refEl = document.getElementById('total-refunds');
         if (depEl) depEl.textContent = fmtMoney(resp.summary.total_deposited || 0);
-        if (spentEl) spentEl.textContent = "-" + fmtMoney(resp.summary.total_spent || 0);
-        if (refEl) refEl.textContent = "+" + fmtMoney(resp.summary.total_refunded || 0);
+        if (spentEl) spentEl.textContent = fmtMoney(resp.summary.total_spent || 0);
       }
 
       if (!tbody) return;
       if (!walletData.transactions.length) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-3)">No ${currentFilter === 'all' ? '' : currentFilter} transactions found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-on-surface-variant text-sm">No ${currentFilter === 'all' ? '' : currentFilter} transactions found.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = walletData.transactions.map(tx => {
         const amt = tx.amount || 0;
         const bal = tx.balance_after || 0;
+        
+        let typeClass = "bg-surface-container text-on-surface-variant";
+        let icon = "swap_horiz";
+        if(tx.type === 'deposit') { typeClass = "bg-success/10 text-success"; icon = "download"; }
+        else if(tx.type === 'purchase') { typeClass = "bg-primary-container/20 text-primary"; icon = "shopping_cart"; }
+        else if(tx.type === 'refund') { typeClass = "bg-secondary-container/20 text-secondary"; icon = "settings_backup_restore"; }
+
         return `
-          <tr>
-            <td><span class="badge badge-${tx.type}">${tx.type}</span></td>
-            <td class="text-sm"><div>${tx.description || '—'}</div></td>
-            <td class="font-bold ${amt > 0 ? 'text-success' : 'text-danger'}">${amt > 0 ? '+' : ''}${amt.toFixed(2)}</td>
-            <td class="text-muted text-sm">₹${bal.toFixed(2)}</td>
-            <td class="text-xxs text-muted">${new Date(tx.createdAt || Date.now()).toLocaleString()}</td>
+          <tr class="hover:bg-surface-container-low/60 transition-all group cursor-pointer border-b border-outline-variant/20 last:border-b-0">
+            <td class="py-4 px-6">
+              <div class="font-label-md text-[11px] font-bold tracking-wider ${typeClass} px-2.5 py-1 rounded-md uppercase inline-block shadow-2xs">
+                  ${tx.type}
+              </div>
+            </td>
+            <td class="py-4 px-6 text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">${tx.description || '—'}</td>
+            <td class="py-4 px-6 font-headline-sm text-sm font-bold ${amt > 0 ? 'text-success' : 'text-on-surface'}">${amt > 0 ? '+' : ''}₹${amt.toFixed(2)}</td>
+            <td class="py-4 px-6 text-sm text-on-surface-variant font-semibold">₹${bal.toFixed(2)}</td>
+            <td class="py-4 px-6 text-xs text-on-surface-variant font-medium text-right">${new Date(tx.createdAt || Date.now()).toLocaleString()}</td>
           </tr>
         `;
       }).join('');
@@ -315,15 +851,24 @@
       toast(e.message, 'error');
       console.error(e);
       const tbody = document.getElementById('tx-body');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--danger)">Failed to load: ${e.message}</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-error text-sm font-semibold">Failed to load: ${e.message}</td></tr>`;
     }
   }
 
+  let txSearchTimeout;
+  window.debounceTxSearch = function() {
+    clearTimeout(txSearchTimeout);
+    txSearchTimeout = setTimeout(() => loadWallet(1), 500);
+  };
+
   window.setTxFilter = function(filter, btn) {
     currentFilter = filter;
-    document.querySelectorAll('.tx-filters .btn').forEach(b => {
-      b.classList.toggle('btn-primary', b === btn);
-      b.classList.toggle('btn-secondary', b !== btn);
+    document.querySelectorAll('.tx-filters button').forEach(b => {
+      if(b === btn) {
+        b.className = "bg-primary text-on-primary px-4 py-2.5 rounded-xl font-label-md text-xs font-bold transition-all whitespace-nowrap shadow-sm";
+      } else {
+        b.className = "bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container-low text-on-surface px-4 py-2.5 rounded-xl font-label-md text-xs font-bold transition-all whitespace-nowrap shadow-sm";
+      }
     });
     loadWallet(1);
   }
@@ -331,11 +876,8 @@
   async function loadPaymentConfig() {
     try {
       paymentConfig = await API.get(`/api/user/wallet/payment-config?t=${Date.now()}`);
-      const upiCard = document.getElementById('method-upi');
-      if (upiCard) {
-        upiCard.style.display = paymentConfig.bharatpe?.enabled ? 'flex' : 'none';
-      }
-      const minDep = paymentConfig.bharatpe?.min_deposit || 1;
+      let minDep = getGlobalMinDeposit();
+
       const hint = document.getElementById('min-dep-hint');
       if (hint) hint.textContent = `Minimum deposit: ₹${minDep}`;
       const input = document.getElementById('deposit-amount-input');
@@ -343,119 +885,807 @@
         input.min = minDep;
         input.oninput = validateDepositAmount;
       }
+      if (paymentConfig.omnipay?.display_name) {
+        const customName = paymentConfig.omnipay.display_name;
+        const methodTitle = document.getElementById('label-method-omnipay');
+        if (methodTitle) methodTitle.textContent = customName;
+        const viewTitle = document.getElementById('label-view-omnipay');
+        if (viewTitle) viewTitle.textContent = `Pay via ${customName}`;
+      }
+      if (paymentConfig.bharatpe?.display_name) {
+        const bpTitle = document.getElementById('label-method-bharatpe');
+        if (bpTitle) bpTitle.textContent = paymentConfig.bharatpe.display_name;
+      }
+      if (paymentConfig.paytm?.display_name) {
+        const ptTitle = document.getElementById('label-method-paytm');
+        if (ptTitle) ptTitle.textContent = paymentConfig.paytm.display_name;
+      }
+      if (paymentConfig.heleket?.display_name) {
+        const hkTitle = document.getElementById('label-method-heleket');
+        if (hkTitle) hkTitle.textContent = paymentConfig.heleket.display_name;
+        const hkViewTitle = document.getElementById('label-view-heleket');
+        if (hkViewTitle) hkViewTitle.textContent = `Pay via ${paymentConfig.heleket.display_name}`;
+      }
+      if (paymentConfig.heleket?.allow_currencies) {
+        const hkCoins = document.getElementById('coins-method-heleket');
+        if (hkCoins) hkCoins.textContent = `Pay with ${paymentConfig.heleket.allow_currencies.replace(/,/g, ', ')}`;
+      }
+      if (paymentConfig.heleket?.usd_rate) window.currentHeleketUsdRate = paymentConfig.heleket.usd_rate;
+      if (typeof renderHeleketCoinOptions === 'function') renderHeleketCoinOptions();
+
+      // Update gateway badge labels with commission percent & bonus
+      function updateGatewayBadge(badgeId, baseLabel, gwKey) {
+        const badge = document.getElementById(badgeId);
+        if (!badge) return;
+        const gw = paymentConfig[gwKey] || {};
+        const commission = parseFloat(gw.commission_percent) || 0;
+        const bonusEnabled = !!gw.bonus_enabled;
+        const bonusType = gw.bonus_type || 'percent';
+        const bonusVal = parseFloat(gw.bonus_value) || 0;
+
+        if (bonusEnabled && bonusVal > 0) {
+          const bonusStr = bonusType === 'flat' ? `+₹${bonusVal}` : `+${bonusVal}%`;
+          if (commission > 0) {
+            badge.textContent = `🎁 ${bonusStr} Bonus • +${commission}% Fee`;
+            badge.className = 'absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm';
+          } else {
+            badge.textContent = `🎁 ${bonusStr} Extra Bonus`;
+            badge.className = 'absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm';
+          }
+        } else if (commission > 0) {
+          badge.textContent = `+${commission}% Surcharge`;
+          badge.className = 'absolute top-0 right-0 bg-warning text-black text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm';
+        } else {
+          badge.textContent = baseLabel;
+          badge.className = 'absolute top-0 right-0 bg-success text-on-primary text-[10px] font-extrabold px-3.5 py-1 rounded-bl-xl uppercase tracking-wider shadow-sm';
+        }
+      }
+      updateGatewayBadge('badge-method-bharatpe', 'Instant Credit \u2022 0% Fee', 'bharatpe');
+      updateGatewayBadge('badge-method-paytm', 'Instant Credit \u2022 0% Fee', 'paytm');
+      updateGatewayBadge('badge-method-omnipay', 'Instant Intent \u2022 Auto Verify', 'omnipay');
+      updateGatewayBadge('badge-method-heleket', 'Global Crypto \u2022 Auto Verify', 'heleket');
+      updateGatewayBadge('badge-method-eaglepay', 'Instant UPI \u2022 Auto Verify', 'eaglepay');
+
+      if (paymentConfig.eaglepay?.display_name) {
+        const epTitle = document.getElementById('label-method-eaglepay');
+        if (epTitle) epTitle.textContent = paymentConfig.eaglepay.display_name;
+        const epViewTitle = document.getElementById('label-view-eaglepay');
+        if (epViewTitle) epViewTitle.textContent = `Pay via ${paymentConfig.eaglepay.display_name}`;
+      }
+
       validateDepositAmount();
+      if (typeof window.updateGatewaySurchargeLabels === 'function') {
+        window.updateGatewaySurchargeLabels();
+      }
     } catch (e) { console.error('Failed to load payment config', e); }
+  }
+
+  function getMinAllowedCryptoInr() {
+    if (Array.isArray(allDynamicCoinsList) && allDynamicCoinsList.length > 0) {
+      const minFromServices = Math.min(...allDynamicCoinsList.map(c => (c.minInr !== undefined && !isNaN(c.minInr)) ? c.minInr : Infinity));
+      if (minFromServices !== Infinity) return minFromServices;
+    }
+    // min_deposit in payment_config.json is already in INR (set by admin in ₹)
+    return paymentConfig.heleket?.min_deposit !== undefined ? Number(paymentConfig.heleket.min_deposit) : 1;
+  }
+
+  function getGlobalMinDeposit() {
+    let minDep = Infinity;
+    if (paymentConfig.bharatpe?.enabled) minDep = Math.min(minDep, paymentConfig.bharatpe.min_deposit || 1);
+    if (paymentConfig.paytm?.enabled) minDep = Math.min(minDep, paymentConfig.paytm.min_deposit || 1);
+    if (paymentConfig.omnipay?.enabled) minDep = Math.min(minDep, paymentConfig.omnipay.min_deposit || 10);
+    if (paymentConfig.heleket?.enabled) {
+      const minCrypto = getMinAllowedCryptoInr();
+      minDep = Math.min(minDep, minCrypto);
+    }
+    if (paymentConfig.eaglepay?.enabled) minDep = Math.min(minDep, paymentConfig.eaglepay.min_deposit || 100);
+    return minDep === Infinity ? 1 : minDep;
+  }
+
+  window.setDepositAmount = function(amt) {
+    const input = document.getElementById('deposit-amount-input');
+    if (input) {
+        input.value = amt;
+        validateDepositAmount();
+    }
   }
 
   function validateDepositAmount() {
     const input = document.getElementById('deposit-amount-input');
-    const btn = document.querySelector('#deposit-amount-screen .btn-primary');
+    const btn = document.getElementById('deposit-continue-btn');
     const error = document.getElementById('min-dep-error');
-    const minDep = paymentConfig.bharatpe?.min_deposit || 1;
+    
+    let minDep = getGlobalMinDeposit();
     const amt = parseFloat(input.value) || 0;
 
     if (amt < minDep) {
-      if (btn) btn.disabled = true;
-      if (btn) btn.style.opacity = '0.5';
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
       if (error) {
         error.textContent = `Please enter at least ₹${minDep}`;
         error.classList.remove('hidden');
       }
     } else {
-      if (btn) btn.disabled = false;
-      if (btn) btn.style.opacity = '1';
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
       if (error) error.classList.add('hidden');
     }
   }
 
+  window.closeDepositModal = function() {
+    const modal = document.getElementById('deposit-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+  }
+
+  window.updateSelectionAmount = function(val) {
+    const amt = parseFloat(val) || 0;
+    depositAmount = amt;
+    const mainInp = document.getElementById('deposit-amount-input');
+    if (mainInp && document.activeElement !== mainInp) mainInp.value = amt ? amt : '';
+    const dispEl = document.getElementById('display-deposit-amount');
+    if (dispEl) dispEl.textContent = `₹${amt}`;
+    document.querySelectorAll('.target-amount-text').forEach(el => el.textContent = `₹${amt}`);
+    
+    // Dynamically recalculate enabled gateways on selection screen as amount changes
+    const minCryptoInr = getMinAllowedCryptoInr();
+    const bpEnabled = paymentConfig.bharatpe?.enabled && amt >= (paymentConfig.bharatpe.min_deposit || 1);
+    const ptEnabled = paymentConfig.paytm?.enabled && amt >= (paymentConfig.paytm.min_deposit || 1);
+    const omniEnabled = paymentConfig.omnipay?.enabled && amt >= (paymentConfig.omnipay.min_deposit || 10);
+    const hkEnabled = paymentConfig.heleket?.enabled && amt >= minCryptoInr;
+    const epEnabled = paymentConfig.eaglepay?.enabled && amt >= (paymentConfig.eaglepay.min_deposit || 100);
+    
+    const upiCard = document.getElementById('method-upi');
+    if (upiCard) {
+      upiCard.style.display = bpEnabled ? 'flex' : 'none';
+      bpEnabled ? upiCard.classList.remove('hidden') : upiCard.classList.add('hidden');
+    }
+    const paytmCard = document.getElementById('method-paytm');
+    if (paytmCard) {
+      paytmCard.style.display = ptEnabled ? 'flex' : 'none';
+      ptEnabled ? paytmCard.classList.remove('hidden') : paytmCard.classList.add('hidden');
+    }
+    const omniCard = document.getElementById('method-omnipay');
+    if (omniCard) {
+      omniCard.style.display = omniEnabled ? 'flex' : 'none';
+      omniEnabled ? omniCard.classList.remove('hidden') : omniCard.classList.add('hidden');
+    }
+    const hkCard = document.getElementById('method-heleket');
+    if (hkCard) {
+      hkCard.style.display = hkEnabled ? 'flex' : 'none';
+      hkEnabled ? hkCard.classList.remove('hidden') : hkCard.classList.add('hidden');
+    }
+    const epCard = document.getElementById('method-eaglepay');
+    if (epCard) {
+      epCard.style.display = epEnabled ? 'flex' : 'none';
+      epEnabled ? epCard.classList.remove('hidden') : epCard.classList.add('hidden');
+    }
+    
+    if (typeof window.updateGatewaySurchargeLabels === 'function') {
+      window.updateGatewaySurchargeLabels(amt);
+    }
+  };
+
+  window.updateGatewaySurchargeLabels = function(amt) {
+    if (!paymentConfig) return;
+    const amount = parseFloat(amt) || parseFloat(depositAmount) || 0;
+    
+    const methods = ['bharatpe', 'paytm', 'omnipay', 'heleket', 'eaglepay'];
+    methods.forEach(method => {
+      const feeEl = document.getElementById(`fee-method-${method}`);
+      if (!feeEl) return;
+      
+      const gw = paymentConfig[method] || {};
+      const commission = parseFloat(gw.commission_percent) || 0;
+      const bonusEnabled = !!gw.bonus_enabled;
+      const bonusType = gw.bonus_type || 'percent';
+      const bonusVal = parseFloat(gw.bonus_value) || 0;
+
+      let bonusAmt = 0;
+      if (bonusEnabled && bonusVal > 0 && amount > 0) {
+        bonusAmt = bonusType === 'percent' ? parseFloat(((amount * bonusVal) / 100).toFixed(2)) : bonusVal;
+      }
+
+      let parts = [];
+      if (commission > 0 && amount > 0) {
+        const surcharge = (amount * (commission / 100)).toFixed(2);
+        const total = (amount + parseFloat(surcharge)).toFixed(2);
+        parts.push(`<span class="text-warning">+₹${surcharge} fee (Pay: ₹${total})</span>`);
+      } else {
+        parts.push(`<span class="text-success">&#10003; 0% Fee</span>`);
+      }
+
+      if (bonusAmt > 0) {
+        const totalGet = (amount + bonusAmt).toFixed(2);
+        parts.push(`<span class="text-emerald-600 font-bold">🎁 +₹${bonusAmt} Bonus (Get ₹${totalGet})</span>`);
+      } else if (bonusEnabled && bonusVal > 0) {
+        const bonusStr = bonusType === 'flat' ? `₹${bonusVal}` : `${bonusVal}%`;
+        parts.push(`<span class="text-emerald-600 font-bold">🎁 +${bonusStr} Bonus</span>`);
+      }
+
+      feeEl.innerHTML = parts.join(' &bull; ');
+    });
+  };
+
+  window.setSelectionAmount = function(amt) {
+    const selInput = document.getElementById('edit-selection-amount');
+    if (selInput) selInput.value = amt;
+    updateSelectionAmount(amt);
+  };
+
   window.nextToSelection = function() {
     const amt = parseFloat(document.getElementById('deposit-amount-input').value);
-    const minDep = paymentConfig.bharatpe?.min_deposit || 1;
+    const minDep = getGlobalMinDeposit();
     if (!amt || amt < minDep) return toast(`Minimum deposit is ₹${minDep}`, 'error');
     depositAmount = amt;
-    document.getElementById('display-deposit-amount').textContent = `₹${amt}`;
+    const dispEl = document.getElementById('display-deposit-amount');
+    if (dispEl) dispEl.textContent = `₹${amt}`;
+    const selInput = document.getElementById('edit-selection-amount');
+    if (selInput) selInput.value = amt;
     document.querySelectorAll('.target-amount-text').forEach(el => el.textContent = `₹${amt}`);
+    
+    // Open popup modal
+    const modal = document.getElementById('deposit-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
     window.showDepositMethod('selection');
   }
 
-  window.showDepositMethod = function(method) {
-    const screens = ['amount-screen', 'selection', 'upi', 'promo'];
+  window.showDepositMethod = function(method, subMethod) {
+    if (subMethod) selectedMethod = subMethod;
+
+    if (method === 'amount-screen') {
+      closeDepositModal();
+      return;
+    }
+
+    if (method === 'selection') {
+      const selInput = document.getElementById('edit-selection-amount');
+      if (selInput && document.activeElement !== selInput) selInput.value = depositAmount || 0;
+      const amt = depositAmount || 0;
+      const minCryptoInr = getMinAllowedCryptoInr();
+      const bpEnabled = paymentConfig.bharatpe?.enabled && amt >= (paymentConfig.bharatpe.min_deposit || 1);
+      const ptEnabled = paymentConfig.paytm?.enabled && amt >= (paymentConfig.paytm.min_deposit || 1);
+      const omniEnabled = paymentConfig.omnipay?.enabled && amt >= (paymentConfig.omnipay.min_deposit || 10);
+      const hkEnabled = paymentConfig.heleket?.enabled && amt >= minCryptoInr;
+      const epEnabled = paymentConfig.eaglepay?.enabled && amt >= (paymentConfig.eaglepay.min_deposit || 100);
+      
+      const upiCard = document.getElementById('method-upi');
+      if (upiCard) {
+        upiCard.style.display = bpEnabled ? 'flex' : 'none';
+        bpEnabled ? upiCard.classList.remove('hidden') : upiCard.classList.add('hidden');
+      }
+      
+      const paytmCard = document.getElementById('method-paytm');
+      if (paytmCard) {
+        paytmCard.style.display = ptEnabled ? 'flex' : 'none';
+        ptEnabled ? paytmCard.classList.remove('hidden') : paytmCard.classList.add('hidden');
+      }
+
+      const omniCard = document.getElementById('method-omnipay');
+      if (omniCard) {
+        omniCard.style.display = omniEnabled ? 'flex' : 'none';
+        omniEnabled ? omniCard.classList.remove('hidden') : omniCard.classList.add('hidden');
+      }
+
+      const hkCard = document.getElementById('method-heleket');
+      if (hkCard) {
+        hkCard.style.display = hkEnabled ? 'flex' : 'none';
+        hkEnabled ? hkCard.classList.remove('hidden') : hkCard.classList.add('hidden');
+      }
+
+      const epCard2 = document.getElementById('method-eaglepay');
+      if (epCard2) {
+        epCard2.style.display = epEnabled ? 'flex' : 'none';
+        epEnabled ? epCard2.classList.remove('hidden') : epCard2.classList.add('hidden');
+      }
+
+      if (typeof window.updateGatewaySurchargeLabels === 'function') {
+        window.updateGatewaySurchargeLabels(amt);
+      }
+
+      // Hide commission breakdown banner when returning to selection screen
+      const commBanner = document.getElementById('commission-breakdown-banner');
+      if (commBanner) commBanner.classList.add('hidden');
+    }
+
+    // Show commission / bonus breakdown banner for the chosen method
+    function showCommissionBanner(method) {
+      const creditAmt = parseFloat(depositAmount || 0);
+      let gwKey = method;
+      if (method === 'upi') gwKey = subMethod || selectedMethod || 'bharatpe';
+      const gwCfg = paymentConfig[gwKey] || {};
+
+      const commission = parseFloat(gwCfg.commission_percent) || 0;
+      const bonusEnabled = !!gwCfg.bonus_enabled;
+      const bonusType = gwCfg.bonus_type || 'percent';
+      const bonusVal = parseFloat(gwCfg.bonus_value) || 0;
+
+      let bonusAmount = 0;
+      if (bonusEnabled && bonusVal > 0 && creditAmt > 0) {
+        bonusAmount = bonusType === 'percent' ? parseFloat(((creditAmt * bonusVal) / 100).toFixed(2)) : bonusVal;
+      }
+
+      const banner = document.getElementById('commission-breakdown-banner');
+      if (!banner) return;
+
+      if ((commission > 0 || bonusAmount > 0) && creditAmt > 0) {
+        const payAmt = parseFloat((creditAmt * (1 + commission / 100)).toFixed(2));
+        const totalGetAmt = parseFloat((creditAmt + bonusAmount).toFixed(2));
+        const payEl = document.getElementById('banner-pay-amount');
+        const credEl = document.getElementById('banner-credit-amount');
+        const commBadge = document.getElementById('banner-commission-badge');
+        const bonusBadge = document.getElementById('banner-bonus-badge');
+
+        if (payEl) payEl.textContent = `₹${payAmt.toLocaleString('en-IN')}`;
+        if (credEl) credEl.textContent = `₹${totalGetAmt.toLocaleString('en-IN')}`;
+
+        if (commBadge) {
+          if (commission > 0) {
+            commBadge.textContent = `+${commission}% fee`;
+            commBadge.classList.remove('hidden');
+          } else {
+            commBadge.classList.add('hidden');
+          }
+        }
+
+        if (bonusBadge) {
+          if (bonusAmount > 0) {
+            bonusBadge.textContent = bonusType === 'percent' ? `🎁 +${bonusVal}% (₹${bonusAmount}) Bonus` : `🎁 +₹${bonusVal} Bonus`;
+            bonusBadge.classList.remove('hidden');
+          } else {
+            bonusBadge.classList.add('hidden');
+          }
+        }
+
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    if (method === 'upi') {
+      showCommissionBanner(subMethod || selectedMethod || 'bharatpe');
+      generateUPIQR();
+      const utrInp = document.getElementById('utr-input');
+      if (utrInp) utrInp.value = '';
+      if (typeof window.showUPIPhase === 'function') window.showUPIPhase('qr');
+    }
+
+    if (method === 'omnipay') {
+      showCommissionBanner('omnipay');
+      const initBox = document.getElementById('omnipay-init-box');
+      const activeBox = document.getElementById('omnipay-active-box');
+      if (initBox) initBox.classList.remove('hidden');
+      if (activeBox) activeBox.classList.add('hidden');
+    }
+
+    if (method === 'heleket') {
+      const minCryptoInr = getMinAllowedCryptoInr();
+      const amt = parseFloat(depositAmount || document.getElementById('deposit-amount-input')?.value || 0);
+      if (amt < minCryptoInr) {
+        toast(`Recharge amount (₹${amt}) is less than the minimum required for crypto deposits (₹${minCryptoInr})`, 'error');
+        return;
+      }
+      showCommissionBanner('heleket');
+      const initBox = document.getElementById('heleket-step-init');
+      const verifyBox = document.getElementById('heleket-step-verify');
+      if (initBox) initBox.classList.remove('hidden');
+      if (verifyBox) verifyBox.classList.add('hidden');
+    }
+
+    if (method === 'eaglepay') {
+      const epAmt = parseFloat(depositAmount || document.getElementById('deposit-amount-input')?.value || 0);
+      const epMin = paymentConfig.eaglepay?.min_deposit || 100;
+      if (epAmt < epMin) {
+        toast(`Minimum Eagle Pay deposit is ₹${epMin}`, 'error');
+        return;
+      }
+      showCommissionBanner('eaglepay');
+    }
+
+    const screens = ['selection', 'upi', 'omnipay', 'heleket', 'eaglepay'];
     screens.forEach(s => {
       const el = document.getElementById(`deposit-${s}`);
       if (el) el.classList.add('hidden');
     });
 
     const target = document.getElementById(`deposit-${method}`);
-    if (target) target.classList.remove('hidden');
+    if (target) {
+        target.classList.remove('hidden');
+    }
 
-    const title = document.getElementById('deposit-modal-title');
-    const titles = { 'amount-screen': 'Add Funds', 'selection': 'Select Method', 'upi': 'UPI Payment', 'crypto': 'Crypto Deposit', 'promo': 'Redeem Voucher' };
-    if (title && titles[method]) title.textContent = titles[method];
+    if (method === 'upi') {
+      window.showUPIPhase('qr');
+    } else if (method === 'omnipay') {
+      const title = document.getElementById('deposit-modal-title');
+      if (title) title.textContent = `${paymentConfig.omnipay?.display_name || 'OmniPay'} Payment`;
+      const backBtn = document.getElementById('deposit-modal-back-btn');
+      if (backBtn) {
+          backBtn.classList.remove('hidden');
+          backBtn.onclick = () => window.showDepositMethod('selection');
+          backBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Gateways';
+      }
+    } else if (method === 'heleket') {
+      const title = document.getElementById('deposit-modal-title');
+      if (title) title.textContent = `${paymentConfig.heleket?.display_name || 'Crypto'} Payment`;
+      const backBtn = document.getElementById('deposit-modal-back-btn');
+      if (backBtn) {
+          backBtn.classList.remove('hidden');
+          backBtn.onclick = () => window.showDepositMethod('selection');
+          backBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Gateways';
+      }
+    } else if (method === 'eaglepay') {
+      const title = document.getElementById('deposit-modal-title');
+      if (title) title.textContent = `${paymentConfig.eaglepay?.display_name || 'Eagle Pay'} Payment`;
+      const backBtn = document.getElementById('deposit-modal-back-btn');
+      if (backBtn) {
+          backBtn.classList.remove('hidden');
+          backBtn.onclick = () => window.showDepositMethod('selection');
+          backBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Gateways';
+      }
+    } else {
+      const title = document.getElementById('deposit-modal-title');
+      if (title) title.textContent = 'Select Payment Gateway';
 
-    if (method === 'upi') generateUPIQR();
+      const backBtn = document.getElementById('deposit-modal-back-btn');
+      if (backBtn) {
+          backBtn.classList.remove('hidden');
+          backBtn.onclick = () => window.showDepositMethod('amount-screen');
+          backBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">arrow_back</span> Edit Amount';
+      }
+    }
+  }
+
+  window.showUPIPhase = function(phase) {
+    const qrEl = document.getElementById('upi-phase-qr');
+    const utrEl = document.getElementById('upi-phase-utr');
+    const modalTitle = document.getElementById('deposit-modal-title');
+    const backBtn = document.getElementById('deposit-modal-back-btn');
+
+    if (phase === 'qr') {
+      if (qrEl) qrEl.classList.remove('hidden');
+      if (utrEl) utrEl.classList.add('hidden');
+      const config = selectedMethod === 'paytm' ? (paymentConfig.paytm || {}) : (paymentConfig.bharatpe || {});
+      if (modalTitle) modalTitle.textContent = config.display_name || (selectedMethod === 'paytm' ? 'Paytm Business' : 'BharatPe');
+      if (backBtn) {
+        backBtn.classList.remove('hidden');
+        backBtn.onclick = () => window.showDepositMethod('selection');
+        backBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Gateways';
+      }
+    } else if (phase === 'utr') {
+      if (qrEl) qrEl.classList.add('hidden');
+      if (utrEl) utrEl.classList.remove('hidden');
+      if (modalTitle) modalTitle.textContent = 'Submit Reference Number';
+      if (backBtn) {
+        backBtn.classList.remove('hidden');
+        backBtn.onclick = () => window.showUPIPhase('qr');
+        backBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to QR Code';
+      }
+      const utrInp = document.getElementById('utr-input');
+      if (utrInp) setTimeout(() => utrInp.focus(), 150);
+    }
   }
 
   function generateUPIQR() {
     const qrContainer = document.getElementById('upi-qr');
-    const upiId = paymentConfig.bharatpe?.upi_id;
-    const upiName = paymentConfig.bharatpe?.upi_name || '{{SITE_NAME}}';
-    if (!paymentConfig.bharatpe?.enabled || !upiId) {
-      qrContainer.innerHTML = '<div class="text-danger text-xs">UPI Unavailable</div>';
+    const skeleton = document.getElementById('upi-qr-skeleton');
+    const config = selectedMethod === 'paytm' ? (paymentConfig.paytm || {}) : (paymentConfig.bharatpe || {});
+    
+    const upiId = config.upi_id;
+    const upiName = config.upi_name || '{{SITE_NAME}}';
+    
+    if (!config.enabled || !upiId) {
+      if (skeleton) skeleton.style.display = 'none';
+      qrContainer.innerHTML = '<div class="text-error text-sm text-center">UPI Unavailable<br>Contact Support</div>';
       return;
     }
     const nameEl = document.getElementById('display-upi-name');
-    if (nameEl) nameEl.textContent = `Pay to: ${upiName}`;
+    if (nameEl) nameEl.textContent = config.display_name || (selectedMethod === 'paytm' ? 'Paytm Business' : 'BharatPe');
 
-    const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${depositAmount}&cu=INR&tn=Wallet_Topup`;
+    // Apply commission surcharge to the QR amount
+    const commission = parseFloat(config.commission_percent) || 0;
+    const creditAmt = parseFloat(depositAmount) || 0;
+    const payAmt = commission > 0
+      ? parseFloat((creditAmt * (1 + commission / 100)).toFixed(2))
+      : creditAmt;
+
+    // Update displayed pay amount if element exists
+    const upiAmtEl = document.getElementById('display-upi-pay-amount');
+    if (upiAmtEl) {
+      if (commission > 0) {
+        upiAmtEl.innerHTML = `Scan &amp; pay <strong>₹${payAmt.toLocaleString('en-IN')}</strong> <span class="text-on-surface-variant text-xs">(+${commission}% fee on ₹${creditAmt.toLocaleString('en-IN')})</span>`;
+      } else {
+        upiAmtEl.innerHTML = `Scan &amp; pay <strong>₹${payAmt.toLocaleString('en-IN')}</strong>`;
+      }
+    }
+
+    // Update the "Yes, I Have Paid" button amount to the total amount paid
+    const btnIpaidAmt = document.getElementById('btn-i-paid-amount');
+    if (btnIpaidAmt) {
+      btnIpaidAmt.textContent = `₹${payAmt.toLocaleString('en-IN')}`;
+    }
+
+    if (skeleton) skeleton.style.display = 'block';
+    
+    // Automatically record pending UPI deposit on the backend
+    window.currentUpiOrderNo = null;
+    API.post('/api/user/wallet/upi-initiate', { method: selectedMethod, amount: creditAmt })
+      .then(res => {
+        if (res && res.order_no) window.currentUpiOrderNo = res.order_no;
+      })
+      .catch(e => console.error("Could not register pending UPI deposit:", e));
+    
+    const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${payAmt}&cu=INR&tn=Wallet_Topup`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiUri)}`;
-    qrContainer.innerHTML = `<img src="${qrUrl}" style="width:100%; height:100%; object-fit:contain; border-radius:12px;" />`;
+    
+    const img = new Image();
+    img.src = qrUrl;
+    img.className = 'w-full h-full object-contain rounded-lg shadow-sm';
+    img.onload = () => {
+      qrContainer.innerHTML = '';
+      qrContainer.appendChild(img);
+      if (skeleton) skeleton.style.display = 'none';
+    };
   }
 
-  window.verifyBharatPe = async function() {
+  window.verifyPayment = async function() {
     const utr = document.getElementById('utr-input').value.trim();
     if (utr.length < 12) return toast('Enter 12-digit UTR', 'error');
-    const btn = document.getElementById('verify-bp-btn');
+    const btn = document.getElementById('verify-btn');
     const oldHtml = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+    btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>';
+    
+    const endpoint = selectedMethod === 'paytm' ? '/api/user/wallet/verify-paytm' : '/api/user/wallet/verify-bharatpe';
+    
     try {
-      const res = await API.post('/api/user/wallet/verify-bharatpe', { utr });
+      const res = await API.post(endpoint, { utr, order_no: window.currentUpiOrderNo });
       toast(`Success! ₹${res.amount} added.`, 'success');
-      closeModal('deposit-modal');
+      showDepositMethod('amount-screen');
       loadWallet(1);
     } catch (e) { toast(e.message, 'error'); }
     finally { btn.disabled = false; btn.innerHTML = oldHtml; }
   }
 
-  window.copyUPILink = function() {
-    const upiId = paymentConfig.bharatpe?.upi_id;
-    if (!upiId) return toast('UPI ID not available yet. Please wait...', 'error');
+  window.initiateOmniPayOrder = async function() {
+    const btn = document.getElementById('btn-init-omnipay');
+    const oldHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Generating Link...'; }
     
-    // Modern approach
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(upiId).then(() => {
-        toast('UPI ID copied to clipboard!', 'success');
-      }).catch(err => copyFallback(upiId));
-    } else {
-      copyFallback(upiId);
+    try {
+      const res = await API.post('/api/user/wallet/omnipay-create', { amount: depositAmount });
+      const orderEl = document.getElementById('omnipay-display-order');
+      if (orderEl) orderEl.textContent = res.order_no;
+      
+      const linkEl = document.getElementById('omnipay-pay-link');
+      if (linkEl && res.payment_url) {
+        linkEl.href = res.payment_url;
+        linkEl.style.display = 'inline-flex';
+      } else if (linkEl) {
+        linkEl.style.display = 'none';
+      }
+
+      const upiEl = document.getElementById('omnipay-upi-link');
+      if (upiEl && res.upi_uri) {
+        upiEl.href = res.upi_uri;
+        upiEl.style.display = 'inline-flex';
+      } else if (upiEl) {
+        upiEl.style.display = 'none';
+      }
+
+      const qrSection = document.getElementById('omnipay-qr-section');
+      const qrBox = document.getElementById('omnipay-qr-box');
+      const qrString = res.qr_code || res.upi_uri;
+      if (qrSection && qrBox && qrString) {
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrString)}`;
+        qrBox.innerHTML = `<img src="${qrUrl}" class="w-full h-full object-contain rounded-lg" alt="QR Code">`;
+        qrSection.classList.remove('hidden');
+      } else if (qrSection) {
+        qrSection.classList.add('hidden');
+      }
+
+      const inpEl = document.getElementById('omnipay-lookup-input');
+      if (inpEl) inpEl.value = res.order_no;
+
+      const initBox = document.getElementById('omnipay-init-box');
+      const activeBox = document.getElementById('omnipay-active-box');
+      if (initBox) initBox.classList.add('hidden');
+      if (activeBox) activeBox.classList.remove('hidden');
+
+      if (res.payment_url) {
+        window.open(res.payment_url, '_blank');
+      }
+      toast('Payment link generated! Complete payment on your app.', 'success');
+    } catch (e) {
+      toast(e.message || 'Failed to initialize payment.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
     }
   };
 
-  function copyFallback(text) {
-    const el = document.createElement('textarea');
-    el.value = text;
-    el.setAttribute('readonly', '');
-    el.style.position = 'absolute';
-    el.style.left = '-9999px';
-    document.body.appendChild(el);
-    el.select();
+  window.copyOmniPayOrder = function() {
+    const orderEl = document.getElementById('omnipay-display-order');
+    if (!orderEl) return;
+    window.copyToClipboard(orderEl.textContent, null, 'Order reference copied!');
+  };
+
+  window.verifyOmniPay = async function() {
+    const inpEl = document.getElementById('omnipay-lookup-input');
+    const val = inpEl ? inpEl.value.trim() : '';
+    if (!val) return toast('Enter UTR or Order Reference Number', 'error');
+
+    const btn = document.getElementById('btn-verify-omnipay');
+    const oldHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Checking...'; }
+
     try {
-      document.execCommand('copy');
-      toast('UPI ID copied! (fallback)', 'success');
-    } catch (err) {
-      toast('Failed to copy. Please copy manually.', 'error');
+      const res = await API.post('/api/user/wallet/verify-omnipay', { order_no: val, utr: val });
+      toast(`Payment successful! ₹${res.amount} credited to wallet.`, 'success');
+      showDepositMethod('amount-screen');
+      loadWallet(1);
+    } catch (e) {
+      toast(e.message || 'Could not verify payment yet.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
     }
-    document.body.removeChild(el);
+  };
+
+  let currentHeleketInvoice = null;
+  let allDynamicCoinsList = [];
+
+  window.toggleHeleketServicesTable = function() {
+    const box = document.getElementById('heleket-services-table-box');
+    const arrow = document.getElementById('heleket-services-arrow');
+    if (!box || !arrow) return;
+    if (box.classList.contains('hidden')) {
+      box.classList.remove('hidden');
+      arrow.textContent = 'expand_less';
+      fetchHeleketServicesData();
+    } else {
+      box.classList.add('hidden');
+      arrow.textContent = 'expand_more';
+    }
+  };
+
+  async function fetchHeleketServicesData() {
+    try {
+      const res = await API.get('/api/user/wallet/heleket-services');
+      if (!res.success || !res.services) return;
+
+      const tbody = document.getElementById('heleket-services-tbody');
+      const badge = document.getElementById('heleket-services-source-badge');
+      if (badge) {
+        badge.textContent = res.source === 'live_api' ? '🔥 Live API Rates' : '⚡ Gateway Rates';
+      }
+
+      const coinIcons = {
+        'USDT': '₮', 'BTC': '₿', 'ETH': 'Ξ', 'TRX': '💎', 'LTC': 'Ł',
+        'BNB': '🟡', 'SOL': '🟣', 'DOGE': '🐕', 'XRP': '💧', 'TON': '🔷'
+      };
+
+      let tableHtml = '';
+      if (res.usd_rate) window.currentHeleketUsdRate = res.usd_rate;
+      const usdRate = window.currentHeleketUsdRate || Number(paymentConfig.heleket?.usd_rate) || 96.38;
+
+      // Map services to enrich table
+      const enrichedList = [];
+      res.services.forEach(s => {
+        const curr = String(s.currency || '').toUpperCase();
+        const net = String(s.network || '').toUpperCase();
+        const code = net && net !== curr && !['BITCOIN', 'ETHEREUM', 'TRON', 'LITECOIN'].includes(net) ? `${curr}:${net}` : curr;
+        const icon = coinIcons[curr] || '⚡';
+        const rawMinUsd = (s.min_amount !== undefined && !isNaN(s.min_amount)) ? parseFloat(s.min_amount) : 1;
+        const rawMaxUsd = (s.max_amount !== undefined && !isNaN(s.max_amount)) ? parseFloat(s.max_amount) : 50000;
+        const minInr = (s.min_inr !== undefined && !isNaN(s.min_inr)) ? parseFloat(s.min_inr) : Math.ceil(rawMinUsd * usdRate);
+        const maxInr = (s.max_inr !== undefined && !isNaN(s.max_inr)) ? parseFloat(s.max_inr) : Math.floor(rawMaxUsd * usdRate);
+        const minDepText = `₹${minInr.toLocaleString('en-IN')} ($${rawMinUsd})`;
+        const maxDepText = `₹${maxInr.toLocaleString('en-IN')} ($${rawMaxUsd})`;
+        
+        let displayLabel = `${curr} (${net})`;
+        if (curr === 'USDT' && net === 'TRC20') displayLabel = 'USDT (TRC20 Network)';
+        else if (curr === 'USDT' && net === 'ERC20') displayLabel = 'USDT (ERC20 Network)';
+        else if (curr === 'USDT' && net === 'BEP20') displayLabel = 'USDT (BEP20 Network)';
+        else if (curr === 'BTC') displayLabel = 'Bitcoin (BTC)';
+        else if (curr === 'ETH') displayLabel = 'Ethereum (ETH)';
+        else if (curr === 'TRX') displayLabel = 'Tron (TRX)';
+        else if (curr === 'LTC') displayLabel = 'Litecoin (LTC)';
+
+        enrichedList.push({ code, icon, label: displayLabel, rawMinUsd, rawMaxUsd, minInr, maxInr, minDepText, maxDepText });
+
+        tableHtml += `
+          <tr class="hover:bg-primary/5 transition-colors">
+            <td class="py-2.5 px-3 font-bold flex items-center gap-1.5">
+              <span>${icon}</span>
+              <span class="truncate">${displayLabel}</span>
+            </td>
+            <td class="py-2.5 px-3 text-right font-bold text-on-surface">${minDepText}</td>
+            <td class="py-2.5 px-3 text-right font-bold text-on-surface-variant">${maxDepText}</td>
+          </tr>
+        `;
+      });
+
+      if (tbody) {
+        tbody.innerHTML = tableHtml || `<tr><td colspan="3" class="py-4 text-center text-on-surface-variant">No services listed</td></tr>`;
+      }
+
+      if (enrichedList.length > 0) {
+        allDynamicCoinsList = enrichedList;
+      }
+    } catch (e) {
+      console.warn('Error loading Heleket services details:', e);
+    }
   }
+
+  window.initiateHeleketPayment = async function() {
+    const btn = document.getElementById('btn-heleket-pay');
+    const oldHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Opening Crypto Checkout...'; }
+
+    try {
+      const payload = { amount: depositAmount };
+      const res = await API.post('/api/user/wallet/heleket-create', payload);
+      currentHeleketInvoice = res;
+
+      const initBox = document.getElementById('heleket-step-init');
+      const verifyBox = document.getElementById('heleket-step-verify');
+      if (initBox) initBox.classList.add('hidden');
+      if (verifyBox) verifyBox.classList.remove('hidden');
+
+      if (res.url) {
+        window.open(res.url, '_blank');
+      }
+      toast('Heleket checkout window opened! Select your coin and pay.', 'success');
+    } catch (e) {
+      toast(e.message || 'Failed to start crypto payment.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+    }
+  };
+
+  window.verifyHeleketPayment = async function() {
+    if (!currentHeleketInvoice || (!currentHeleketInvoice.order_id && !currentHeleketInvoice.uuid)) {
+      return toast('No active crypto invoice found.', 'error');
+    }
+
+    const btn = document.querySelector('#heleket-step-verify button.bg-success');
+    const oldHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Checking Status...'; }
+
+    try {
+      const res = await API.post('/api/user/wallet/verify-heleket', {
+        order_id: currentHeleketInvoice.order_id,
+        uuid: currentHeleketInvoice.uuid
+      });
+      if (res.status === 'PAID') {
+        toast(`Crypto deposit verified! ₹${res.credited_amount || depositAmount} added to wallet.`, 'success');
+        showDepositMethod('amount-screen');
+        loadWallet(1);
+      } else {
+        toast(res.message || 'Payment confirmed!', 'success');
+      }
+    } catch (e) {
+      toast(e.message || 'Could not confirm payment yet.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+    }
+  };
+
+  window.reopenHeleketLink = function() {
+    if (currentHeleketInvoice && currentHeleketInvoice.url) {
+      window.open(currentHeleketInvoice.url, '_blank');
+    } else {
+      toast('No active invoice URL found.', 'error');
+    }
+  };
+
+  window.copyUPILink = function() {
+    const config = selectedMethod === 'paytm' ? (paymentConfig.paytm || {}) : (paymentConfig.bharatpe || {});
+    const upiId = config.upi_id;
+    if (!upiId) return toast('UPI ID not available yet.', 'error');
+    window.copyToClipboard(upiId, null, 'UPI ID copied to clipboard!');
+  };
 
   window.downloadQRCode = function() {
     const img = document.querySelector('#upi-qr img');
@@ -469,45 +1699,75 @@
   };
 
   window.redeemPromo = async function() {
-    const input1 = document.getElementById('promo-input');
-    const input2 = document.getElementById('promo-code');
-    const code = (input1?.value || input2?.value || "").trim().toUpperCase();
+    const input = document.getElementById('promo-input');
+    const code = (input?.value || "").trim().toUpperCase();
     if (!code) return;
     try {
       const res = await API.post('/api/user/wallet/redeem-promo', { code });
       toast(`Voucher redeemed! ₹${res.amount} added.`, 'success');
-      if (input1) input1.value = '';
-      if (input2) input2.value = '';
+      if (input) input.value = '';
       loadWallet(1);
     } catch (e) { toast(e.message, 'error'); }
   }
-
-  window.openModal = (id) => {
-    document.getElementById(id).classList.add('visible');
-    if (id === 'deposit-modal') window.showDepositMethod('amount-screen');
-  };
-  window.closeModal = (id) => document.getElementById(id).classList.remove('visible');
   
   window.loadWallet = loadWallet;
 
   loadWallet(1);
+  window.initiateEaglePayOrder = async function() {
+    const btn = document.getElementById('btn-eaglepay-pay');
+    try {
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating link…'; }
+      const res = await API.post('/api/user/wallet/eaglepay-payin', { amount: depositAmount });
+      const orderEl = document.getElementById('eaglepay-display-order');
+      if (orderEl) orderEl.textContent = res.order_no || res.gateway_order_no || '—';
+      const linkEl = document.getElementById('eaglepay-pay-link');
+      if (linkEl && res.payment_url) linkEl.href = res.payment_url;
+
+      const initBox = document.getElementById('eaglepay-init-box');
+      const activeBox = document.getElementById('eaglepay-active-box');
+      if (initBox) initBox.classList.add('hidden');
+      if (activeBox) activeBox.classList.remove('hidden');
+
+      if (res.payment_url) window.open(res.payment_url, '_blank');
+      toast('Eagle Pay link generated! Complete payment in the new tab.', 'success');
+    } catch (e) {
+      toast(e.message || 'Failed to initialize Eagle Pay.', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">open_in_new</span> Pay with Eagle Pay'; }
+    }
+  };
+
+  window.verifyEaglePayOrder = async function() {
+    const orderEl = document.getElementById('eaglepay-display-order');
+    const orderNo = orderEl?.textContent?.trim();
+    if (!orderNo || orderNo === '—') {
+      toast('No active Eagle Pay order found.', 'error');
+      return;
+    }
+    try {
+      const res = await API.post('/api/user/wallet/verify-eaglepay', { order_no: orderNo });
+      if (res.success) {
+        toast(`Payment confirmed! ₹${res.amount || depositAmount} credited to wallet.`, 'success');
+        showDepositMethod('amount-screen');
+      } else {
+        toast(res.message || 'Payment not confirmed yet. Please wait and try again.', 'error');
+      }
+    } catch (e) {
+      toast(e.message || 'Could not verify Eagle Pay payment yet.', 'error');
+    }
+  };
+
   loadPaymentConfig();
 
-  // Real-time updates: Poll every 10 seconds
   const polling = setInterval(() => {
-    // Only poll if tab is active to save resources
     if (document.visibilityState === 'visible') {
-      loadWallet(walletData.page);
+      loadWallet(walletData.page, true);
       loadPaymentConfig();
     }
-  }, 10000);
+  }, 30000);
 
-  // Cleanup on page navigate (SPA only)
   window.addEventListener('popstate', () => clearInterval(polling), { once: true });
 })();
 </script>
-<script src="/js/main.js"></script><script src="/js/ambient-bg.js"></script></body>
+</body>
 </html>
-
-
-

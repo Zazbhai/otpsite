@@ -6,13 +6,15 @@ const AccountCategory  = require("../models/AccountCategory");
 const ReadymadeAccount = require("../models/ReadymadeAccount");
 const Transaction      = require("../models/Transaction");
 const User             = require("../models/User");
+const Setting          = require("../models/Setting");
+
 
 router.use(loginRequired);
 
 /* ─── LIST CATEGORIES (public within dashboard) ─────────────────── */
 router.get("/categories", async (req, res) => {
   try {
-    const Setting = require("../models/Setting");
+
     const s = await Setting.findOne({ key: "readymade_accounts_enabled" });
     if (s && s.value === "false") return res.json([]); // feature disabled
     const cats = await AccountCategory.find({ is_active: true }).sort({ sort_order: 1, name: 1 });
@@ -35,7 +37,9 @@ router.post("/buy/:categoryId", async (req, res) => {
     const result = await withTransaction(async (session) => {
       const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
 
-      const user = await User.findById(req.userId, null, queryOptions);
+      const user = process.env.DB_TYPE === "mysql"
+        ? await User.findById(req.userId, queryOptions)
+        : await User.findById(req.userId, null, queryOptions);
       if (!user) throw new Error("USER_NOT_FOUND");
 
       let cat;
@@ -79,12 +83,16 @@ router.post("/buy/:categoryId", async (req, res) => {
 
       if (!account) throw new Error("OUT_OF_STOCK");
 
-      user.balance = newBalance;
-      user.total_spent = parseFloat(((user.total_spent || 0) + Number(cat.price)).toFixed(4));
-      user.total_orders = (user.total_orders || 0) + 1;
-      await user.save(queryOptions);
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: req.userId, balance: { $gte: Number(cat.price) } },
+        { $inc: { balance: -Number(cat.price), total_spent: Number(cat.price), total_orders: 1 } },
+        { ...queryOptions, new: true }
+      );
+      if (!updatedUser) throw new Error("INSUFFICIENT_BALANCE");
 
-      await Transaction.create([{
+      user.balance = updatedUser.balance; // Update local reference for the transaction log below
+
+      const transactionData = {
         user_id: req.userId,
         type: "purchase",
         amount: -Number(cat.price),
@@ -92,7 +100,13 @@ router.post("/buy/:categoryId", async (req, res) => {
         description: `Readymade Account: ${cat.name}`,
         reference: account._id?.toString() || account.id?.toString(),
         status: "completed",
-      }], queryOptions);
+      };
+
+      if (process.env.DB_TYPE === "mysql") {
+        await Transaction.create(transactionData, queryOptions);
+      } else {
+        await Transaction.create([transactionData], queryOptions);
+      }
 
       return {
         category: cat.name,
