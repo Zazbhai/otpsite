@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const path = require("path");
 const os = require("os");
 const rateLimit = require("express-rate-limit");
+const { createHash } = require("node:crypto");
 const fs = require("fs");
 const { getCachedSettings } = require("./utils/settingsCache");
 
@@ -58,11 +59,33 @@ app.use((req, res, next) => {
   next();
 });
 
-// API rate limit: up to 1,000 requests per client IP per rolling minute.
-// This supports the dashboard/order polling while retaining a finite abuse cap.
+// API rate limit: up to 1,000 requests per authenticated user/API key per rolling
+// minute. Anonymous requests remain keyed by IP. Keying authenticated traffic by
+// user prevents a reverse proxy's shared IP from throttling every customer at once.
+function apiRateLimitKey(req) {
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ")
+    ? auth.slice(7)
+    : (req.cookies?.token || req.query?.token || "");
+  const { decodeToken } = require("./middleware/auth");
+  const payload = token ? decodeToken(token) : null;
+  if (payload?.user_id) return "user:" + String(payload.user_id);
+
+  // API gateway calls authenticate with api_key instead of a JWT. Hash it so
+  // credentials never become part of rate-limit store keys or diagnostics.
+  const apiKey = req.query?.api_key || req.body?.api_key;
+  if (apiKey) {
+    const digest = createHash("sha256").update(String(apiKey)).digest("hex");
+    return "api:" + digest;
+  }
+
+  return "ip:" + (req.ip || "unknown");
+}
+
 app.use("/api/", rateLimit({
   windowMs: 60 * 1000,
   max: 1000,
+  keyGenerator: apiRateLimitKey,
   standardHeaders: true,
   legacyHeaders: false,
 }));
