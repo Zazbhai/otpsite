@@ -308,6 +308,7 @@
         <p><span class="refresh-pulse"></span> <span id="last-updated">Synchronizing data…</span></p>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <button id="dashboard-refresh" type="button" class="btn btn-secondary btn-sm" onclick="refreshDashboard()" title="Refresh dashboard data">↻ Refresh</button>
         <label for="dashboard-period" class="text-xs text-muted">Period</label>
         <select id="dashboard-period" class="form-select" style="width:auto;min-width:130px;padding:8px 30px 8px 10px" onchange="changeDashboardPeriod(this.value)">
           <option value="today">Today</option><option value="yesterday">Yesterday</option><option value="date">By date</option>
@@ -459,6 +460,7 @@
     dashboardDate = value;
     if (value) loadStats();
   };
+  window.refreshDashboard = function() { loadStats(false); };
 
   function renderPieChart(dist) {
     if (!dist) return;
