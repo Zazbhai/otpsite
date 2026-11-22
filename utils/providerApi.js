@@ -13,6 +13,31 @@ if (!fs.existsSync(DATA_DIR)) {
 const DUP_FILE = path.join(DATA_DIR, 'duplicate_number_block.json');
 const LOG_FILE = path.join(DATA_DIR, 'onlinesim_log.txt');
 
+// Provider limits apply to the server/API key, not to an individual order.
+// Back off all polling for this provider briefly after a 429 response.
+const providerBackoff = new Map();
+const PROVIDER_BACKOFF_MS = 10_000;
+
+function providerKey(server) {
+  return String(server?.api_check_status_url || server?.api_get_number_url || server?.name || "provider");
+}
+
+function isRateLimitedResponse(response) {
+  const body = response?.data?.text || response?.data?.error || JSON.stringify(response?.data || "");
+  return response?.status === 429 || /TOO[_ ]MANY[_ ]REQUESTS|too many requests|rate limit exceeded/i.test(String(body));
+}
+
+function getProviderBackoff(server) {
+  const until = providerBackoff.get(providerKey(server)) || 0;
+  return until > Date.now() ? until : 0;
+}
+
+function markProviderBackoff(server) {
+  const until = Date.now() + PROVIDER_BACKOFF_MS;
+  providerBackoff.set(providerKey(server), until);
+  return until;
+}
+
 // Memory cache for speed, backed by file for persistence
 let numberCache = new Map();
 const DUPLICATE_WINDOW = 3 * 60 * 1000; 
@@ -111,6 +136,8 @@ async function callProvider(url, server, method = "GET") {
 // 1. Get Number
 async function getNumber(server, serviceCode, countryCode) {
   if (!server.api_get_number_url) return { error: "Server missing API GET url" };
+  const backoffUntil = getProviderBackoff(server);
+  if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
   
   let url = buildUrl(server.api_get_number_url, { 
     api_key: server.api_key, 
@@ -128,6 +155,10 @@ async function getNumber(server, serviceCode, countryCode) {
     const response = await callProvider(url, server);
     logToProviderFile(`getNumber | URL=${url} | RESP=${response.data.text || JSON.stringify(response.data)}`);
     const text = response.data.text || "";
+    if (isRateLimitedResponse(response)) {
+       const retryAt = markProviderBackoff(server);
+       return { error: "Provider rate limited", rate_limited: true, retry_at: retryAt, originalError: text };
+    }
     console.log(`[DEBUG] Provider Response [Attempt ${attempt}]:`, text);
 
     // Standard Text Format: ACCESS_NUMBER:123456:919876543210
@@ -192,6 +223,8 @@ async function getNumber(server, serviceCode, countryCode) {
 // 2. Check Status
 async function checkStatus(server, api_order_id) {
   if (!server.api_check_status_url) return { error: "Server missing API Check url" };
+  const backoffUntil = getProviderBackoff(server);
+  if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
   
   let url = buildUrl(server.api_check_status_url, { 
     api_key: server.api_key, 
@@ -201,6 +234,10 @@ async function checkStatus(server, api_order_id) {
   const response = await callProvider(url, server);
   logToProviderFile(`checkStatus | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
   const text = response.data.text || "";
+  if (isRateLimitedResponse(response)) {
+     const retryAt = markProviderBackoff(server);
+     return { error: "Provider rate limited", rate_limited: true, retry_at: retryAt };
+  }
 
   if (text === "STATUS_WAIT_CODE" || text === "TZ_NUM_WAIT") {
      return { status: "waiting", otp: null };

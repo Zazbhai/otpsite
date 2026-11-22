@@ -117,7 +117,9 @@ async function syncOrder(orderIdOrDoc) {
       const now = new Date();
       const lastCheck = order.last_check_at || new Date(0);
       
-      if (now - lastCheck >= 2000) {
+      const configuredInterval = Number(order.check_interval || serverConf.check_interval || 3);
+      const minCheckInterval = Math.max(3000, configuredInterval * 1000);
+      if (now - lastCheck >= minCheckInterval) {
         order.last_check_at = now;
         const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
         
