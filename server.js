@@ -58,9 +58,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Basic rate limiting on API
-// Increased rate limiting to support high-frequency polling (3s intervals)
-app.use("/api/", rateLimit({ windowMs: 15 * 60 * 1000, max: 2000, standardHeaders: true, legacyHeaders: false }));
+// API rate limit: up to 1,000 requests per client IP per rolling minute.
+// This supports the dashboard/order polling while retaining a finite abuse cap.
+app.use("/api/", rateLimit({
+  windowMs: 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
 // Maintenance Mode Interceptor
 app.use(async (req, res, next) => {
   const { isMaintenanceOn } = require("./utils/maintenance");
