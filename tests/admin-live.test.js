@@ -159,7 +159,8 @@ function adminRouter(dbType) {
   const models = {
     User: { countDocuments: async () => 20, aggregate: async () => [], findAll: async () => [] },
     Order: {
-      aggregate: async pipeline => pipeline[0].$project?.normalizedStatus ? distribution : [],
+      count: async options => options?.where?.status === 'completed' ? 7 : options?.where?.status === 'active' ? 3 : 12,
+      aggregate: async pipeline => pipeline[0].$project?.normalizedStatus ? distribution : pipeline[0].$match?.createdAt ? [{ orders: 12, successful: 7, active: 3 }] : [],
       findAll: async options => options.group?.[0] === "status"
         ? distribution.map(row => ({ status: row._id, get: () => String(row.count) }))
         : [],
@@ -172,6 +173,7 @@ function adminRouter(dbType) {
     if (name.startsWith("../models/")) return models[path.basename(name)] || {};
     if (name === "../middleware/auth") return { adminRequired: authorized };
     if (name === "../utils/db") return { DB_TYPE: dbType };
+    if (name === "../utils/analyticsPeriod") return { resolveAnalyticsPeriod: () => ({ key: "today", date: "2026-11-23", start: new Date(0), end: new Date(86400000), timezone: "Asia/Calcutta", label: "Today" }) };
     if (name === "../utils/adminRealtime") return { streamAdminChanges: (req, res) => res.json({ streamed: true }) };
     if (name.startsWith("../utils/")) return {};
     return require(name);
@@ -185,11 +187,14 @@ for (const dbType of ["mongodb", "mysql"]) {
     const { router } = adminRouter(dbType);
     const route = router.stack.find(layer => layer.route?.path === "/analytics");
     let result;
-    await route.route.stack[0].handle({}, { json(data) { result = data; } });
+    await route.route.stack[0].handle({}, { json(data) { result = data; }, status() { return this; } });
     assert.equal(result.metrics.successfulOrders, 7);
     assert.equal(result.metrics.totalOrders, 12);
     assert.equal(result.metrics.activeOrders, 3);
     assert.equal(result.metrics.successRate, 7 / 12);
+    assert.equal(result.period.label, "Today");
+    assert.equal(result.period.successfulOrders, 7);
+    assert.equal(result.period.revenue, 0);
   });
 }
 

@@ -21,6 +21,7 @@ const { DB_TYPE } = require("../utils/db");
 const { clearSettingsCache } = require("../utils/settingsCache");
 const { clearCache } = require("../utils/apiCache");
 const { emitToAll, emitToUser } = require("../utils/realtimeEmitter");
+const { resolveAnalyticsPeriod } = require("../utils/analyticsPeriod");
 
 const formatServiceName = (name) => {
   if (!name) return "";
@@ -58,14 +59,15 @@ router.get("/analytics", async (req, res) => {
   try {
     const now = new Date();
     
-    // Start of today (local basic assumption)
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const period = resolveAnalyticsPeriod(req.query, now);
+    const todayStart = period.start;
+    const periodEnd = period.end;
     const thirtyDaysAgo = new Date(now - 30 * 864e5);
     const fourteenDaysAgo = new Date(now - 14 * 864e5);
 
     const [totalUsers, todayUsers] = await Promise.all([
       User.countDocuments(),
-      User.countDocuments({ createdAt: { $gte: todayStart } }),
+      User.countDocuments({ createdAt: { $gte: todayStart, $lt: periodEnd } }),
     ]);
     let metrics = { totalUsers, todayUsers };
     let graphs = { dailyDeposits: [], dailyRevenue: [], userGrowth: [] };
@@ -77,9 +79,9 @@ router.get("/analytics", async (req, res) => {
       
       const [depRes, todayDepRes, revRes, todayRevRes, liabRes, volRes] = await Promise.all([
         Transaction.findAll({ attributes: [[fn('SUM', col('amount')), 'total']], where: { type: 'deposit', status: 'completed' }, raw: true }),
-        Transaction.findAll({ attributes: [[fn('SUM', col('amount')), 'total']], where: { type: 'deposit', status: 'completed', createdAt: { [Op.gte]: todayStart } }, raw: true }),
+        Transaction.findAll({ attributes: [[fn('SUM', col('amount')), 'total']], where: { type: 'deposit', status: 'completed', createdAt: { [Op.gte]: todayStart, [Op.lt]: periodEnd } }, raw: true }),
         Order.findAll({ attributes: [[fn('SUM', col('cost')), 'total']], where: { status: 'completed' }, raw: true }),
-        Order.findAll({ attributes: [[fn('SUM', col('cost')), 'total']], where: { status: 'completed', createdAt: { [Op.gte]: todayStart } }, raw: true }),
+        Order.findAll({ attributes: [[fn('SUM', col('cost')), 'total']], where: { status: 'completed', createdAt: { [Op.gte]: todayStart, [Op.lt]: periodEnd } }, raw: true }),
         User.findAll({ attributes: [[fn('SUM', col('balance')), 'total']], raw: true }),
         User.findAll({ attributes: [[fn('SUM', col('total_spent')), 'total']], raw: true })
       ]);
@@ -92,6 +94,9 @@ router.get("/analytics", async (req, res) => {
       const lifetimeVolume = parseFloat(volRes[0]?.total || 0);
 
       metrics = { ...metrics, totalDeposits, todayDeposits, totalRevenue, todayRevenue, totalLiability, lifetimeVolume };
+      metrics.periodOrders = await Order.count({ where: { createdAt: { [Op.gte]: todayStart, [Op.lt]: periodEnd } } });
+      metrics.periodSuccessfulOrders = await Order.count({ where: { status: 'completed', createdAt: { [Op.gte]: todayStart, [Op.lt]: periodEnd } } });
+      metrics.periodActiveOrders = await Order.count({ where: { status: 'active', createdAt: { [Op.gte]: todayStart, [Op.lt]: periodEnd } } });
 
       graphs.dailyDeposits = await Transaction.findAll({
         attributes: [[fn('DATE', col('createdAt')), 'date'], [fn('SUM', col('amount')), 'total']],
@@ -129,10 +134,11 @@ router.get("/analytics", async (req, res) => {
       orderDistribution = Object.entries(distMap).map(([k, v]) => ({ _id: k, count: v }));
     } else {
       // Original MongoDB Aggregations
-      const depositPipeline = await Transaction.aggregate([{ $match: { type: "deposit", status: "completed" } },{ $group: { _id: null, total: { $sum: "$amount" }, today: { $sum: { $cond: [{ $gte: ["$createdAt", todayStart] }, "$amount", 0] } } } }]);
-      const orderPipeline = await Order.aggregate([{ $match: { status: "completed" } },{ $group: { _id: null, total: { $sum: "$cost" }, today: { $sum: { $cond: [{ $gte: ["$createdAt", todayStart] }, "$cost", 0] } } } }]);
+      const depositPipeline = await Transaction.aggregate([{ $match: { type: "deposit", status: "completed" } },{ $group: { _id: null, total: { $sum: "$amount" }, period: { $sum: { $cond: [{ $and: [{ $gte: ["$createdAt", todayStart] }, { $lt: ["$createdAt", periodEnd] }] }, "$amount", 0] } } } }]);
+      const orderPipeline = await Order.aggregate([{ $match: { status: "completed" } },{ $group: { _id: null, total: { $sum: "$cost" }, period: { $sum: { $cond: [{ $and: [{ $gte: ["$createdAt", todayStart] }, { $lt: ["$createdAt", periodEnd] }] }, "$cost", 0] } } } }]);
       const userStats = await User.aggregate([{ $group: { _id: null, totalLiability: { $sum: "$balance" }, totalSpent: { $sum: "$total_spent" } } }]);
-      metrics = { ...metrics, totalDeposits: depositPipeline[0]?.total || 0, todayDeposits: depositPipeline[0]?.today || 0, totalRevenue: orderPipeline[0]?.total || 0, todayRevenue: orderPipeline[0]?.today || 0, totalLiability: userStats[0]?.totalLiability || 0, lifetimeVolume: userStats[0]?.totalSpent || 0 };
+      const periodOrderStats = await Order.aggregate([{ $match: { createdAt: { $gte: todayStart, $lt: periodEnd } } }, { $group: { _id: null, orders: { $sum: 1 }, successful: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } }, active: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } } } }]);
+      metrics = { ...metrics, totalDeposits: depositPipeline[0]?.total || 0, todayDeposits: depositPipeline[0]?.period || 0, totalRevenue: orderPipeline[0]?.total || 0, todayRevenue: orderPipeline[0]?.period || 0, totalLiability: userStats[0]?.totalLiability || 0, lifetimeVolume: userStats[0]?.totalSpent || 0, periodOrders: periodOrderStats[0]?.orders || 0, periodSuccessfulOrders: periodOrderStats[0]?.successful || 0, periodActiveOrders: periodOrderStats[0]?.active || 0 };
       graphs.dailyDeposits = await Transaction.aggregate([{ $match: { type: "deposit", status: "completed", createdAt: { $gte: fourteenDaysAgo } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, total: { $sum: "$amount" } } }, { $sort: { _id: 1 } }]);
       graphs.dailyRevenue = await Order.aggregate([{ $match: { status: "completed", createdAt: { $gte: fourteenDaysAgo } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, total: { $sum: "$cost" } } }, { $sort: { _id: 1 } }]);
       graphs.userGrowth = await User.aggregate([{ $match: { createdAt: { $gte: fourteenDaysAgo } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }]);
@@ -144,6 +150,7 @@ router.get("/analytics", async (req, res) => {
     const activeOrders = orderDistribution.find(row => row._id === "active")?.count ?? 0;
     const successfulOrders = orderDistribution.find(row => row._id === "completed")?.count ?? 0;
     res.json({
+      period: { ...period, orders: metrics.periodOrders || 0, successfulOrders: metrics.periodSuccessfulOrders || 0, activeOrders: metrics.periodActiveOrders || 0, revenue: metrics.todayRevenue || 0, deposits: metrics.todayDeposits || 0, users: todayUsers, successRate: (metrics.periodOrders || 0) ? (metrics.periodSuccessfulOrders || 0) / metrics.periodOrders : 0 },
       metrics: { ...metrics, totalOrders, activeOrders, successfulOrders, successRate: totalOrders ? successfulOrders / totalOrders : 0 },
       graphs,
       topServices,
@@ -151,6 +158,7 @@ router.get("/analytics", async (req, res) => {
     });
   } catch (err) { 
     console.error("Analytics Error:", err);
+    if (/^Invalid analytics date$/.test(err.message)) return res.status(400).json({ error: err.message });
     res.status(500).json({ error: "Server error" }); 
   }
 });

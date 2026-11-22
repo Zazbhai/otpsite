@@ -40,7 +40,16 @@
     <button onclick="logout()" class="sidebar-item" style="width:100%;background:none;border:none;text-align:left;color:var(--danger)">🚪 Logout</button>
   </aside>
   <main class="main-content">
-    <h1 style="font-size:24px;margin-bottom:32px">Analytics</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px">
+      <h1 style="font-size:24px;margin:0">Analytics</h1>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <label for="analytics-period" class="text-xs text-muted">Period</label>
+        <select id="analytics-period" class="form-select" style="width:auto;min-width:130px;padding:8px 30px 8px 10px" onchange="changeAnalyticsPeriod(this.value)">
+          <option value="today">Today</option><option value="yesterday">Yesterday</option><option value="date">By date</option>
+        </select>
+        <input id="analytics-date" type="date" class="form-input" style="width:auto;padding:8px 10px;display:none" onchange="changeAnalyticsDate(this.value)">
+      </div>
+    </div>
     <div class="grid-4 mb-8">
       <div class="stat-card"><div class="stat-icon" style="color:#a855f7;background:rgba(168,85,247,0.1)">👥</div><div class="stat-value" id="a-t-users">—</div><div class="stat-label">Total Users</div></div>
       <div class="stat-card"><div class="stat-icon" style="color:#3b82f6;background:rgba(59,130,246,0.1)">👤</div><div class="stat-value" id="a-users">—</div><div class="stat-label">New Users Today</div></div>
@@ -86,21 +95,28 @@
     plugins: { legend: { labels: { color: "var(--on-surface-variant)" } } },
     responsive: true,
   };
+  let analyticsRange = "today";
+  let analyticsDate = "";
 
   async function load() {
-    const data = await API.get("/api/admin/analytics");
+    const params = new URLSearchParams({ range: analyticsRange });
+    if (analyticsRange === "date" && analyticsDate) params.set("date", analyticsDate);
+    const data = await API.get("/api/admin/analytics?" + params.toString());
     // Existing chart instances must be released before a live redraw.
     ["finance-chart", "growth-chart", "services-chart"].forEach(id => Chart.getChart(id)?.destroy());
     
     // Top Stats
     document.getElementById("a-t-users").textContent = data.metrics.totalUsers.toLocaleString();
-    document.getElementById("a-users").textContent   = `+${data.metrics.todayUsers.toLocaleString()}`;
+    document.getElementById("a-users").textContent   = "+" + data.period.users.toLocaleString();
     document.getElementById("a-t-rev").textContent   = fmtMoney(data.metrics.totalRevenue);
-    document.getElementById("a-rev").textContent     = fmtMoney(data.metrics.todayRevenue);
+    document.getElementById("a-rev").textContent     = fmtMoney(data.period.revenue);
     document.getElementById("a-t-dep").textContent   = fmtMoney(data.metrics.totalDeposits);
-    document.getElementById("a-dep").textContent     = fmtMoney(data.metrics.todayDeposits);
-    document.getElementById("a-t-ord").textContent   = data.metrics.totalOrders.toLocaleString();
-    document.getElementById("a-active").textContent  = data.metrics.activeOrders.toLocaleString();
+    document.getElementById("a-dep").textContent     = fmtMoney(data.period.deposits);
+    document.getElementById("a-t-ord").textContent   = data.period.orders.toLocaleString();
+    document.getElementById("a-active").textContent  = data.period.activeOrders.toLocaleString();
+    document.querySelector("#a-t-rev")?.closest(".stat-card")?.querySelector(".stat-label")?.replaceChildren("All-time Revenue");
+    document.querySelector("#a-rev")?.closest(".stat-card")?.querySelector(".stat-label")?.replaceChildren(data.period.label + " Revenue");
+    document.querySelector("#a-dep")?.closest(".stat-card")?.querySelector(".stat-label")?.replaceChildren(data.period.label + " Deposits");
 
     // Align dates for charts (last 14 days)
     const dates = [];
@@ -187,6 +203,17 @@
     
     document.querySelectorAll("[id^='top-']").forEach(el => el.innerHTML = tableHTML);
   }
+
+  window.changeAnalyticsPeriod = function(value) {
+    analyticsRange = value;
+    const dateInput = document.getElementById("analytics-date");
+    dateInput.style.display = value === "date" ? "block" : "none";
+    if (value !== "date" || analyticsDate) load().catch(e => toast(e.message, "error"));
+  };
+  window.changeAnalyticsDate = function(value) {
+    analyticsDate = value;
+    if (value) load().catch(e => toast(e.message, "error"));
+  };
 
   async function init() {
     if (!await requireAdmin()) return;
