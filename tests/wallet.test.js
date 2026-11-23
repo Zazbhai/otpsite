@@ -435,6 +435,46 @@ test("website provider failure reverses exactly the reserved debit and logs the 
   assert.equal(f.tables.orders.length, 0);
 });
 
+test("provider timeout is exposed as no numbers on the website and NO_NUMBERS to API clients", async () => {
+  const website = walletFixture();
+  const websiteRoutes = routesFixture(website, async () => ({ error: "Provider request timed out" }));
+  const websiteResponse = response();
+  await websiteRoutes.purchase({ userId: "u1", body: { service_id: "svc" } }, websiteResponse);
+  assert.equal(websiteResponse.statusCode, 400);
+  assert.equal(websiteResponse.body.error, "No numbers available");
+  assert.equal(websiteResponse.body.code, "NO_NUMBERS");
+  assert.equal(website.tables.users[0].balance, 10);
+
+  const api = walletFixture();
+  api.tables.users[0].api_key = "test-key";
+  const apiRoutes = routesFixture(api, async () => ({ error: "Provider request timed out" }));
+  const apiResponse = response();
+  await apiRoutes.gateway({ method: "GET", query: { api_key: "test-key", action: "getNumber", service: "test", country: "22" } }, apiResponse);
+  assert.equal(apiResponse.statusCode, 200);
+  assert.equal(apiResponse.body, "NO_NUMBERS");
+  assert.equal(api.tables.users[0].balance, 10);
+});
+
+test("provider allocation maps fetch and response-body aborts to NO_NUMBERS and retains diagnostics", async () => {
+  for (const phase of ["fetch", "body"]) {
+    const logs = [];
+    const aborted = Object.assign(new Error("This operation was aborted"), { name: "AbortError" });
+    const provider = moduleFrom("utils/providerApi.js", {
+      fs: { existsSync: () => true, readFileSync: () => "[]", appendFileSync() {} },
+    }, {
+      AbortController,
+      fetch: async () => {
+        if (phase === "fetch") throw aborted;
+        return { ok: true, status: 200, text: async () => { throw aborted; } };
+      },
+      console: { log() {}, error: (...args) => logs.push(args.join(" ")) },
+    });
+    const result = await provider.getNumber({ api_get_number_url: "https://provider.example/getNumber" }, "test", "22");
+    assert.equal(result.error, "NO_NUMBERS");
+    assert.ok(logs.some(line => line.includes("Provider API Error: This operation was aborted")));
+  }
+});
+
 test("API purchase also checks funds before provider and charges a successful order", async () => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";

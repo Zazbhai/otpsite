@@ -539,7 +539,6 @@ router.post("/orders", async (req, res) => {
 
     if (!providerRes || providerRes.error || !providerRes.api_order_id || !providerRes.phone) {
       console.error("❌ PROVIDER API REJECTION ❌", providerRes?.originalError || providerRes?.error);
-      if (providerRes?.error === "Provider request timed out") throw new Error("PROVIDER_TIMEOUT");
       throw new Error("PROVIDER_REJECTION");
     }
 
@@ -589,8 +588,9 @@ router.post("/orders", async (req, res) => {
 
     if (err.message === "INSUFFICIENT_BALANCE") return res.status(402).json({ error: "Insufficient balance" });
     if (err.message === "INVALID_SERVICE_PRICE") return res.status(409).json({ error: "Service price is invalid" });
-    if (err.message === "PROVIDER_REJECTION") return res.status(400).json({ error: "Number Not Available" });
-    if (err.message === "PROVIDER_TIMEOUT") return res.status(400).json({ error: "Provider timed out. Please try again." });
+    if (err.message === "PROVIDER_REJECTION" || err.message === "PROVIDER_TIMEOUT") {
+      return res.status(400).json({ error: "No numbers available", code: "NO_NUMBERS" });
+    }
     if (err.message === "Service not found or inactive") return res.status(404).json({ error: err.message });
     
     console.error("Order error:", err);

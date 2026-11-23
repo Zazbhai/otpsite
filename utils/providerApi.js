@@ -126,8 +126,11 @@ async function callProvider(url, server, method = "GET") {
   } catch (err) {
     clearTimeout(timeoutId);
     console.error("Provider API Error:", err.message);
-    if (err.name === 'AbortError') {
-      return { ok: false, data: { error: "Provider request timed out" }, status: 408 };
+    // A provider timeout is an inventory failure from the caller's point of
+    // view. Do not expose transport details such as "This operation was
+    // aborted" to website users or API clients.
+    if (err.name === 'AbortError' || /\babort(?:ed|ing)?\b/i.test(String(err.message))) {
+      return { ok: false, timed_out: true, data: { error: "NO_NUMBERS", code: "NO_NUMBERS" }, status: 408 };
     }
     return { ok: false, data: { error: err.message }, status: 500 };
   }
@@ -204,10 +207,8 @@ async function getNumber(server, serviceCode, countryCode) {
     }
   }
 
-  // If we're here, it means we exhausted retries or hit an immediate non-retryable error
-  // Map any technical error string to user-friendly "Number Not Available"
-  const finalError = (lastError === "Provider request timed out") ? lastError : "Number Not Available";
-  return { error: finalError, originalError: lastError, url };
+  // Exhausted inventory/retries always has the stable public error contract.
+  return { error: "NO_NUMBERS", code: "NO_NUMBERS", originalError: lastError, url };
 }
 
 // 2. Check Status

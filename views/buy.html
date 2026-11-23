@@ -1046,7 +1046,8 @@
         } catch (_) { /* ignore — fall through to failure */ }
       }
 
-      const msg = e.message.includes('aborted') ? 'Number Not Available' : (e.message || 'Number Not Available');
+      const msg = /aborted|timed.?out|number not available|no_numbers/i.test(e.message || '')
+        ? 'No numbers available' : (e.message || 'No numbers available');
       toast(msg, 'error');
       window.failAllocation();
     } finally {
