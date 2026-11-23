@@ -1,3 +1,4 @@
+const wallet = require("../utils/wallet");
 const express = require("express");
 const router = express.Router();
 const fs = require("fs");
@@ -49,76 +50,25 @@ async function handleDepositCallback(req, res) {
       apiBase: o.api_base || o.apiBase || "https://api.omnipay.global"
     };
 
-    // Verify with gateway queryOrder directly; if not yet updated or returns null, check the callback payload status
+    // Only the authenticated gateway query may confirm a payment.
     let data = await omnipay.queryOrder(omniConfig, orderNo);
     let statusStr = String(data?.status || "").toUpperCase();
-    let isSuccess = statusStr === "SUCCEEDED" || statusStr === "SUCCESS" || statusStr === "PAID" || statusStr === "COMPLETED" || statusStr === "1" || data?.status === 1 || statusStr === "2" || data?.status === 2 || statusStr.includes("SUCC") || statusStr.includes("PAID");
+    let isSuccess = statusStr === "SUCCEEDED" || statusStr === "SUCCESS" || statusStr === "PAID" || statusStr === "COMPLETED" || statusStr === "1" || data?.status === 1 || statusStr === "2" || data?.status === 2;
 
     if (!isSuccess) {
-      const callbackStatus = String(bodyData.status || payload.status || "").toUpperCase();
-      isSuccess = callbackStatus === "SUCCEEDED" || callbackStatus === "SUCCESS" || callbackStatus === "PAID" || callbackStatus === "COMPLETED" || callbackStatus === "1" || bodyData.status === 1 || callbackStatus === "2" || bodyData.status === 2 || callbackStatus.includes("SUCC") || callbackStatus.includes("PAID");
-      if (isSuccess) {
-        data = bodyData.status ? bodyData : payload;
-      }
-    }
-
-    if (!isSuccess) {
-      const failedStatus = statusStr === "FAILED" || statusStr === "REJECTED" || statusStr === "-1" || data?.status === -1 || bodyData.status === -1;
+      const failedStatus = statusStr === "FAILED" || statusStr === "REJECTED" || statusStr === "-1" || data?.status === -1;
       if (failedStatus && tx.status === "pending") {
         tx.status = "failed";
         tx.description = `OmniPay Deposit Failed (Ref: ${orderNo})`;
-        await tx.save().catch(() => {});
+        await Transaction.findOneAndUpdate({ _id: tx._id, status: "pending" }, { $set: { status: "failed", description: tx.description } });
       }
-      return res.status(200).send("SUCCESS");
+      return res.status(data ? 200 : 503).send(data ? "SUCCESS" : "RETRY");
     }
 
-    const commission = parseFloat(o.commission_percent) || 0;
-    const paidAmount = parseFloat(data?.actual_amount || data?.amount || bodyData.amount || payload.amount || 0);
-    const creditAmount = (tx && parseFloat(tx.amount) > 0)
-      ? parseFloat(tx.amount)
-      : (commission > 0 ? parseFloat((paidAmount / (1 + commission / 100)).toFixed(2)) : paidAmount);
-
-    const { calculateDepositBonus } = require("../utils/paymentBonus");
-    const { totalCredit, bonusAmount, bonusDesc } = calculateDepositBonus(creditAmount, o);
-
-    let updatedUser;
-    let hadDeposited = false;
-
-    await withTransaction(async (session) => {
-      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-
-      const doubleCheckTx = await Transaction.findOne({ reference: orderNo }, null, queryOptions);
-      if (!doubleCheckTx || doubleCheckTx.status === "completed") {
-        throw new Error("ALREADY_CREDITED");
-      }
-
-      const user = process.env.DB_TYPE === "mysql"
-        ? await User.findById(doubleCheckTx.user_id, queryOptions)
-        : await User.findById(doubleCheckTx.user_id, null, queryOptions);
-
-      if (!user) throw new Error("USER_NOT_FOUND");
-      hadDeposited = user.has_deposited;
-
-      updatedUser = await User.findOneAndUpdate(
-        { _id: doubleCheckTx.user_id },
-        { $inc: { balance: totalCredit }, $set: { has_deposited: true } },
-        { ...queryOptions, new: true }
-      );
-      if (!updatedUser) throw new Error("USER_NOT_FOUND");
-
-      doubleCheckTx.status = "completed";
-      doubleCheckTx.amount = totalCredit;
-      doubleCheckTx.balance_after = updatedUser.balance;
-      doubleCheckTx.description = `OmniPay Deposit (Ref: ${orderNo})${bonusDesc}`;
-      if (process.env.DB_TYPE === "mysql") {
-        await doubleCheckTx.save(queryOptions);
-      } else {
-        await doubleCheckTx.save(queryOptions);
-      }
-
-      const { processReferralBonus } = require("../utils/referralBonus");
-      await processReferralBonus(updatedUser, creditAmount, hadDeposited, queryOptions).catch(e => console.error("Referral bonus error:", e));
-    });
+    const credited = await wallet.creditDeposit({ transactionId: tx._id, userId: tx.user_id,
+      config: o, description: `OmniPay Deposit (Ref: ${orderNo})` });
+    const updatedUser = credited.user;
+    const { totalCredit, bonusAmount, base_amount: creditAmount } = credited;
 
     console.log(`[OmniPay Callback] Credited ₹${totalCredit} (base: ₹${creditAmount}, bonus: ₹${bonusAmount}) for order ${orderNo}`);
     res.status(200).send("SUCCESS");

@@ -3,6 +3,7 @@ const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
 const DB_TYPE = (process.env.DB_TYPE || "mongodb").toLowerCase().trim();
+process.env.DB_TYPE = DB_TYPE;
 
 let sequelize;
 if (DB_TYPE === "mysql") {
@@ -54,7 +55,10 @@ const connectDB = async () => {
         }
       });
 
+      await require("./walletSchema").ensureReferenceSchema(sequelize);
       await sequelize.sync({ alter: false });
+      await require("./walletSchema").ensureWalletSchema(sequelize);
+
       log("✅ MySQL Models synchronized");
     } catch (err) {
       log("❌ MySQL connection error: " + err.message);
@@ -259,6 +263,10 @@ const applyMongooseShims = (model) => {
       finalOpts = { ...projection };
     }
 
+    if (query?.where) {
+      const { where: ignoredWhere, ...embeddedOptions } = query;
+      finalOpts = { ...embeddedOptions, ...finalOpts };
+    }
     const q = query && query.where ? query.where : query;
     if (!q || (typeof q === 'object' && Object.values(q).every(v => v === undefined))) {
        return new Query(model, { id: null }, { ...finalOpts, single: true, forceNull: true });
@@ -280,6 +288,12 @@ const applyMongooseShims = (model) => {
   };
 
   model.findOneAndUpdate = async (query, update, options) => {
+    // A read/modify/write is atomic only while the row remains locked. This
+    // also protects callers which don't supply a transaction explicitly.
+    if (!options?.transaction) {
+      return model.sequelize.transaction(transaction =>
+        model.findOneAndUpdate(query, update, { ...options, transaction }));
+    }
     const where = translateQuery(query);
     const findOptions = { where, transaction: options?.transaction };
     if (options?.transaction) {
@@ -290,6 +304,7 @@ const applyMongooseShims = (model) => {
       if (options?.upsert) return model.create({ ...where, ...update }, { transaction: options?.transaction });
       return null;
     }
+    const previous = options?.new === false ? model.build(record.get({ plain: true }), { isNewRecord: false }) : null;
 
     // Extract updates
     let finalUpdate = { ...update };
@@ -298,8 +313,11 @@ const applyMongooseShims = (model) => {
     if (update.$inc) {
       const incs = update.$inc;
       for (const key in incs) {
-        const val = parseFloat(incs[key]);
-        record[key] = (record[key] || 0) + val;
+        const val = Number(incs[key]);
+        if (!Number.isFinite(val)) throw new Error("Invalid increment");
+        const current = Number(record[key] || 0);
+        if (!Number.isFinite(current)) throw new Error("Invalid stored numeric value");
+        finalUpdate[key] = require("./money").money(current + val);
       }
       delete finalUpdate.$inc;
     }
@@ -307,15 +325,12 @@ const applyMongooseShims = (model) => {
     // Handle Mongoose-style $set
     if (update.$set) {
       const sets = update.$set;
-      for (const key in sets) {
-        record[key] = sets[key];
-      }
       delete finalUpdate.$set;
       finalUpdate = { ...finalUpdate, ...sets };
     }
 
     await record.update(finalUpdate, { transaction: options?.transaction });
-    return record;
+    return previous || record;
   };
 
   model.findByIdAndUpdate = (id, update, options) => {
@@ -342,8 +357,7 @@ const applyMongooseShims = (model) => {
   model.count = model.countDocuments;
 
   model.updateOne = async (query, update, options) => {
-    const actualUpdate = update.$set ? update.$set : update;
-    return model.findOneAndUpdate(query, actualUpdate, options);
+    return model.findOneAndUpdate(query, update, options);
   };
   
   model.bulkWrite = async (operations) => {
@@ -351,8 +365,7 @@ const applyMongooseShims = (model) => {
     for (const op of operations) {
       if (op.updateOne) {
         const { filter, update, upsert } = op.updateOne;
-        const actualUpdate = update.$set ? update.$set : update;
-        const res = await model.findOneAndUpdate(filter, actualUpdate, { upsert });
+        const res = await model.findOneAndUpdate(filter, update, { upsert });
         results.push(res);
       }
     }
@@ -411,9 +424,14 @@ const applyMongooseShims = (model) => {
  */
 const withTransaction = async (callback) => {
   if (DB_TYPE === "mysql") {
-    return await sequelize.transaction(async (t) => {
-      return await callback(t);
-    });
+    for (let attempt = 0; ; attempt++) {
+      try { return await sequelize.transaction(t => callback(t)); }
+      catch (err) {
+        const code = err.original?.code || err.parent?.code;
+        if (attempt >= 2 || !["ER_LOCK_DEADLOCK", "ER_LOCK_WAIT_TIMEOUT"].includes(code)) throw err;
+        await new Promise(resolve => setTimeout(resolve, 25 * (attempt + 1)));
+      }
+    }
   } else {
     const mongoose = require("mongoose");
     const session = await mongoose.startSession();
@@ -424,7 +442,7 @@ const withTransaction = async (callback) => {
       });
       return result;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 };

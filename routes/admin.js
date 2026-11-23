@@ -1,3 +1,4 @@
+const wallet = require("../utils/wallet");
 const express  = require("express");
 const router   = express.Router();
 const bcrypt   = require("bcryptjs");
@@ -347,7 +348,9 @@ router.get("/users/:id", async (req, res) => {
       history_limit: historyLimit,
       deposit_stats: depositStats
     });
-  } catch (err) { 
+  } catch (err) {
+    if (err.message === "INSUFFICIENT_BALANCE") return res.status(402).json({ error: "Insufficient balance" });
+    if (err.message === "INVALID_AMOUNT") return res.status(400).json({ error: "Invalid amount" });
     console.error("ADMIN_ROUTE_ERROR:", err);
     res.status(500).json({ error: "Server error" }); 
   }
@@ -356,7 +359,7 @@ router.get("/users/:id", async (req, res) => {
 router.patch("/users/:id", async (req, res) => {
   try {
     const { balance, is_banned, notes, is_admin } = req.body;
-    const user = await User.findById(req.params.id);
+    let user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     // Protect Super Admin from demotion/ban
@@ -372,12 +375,19 @@ router.patch("/users/:id", async (req, res) => {
       }
     }
 
-    if (balance   !== undefined) user.balance   = parseFloat(balance);
+    if (balance !== undefined) {
+      const value = require("../utils/money").money(balance);
+      if (value < 0) return res.status(400).json({ error: "Balance cannot be negative" });
+    }
     if (is_banned !== undefined) user.is_banned = is_banned;
     if (is_admin  !== undefined) user.is_admin  = is_admin;
     if (notes     !== undefined) user.notes     = notes;
     
     if (req.body.discounts !== undefined) {
+      if (!Array.isArray(req.body.discounts) || req.body.discounts.some(d => !d ||
+          !Number.isFinite(Number(d.percentage)) || Number(d.percentage) < 0 || Number(d.percentage) >= 100)) {
+        return res.status(400).json({ error: "Discount percentages must be between 0 and less than 100" });
+      }
       if (process.env.DB_TYPE === "mysql") {
         user.discounts = JSON.stringify(req.body.discounts);
       } else {
@@ -398,6 +408,12 @@ router.patch("/users/:id", async (req, res) => {
     }
 
     await user.save();
+    if (balance !== undefined) {
+      await wallet.setBalance(req.params.id, balance);
+      user = await User.findById(req.params.id);
+      emitToUser(String(req.params.id), "balance", { balance: user.balance });
+    }
+
 
     if (req._pendingDiscountUpdate) {
       const { clearCache } = require("../utils/apiCache");
@@ -415,7 +431,7 @@ router.patch("/users/:id", async (req, res) => {
 
 router.post("/users/:id/login-as", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    let user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
     
     const { createToken } = require("../middleware/auth");
@@ -505,9 +521,11 @@ router.patch("/orders/:id", async (req, res) => {
     }
 
     const order = await withTransaction(async session => {
-      const queryOptions = DB_TYPE === "mysql" ? { transaction: session } : { session };
+      const queryOptions = DB_TYPE === "mysql" ? { transaction: session, lock: true } : { session };
       const current = await Order.findOne({ order_id: req.params.id }, null, queryOptions);
       if (!current) return null;
+      if (status === "active" && ["cancelled", "expired", "refunded"].includes(current.status)) throw new Error("ORDER_ALREADY_REFUNDED");
+      if (status === "refunded" && otp) throw new Error("ORDER_NOT_REFUNDABLE");
 
       if (status === "refunded" && current.status !== "refunded") {
         if (current.refund_issued || current.otp || (current.all_otps && current.all_otps.length)) {
@@ -517,8 +535,10 @@ router.patch("/orders/:id", async (req, res) => {
         const existingRefund = await Transaction.findOne({ order_id: current.order_id, type: "refund" }, null, queryOptions);
         if (existingRefund) throw new Error("ORDER_ALREADY_REFUNDED");
 
+        const purchase = await Transaction.findOne({ order_id: current.order_id, user_id: String(current.user_id), type: "purchase", status: "completed" }, null, queryOptions);
+        wallet.assertVerifiedPurchase(purchase, current.cost);
         const updatedOrder = await Order.findOneAndUpdate(
-          { _id: current._id, refund_issued: { $ne: true }, status: { $nin: ["cancelled", "expired", "refunded"] } },
+          { _id: current._id, refund_issued: { $ne: true }, status: "active" },
           { $set: { status: "refunded", refund_issued: true } },
           { ...queryOptions, new: true }
         );
@@ -532,7 +552,7 @@ router.patch("/orders/:id", async (req, res) => {
         const refund = {
           user_id: current.user_id, type: "refund", amount: current.cost,
           balance_after: user.balance,
-          description: `Refund for order ${current.order_id}`, order_id: current.order_id,
+          description: `Refund for order ${current.order_id}`, order_id: current.order_id, reference: `ORDER-REFUND:${current.order_id}`,
         };
         if (DB_TYPE === "mysql") await Transaction.create(refund, queryOptions);
         else await Transaction.create([refund], queryOptions);
@@ -540,6 +560,7 @@ router.patch("/orders/:id", async (req, res) => {
         current.refund_issued = true;
       } else if (status) {
         current.status = status;
+        if (["cancelled", "expired", "completed"].includes(status)) current.refund_issued = true;
       }
       if (otp && otp !== current.otp) {
         current.otp = otp;
@@ -556,6 +577,7 @@ router.patch("/orders/:id", async (req, res) => {
     console.error("Admin order update error:", err);
     if (err.message === "ORDER_NOT_REFUNDABLE") return res.status(409).json({ error: "An order with a received OTP cannot be refunded" });
     if (err.message === "ORDER_ALREADY_REFUNDED") return res.status(409).json({ error: "This order has already been refunded" });
+    if (["PURCHASE_DEBIT_UNVERIFIED", "PURCHASE_LEDGER_MISSING", "ORDER_COST_MISMATCH"].includes(err.message)) return res.status(409).json({ error: "The original charge needs review before this order can be refunded" });
     if (err.message === "USER_NOT_FOUND") return res.status(404).json({ error: "Order owner not found" });
     res.status(500).json({ error: "Server error" }); 
   }
@@ -1129,26 +1151,19 @@ router.post("/transactions/deposit", async (req, res) => {
     const { user_id, amount, description } = req.body;
     if (!user_id || amount == null) return res.status(400).json({ error: "user_id and amount are required" });
     
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    const parsedAmount = Number(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return res.status(400).json({ error: "Amount must be a positive number" });
     }
 
-    const user = await User.findById(user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    user.balance = parseFloat((user.balance + parsedAmount).toFixed(4));
-    user.has_deposited = true;
-    await user.save();
-    await Transaction.create({
-      user_id, type: "deposit", amount: parsedAmount,
-      balance_after: user.balance,
-      status: "completed",
-      description: description || "Manual deposit by admin",
-    });
+    const user = await wallet.adjustBalance({ userId: user_id, amount: parsedAmount,
+      description: description || "Manual deposit by admin" });
 
     emitToUser(String(user_id), "balance", { balance: user.balance }); // Real-time balance push
     res.json({ balance: user.balance });
-  } catch (err) { 
+  } catch (err) {
+    if (err.message === "INSUFFICIENT_BALANCE") return res.status(402).json({ error: "Insufficient balance" });
+    if (err.message === "INVALID_AMOUNT") return res.status(400).json({ error: "Invalid amount" });
     console.error("ADMIN_ROUTE_ERROR:", err);
     res.status(500).json({ error: "Server error" }); 
   }
@@ -1159,29 +1174,19 @@ router.post("/transactions/deduct", async (req, res) => {
     const { user_id, amount, description } = req.body;
     if (!user_id || amount == null) return res.status(400).json({ error: "user_id and amount are required" });
     
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    const parsedAmount = Number(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return res.status(400).json({ error: "Amount must be a positive number" });
     }
 
-    const user = await User.findById(user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    user.balance = parseFloat((user.balance - parsedAmount).toFixed(4));
-    await user.save();
-    
-    await Transaction.create({
-      user_id,
-      type: "deduction",
-      amount: -parsedAmount,
-      balance_after: user.balance,
-      status: "completed",
-      description: description || "Manual deduction by admin",
-    });
+    const user = await wallet.adjustBalance({ userId: user_id, amount: -parsedAmount,
+      description: description || "Manual deduction by admin" });
 
     emitToUser(String(user_id), "balance", { balance: user.balance }); // Real-time balance push
     res.json({ balance: user.balance });
-  } catch (err) { 
+  } catch (err) {
+    if (err.message === "INSUFFICIENT_BALANCE") return res.status(402).json({ error: "Insufficient balance" });
+    if (err.message === "INVALID_AMOUNT") return res.status(400).json({ error: "Invalid amount" });
     console.error("ADMIN_ROUTE_ERROR:", err);
     res.status(500).json({ error: "Server error" }); 
   }
@@ -1196,26 +1201,18 @@ router.post("/transactions/:id/approve", async (req, res) => {
       return res.status(400).json({ error: `Transaction is already ${tx.status}` });
     }
 
-    const user = await User.findById(tx.user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    const creditAmount = parseFloat(tx.amount || 0);
-    user.balance = parseFloat((user.balance + creditAmount).toFixed(4));
-    user.has_deposited = true;
-    await user.save();
-
-    tx.status = "completed";
-    tx.balance_after = user.balance;
-    if (!tx.description.includes("(Approved)")) {
-      tx.description = (tx.description || "Deposit") + " (Approved by Admin)";
-    }
-    await tx.save();
+    if (tx.type !== "deposit") return res.status(400).json({ error: "Only deposits can be approved" });
+    const credited = await wallet.creditDeposit({ transactionId: tx._id, userId: tx.user_id,
+      config: {}, description: `${tx.description || "Deposit"} (Approved by Admin)` });
+    const user = credited.user;
+    const approvedTx = await Transaction.findById(tx._id);
 
     emitToUser(String(user._id || user.id), "balance", { balance: user.balance });
     emitToUser(String(user._id || user.id), "wallet_update", { balance: user.balance });
 
-    res.json({ success: true, message: "Deposit approved successfully", balance: user.balance, transaction: tx });
+    res.json({ success: true, message: "Deposit approved successfully", balance: user.balance, transaction: approvedTx });
   } catch (err) {
+    if (err.message === "ALREADY_CREDITED") return res.status(409).json({ error: "Deposit already credited" });
     console.error("Admin approve transaction error:", err);
     res.status(500).json({ error: "Server error approving deposit" });
   }
@@ -1230,13 +1227,13 @@ router.post("/transactions/:id/reject", async (req, res) => {
       return res.status(400).json({ error: `Transaction is already ${tx.status}` });
     }
 
-    tx.status = "failed";
-    if (!tx.description.includes("(Rejected)")) {
-      tx.description = (tx.description || "Deposit") + " (Rejected by Admin)";
-    }
-    await tx.save();
+    if (tx.type !== "deposit") return res.status(400).json({ error: "Only deposits can be rejected" });
+    const rejected = await Transaction.findOneAndUpdate({ _id: tx._id, type: "deposit", status: "pending" }, {
+      $set: { status: "failed", description: `${tx.description || "Deposit"} (Rejected by Admin)` },
+    }, { new: true });
+    if (!rejected) return res.status(409).json({ error: "Transaction state changed" });
 
-    res.json({ success: true, message: "Deposit marked as rejected", transaction: tx });
+    res.json({ success: true, message: "Deposit marked as rejected", transaction: rejected });
   } catch (err) {
     console.error("Admin reject transaction error:", err);
     res.status(500).json({ error: "Server error rejecting deposit" });

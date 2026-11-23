@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS `Users` (
   `password_hash`     VARCHAR(255)     NOT NULL,
   `display_name`      VARCHAR(100)     NOT NULL DEFAULT '',
   `avatar_color`      VARCHAR(20)      NOT NULL DEFAULT '#3b82f6',
-  `balance`           DOUBLE           NOT NULL DEFAULT 0,
+  `balance`           DECIMAL(18,4)           NOT NULL DEFAULT 0,
   `is_banned`         TINYINT(1)       NOT NULL DEFAULT 0,
   `is_admin`          TINYINT(1)       NOT NULL DEFAULT 0,
-  `total_spent`       DOUBLE           NOT NULL DEFAULT 0,
+  `total_spent`       DECIMAL(18,4)           NOT NULL DEFAULT 0,
   `total_orders`      INT UNSIGNED     NOT NULL DEFAULT 0,
   `notes`             TEXT             NOT NULL DEFAULT '',
   `api_key`           VARCHAR(255)     NOT NULL DEFAULT '',
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `Users` (
   `referral_code`     VARCHAR(50)               DEFAULT NULL,
   `referred_by`       VARCHAR(50)               DEFAULT NULL,
   `referral_count`    INT UNSIGNED     NOT NULL DEFAULT 0,
-  `referral_earnings` DOUBLE           NOT NULL DEFAULT 0,
+  `referral_earnings` DECIMAL(18,4)           NOT NULL DEFAULT 0,
   `has_deposited`     TINYINT(1)       NOT NULL DEFAULT 0,
   `createdAt`         DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt`         DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS `Services` (
   `server_id`     INT UNSIGNED            DEFAULT NULL,   -- FK → Servers.id
   `service_code`  VARCHAR(100)  NOT NULL,
   `country_code`  VARCHAR(20)   NOT NULL,
-  `price`         DOUBLE        NOT NULL,
+  `price`         DECIMAL(18,4)        NOT NULL,
   `image_url`     VARCHAR(500)  NOT NULL DEFAULT '',
   `icon_color`    VARCHAR(20)   NOT NULL DEFAULT '',
   `success_rate`  VARCHAR(20)   NOT NULL DEFAULT '95%',
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   `all_otps`          LONGTEXT                DEFAULT NULL,             -- array of OTP strings
   `status`            ENUM('active','completed','refunded','expired','cancelled')
                                      NOT NULL DEFAULT 'active',
-  `cost`              DOUBLE         NOT NULL,
+  `cost`              DECIMAL(18,4)         NOT NULL,
   `expires_at`        DATETIME                DEFAULT NULL,
   `min_cancel_at`     DATETIME                DEFAULT NULL,
   `external_order_id` VARCHAR(100)   NOT NULL DEFAULT '',
@@ -175,10 +175,10 @@ CREATE TABLE IF NOT EXISTS `Transactions` (
   `user_id`       VARCHAR(50)   NOT NULL,
   `type`          ENUM('deposit','purchase','refund','bonus','deduction')
                                 NOT NULL,
-  `amount`        DOUBLE        NOT NULL,
-  `balance_after` DOUBLE        NOT NULL DEFAULT 0,
+  `amount`        DECIMAL(18,4)        NOT NULL,
+  `balance_after` DECIMAL(18,4)        NOT NULL DEFAULT 0,
   `description`   VARCHAR(500)  NOT NULL DEFAULT '',
-  `reference`     VARCHAR(255)  NOT NULL DEFAULT '',
+  `reference`     VARCHAR(255)  NULL DEFAULT NULL,
   `order_id`      VARCHAR(30)   NOT NULL DEFAULT '',
   `status`        ENUM('pending','completed','failed')
                                 NOT NULL DEFAULT 'completed',
@@ -189,7 +189,10 @@ CREATE TABLE IF NOT EXISTS `Transactions` (
   KEY `idx_transactions_user_id`    (`user_id`),
   KEY `idx_transactions_type`       (`type`),
   KEY `idx_transactions_order_id`   (`order_id`),
-  KEY `idx_transactions_created_at` (`createdAt`)
+  KEY `idx_transactions_created_at` (`createdAt`),
+  UNIQUE KEY `uq_transactions_reference` (`reference`),
+  KEY `idx_transactions_order_type_status` (`order_id`, `type`, `status`),
+  KEY `idx_transactions_recovery` (`type`, `status`, `createdAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -219,7 +222,7 @@ CREATE TABLE IF NOT EXISTS `Settings` (
 CREATE TABLE IF NOT EXISTS `PromoCodes` (
   `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `code`        VARCHAR(100) NOT NULL,
-  `amount`      DOUBLE       NOT NULL,
+  `amount`      DECIMAL(18,4)       NOT NULL,
   `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
   `usage_limit` INT          NOT NULL DEFAULT 1,
   `used_count`  INT          NOT NULL DEFAULT 0,
@@ -242,7 +245,7 @@ CREATE TABLE IF NOT EXISTS `AccountCategories` (
   `name`        VARCHAR(100) NOT NULL,
   `description` TEXT         NOT NULL DEFAULT '',
   `icon`        VARCHAR(20)  NOT NULL DEFAULT '🗂️',
-  `price`       DOUBLE       NOT NULL,
+  `price`       DECIMAL(18,4)       NOT NULL,
   `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
   `sort_order`  INT          NOT NULL DEFAULT 0,
   `createdAt`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -267,7 +270,7 @@ CREATE TABLE IF NOT EXISTS `ReadymadeAccounts` (
                                NOT NULL DEFAULT 'available',
   `sold_to`       VARCHAR(50)           DEFAULT NULL,
   `sold_at`       DATETIME              DEFAULT NULL,
-  `price_at_sale` DOUBLE                DEFAULT NULL,
+  `price_at_sale` DECIMAL(18,4)                DEFAULT NULL,
   `createdAt`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 

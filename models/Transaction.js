@@ -1,3 +1,4 @@
+const { decimalField } = require("../utils/money");
 const mongoose = require("mongoose");
 const { DataTypes } = require("sequelize");
 const { sequelize, DB_TYPE, applyMongooseShims } = require("../utils/db");
@@ -11,8 +12,8 @@ if (DB_TYPE === "mysql") {
       type: DataTypes.ENUM("deposit", "purchase", "refund", "bonus", "deduction"),
       allowNull: false,
     },
-    amount: { type: DataTypes.FLOAT, allowNull: false },
-    balance_after: { type: DataTypes.FLOAT, defaultValue: 0 },
+    amount: decimalField(DataTypes, "amount", { allowNull: false }),
+    balance_after: decimalField(DataTypes, "balance_after", { defaultValue: 0 }),
     description: { type: DataTypes.STRING, defaultValue: "" },
     reference: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
     order_id: { type: DataTypes.STRING, defaultValue: "" },
@@ -28,7 +29,9 @@ if (DB_TYPE === "mysql") {
     indexes: [
       { fields: ["user_id"] },
       { fields: ["createdAt"] },
-      { fields: ["reference"], unique: true }
+      { fields: ["reference"], unique: true },
+      { fields: ["order_id", "type", "status"] },
+      { fields: ["type", "status", "createdAt"] }
     ]
   });
 
@@ -55,6 +58,8 @@ if (DB_TYPE === "mysql") {
     },
     { timestamps: true }
   );
+  transactionSchema.index({ order_id: 1, type: 1, status: 1 });
+  transactionSchema.index({ type: 1, status: 1, createdAt: 1 });
   Transaction = mongoose.model("Transaction", transactionSchema);
 }
 

@@ -1,3 +1,4 @@
+const wallet = require("../utils/wallet");
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
@@ -72,6 +73,7 @@ router.all("/", async (req, res) => {
           
           const userDiscounts = parseDiscounts(user.discounts);
           const finalPrice = calculateUserPrice(svc.price, svc.name, userDiscounts, String(svc.server_id?._id || svc.server_id || ''));
+          if (!Number.isFinite(finalPrice) || finalPrice <= 0) return;
           const priceKey = finalPrice.toFixed(2);
           // Standard stub format: { "PRICE": "COUNT" }
           prices[svc.country_code][svc.service_code][priceKey] = 100;
@@ -108,6 +110,8 @@ router.all("/", async (req, res) => {
         const userDiscounts = parseDiscounts(user.discounts);
         const finalPrice = calculateUserPrice(svc.price, svc.name, userDiscounts, String(svc.server_id?._id || svc.server_id || ''));
 
+        if (!Number.isFinite(finalPrice) || finalPrice <= 0) return res.send("NO_NUMBERS");
+
         if (user.balance < finalPrice) return res.send("NO_BALANCE");
         if (maxPrice && finalPrice > parseFloat(maxPrice)) return res.send("NO_NUMBERS");
 
@@ -116,22 +120,11 @@ router.all("/", async (req, res) => {
 
         // 1. Pre-check and deduct balance atomically
         let balanceDeducted = false;
+        const reservedOrderId = "ORD-" + nanoid(16).toUpperCase();
         let orderSaved = false;
-        let balanceResult;
         try {
-          balanceResult = await withTransaction(async (session) => {
-            const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-
-            const freshUser = await User.findOneAndUpdate(
-              { _id: user._id, balance: { $gte: finalPrice } },
-              { $inc: { balance: -finalPrice, total_spent: finalPrice, total_orders: 1 } },
-              { ...queryOptions, new: true }
-            );
-
-            if (!freshUser) throw new Error("NO_BALANCE");
-
-            return { userBalance: freshUser.balance };
-          });
+          await wallet.reservePurchase({ userId: user._id, orderId: reservedOrderId,
+            amount: finalPrice, description: `API: Purchased ${svc.name} (${country})` });
           balanceDeducted = true;
         } catch (err) {
           return res.send("NO_BALANCE");
@@ -146,84 +139,47 @@ router.all("/", async (req, res) => {
             providerRes = { error: apiErr.message || "Provider API Failure" };
           }
 
-          if (providerRes.error) {
+          if (!providerRes || providerRes.error || !providerRes.api_order_id || !providerRes.phone) {
             throw new Error("PROVIDER_REJECTION");
           }
 
           // 4. Create Order and Transaction atomically
-          const orderResult = await withTransaction(async (session) => {
-            const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
+          const orderId = reservedOrderId;
+          const minCancelMins = serverConf.min_cancel_minutes != null ? serverConf.min_cancel_minutes : 0;
 
-            if (providerRes.api_order_id) {
-              const existingOrder = await Order.findOne({ external_order_id: providerRes.api_order_id }, null, queryOptions);
-              if (existingOrder) throw new Error("DUPLICATE_EXTERNAL_ORDER");
-            }
+          const orderData = {
+            order_id: orderId,
+            user_id: user._id,
+            service_id: svc._id || svc.id,
+            service_name: svc.name,
+            server_name: serverConf.name,
+            country,
+            phone: providerRes.phone,
+            external_order_id: providerRes.api_order_id,
+            cost: finalPrice,
+            status: "active",
+            expires_at: new Date(Date.now() + (serverConf.auto_cancel_minutes || 20) * 60 * 1000),
+            min_cancel_at: new Date(Date.now() + minCancelMins * 60 * 1000),
+            service_image: svc.image_url || "",
+            service_color: svc.icon_color || "",
+            check_interval: serverConf.check_interval || 3,
+            multi_otp_enabled: serverConf.multi_otp_supported || false
+          };
 
-            const orderId = "ORD-" + nanoid(10).toUpperCase();
-            const minCancelMins = serverConf.min_cancel_minutes != null ? serverConf.min_cancel_minutes : 0;
-            
-            const orderData = {
-              order_id: orderId,
-              user_id: user._id,
-              service_id: svc._id || svc.id,
-              service_name: svc.name,
-              server_name: serverConf.name,
-              country,
-              phone: providerRes.phone,
-              external_order_id: providerRes.api_order_id,
-              cost: finalPrice,
-              status: "active",
-              expires_at: new Date(Date.now() + (serverConf.auto_cancel_minutes || 20) * 60 * 1000),
-              min_cancel_at: new Date(Date.now() + minCancelMins * 60 * 1000),
-              service_image: svc.image_url || "",
-              service_color: svc.icon_color || "",
-              check_interval: serverConf.check_interval || 3,
-              multi_otp_enabled: serverConf.multi_otp_supported || false
-            };
-
-            let order;
-            if (process.env.DB_TYPE === "mysql") {
-              order = await Order.create(orderData, queryOptions);
-            } else {
-              const createdOrders = await Order.create([orderData], queryOptions);
-              order = createdOrders[0];
-            }
-
-            const txData = {
-              user_id: user._id,
-              type: "purchase",
-              amount: -finalPrice,
-              balance_after: balanceResult.userBalance,
-              description: `API: Purchased ${svc.name} (${country})`,
-              order_id: orderId,
-            };
-
-            if (process.env.DB_TYPE === "mysql") {
-              await Transaction.create(txData, queryOptions);
-            } else {
-              await Transaction.create([txData], queryOptions);
-            }
-
-            return { orderId, phone: providerRes.phone };
-          });
+          const savedOrder = await wallet.finalizePurchase(orderData);
+          const orderResult = { orderId: savedOrder.order_id, phone: savedOrder.phone };
 
           orderSaved = true;
           return res.send(`ACCESS_NUMBER:${orderResult.orderId}:${orderResult.phone.replace(/\D/g, '')}`);
         } catch (err) {
           if (balanceDeducted && !orderSaved) {
             console.log(`[API/Order/Rollback] Rollback refunding user ${user._id} amount ${finalPrice}`);
-            await withTransaction(async (session) => {
-              const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-              await User.updateOne(
-                { _id: user._id },
-                { $inc: { balance: finalPrice, total_spent: -finalPrice, total_orders: -1 } },
-                queryOptions
-              );
-            }).catch(refundErr => {
-              console.error("[API/Order/Rollback] Critical Error: Rollback refund failed!", refundErr.message);
+            const reversed = await wallet.reversePurchase(reservedOrderId).catch(refundErr => {
+              console.error("[API/Order/Rollback]", reservedOrderId, refundErr.message);
+              return false;
             });
 
-            if (providerRes && providerRes.api_order_id) {
+            if (reversed && err.message !== "DUPLICATE_EXTERNAL_ORDER" && providerRes?.api_order_id) {
               providerApi.cancelOrder(serverConf, providerRes.api_order_id).catch(() => {});
             }
           }
@@ -235,7 +191,7 @@ router.all("/", async (req, res) => {
         const { id } = query;
         if (!id) return res.send("BAD_REQUEST");
 
-        const order = await Order.findOne({ order_id: id, user_id: String(user._id) });
+        let order = await Order.findOne({ order_id: id, user_id: String(user._id) });
         if (!order) return res.send("NO_ACTIVATION");
 
         // ── Check 1: Already has OTP — return OTP but DO NOT force completion ──
@@ -284,39 +240,9 @@ router.all("/", async (req, res) => {
 
               if (checkRes.status === "cancelled" || checkRes.status === "refunded" || checkRes.status === "expired") {
                 // Provider cancelled with no OTP — issue refund atomically in transaction
-                await withTransaction(async (session) => {
-                  const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-                  
-                  // Double Check Layer 1: Verify no refund transaction exists yet
-                  const existingTx = await Transaction.findOne({ order_id: order.order_id, type: "refund" }, null, queryOptions);
-                  if (existingTx) throw new Error("ALREADY_REFUNDED_TX");
-
-                  // Double Check Layer 2: Atomic update with refund_issued check
-                  const refundable = await Order.findOneAndUpdate(
-                    { _id: order._id, refund_issued: { $ne: true } },
-                    { $set: { status: "cancelled", refund_issued: true } },
-                    { ...queryOptions, new: true }
-                  );
-
-                  if (refundable) {
-                    const userAfterRefund = await User.findOneAndUpdate(
-                      { _id: order.user_id },
-                      { $inc: { balance: order.cost } },
-                      { ...queryOptions, new: true }
-                    );
-                    
-                    if (userAfterRefund) {
-                      await Transaction.create([{
-                        user_id: userAfterRefund._id || userAfterRefund.id, 
-                        type: "refund", 
-                        amount: order.cost,
-                        balance_after: userAfterRefund.balance, 
-                        description: `Provider cancelled order ${order.order_id} (no OTP)`, 
-                        order_id: order.order_id
-                      }], queryOptions);
-                    }
-                  }
-                }).then(notifyAdminChange).catch(err => console.error("[getStatus] Refund transaction failed:", err.message));
+                const result = await wallet.refundOrder(order._id, "cancelled", `Provider cancelled order ${order.order_id} (no OTP)`);
+                if (result.refunded) notifyAdminChange();
+                if (wallet.hasOtp(result.order)) return res.send(`STATUS_OK:${result.order.otp || result.order.all_otps[0]}`);
 
                 return res.send("STATUS_CANCEL");
               }
@@ -352,7 +278,7 @@ router.all("/", async (req, res) => {
         const { id, status } = query;
         if (!id) return res.send("BAD_REQUEST");
         
-        const order = await Order.findOne({ order_id: id, user_id: String(user._id) });
+        let order = await Order.findOne({ order_id: id, user_id: String(user._id) });
         if (!order) return res.send("NO_ACTIVATION");
 
         const API_STATUS_CANCEL = process.env.API_STATUS_CANCEL || "8";
@@ -368,12 +294,14 @@ router.all("/", async (req, res) => {
            }
 
            try {
+              order = await Order.findById(order._id);
+              if (!order || order.status !== "active") return res.send("ACCESS_CANCEL_ALREADY");
               // ── Condition 1: Manual Cancel + OTP exists = mark completed ──
               const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
               if (hasOtp) {
                 order.status = "completed";
                 order.refund_issued = true; // Also ensure refund is locked
-                await order.save();
+                await Order.findOneAndUpdate({ _id: order._id, status: "active" }, { $set: { status: "completed", refund_issued: true } });
                 return res.send("ACCESS_CANCEL");
               }
 
@@ -382,49 +310,13 @@ router.all("/", async (req, res) => {
                  return res.send(`BAD_STATUS`);
               }
 
-              const serverConf = await Server.findOne({ name: order.server_name });
-              if (serverConf && serverConf.api_cancel_url && order.external_order_id) {
-                 await providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
-              }
-
-              // Atomic refund lock + balance update in ONE transaction
-              const cancelResult = await withTransaction(async (session) => {
-                const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-                
-                // Double Check Layer 1: Verify no refund transaction exists yet
-                const existingTx = await Transaction.findOne({ order_id: order.order_id, type: "refund" }, null, queryOptions);
-                if (existingTx) throw new Error("ALREADY_REFUNDED_TX");
-
-                // Double Check Layer 2: Atomic update with refund_issued check
-                const refundable = await Order.findOneAndUpdate(
-                  { _id: order._id, refund_issued: { $ne: true } },
-                  { $set: { refund_issued: true, status: "cancelled" } },
-                  { ...queryOptions, new: true }
-                );
-                
-                if (!refundable) return "ALREADY_REFUNDED";
-
-                const userAfterRefund = await User.findOneAndUpdate(
-                  { _id: user._id },
-                  { $inc: { balance: order.cost } },
-                  { ...queryOptions, new: true }
-                );
-
-                if (userAfterRefund) {
-                  await Transaction.create([{
-                     user_id: userAfterRefund._id || userAfterRefund.id, 
-                     type: "refund", 
-                     amount: order.cost,
-                     balance_after: userAfterRefund.balance, 
-                     description: `API Cancelled order ${order.order_id}`, 
-                     order_id: order.order_id
-                  }], queryOptions);
+              const result = await wallet.refundOrder(order._id, "cancelled", `API cancelled order ${order.order_id}`);
+              if (result.refunded) {
+                const serverConf = await Server.findOne({ name: order.server_name });
+                if (serverConf?.api_cancel_url && order.external_order_id) {
+                  providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
                 }
-                return "SUCCESS";
-              }).catch(err => {
-                console.error("[setStatus] Cancel transaction failed:", err.message);
-                return "ERROR";
-              });
+              }
               return res.send("ACCESS_CANCEL");
            } finally {
               releaseLock(orderIdStr);
@@ -435,7 +327,7 @@ router.all("/", async (req, res) => {
         if (status == "3") {
            const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
            // Allow if completed OR if active with an OTP
-           if (order.status !== "completed" && !(order.status === "active" && hasOtp)) {
+           if (!hasOtp || !["active", "completed"].includes(order.status)) {
              return res.send("BAD_STATUS");
            }
            
@@ -449,7 +341,10 @@ router.all("/", async (req, res) => {
              await providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
            }
 
-           await order.save();
+           const retried = await Order.findOneAndUpdate({ _id: order._id, status: { $in: ["active", "completed"] }, refund_issued: true }, {
+             $set: { status: "active", otp: "", refund_issued: true, expires_at: order.expires_at },
+           }, { new: true });
+           if (!retried) return res.send("BAD_STATUS");
            return res.send("ACCESS_RETRY_GET");
         }
 

@@ -1,3 +1,4 @@
+const wallet = require("../utils/wallet");
 const express = require("express");
 const router = express.Router();
 const fs = require("fs");
@@ -75,7 +76,7 @@ async function handleHeleketWebhook(req, res) {
     if (isFailed && tx.status === "pending") {
       tx.status = "failed";
       tx.description = `Heleket Crypto Deposit Failed/Expired (Ref: ${orderId})`;
-      await tx.save().catch(() => {});
+      await Transaction.findOneAndUpdate({ _id: tx._id, status: "pending" }, { $set: { status: "failed", description: tx.description } });
       return res.status(200).send("OK");
     }
 
@@ -86,49 +87,10 @@ async function handleHeleketWebhook(req, res) {
 
     // Payment is PAID! Credit amount to user
     // Note: If transaction has an expected INR amount in tx.amount, we credit that amount.
-    const commission = parseFloat(hConfig.commission_percent) || 0;
-    const rawPaid = parseFloat(payload.payment_amount || payload.amount || 0);
-    const creditAmount = (tx && parseFloat(tx.amount) > 0)
-      ? parseFloat(tx.amount)
-      : (commission > 0 ? parseFloat((rawPaid / (1 + commission / 100)).toFixed(2)) : rawPaid);
-
-    const { calculateDepositBonus } = require("../utils/paymentBonus");
-    const { totalCredit, bonusAmount, bonusDesc } = calculateDepositBonus(creditAmount, hConfig);
-
-    let updatedUser;
-    let hadDeposited = false;
-
-    await withTransaction(async (session) => {
-      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-
-      const doubleCheckTx = await Transaction.findOne({ reference: orderId }, null, queryOptions);
-      if (!doubleCheckTx || doubleCheckTx.status === "completed") {
-        throw new Error("ALREADY_CREDITED");
-      }
-
-      const user = process.env.DB_TYPE === "mysql"
-        ? await User.findById(doubleCheckTx.user_id, queryOptions)
-        : await User.findById(doubleCheckTx.user_id, null, queryOptions);
-
-      if (!user) throw new Error("USER_NOT_FOUND");
-      hadDeposited = user.has_deposited;
-
-      updatedUser = await User.findOneAndUpdate(
-        { _id: doubleCheckTx.user_id },
-        { $inc: { balance: totalCredit }, $set: { has_deposited: true } },
-        { ...queryOptions, new: true }
-      );
-      if (!updatedUser) throw new Error("USER_NOT_FOUND");
-
-      doubleCheckTx.status = "completed";
-      doubleCheckTx.amount = totalCredit;
-      doubleCheckTx.balance_after = updatedUser.balance;
-      doubleCheckTx.description = `Heleket Crypto Deposit (${payload.currency || "Crypto"}) (Ref: ${orderId})${bonusDesc}`;
-      await doubleCheckTx.save(queryOptions);
-
-      const { processReferralBonus } = require("../utils/referralBonus");
-      await processReferralBonus(updatedUser, creditAmount, hadDeposited, queryOptions).catch(e => console.error("Referral bonus error:", e));
-    });
+    const credited = await wallet.creditDeposit({ transactionId: tx._id, userId: tx.user_id,
+      config: hConfig, description: `Heleket Crypto Deposit (Ref: ${orderId})` });
+    const updatedUser = credited.user;
+    const { totalCredit, bonusAmount, base_amount: creditAmount } = credited;
 
     console.log(`[Heleket Webhook] Successfully credited ₹${totalCredit} (base: ₹${creditAmount}, bonus: ₹${bonusAmount}) for order ${orderId}`);
     res.status(200).send("OK");

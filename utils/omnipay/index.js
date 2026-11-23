@@ -25,7 +25,7 @@ async function createOrder(config, { amount, orderNo, callbackUrl, jumpUrl, titl
     const body = {
       title: title || "Rapid OTP Wallet Deposit",
       order_no: orderNo || `PAY-${Date.now()}`,
-      amount: parseInt(amount),
+      amount: require("../money").positiveMoney(amount),
       currency: "INR",
       payment_method: "UPI_INTENT",
       callback_url: callbackUrl || "https://rapidotp.com/api/payment/omnipay/callback",

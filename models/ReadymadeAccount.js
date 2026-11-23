@@ -1,3 +1,4 @@
+const { decimalField } = require("../utils/money");
 const mongoose = require("mongoose");
 const { DataTypes } = require("sequelize");
 const { sequelize, DB_TYPE, applyMongooseShims } = require("../utils/db");
@@ -15,7 +16,7 @@ if (DB_TYPE === "mysql") {
     },
     sold_to: { type: DataTypes.STRING, defaultValue: null },
     sold_at: { type: DataTypes.DATE, defaultValue: null },
-    price_at_sale: { type: DataTypes.FLOAT, defaultValue: null },
+    price_at_sale: decimalField(DataTypes, "price_at_sale", { defaultValue: null }),
     _id: {
       type: DataTypes.VIRTUAL,
       get() { return String(this.id); }

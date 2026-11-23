@@ -24,7 +24,7 @@ function getPaymentConfig() {
  * @returns {{ bonusAmount: number, totalCredit: number, bonusDesc: string, bonusEnabled: boolean, bonusType: string, bonusValue: number }}
  */
 function calculateDepositBonus(creditAmount, gatewayOrConfig) {
-  const base = parseFloat(creditAmount) || 0;
+  const base = require("./money").money(creditAmount);
   if (base <= 0) {
     return { bonusAmount: 0, totalCredit: 0, bonusDesc: "", bonusEnabled: false, bonusType: "percent", bonusValue: 0 };
   }
@@ -37,9 +37,10 @@ function calculateDepositBonus(creditAmount, gatewayOrConfig) {
     gwConfig = {};
   }
 
-  const bonusEnabled = !!gwConfig.bonus_enabled;
+  const bonusEnabled = gwConfig.bonus_enabled === true || gwConfig.bonus_enabled === "true";
   const bonusType = gwConfig.bonus_type === "flat" ? "flat" : "percent";
   const bonusValue = parseFloat(gwConfig.bonus_value) || 0;
+  if (!Number.isFinite(bonusValue)) throw new Error("INVALID_AMOUNT");
 
   if (!bonusEnabled || bonusValue <= 0) {
     return {

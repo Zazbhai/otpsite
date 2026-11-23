@@ -1,13 +1,14 @@
 const mongoose = require("mongoose");
 const { DataTypes } = require("sequelize");
 const { sequelize, DB_TYPE, applyMongooseShims } = require("../utils/db");
+const { decimalField } = require("../utils/money");
 
 let PromoCode;
 
 if (DB_TYPE === "mysql") {
   PromoCode = sequelize.define("PromoCode", {
     code: { type: DataTypes.STRING, allowNull: false, unique: true },
-    amount: { type: DataTypes.FLOAT, allowNull: false },
+    amount: decimalField(DataTypes, "amount", { allowNull: false }),
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     usage_limit: { type: DataTypes.INTEGER, defaultValue: 1 },
     used_count: { type: DataTypes.INTEGER, defaultValue: 0 },

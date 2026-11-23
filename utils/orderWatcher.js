@@ -16,6 +16,7 @@ function startWatcher() {
     isRunning = true;
 
     try {
+      await require("./wallet").recoverPendingPurchases();
       const now = new Date();
       const { Op } = require("sequelize");
       const { DB_TYPE } = require("./db");
@@ -34,7 +35,7 @@ function startWatcher() {
                   ]
               },
               // Project only fields needed for syncOrder to save memory
-              attributes: ['id', 'order_id', 'user_id', 'status', 'external_order_id', 'server_name', 'check_interval', 'last_check_at', 'expires_at', 'min_cancel_at', 'cost', 'multi_otp_enabled', 'otp', 'all_otps']
+              attributes: ['id', 'order_id', 'user_id', 'status', 'external_order_id', 'server_name', 'check_interval', 'last_check_at', 'expires_at', 'min_cancel_at', 'cost', 'multi_otp_enabled', 'otp', 'all_otps', 'verification_count', 'refund_issued']
           });
       } else {
           // MongoDB logic

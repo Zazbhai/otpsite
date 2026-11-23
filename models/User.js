@@ -1,3 +1,4 @@
+const { decimalField } = require("../utils/money");
 const mongoose = require("mongoose");
 const { DataTypes } = require("sequelize");
 const { sequelize, DB_TYPE, applyMongooseShims } = require("../utils/db");
@@ -14,10 +15,10 @@ if (DB_TYPE === "mysql") {
     telegram_chat_id: { type: DataTypes.STRING, defaultValue: "" },
     avatar_color: { type: DataTypes.STRING, defaultValue: "#3b82f6" },
     avatar_url: { type: DataTypes.STRING, defaultValue: "" },
-    balance: { type: DataTypes.FLOAT, defaultValue: 0 },
+    balance: decimalField(DataTypes, "balance", { defaultValue: 0 }),
     is_banned: { type: DataTypes.BOOLEAN, defaultValue: false },
     is_admin: { type: DataTypes.BOOLEAN, defaultValue: false },
-    total_spent: { type: DataTypes.FLOAT, defaultValue: 0 },
+    total_spent: decimalField(DataTypes, "total_spent", { defaultValue: 0 }),
     total_orders: { type: DataTypes.INTEGER, defaultValue: 0 },
     notes: { type: DataTypes.TEXT, defaultValue: "" },
     api_key: { type: DataTypes.STRING, defaultValue: "" },
@@ -25,7 +26,7 @@ if (DB_TYPE === "mysql") {
     referral_code: { type: DataTypes.STRING, unique: true },
     referred_by: { type: DataTypes.STRING, defaultValue: null },
     referral_count: { type: DataTypes.INTEGER, defaultValue: 0 },
-    referral_earnings: { type: DataTypes.FLOAT, defaultValue: 0 },
+    referral_earnings: decimalField(DataTypes, "referral_earnings", { defaultValue: 0 }),
     has_deposited: { type: DataTypes.BOOLEAN, defaultValue: false },
     discounts: { type: DataTypes.TEXT, defaultValue: "[]" }, // JSON string of [{service_name, percentage}]
     _id: {
@@ -108,6 +109,7 @@ if (DB_TYPE === "mysql") {
     next();
   });
 
+  userSchema.pre("findOneAndUpdate", require("../utils/money").roundMongoWalletIncrement);
   User = mongoose.model("User", userSchema);
 }
 

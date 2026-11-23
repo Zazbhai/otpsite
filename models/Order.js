@@ -1,3 +1,4 @@
+const { decimalField } = require("../utils/money");
 const mongoose = require("mongoose");
 const { DataTypes } = require("sequelize");
 const { sequelize, DB_TYPE, applyMongooseShims } = require("../utils/db");
@@ -29,7 +30,7 @@ if (DB_TYPE === "mysql") {
       type: DataTypes.ENUM("active", "completed", "refunded", "expired", "cancelled"),
       defaultValue: "active",
     },
-    cost: { type: DataTypes.FLOAT, allowNull: false },
+    cost: decimalField(DataTypes, "cost", { allowNull: false }),
     expires_at: { type: DataTypes.DATE },
     min_cancel_at: { type: DataTypes.DATE },
     external_order_id: { type: DataTypes.STRING, defaultValue: "" },
@@ -50,7 +51,8 @@ if (DB_TYPE === "mysql") {
       { fields: ['user_id'] },
       { fields: ['last_check_at'] },
       { fields: ['createdAt'] },
-      { fields: ['order_id'], unique: true }
+      { fields: ['order_id'], unique: true },
+      { fields: ['server_name', 'external_order_id'] }
     ]
   });
 
@@ -86,6 +88,7 @@ if (DB_TYPE === "mysql") {
     },
     { timestamps: true }
   );
+  orderSchema.index({ server_name: 1, external_order_id: 1 });
   Order = mongoose.model("Order", orderSchema);
 }
 

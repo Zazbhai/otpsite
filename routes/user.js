@@ -1,3 +1,4 @@
+const wallet = require("../utils/wallet");
 const express = require("express");
 const router  = express.Router();
 const mongoose = require("mongoose");
@@ -476,6 +477,7 @@ router.post("/orders", async (req, res) => {
   const { withTransaction } = require("../utils/db");
   
   let balanceDeducted = false;
+  const reservedOrderId = "ORD-" + nanoid(16).toUpperCase();
   let finalPrice = 0;
   let orderSaved = false;
   let localServerConf = null;
@@ -485,7 +487,7 @@ router.post("/orders", async (req, res) => {
     const { service_id } = req.body;
     if (!service_id) return res.status(400).json({ error: "service_id is required" });
 
-    // 1. Pre-check and deduct balance
+    // Prepare trusted service/provider configuration before reserving funds
     const orderResult = await withTransaction(async (session) => {
       const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
       
@@ -499,6 +501,7 @@ router.post("/orders", async (req, res) => {
       const userDoc = await User.findById(req.userId).select("discounts");
       const d = parseDiscounts(userDoc?.discounts);
       const calculatedPrice = calculateUserPrice(service.price, service.name, d, String(service.server_id?._id || service.server_id || ''));
+      if (!Number.isFinite(calculatedPrice) || calculatedPrice <= 0) throw new Error("INVALID_SERVICE_PRICE");
 
       if (calculatedPrice !== service.price) {
         console.log(`[Order] Discount applied for user ${req.userId}: ${service.name} (${service.price} -> ${calculatedPrice})`);
@@ -510,22 +513,19 @@ router.post("/orders", async (req, res) => {
 
       if (!serverConf) throw new Error("Server not configured");
 
-      // Deduct balance ATOMICALLY
-      const user = await User.findOneAndUpdate(
-        { _id: req.userId, balance: { $gte: calculatedPrice } },
-        { $inc: { balance: -calculatedPrice, total_spent: calculatedPrice, total_orders: 1 } },
-        { ...queryOptions, new: true }
-      );
-
-      if (!user) throw new Error("INSUFFICIENT_BALANCE");
-
+      if (!serverConf.is_active) throw new Error("Server not configured");
       // Return configuration needed for API call
-      return { service, serverConf, userBalance: user.balance, finalPrice: calculatedPrice };
+      return { service, serverConf, finalPrice: calculatedPrice };
     });
 
     const { service, serverConf } = orderResult;
     localServerConf = serverConf;
     finalPrice = orderResult.finalPrice;
+    const reservedUser = await wallet.reservePurchase({
+      userId: req.userId, orderId: reservedOrderId, amount: finalPrice,
+      description: `Purchased ${service.name} (${service.country_code})`,
+    });
+    orderResult.userBalance = reservedUser.balance;
     balanceDeducted = true;
 
     // 2. Provider API call (OUTSIDE database transaction)
@@ -537,95 +537,58 @@ router.post("/orders", async (req, res) => {
     }
     localProviderRes = providerRes;
 
-    if (providerRes.error) {
-      console.error("❌ PROVIDER API REJECTION ❌", providerRes.originalError || providerRes.error);
-      if (providerRes.error === "Provider request timed out") throw new Error("PROVIDER_TIMEOUT");
+    if (!providerRes || providerRes.error || !providerRes.api_order_id || !providerRes.phone) {
+      console.error("❌ PROVIDER API REJECTION ❌", providerRes?.originalError || providerRes?.error);
+      if (providerRes?.error === "Provider request timed out") throw new Error("PROVIDER_TIMEOUT");
       throw new Error("PROVIDER_REJECTION");
     }
 
     // 4. Success: Create order in final transaction
-    const finalResult = await withTransaction(async (session) => {
-      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
+    const orderId = reservedOrderId;
+    const cancelMinutes = serverConf.auto_cancel_minutes || 20;
+    const expiresAt = new Date(Date.now() + cancelMinutes * 60 * 1000);
+    const minCancelMinutes = serverConf.min_cancel_minutes || 0;
+    const minCancelAt = new Date(Date.now() + minCancelMinutes * 60 * 1000);
 
-      // Double Check: Ensure this external order ID hasn't been used yet
-      if (providerRes.api_order_id) {
-        const existing = await Order.findOne({ external_order_id: providerRes.api_order_id }, null, queryOptions);
-        if (existing) throw new Error("DUPLICATE_EXTERNAL_ORDER");
-      }
-      
-      const orderId = "ORD-" + nanoid(10).toUpperCase();
-      const cancelMinutes = serverConf.auto_cancel_minutes || 20;
-      const expiresAt = new Date(Date.now() + cancelMinutes * 60 * 1000);
-      const minCancelMinutes = serverConf.min_cancel_minutes || 0;
-      const minCancelAt = new Date(Date.now() + minCancelMinutes * 60 * 1000);
+    const orderData = {
+      order_id: orderId,
+      user_id: req.userId,
+      service_id: service._id || service.id,
+      service_name: service.name,
+      server_name: serverConf.name,
+      country: service.country_code,
+      phone: providerRes.phone,
+      external_order_id: providerRes.api_order_id,
+      cost: finalPrice,
+      status: "active",
+      expires_at: expiresAt,
+      min_cancel_at: minCancelAt,
+      service_image: service.image_url || "",
+      service_color: service.icon_color || "",
+      check_interval: serverConf.check_interval || 3,
+      multi_otp_enabled: serverConf.multi_otp_supported || false
+    };
 
-      const orderData = {
-        order_id: orderId,
-        user_id: req.userId,
-        service_id: service._id || service.id,
-        service_name: service.name,
-        server_name: serverConf.name,
-        country: service.country_code,
-        phone: providerRes.phone,
-        external_order_id: providerRes.api_order_id,
-        cost: finalPrice,
-        status: "active",
-        expires_at: expiresAt,
-        min_cancel_at: minCancelAt,
-        service_image: service.image_url || "",
-        service_color: service.icon_color || "",
-        check_interval: serverConf.check_interval || 3,
-        multi_otp_enabled: serverConf.multi_otp_supported || false
-      };
-
-      let order;
-      if (process.env.DB_TYPE === "mysql") {
-        order = await Order.create(orderData, queryOptions);
-      } else {
-        const createdOrders = await Order.create([orderData], queryOptions);
-        order = createdOrders[0];
-      }
-
-      const transactionData = {
-        user_id: req.userId,
-        type: "purchase",
-        amount: -finalPrice,
-        balance_after: orderResult.userBalance, // We know this from first step
-        description: `Purchased ${service.name} (${service.country_code})`,
-        order_id: orderId,
-      };
-
-      if (process.env.DB_TYPE === "mysql") {
-        await Transaction.create(transactionData, queryOptions);
-      } else {
-        await Transaction.create([transactionData], queryOptions);
-      }
-
-      orderSaved = true;
-      return order;
-    });
+    const finalResult = await wallet.finalizePurchase(orderData);
+    orderSaved = true;
+    emitToUser(String(req.userId), "balance", { balance: orderResult.userBalance });
 
     res.json({ order: finalResult });
   } catch (err) {
     if (balanceDeducted && !orderSaved) {
       console.log(`[Order/Rollback] Rollback refunding user ${req.userId} amount ${finalPrice}`);
-      await withTransaction(async (session) => {
-        const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-        await User.updateOne(
-          { _id: req.userId },
-          { $inc: { balance: finalPrice, total_spent: -finalPrice, total_orders: -1 } },
-          queryOptions
-        );
-      }).catch(refundErr => {
-        console.error("[Order/Rollback] Critical Error: Rollback refund failed!", refundErr.message);
+      const reversed = await wallet.reversePurchase(reservedOrderId).catch(refundErr => {
+        console.error("[Order/Rollback]", reservedOrderId, refundErr.message);
+        return false; // durable pending reservation is retried by recovery
       });
 
-      if (localProviderRes && localProviderRes.api_order_id && localServerConf) {
+      if (reversed && err.message !== "DUPLICATE_EXTERNAL_ORDER" && localProviderRes?.api_order_id && localServerConf) {
         providerApi.cancelOrder(localServerConf, localProviderRes.api_order_id).catch(() => {});
       }
     }
 
     if (err.message === "INSUFFICIENT_BALANCE") return res.status(402).json({ error: "Insufficient balance" });
+    if (err.message === "INVALID_SERVICE_PRICE") return res.status(409).json({ error: "Service price is invalid" });
     if (err.message === "PROVIDER_REJECTION") return res.status(400).json({ error: "Number Not Available" });
     if (err.message === "PROVIDER_TIMEOUT") return res.status(400).json({ error: "Provider timed out. Please try again." });
     if (err.message === "Service not found or inactive") return res.status(404).json({ error: err.message });
@@ -750,11 +713,10 @@ router.post("/checker/check", async (req, res) => {
 
 // ── POST /api/user/orders/:id/cancel ─────────────────────────────
 router.post("/orders/:id/cancel", async (req, res) => {
-  const { withTransaction } = require("../utils/db");
   
   try {
     // ── Step 1: Validate the order (no session needed) ────────────
-    const order = await Order.findOne({ order_id: req.params.id, user_id: req.userId });
+    let order = await Order.findOne({ order_id: req.params.id, user_id: req.userId });
     if (!order) return res.status(404).json({ error: "Order not found" });
     if (order.status !== "active") return res.status(400).json({ error: "Order cannot be cancelled" });
 
@@ -766,6 +728,8 @@ router.post("/orders/:id/cancel", async (req, res) => {
     }
 
     try {
+      order = await Order.findById(order._id);
+      if (!order || order.status !== "active") return res.json({ success: true, order, refunded: false });
       const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
 
       // Cooldown check (only when no OTP received yet)
@@ -777,80 +741,20 @@ router.post("/orders/:id/cancel", async (req, res) => {
       // Do NOT change order status. The number may still be waiting for more OTPs.
       // Just ensure refund_issued=true so no refund can ever be issued for this order.
       if (hasOtp) {
-        await Order.findOneAndUpdate(
-          { _id: order._id },
-          { $set: { refund_issued: true, status: "completed" } }
+        const completed = await Order.findOneAndUpdate(
+          { _id: order._id, status: "active" },
+          { $set: { refund_issued: true, status: "completed" } },
+          { new: true }
         );
         // Order moves to completed — removed from active list
         emitToUser(String(req.userId), "order", { orderId: order.order_id, status: "completed" });
-        return res.json({ success: true, order, refunded: false });
+        return res.json({ success: true, order: completed || await Order.findById(order._id), refunded: false });
       }
 
       // ── Step 3: Atomically claim the refund slot ──────────────────
-      const result = await withTransaction(async (session) => {
-        const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
+      const result = await wallet.refundOrder(order._id, "cancelled", `User cancelled order ${order.order_id} (no OTP)`);
+      if (!result.refunded) return res.json({ success: true, ...result });
 
-        // Double Check Layer 1: Verify no refund transaction exists yet
-        const existingTx = await Transaction.findOne({ order_id: order.order_id, type: "refund" }, null, queryOptions);
-        if (existingTx) throw new Error("ALREADY_REFUNDED_TX");
-
-        // Double Check Layer 2: Verify fresh order state in DB
-        const freshOrder = process.env.DB_TYPE === "mysql"
-          ? await Order.findById(order._id, queryOptions)
-          : await Order.findById(order._id, null, queryOptions);
-        
-        if (!freshOrder || freshOrder.refund_issued || ["cancelled", "expired", "refunded"].includes(freshOrder.status)) {
-          throw new Error("ALREADY_REFUNDED_FLAG");
-        }
-
-        // Double Check Layer 3: Atomic Lock & Mark Cancelled
-        const refundable = await Order.findOneAndUpdate(
-          { _id: order._id, refund_issued: { $ne: true }, status: { $nin: ["cancelled", "expired", "refunded"] } },
-          { $set: { refund_issued: true, status: "cancelled" } },
-          { ...queryOptions, new: true }
-        );
-
-        if (!refundable) {
-          throw new Error("ALREADY_REFUNDED_FLAG");
-        }
-
-        // Step 5: Atomic refund update
-        const updatedUser = await User.findOneAndUpdate(
-          { _id: req.userId },
-          { $inc: { balance: order.cost } },
-          { ...queryOptions, new: true }
-        );
-
-        if (!updatedUser) throw new Error("USER_NOT_FOUND");
-
-        const refundTxData = {
-          user_id: updatedUser._id || updatedUser.id, 
-          type: "refund", 
-          amount: order.cost,
-          balance_after: updatedUser.balance, 
-          description: `User cancelled order ${order.order_id} (no OTP)`, 
-          order_id: order.order_id
-        };
-
-        if (process.env.DB_TYPE === "mysql") {
-          await Transaction.create(refundTxData, queryOptions);
-        } else {
-          await Transaction.create([refundTxData], queryOptions);
-        }
-
-        return { success: true, order, refunded: true, newBalance: updatedUser.balance };
-      }).catch(err => {
-        if (err.message === "ALREADY_REFUNDED_TX" || err.message === "ALREADY_REFUNDED_FLAG") {
-          return { already: true };
-        }
-        throw err;
-      });
-
-      if (result.already) {
-        return res.json({ success: true, order, refunded: false });
-      }
-
-      // ── Step 4: Provider Cancel (OUTSIDE transaction to prevent database block locks) ──
       const serverConf = await Server.findOne({ name: order.server_name });
       if (serverConf && serverConf.api_cancel_url && order.external_order_id) {
          providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
@@ -859,12 +763,13 @@ router.post("/orders/:id/cancel", async (req, res) => {
       emitToUser(String(req.userId), "balance", { balance: result.newBalance });
       emitToUser(String(req.userId), "order", { orderId: order.order_id, status: "cancelled" });
 
-      res.json(result);
+      res.json({ success: true, ...result });
     } finally {
       releaseLock(orderIdStr);
     }
   } catch (err) {
     if (err.message === "USER_NOT_FOUND") return res.status(500).json({ error: "User not found" });
+    if (["PURCHASE_DEBIT_UNVERIFIED", "PURCHASE_LEDGER_MISSING", "ORDER_COST_MISMATCH"].includes(err.message)) return res.status(409).json({ error: "The original charge needs review before this order can be refunded. Please contact support." });
     console.error("Cancel error:", err);
     res.status(500).json({ error: "Server error" });
   }
@@ -873,10 +778,10 @@ router.post("/orders/:id/cancel", async (req, res) => {
 // ── POST /api/user/orders/:id/retry ──────────────────────────────
 router.post("/orders/:id/retry", async (req, res) => {
   try {
-    const order = await Order.findOne({ order_id: req.params.id, user_id: req.userId });
+    let order = await Order.findOne({ order_id: req.params.id, user_id: req.userId });
     if (!order) return res.status(404).json({ error: "Order not found" });
     const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
-    if (order.status !== "completed" && !(order.status === "active" && hasOtp)) {
+    if (!hasOtp || !["completed", "active"].includes(order.status)) {
         return res.status(400).json({ error: "Can only request next SMS for completed orders or active orders with at least one OTP" });
     }
 
@@ -901,7 +806,10 @@ router.post("/orders/:id/retry", async (req, res) => {
       }
     }
     order.expires_at = new Date(Date.now() + addMinutes * 60 * 1000);
-    await order.save();
+    order = await Order.findOneAndUpdate({ _id: order._id, status: { $in: ["active", "completed"] }, refund_issued: true }, {
+      $set: { status: "active", otp: "", refund_issued: true, expires_at: order.expires_at },
+    }, { new: true });
+    if (!order) return res.status(409).json({ error: "Order state changed" });
 
     res.json({ success: true, order });
   } catch (err) { 
@@ -955,12 +863,12 @@ router.get("/wallet", async (req, res) => {
       const [depositedRes, spentRes, refundedRes] = await Promise.all([
         Transaction.findAll({
           attributes: [[fn('SUM', col('amount')), 'total']],
-          where: { user_id: userId, type: { [Op.in]: ['deposit', 'bonus'] } },
+          where: { user_id: userId, status: 'completed', type: { [Op.in]: ['deposit', 'bonus'] } },
           raw: true
         }),
         Transaction.findAll({
           attributes: [[fn('SUM', col('amount')), 'total']],
-          where: { user_id: userId, type: 'purchase' },
+          where: { user_id: userId, type: { [Op.in]: ['purchase', 'deduction'] } },
           raw: true
         }),
         Transaction.findAll({
@@ -981,8 +889,8 @@ router.get("/wallet", async (req, res) => {
         { $match: { user_id: req.userId.toString() } },
         { $group: {
             _id: null,
-            total_deposited: { $sum: { $cond: [{ $in: ["$type", ["deposit", "bonus"]] }, "$amount", 0] } },
-            total_spent: { $sum: { $cond: [{ $eq: ["$type", "purchase"] }, { $abs: "$amount" }, 0] } },
+            total_deposited: { $sum: { $cond: [{ $and: [{ $eq: ["$status", "completed"] }, { $in: ["$type", ["deposit", "bonus"]] }] }, "$amount", 0] } },
+            total_spent: { $sum: { $cond: [{ $in: ["$type", ["purchase", "deduction"]] }, { $abs: "$amount" }, 0] } },
             total_refunded: { $sum: { $cond: [{ $eq: ["$type", "refund"] }, "$amount", 0] } }
         }}
       ]);
@@ -1029,10 +937,11 @@ router.post("/wallet/redeem-promo", async (req, res) => {
       }
 
       if (!promo) throw new Error("INVALID_PROMO");
+      require("../utils/money").positiveMoney(promo.amount);
 
       const usedBy = Array.isArray(promo.used_by) ? promo.used_by : JSON.parse(promo.used_by || "[]");
       if (promo.used_count >= promo.usage_limit) throw new Error("LIMIT_REACHED");
-      if (usedBy.includes(req.userId)) throw new Error("ALREADY_REDEEMED");
+      if (usedBy.map(String).includes(String(req.userId))) throw new Error("ALREADY_REDEEMED");
 
       // Update user balance atomically
       const updatedUser = await User.findOneAndUpdate(
@@ -1238,10 +1147,10 @@ router.post("/wallet/eaglepay-payin", loginRequired, async (req, res) => {
     }
 
     const { amount } = req.body;
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
       return res.status(400).json({ error: "Invalid amount" });
     }
-    const depositAmount = parseFloat(amount);
+    const depositAmount = require("../utils/money").positiveMoney(amount);
     const minDeposit = epCfg.min_deposit || 100;
     if (depositAmount < minDeposit) {
       return res.status(400).json({ error: `Minimum deposit is ₹${minDeposit}` });
@@ -1253,10 +1162,20 @@ router.post("/wallet/eaglepay-payin", loginRequired, async (req, res) => {
       ? parseFloat((depositAmount * (1 + commission / 100)).toFixed(2))
       : depositAmount;
 
-    const orderNo = `EP${Date.now()}${req.userId.toString().slice(-4)}`;
+    const orderNo = `EP-${nanoid(20)}`;
     const siteHost = process.env.SITE_URL || `https://${req.hostname}`;
     const callbackUrl = epCfg.callback_url || `${siteHost}/api/payment/eaglepay/callback`;
     const returnUrl = epCfg.return_url || `${siteHost}/dashboard/wallet`;
+
+    // Store pending transaction
+    await wallet.createTransaction({
+      user_id: req.userId,
+      type: "deposit",
+      amount: depositAmount,
+      status: "pending",
+      reference: orderNo,
+      description: `Eagle Pay Deposit Initiated (Ref: ${orderNo})`
+    });
 
     const result = await eaglepay.createPayin(epCfg, {
       amount: chargeAmount,
@@ -1277,16 +1196,6 @@ router.post("/wallet/eaglepay-payin", loginRequired, async (req, res) => {
       return res.status(502).json({ error: "Gateway did not return a payment URL." });
     }
 
-    // Store pending transaction
-    const tx = new Transaction({
-      user_id: req.userId,
-      type: "deposit",
-      amount: depositAmount,
-      status: "pending",
-      reference: orderNo,
-      description: `Eagle Pay Deposit Initiated (Ref: ${orderNo})`
-    });
-    await tx.save();
 
     res.json({
       success: true,
@@ -1316,7 +1225,7 @@ router.post("/wallet/verify-eaglepay", loginRequired, async (req, res) => {
     if (!epCfg.enabled) return res.status(503).json({ error: "Eagle Pay is not enabled" });
 
     // Look up the pending transaction first
-    const tx = await Transaction.findOne({ reference: order_no, type: "deposit" });
+    const tx = await Transaction.findOne({ reference: order_no, user_id: String(req.userId), type: "deposit" });
     if (!tx) return res.status(404).json({ error: "Order not found. Please retry or contact support." });
 
     if (tx.status === "completed") {
@@ -1337,45 +1246,10 @@ router.post("/wallet/verify-eaglepay", loginRequired, async (req, res) => {
       });
     }
 
-    // Credit the wallet
-    const commission = parseFloat(epCfg.commission_percent) || 0;
-    const paidAmount = parseFloat(queryResult?.data?.amount || 0);
-    const creditAmount = (tx && parseFloat(tx.amount) > 0)
-      ? parseFloat(tx.amount)
-      : (commission > 0 ? parseFloat((paidAmount / (1 + commission / 100)).toFixed(2)) : paidAmount);
-
-    const { calculateDepositBonus } = require("../utils/paymentBonus");
-    const { totalCredit, bonusAmount, bonusDesc } = calculateDepositBonus(creditAmount, epCfg);
-
-    const { withTransaction } = require("../utils/db");
-    let updatedUser;
-    let hadDeposited = false;
-    await withTransaction(async (session) => {
-      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-      const user = process.env.DB_TYPE === "mysql"
-        ? await User.findById(req.userId, queryOptions)
-        : await User.findById(req.userId, null, queryOptions);
-      if (!user) throw new Error("User not found");
-      hadDeposited = user.has_deposited;
-
-      updatedUser = await User.findOneAndUpdate(
-        { _id: req.userId },
-        { $inc: { balance: totalCredit }, $set: { has_deposited: true } },
-        { ...queryOptions, new: true }
-      );
-      if (!updatedUser) throw new Error("User not found");
-
-      tx.status = "completed";
-      tx.amount = totalCredit;
-      tx.balance_after = updatedUser.balance;
-      tx.description = `Eagle Pay Deposit Confirmed (Ref: ${order_no})${bonusDesc}`;
-      await tx.save(queryOptions);
-
-      const { processReferralBonus } = require("../utils/referralBonus");
-      await processReferralBonus(updatedUser, creditAmount, hadDeposited, queryOptions).catch((e) =>
-        console.error("Referral bonus error:", e)
-      );
-    });
+    const credited = await wallet.creditDeposit({ transactionId: tx._id, userId: req.userId,
+      config: epCfg, description: `Eagle Pay Deposit (Ref: ${tx.reference})` });
+    const updatedUser = credited.user;
+    const { totalCredit, bonusAmount, base_amount: creditAmount } = credited;
 
     if (updatedUser) {
       const { emitToUser } = require("../utils/realtimeEmitter");
@@ -1384,6 +1258,7 @@ router.post("/wallet/verify-eaglepay", loginRequired, async (req, res) => {
 
     res.json({ success: true, amount: totalCredit, base_amount: creditAmount, bonus_amount: bonusAmount, message: "Payment confirmed and wallet credited!" });
   } catch (err) {
+    if (err.message === "ALREADY_CREDITED") return res.json({ success: true, message: "Already credited" });
     console.error("[EaglePay Verify Error]:", err);
     res.status(500).json({ error: "Failed to verify Eagle Pay payment" });
   }
@@ -1393,8 +1268,8 @@ router.post("/wallet/verify-eaglepay", loginRequired, async (req, res) => {
 router.post("/wallet/upi-initiate", loginRequired, async (req, res) => {
   try {
     const { method, amount } = req.body;
-    const parsedAmt = parseFloat(amount);
-    if (isNaN(parsedAmt) || parsedAmt < 1) {
+    const parsedAmt = Number(amount);
+    if (!Number.isFinite(parsedAmt) || parsedAmt < 1) {
       return res.status(400).json({ error: "Invalid deposit amount." });
     }
 
@@ -1408,7 +1283,7 @@ router.post("/wallet/upi-initiate", loginRequired, async (req, res) => {
     const gatewayName = gConfig.display_name || (gatewayKey === "paytm" ? "Paytm Business" : "BharatPe");
 
     const prefix = gatewayKey === "paytm" ? "PTM" : "BP";
-    const orderNo = `${prefix}-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderNo = `${prefix}-${nanoid(20)}`;
 
     const txData = {
       user_id: req.userId,
@@ -1487,75 +1362,16 @@ router.post("/wallet/verify-bharatpe", async (req, res) => {
       }
     } catch (_) {}
 
-    const { calculateDepositBonus } = require("../utils/paymentBonus");
-    const { totalCredit, bonusAmount, bonusDesc } = calculateDepositBonus(creditAmount, bpCfg);
-
-    const { withTransaction } = require("../utils/db");
-
-    let updatedUser;
-    let hadDeposited = false;
-
-    await withTransaction(async (session) => {
-      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-
-      // Check 2: Double-check existence inside transaction
-      const doubleCheck = await Transaction.findOne({ reference: cleanUtr, type: "deposit", status: "completed" }, null, queryOptions);
-      if (doubleCheck) throw new Error("ALREADY_REDEEMED");
-
-      const user = process.env.DB_TYPE === "mysql" 
-        ? await User.findById(req.userId, queryOptions)
-        : await User.findById(req.userId, null, queryOptions);
-
-      if (!user) throw new Error("USER_NOT_FOUND");
-      hadDeposited = user.has_deposited;
-
-      updatedUser = await User.findOneAndUpdate(
-        { _id: req.userId },
-        { $inc: { balance: totalCredit }, $set: { has_deposited: true } },
-        { ...queryOptions, new: true }
-      );
-      if (!updatedUser) throw new Error("USER_NOT_FOUND");
-
-      // Check if we have an existing pending transaction for this order_no or utr
-      let existingPending = null;
-      if (order_no) {
-        existingPending = await Transaction.findOne({ reference: order_no, user_id: req.userId, type: "deposit", status: "pending" }, null, queryOptions);
-      }
-      if (!existingPending) {
-        existingPending = await Transaction.findOne({ reference: cleanUtr, user_id: req.userId, type: "deposit", status: "pending" }, null, queryOptions);
-      }
-
-      if (existingPending) {
-        existingPending.amount = totalCredit;
-        existingPending.balance_after = updatedUser.balance;
-        existingPending.description = `UPI Deposit (UTR: ${cleanUtr})${bonusDesc}`;
-        existingPending.reference = cleanUtr;
-        existingPending.status = "completed";
-        await existingPending.save(queryOptions);
-      } else {
-        const txData = {
-          user_id: updatedUser._id || updatedUser.id,
-          type: "deposit",
-          amount: totalCredit,
-          balance_after: updatedUser.balance,
-          description: `UPI Deposit (UTR: ${cleanUtr})${bonusDesc}`,
-          reference: cleanUtr,
-          status: "completed"
-        };
-        if (process.env.DB_TYPE === "mysql") {
-          await Transaction.create(txData, queryOptions);
-        } else {
-          await Transaction.create([txData], queryOptions);
-        }
-      }
-
-      // --- Referral Bonus Logic (Using Utility) ---
-      const { processReferralBonus } = require("../utils/referralBonus");
-      await processReferralBonus(updatedUser, creditAmount, hadDeposited, queryOptions);
+    const credited = await wallet.creditReceipt({
+      reference: cleanUtr, userId: req.userId, amount: creditAmount,
+      config: bpCfg, description: `UPI Deposit (UTR: ${cleanUtr})`, orderNo: order_no,
     });
+    const { totalCredit, bonusAmount } = credited;
 
     res.json({ success: true, amount: totalCredit, base_amount: creditAmount, bonus_amount: bonusAmount });
   } catch (err) {
+    if (err.message === "PAYMENT_ORDER_NOT_FOUND") return res.status(404).json({ error: "Payment order not found" });
+    if (err.message === "ALREADY_CREDITED") return res.json({ success: true, message: "Already credited" });
     if (err.message === "ALREADY_REDEEMED" || err.name === "SequelizeUniqueConstraintError" || err.code === 11000) {
       return res.status(400).json({ error: "This UTR has already been redeemed." });
     }
@@ -1585,7 +1401,7 @@ router.post("/wallet/verify-paytm", async (req, res) => {
       // If unconfirmed, update existing pending transaction with submitted UTR if found
       if (order_no) {
         try {
-          const pendingTx = await Transaction.findOne({ reference: order_no });
+          const pendingTx = await Transaction.findOne({ reference: order_no, user_id: String(req.userId), type: "deposit", status: "pending" });
           if (pendingTx && pendingTx.status === "pending") {
             pendingTx.description = `Pending Paytm Deposit (Submitted UTR: ${cleanUtr})`;
             await pendingTx.save();
@@ -1611,75 +1427,16 @@ router.post("/wallet/verify-paytm", async (req, res) => {
       }
     } catch (_) {}
 
-    const { calculateDepositBonus } = require("../utils/paymentBonus");
-    const { totalCredit, bonusAmount, bonusDesc } = calculateDepositBonus(creditAmount, ptCfg);
-
-    const { withTransaction } = require("../utils/db");
-
-    let updatedUser;
-    let hadDeposited = false;
-
-    await withTransaction(async (session) => {
-      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-
-      // Check 2: Double-check existence inside transaction
-      const doubleCheck = await Transaction.findOne({ reference: cleanUtr, type: "deposit", status: "completed" }, null, queryOptions);
-      if (doubleCheck) throw new Error("ALREADY_REDEEMED");
-
-      const user = process.env.DB_TYPE === "mysql" 
-        ? await User.findById(req.userId, queryOptions)
-        : await User.findById(req.userId, null, queryOptions);
-
-      if (!user) throw new Error("USER_NOT_FOUND");
-      hadDeposited = user.has_deposited;
-
-      updatedUser = await User.findOneAndUpdate(
-        { _id: req.userId },
-        { $inc: { balance: totalCredit }, $set: { has_deposited: true } },
-        { ...queryOptions, new: true }
-      );
-      if (!updatedUser) throw new Error("USER_NOT_FOUND");
-
-      // Check if we have an existing pending transaction for this order_no or utr
-      let existingPending = null;
-      if (order_no) {
-        existingPending = await Transaction.findOne({ reference: order_no }, null, queryOptions);
-      }
-      if (!existingPending) {
-        existingPending = await Transaction.findOne({ reference: cleanUtr, status: "pending" }, null, queryOptions);
-      }
-
-      if (existingPending) {
-        existingPending.amount = totalCredit;
-        existingPending.balance_after = updatedUser.balance;
-        existingPending.description = `Paytm Deposit (UTR: ${cleanUtr})${bonusDesc}`;
-        existingPending.reference = cleanUtr;
-        existingPending.status = "completed";
-        await existingPending.save(queryOptions);
-      } else {
-        const txData = {
-          user_id: updatedUser._id || updatedUser.id,
-          type: "deposit",
-          amount: totalCredit,
-          balance_after: updatedUser.balance,
-          description: `Paytm Deposit (UTR: ${cleanUtr})${bonusDesc}`,
-          reference: cleanUtr,
-          status: "completed"
-        };
-        if (process.env.DB_TYPE === "mysql") {
-          await Transaction.create(txData, queryOptions);
-        } else {
-          await Transaction.create([txData], queryOptions);
-        }
-      }
-
-      // --- Referral Bonus Logic (Using Utility) ---
-      const { processReferralBonus } = require("../utils/referralBonus");
-      await processReferralBonus(updatedUser, creditAmount, hadDeposited, queryOptions).catch(e => console.error("Referral bonus error:", e));
+    const credited = await wallet.creditReceipt({
+      reference: cleanUtr, userId: req.userId, amount: creditAmount,
+      config: ptCfg, description: `Paytm Deposit (UTR: ${cleanUtr})`, orderNo: order_no,
     });
+    const { totalCredit, bonusAmount } = credited;
 
     res.json({ success: true, amount: totalCredit, base_amount: creditAmount, bonus_amount: bonusAmount });
   } catch (err) {
+    if (err.message === "PAYMENT_ORDER_NOT_FOUND") return res.status(404).json({ error: "Payment order not found" });
+    if (err.message === "ALREADY_CREDITED") return res.json({ success: true, message: "Already credited" });
     if (err.message === "ALREADY_REDEEMED" || err.name === "SequelizeUniqueConstraintError" || err.code === 11000) {
       return res.status(400).json({ error: "This UTR has already been redeemed." });
     }
@@ -1692,7 +1449,7 @@ router.post("/wallet/verify-paytm", async (req, res) => {
 router.post("/wallet/omnipay-create", async (req, res) => {
   try {
     const { amount } = req.body;
-    if (!amount || isNaN(amount) || amount < 1) {
+    if (!Number.isFinite(Number(amount)) || Number(amount) < 1) {
       return res.status(400).json({ error: "Invalid deposit amount." });
     }
 
@@ -1706,7 +1463,7 @@ router.post("/wallet/omnipay-create", async (req, res) => {
       return res.status(400).json({ error: `Minimum deposit for OmniPay is ₹${o.min_deposit || 10}` });
     }
 
-    const orderNo = `OMNI-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderNo = `OMNI-${nanoid(20)}`;
     const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
     const host = req.headers.host || "localhost:5007";
     let callbackUrl = o.callback_url || `${protocol}://${host}/api/payment/omnipay/callback`;
@@ -1722,10 +1479,25 @@ router.post("/wallet/omnipay-create", async (req, res) => {
 
     // Calculate pay amount: original credit amount + gateway commission surcharge
     const commission = parseFloat(o.commission_percent) || 0;
-    const creditAmount = parseFloat(amount);
+    const creditAmount = require("../utils/money").positiveMoney(amount);
     const payAmount = commission > 0
       ? parseFloat((creditAmount * (1 + commission / 100)).toFixed(2))
       : creditAmount;
+
+    const txData = {
+      user_id: req.userId,
+      type: "deposit",
+      amount: creditAmount,
+      balance_after: 0,
+      description: `Pending OmniPay Deposit (Ref: ${orderNo})`,
+      reference: orderNo,
+      status: "pending"
+    };
+    if (process.env.DB_TYPE === "mysql") {
+      await Transaction.create(txData);
+    } else {
+      await Transaction.create([txData]);
+    }
 
     const result = await omnipay.createOrder(omniConfig, {
       amount: payAmount,
@@ -1736,24 +1508,6 @@ router.post("/wallet/omnipay-create", async (req, res) => {
     });
 
     if (result && (result.code === 200 || result.success)) {
-      // Record pending transaction for the CREDIT amount (not the pay amount)
-      try {
-        const txData = {
-          user_id: req.userId,
-          type: "deposit",
-          amount: creditAmount,
-          balance_after: 0,
-          description: `Pending OmniPay Deposit (Ref: ${orderNo})`,
-          reference: orderNo,
-          status: "pending"
-        };
-        if (process.env.DB_TYPE === "mysql") {
-          await Transaction.create(txData);
-        } else {
-          await Transaction.create([txData]);
-        }
-      } catch (txErr) { console.error("Could not save pending tx:", txErr); }
-
       const details = result.data?.details || {};
       const paymentUrl = details.redirect_url || details.redirect_uri || result.data?.payment_url || result.data?.pay_url || result.data?.intent_url || result.data?.qr_code || result.payment_url || null;
       const upiUri = details.redirect_uri || details.qr_code || (typeof result.data?.qr_code === 'string' && result.data.qr_code.startsWith('upi://') ? result.data.qr_code : null);
@@ -1787,7 +1541,8 @@ router.post("/wallet/verify-omnipay", async (req, res) => {
     if (!lookupKey) return res.status(400).json({ error: "Order number or UTR required." });
 
     // Check if already redeemed or completed
-    const exists = await Transaction.findOne({ reference: lookupKey });
+    const exists = await Transaction.findOne({ reference: lookupKey, user_id: String(req.userId), type: "deposit" });
+    if (!exists) return res.status(404).json({ error: "Payment order not found" });
     if (exists && exists.status === "completed") {
       return res.status(400).json({ error: "This transaction has already been redeemed." });
     }
@@ -1809,83 +1564,20 @@ router.post("/wallet/verify-omnipay", async (req, res) => {
     }
 
     const statusStr = String(data.status || "").toUpperCase();
-    const isSuccess = statusStr === "SUCCEEDED" || statusStr === "SUCCESS" || statusStr === "PAID" || statusStr === "COMPLETED" || statusStr === "1" || data.status === 1 || statusStr === "2" || data.status === 2 || statusStr.includes("SUCC") || statusStr.includes("PAID");
+    const isSuccess = statusStr === "SUCCEEDED" || statusStr === "SUCCESS" || statusStr === "PAID" || statusStr === "COMPLETED" || statusStr === "1" || data.status === 1 || statusStr === "2" || data.status === 2;
 
     if (!isSuccess) {
       return res.status(400).json({ error: `Payment is currently ${data.status || "PENDING"}. Once paid, please check again.` });
     }
 
-    const commission = parseFloat(o.commission_percent) || 0;
-    const paidAmount = parseFloat(data.actual_amount || data.amount || 0);
-    const creditAmount = (exists && parseFloat(exists.amount) > 0)
-      ? parseFloat(exists.amount)
-      : (commission > 0 ? parseFloat((paidAmount / (1 + commission / 100)).toFixed(2)) : paidAmount);
-
-    if (!creditAmount || creditAmount <= 0) return res.status(400).json({ error: "Invalid payment amount received from gateway." });
-
-    const { calculateDepositBonus } = require("../utils/paymentBonus");
-    const { totalCredit, bonusAmount, bonusDesc } = calculateDepositBonus(creditAmount, o);
-
-    const finalReference = data.order_no || lookupKey;
-    const { withTransaction } = require("../utils/db");
-
-    let updatedUser;
-    let hadDeposited = false;
-
-    await withTransaction(async (session) => {
-      const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-
-      const doubleCheck = await Transaction.findOne({ reference: finalReference }, null, queryOptions);
-      if (doubleCheck && doubleCheck.status === "completed") throw new Error("ALREADY_REDEEMED");
-
-      const user = process.env.DB_TYPE === "mysql"
-        ? await User.findById(req.userId, queryOptions)
-        : await User.findById(req.userId, null, queryOptions);
-
-      if (!user) throw new Error("USER_NOT_FOUND");
-      hadDeposited = user.has_deposited;
-
-      updatedUser = await User.findOneAndUpdate(
-        { _id: req.userId },
-        { $inc: { balance: totalCredit }, $set: { has_deposited: true } },
-        { ...queryOptions, new: true }
-      );
-      if (!updatedUser) throw new Error("USER_NOT_FOUND");
-
-      if (doubleCheck && doubleCheck.status === "pending") {
-        doubleCheck.status = "completed";
-        doubleCheck.amount = totalCredit;
-        doubleCheck.balance_after = updatedUser.balance;
-        doubleCheck.description = `OmniPay Deposit (Ref: ${finalReference})${bonusDesc}`;
-        if (process.env.DB_TYPE === "mysql") {
-          await doubleCheck.save(queryOptions);
-        } else {
-          await doubleCheck.save(queryOptions);
-        }
-      } else {
-        const txData = {
-          user_id: updatedUser._id || updatedUser.id,
-          type: "deposit",
-          amount: totalCredit,
-          balance_after: updatedUser.balance,
-          description: `OmniPay Deposit (Ref: ${finalReference})${bonusDesc}`,
-          reference: finalReference,
-          status: "completed"
-        };
-
-        if (process.env.DB_TYPE === "mysql") {
-          await Transaction.create(txData, queryOptions);
-        } else {
-          await Transaction.create([txData], queryOptions);
-        }
-      }
-
-      const { processReferralBonus } = require("../utils/referralBonus");
-      await processReferralBonus(updatedUser, creditAmount, hadDeposited, queryOptions).catch(e => console.error("Referral bonus error:", e));
-    });
+    const credited = await wallet.creditDeposit({ transactionId: exists._id, userId: req.userId,
+      config: o, description: `OmniPay Deposit (Ref: ${exists.reference})` });
+    const updatedUser = credited.user;
+    const { totalCredit, bonusAmount, base_amount: creditAmount } = credited;
 
     res.json({ success: true, amount: totalCredit, base_amount: creditAmount, bonus_amount: bonusAmount });
   } catch (err) {
+    if (err.message === "ALREADY_CREDITED") return res.json({ success: true, message: "Already credited" });
     if (err.message === "ALREADY_REDEEMED" || err.name === "SequelizeUniqueConstraintError" || err.code === 11000) {
       return res.status(400).json({ error: "This transaction has already been redeemed." });
     }
@@ -1898,7 +1590,7 @@ router.post("/wallet/verify-omnipay", async (req, res) => {
 router.post("/wallet/heleket-create", loginRequired, async (req, res) => {
   try {
     const { amount } = req.body;
-    if (!amount || isNaN(amount) || amount < 1) {
+    if (!Number.isFinite(Number(amount)) || Number(amount) < 1) {
       return res.status(400).json({ error: "Invalid deposit amount." });
     }
 
@@ -1913,7 +1605,7 @@ router.post("/wallet/heleket-create", loginRequired, async (req, res) => {
       return res.status(400).json({ error: `Minimum deposit for Crypto is ₹${minDep}` });
     }
 
-    const orderNo = `HEL-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderNo = `HEL-${nanoid(20)}`;
     const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
     const host = req.headers.host || "localhost:5007";
     const callbackUrl = `${protocol}://${host}/api/payment/heleket/callback`;
@@ -1921,28 +1613,26 @@ router.post("/wallet/heleket-create", loginRequired, async (req, res) => {
 
     // Calculate pay amount: original credit amount + gateway commission surcharge
     const commission = parseFloat(hConfig.commission_percent) || 0;
-    const creditAmount = parseFloat(amount);
+    const creditAmount = require("../utils/money").positiveMoney(amount);
     const payAmount = commission > 0
       ? parseFloat((creditAmount * (1 + commission / 100)).toFixed(2))
       : creditAmount;
 
     // Record pending transaction for the CREDIT amount (not the pay amount)
-    try {
-      const txData = {
-        user_id: req.userId,
-        type: "deposit",
-        amount: creditAmount,
-        balance_after: 0,
-        description: `Pending Heleket Crypto Deposit (Ref: ${orderNo})`,
-        reference: orderNo,
-        status: "pending"
-      };
-      if (process.env.DB_TYPE === "mysql") {
-        await Transaction.create(txData);
-      } else {
-        await Transaction.create([txData]);
-      }
-    } catch (txErr) { console.error("Could not save pending Heleket tx:", txErr); }
+    const txData = {
+      user_id: req.userId,
+      type: "deposit",
+      amount: creditAmount,
+      balance_after: 0,
+      description: `Pending Heleket Crypto Deposit (Ref: ${orderNo})`,
+      reference: orderNo,
+      status: "pending"
+    };
+    if (process.env.DB_TYPE === "mysql") {
+      await Transaction.create(txData);
+    } else {
+      await Transaction.create([txData]);
+    }
 
     const invoice = await heleket.createInvoice(hConfig, {
       amount: payAmount.toFixed(2),
@@ -1976,7 +1666,7 @@ router.post("/wallet/verify-heleket", loginRequired, async (req, res) => {
     const lookupId = (order_id || uuid || "").trim();
     if (!lookupId) return res.status(400).json({ error: "Order ID or UUID required." });
 
-    const tx = await Transaction.findOne({ reference: lookupId });
+    let tx = await Transaction.findOne({ reference: lookupId, user_id: String(req.userId), type: "deposit" });
     if (tx && tx.status === "completed") {
       return res.json({ success: true, status: "PAID", message: "Deposit already completed and credited!" });
     }
@@ -1991,52 +1681,15 @@ router.post("/wallet/verify-heleket", loginRequired, async (req, res) => {
       return res.status(400).json({ error: "Could not retrieve status from Heleket gateway right now." });
     }
 
+    if (!tx && info.order_id) tx = await Transaction.findOne({ reference: info.order_id, user_id: String(req.userId), type: "deposit" });
+    if (!tx) return res.status(404).json({ error: "Payment order not found" });
     if (heleket.isPaymentPaid(info)) {
       // If paid and webhook hasn't fired or completed it yet, credit it right now!
-      if (tx && tx.status === "pending") {
-        const commission = parseFloat(hConfig.commission_percent) || 0;
-        const rawPaid = parseFloat(info.payment_amount || info.amount || 0);
-        const creditAmount = (tx && parseFloat(tx.amount) > 0)
-          ? parseFloat(tx.amount)
-          : (commission > 0 ? parseFloat((rawPaid / (1 + commission / 100)).toFixed(2)) : rawPaid);
-
-        const { calculateDepositBonus } = require("../utils/paymentBonus");
-        const { totalCredit, bonusAmount, bonusDesc } = calculateDepositBonus(creditAmount, hConfig);
-
-        let updatedUser;
-        let hadDeposited = false;
-        const { withTransaction } = require("../utils/db");
-
-        await withTransaction(async (session) => {
-          const queryOptions = process.env.DB_TYPE === "mysql" ? { transaction: session } : { session };
-          const doubleCheck = await Transaction.findOne({ reference: lookupId }, null, queryOptions);
-          if (doubleCheck && doubleCheck.status === "completed") throw new Error("ALREADY_CREDITED");
-
-          const user = process.env.DB_TYPE === "mysql"
-            ? await User.findById(req.userId, queryOptions)
-            : await User.findById(req.userId, null, queryOptions);
-
-          if (!user) throw new Error("USER_NOT_FOUND");
-          hadDeposited = user.has_deposited;
-
-          updatedUser = await User.findOneAndUpdate(
-            { _id: req.userId },
-            { $inc: { balance: totalCredit }, $set: { has_deposited: true } },
-            { ...queryOptions, new: true }
-          );
-          if (!updatedUser) throw new Error("USER_NOT_FOUND");
-
-          doubleCheck.status = "completed";
-          doubleCheck.amount = totalCredit;
-          doubleCheck.balance_after = updatedUser.balance;
-          doubleCheck.description = `Heleket Crypto Deposit (${info.currency || "Crypto"}) (Ref: ${lookupId})${bonusDesc}`;
-          await doubleCheck.save(queryOptions);
-
-          const { processReferralBonus } = require("../utils/referralBonus");
-          await processReferralBonus(updatedUser, creditAmount, hadDeposited, queryOptions).catch(e => console.error("Referral bonus error:", e));
-        });
-
-        return res.json({ success: true, status: "PAID", credited_amount: totalCredit, base_amount: creditAmount, bonus_amount: bonusAmount });
+      if (["pending", "failed"].includes(tx.status)) {
+        const credited = await wallet.creditDeposit({ transactionId: tx._id, userId: req.userId,
+          config: hConfig, description: `Heleket Crypto Deposit (Ref: ${tx.reference})` });
+        return res.json({ success: true, status: "PAID", credited_amount: credited.totalCredit,
+          base_amount: credited.base_amount, bonus_amount: credited.bonusAmount });
       } else if (!tx) {
         return res.status(400).json({ error: "Transaction record not found locally." });
       }

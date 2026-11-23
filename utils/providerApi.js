@@ -114,8 +114,8 @@ async function callProvider(url, server, method = "GET") {
 
   try {
     const res = await fetch(noCacheUrl, { ...options, cache: 'no-store', signal: controller.signal });
-    clearTimeout(timeoutId);
     const text = await res.text();
+    clearTimeout(timeoutId);
     let data;
     try {
       data = JSON.parse(text);
@@ -145,7 +145,7 @@ async function getNumber(server, serviceCode, countryCode) {
     country: countryCode 
   });
   
-  const maxRetries = server.retry_count || 0;
+  const maxRetries = Math.min(5, Math.max(1, Number(server.retry_count) || 1));
   let attempt = 0;
   let lastError = null;
 
@@ -159,20 +159,16 @@ async function getNumber(server, serviceCode, countryCode) {
        const retryAt = markProviderBackoff(server);
        return { error: "Provider rate limited", rate_limited: true, retry_at: retryAt, originalError: text };
     }
+    if (!response.ok) return { error: response.data.error || "Provider request failed" };
     console.log(`[DEBUG] Provider Response [Attempt ${attempt}]:`, text);
 
     // Standard Text Format: ACCESS_NUMBER:123456:919876543210
     if (text.startsWith("ACCESS_NUMBER:")) {
        const parts = text.split(":");
        const api_order_id = parts[1];
-       const phone = parts[2].replace(/\D/g, '');
+       const phone = (parts[2] || "").replace(/\D/g, '');
+       if (!api_order_id || !phone) return { error: "Malformed provider response" };
        
-       if (isDuplicate(phone)) {
-         console.log(`[DUPLICATE] Number ${phone} already assigned recently. Retrying...`);
-         attempt++;
-         if (attempt >= maxRetries && maxRetries > 0) break;
-         continue;
-       }
        return { api_order_id, phone };
     }
     
@@ -181,12 +177,6 @@ async function getNumber(server, serviceCode, countryCode) {
        const api_order_id = response.data.id.toString();
        const phone = response.data.phone.toString().replace(/\D/g, '');
        
-       if (isDuplicate(phone)) {
-         console.log(`[DUPLICATE] Number ${phone} already assigned recently. Retrying...`);
-         attempt++;
-         if (attempt >= maxRetries && maxRetries > 0) break;
-         continue;
-       }
        return { api_order_id, phone };
     }
 

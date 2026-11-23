@@ -1,5 +1,8 @@
 function calculateUserPrice(originalPrice, serviceName, discounts, serverId) {
-  if (!discounts || !discounts.length) return originalPrice;
+  originalPrice = Number(originalPrice);
+  if (!Number.isFinite(originalPrice) || originalPrice <= 0) return NaN;
+  originalPrice = Math.round(originalPrice * 10000) / 10000;
+  if (!Array.isArray(discounts) || !discounts.length) return originalPrice;
   
   const targetName = (serviceName || "").toString().trim().toLowerCase();
   const targetServer = serverId != null ? String(serverId) : "all";
@@ -8,6 +11,7 @@ function calculateUserPrice(originalPrice, serviceName, discounts, serverId) {
   let bestWeight = -1;
 
   for (const d of discounts) {
+    if (!d || typeof d !== "object") continue;
     const dName = (d.service_name || "all").toString().trim().toLowerCase();
     const dServer = (d.server_id || "all").toString();
 
@@ -31,7 +35,8 @@ function calculateUserPrice(originalPrice, serviceName, discounts, serverId) {
     }
   }
 
-  if (bestMatch && bestMatch.percentage > 0) {
+  if (bestMatch && Number(bestMatch.percentage) > 0) {
+    if (!Number.isFinite(Number(bestMatch.percentage)) || Number(bestMatch.percentage) >= 100) return NaN;
     const discounted = originalPrice * (1 - (bestMatch.percentage / 100));
     return parseFloat(discounted.toFixed(2));
   }
@@ -44,7 +49,8 @@ function parseDiscounts(discounts) {
   if (Array.isArray(discounts)) return discounts;
   if (typeof discounts === 'string') {
     try {
-      return JSON.parse(discounts);
+      const parsed = JSON.parse(discounts);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
       return [];
     }

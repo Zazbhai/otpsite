@@ -50,6 +50,7 @@ router.post("/buy/:categoryId", async (req, res) => {
       }
       
       if (!cat) throw new Error("CATEGORY_NOT_FOUND");
+      require("../utils/money").positiveMoney(cat.price);
 
       // Check balance before locking account record
       const newBalance = parseFloat((user.balance - Number(cat.price)).toFixed(4));

@@ -51,7 +51,6 @@ async function processReferralBonus(user, amount, hadDeposited, queryOptions = {
       );
 
       if (referrer) {
-        emitToUser(String(referrer._id || referrer.id), "balance", { balance: referrer.balance });
 
         const txData = {
           user_id: referrer._id || referrer.id,
@@ -67,10 +66,12 @@ async function processReferralBonus(user, amount, hadDeposited, queryOptions = {
         } else {
           await Transaction.create([txData], queryOptions);
         }
+        return referrer;
       }
     }
   } catch (err) {
     console.error("[ReferralBonus] Process Error:", err);
+    throw err;
   }
 }
 

@@ -1,3 +1,4 @@
+const { decimalField } = require("../utils/money");
 const mongoose = require("mongoose");
 const { DataTypes } = require("sequelize");
 const { sequelize, DB_TYPE, applyMongooseShims } = require("../utils/db");
@@ -9,7 +10,7 @@ if (DB_TYPE === "mysql") {
     name: { type: DataTypes.STRING, allowNull: false },
     description: { type: DataTypes.TEXT, defaultValue: "" },
     icon: { type: DataTypes.STRING, defaultValue: "🗂️" },
-    price: { type: DataTypes.FLOAT, allowNull: false },
+    price: decimalField(DataTypes, "price", { allowNull: false }),
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
     _id: {
