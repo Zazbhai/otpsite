@@ -55,6 +55,7 @@
       <button class="btn btn-secondary btn-sm" onclick="setFilter('refund',this)">Refunds</button>
       <button class="btn btn-secondary btn-sm" onclick="setFilter('bonus',this)">Bonuses</button>
     </div>
+    <p class="text-xs text-muted" style="margin-bottom:12px">Deposits includes payment deposits and promo-code credits.</p>
     <div class="card" style="padding:0;overflow:hidden">
       <div class="table-wrap">
         <table>
@@ -93,7 +94,7 @@
     document.getElementById("total-count").textContent = `(${data.total.toLocaleString()})`;
     tbody.innerHTML = data.transactions.map(t => `
       <tr>
-        <td>${txBadge(t.type)}</td>
+        <td>${t.type === 'bonus' && /^Redeemed promo code:/i.test(t.description || '') ? '<span class="badge badge-bonus">Promo code</span>' : txBadge(t.type)}</td>
         <td class="mono text-sm"><a href="/admin/users/${t.user_id}" style="color:var(--accent)">${t.user_id}</a></td>
         <td>${txSign(t.type, t.amount)}</td>
         <td class="mono text-sm">${fmtMoney(t.balance_after)}</td>

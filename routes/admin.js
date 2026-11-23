@@ -1061,15 +1061,22 @@ router.get("/transactions", async (req, res) => {
     const filter = {};
     if (q) {
       const orClauses = [
-        { description: new RegExp(q, "i") },
-        { reference: new RegExp(q, "i") }
+        { description: { $regex: String(q), $options: "i" } },
+        { reference: { $regex: String(q), $options: "i" } }
       ];
       if (mongoose.Types.ObjectId.isValid(q)) orClauses.push({ user_id: new mongoose.Types.ObjectId(q) });
       if (q.match(/^[a-zA-Z0-9_\-]+$/)) orClauses.push({ order_id: q });
       filter.$or = orClauses;
     }
 
-    if (type   && type   !== "all") filter.type   = type;
+    if (type === "deposit") {
+      // Promo redemptions are bonus ledger entries, including historical ones.
+      // Keep other bonuses out of Deposits and preserve any search conditions.
+      filter.$and = [{ $or: [
+        { type: "deposit" },
+        { type: "bonus", description: { $regex: "^Redeemed promo code:" } },
+      ] }];
+    } else if (type && type !== "all") filter.type = type;
     if (status && status !== "all") filter.status = status;
     if (user_id)                    filter.user_id = user_id;
 

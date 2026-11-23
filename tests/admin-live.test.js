@@ -154,7 +154,7 @@ test("back/forward cache navigation reconnects the admin stream", async () => {
   await c.timers.advance(300); assert.equal(calls, 1);
 });
 
-function adminRouter(dbType) {
+function adminRouter(dbType, overrides = {}) {
   const distribution = [{ _id: "completed", count: 7 }, { _id: "active", count: 3 }, { _id: "cancelled", count: 2 }];
   const models = {
     User: { countDocuments: async () => 20, aggregate: async () => [], findAll: async () => [] },
@@ -166,6 +166,7 @@ function adminRouter(dbType) {
         : [],
     },
     Transaction: { aggregate: async () => [], findAll: async () => [] },
+    ...overrides,
   };
   const authorized = (req, res, next) => next();
   const module = { exports: {} };
@@ -181,6 +182,45 @@ function adminRouter(dbType) {
   vm.runInNewContext(source("routes/admin.js"), { require: customRequire, module, __dirname: path.join(root, "routes"), console, process: { env: {} } });
   return { router: module.exports, authorized };
 }
+
+test("admin Deposits includes existing promo credits while preserving search, status and user filters", async () => {
+  const sift = require("sift").default;
+  const records = [
+    { type: "deposit", description: "Payment", status: "completed", user_id: "u1" },
+    { type: "bonus", description: "Redeemed promo code: WELCOME", status: "completed", user_id: "u1" },
+    { type: "bonus", description: "Referral bonus WELCOME", status: "completed", user_id: "u1" },
+    { type: "bonus", description: "Redeemed promo code: WELCOME", status: "completed", user_id: "u2" },
+    { type: "bonus", description: "Redeemed promo code: WELCOME", status: "failed", user_id: "u1" },
+  ];
+  const Transaction = {
+    countDocuments: async filter => records.filter(sift(filter)).length,
+    find(filter) {
+      let offset = 0;
+      const query = {
+        sort: () => query,
+        skip(value) { offset = value; return query; },
+        limit: async limit => records.filter(sift(filter)).slice(offset, offset + limit),
+      };
+      return query;
+    },
+  };
+  const { router } = adminRouter("mongodb", { Transaction });
+  const handler = router.stack.find(layer => layer.route?.path === "/transactions").route.stack[0].handle;
+  async function run(query) {
+    let result;
+    await handler({ query }, { json(data) { result = data; }, status() { return this; } });
+    return result;
+  }
+  const deposits = await run({ type: "deposit", status: "completed", user_id: "u1", limit: 1 });
+  assert.equal(deposits.total, 2);
+  assert.equal(deposits.pages, 2);
+  const promoPage = await run({ type: "deposit", status: "completed", user_id: "u1", limit: 1, page: 2 });
+  assert.equal(promoPage.transactions[0].description, "Redeemed promo code: WELCOME");
+  const search = await run({ type: "deposit", q: "WELCOME", status: "completed", user_id: "u1" });
+  assert.equal(search.total, 1);
+  assert.equal(search.transactions[0].type, "bonus");
+  assert.equal((await run({ type: "bonus" })).total, 4);
+});
 
 for (const dbType of ["mongodb", "mysql"]) {
   test(`analytics returns total successful orders in ${dbType} mode`, async () => {
