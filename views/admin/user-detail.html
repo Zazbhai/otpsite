@@ -435,6 +435,13 @@
     return '<span class="badge badge-active" style="display:inline-flex;align-items:center;gap:3px;font-weight:700">✓ Success</span>';
   }
 
+  function fmtAdminDate(value) {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    return new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Calcutta', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(d);
+  }
+
   function copyText(val, msg) {
     if (!val) return;
     navigator.clipboard.writeText(val);
@@ -504,7 +511,7 @@
             </div>
           </td>
           <td data-label="Balance After" class="mono text-sm">${t.balance_after != null && !isPending ? fmtMoney(t.balance_after) : '—'}</td>
-          <td data-label="Date" class="text-muted text-xs">${fmtDate(t.createdAt)}</td>
+          <td data-label="Date" class="text-muted text-xs">${fmtAdminDate(t.createdAt)}</td>
           <td data-label="Actions" style="text-align:right">
             ${isPending && t.type === 'deposit' ? `
               <div style="display:inline-flex;gap:6px;justify-content:flex-end">
@@ -542,7 +549,7 @@
 
   async function loadUser() {
     try {
-      const data = await API.get(`/api/admin/users/${userId}`);
+      const data = await API.get(`/api/admin/users/${userId}?history_limit=5000`);
       userObj = data.user;
       allUserTransactions = data.recent_transactions || [];
       
@@ -602,8 +609,8 @@
 
       // Update Tab Counter Numbers
       const countAll = allUserTransactions.length;
-      const countSuccess = allUserTransactions.filter(t => (t.type === 'deposit' || t.type === 'bonus') && (t.status || 'completed').toLowerCase() !== 'pending' && (t.status || '').toLowerCase() !== 'failed' && (t.status || '').toLowerCase() !== 'cancelled').length;
-      const countPending = allUserTransactions.filter(t => (t.type === 'deposit' || t.type === 'bonus') && ((t.status || '').toLowerCase() === 'pending' || (t.description && t.description.toLowerCase().includes('pending')))).length;
+      const countSuccess = Number(depStats.successful_deposits_count || 0);
+      const countPending = Number(depStats.pending_deposits_count || 0);
       const countPurchases = allUserTransactions.filter(t => t.type === 'purchase' || t.type === 'deduction').length;
       const countRefunds = allUserTransactions.filter(t => t.type === 'refund').length;
 

@@ -253,6 +253,7 @@ router.post("/users", async (req, res) => {
 router.get("/users/:id", async (req, res) => {
   try {
     const userId = req.params.id;
+    const historyLimit = Math.min(Math.max(parseInt(req.query.history_limit || "5000", 10) || 5000, 1), 5000);
     const user   = await User.findById(userId).select("-password_hash");
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -260,8 +261,8 @@ router.get("/users/:id", async (req, res) => {
     if (userObj._id) userObj._id = userObj._id.toString();
 
     const [orders, transactions] = await Promise.all([
-      Order.find({ user_id: userId }).sort({ createdAt: -1 }).limit(20),
-      Transaction.find({ user_id: userId }).sort({ createdAt: -1 }).limit(100)
+      Order.find({ user_id: userId }).sort({ createdAt: -1 }).limit(historyLimit),
+      Transaction.find({ user_id: userId }).sort({ createdAt: -1 }).limit(historyLimit)
     ]);
 
     // Calculate detailed deposit & financial breakdown for this user
@@ -343,6 +344,7 @@ router.get("/users/:id", async (req, res) => {
       user: userObj,
       recent_orders: orders,
       recent_transactions: transactions,
+      history_limit: historyLimit,
       deposit_stats: depositStats
     });
   } catch (err) { 
