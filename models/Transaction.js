@@ -28,6 +28,8 @@ if (DB_TYPE === "mysql") {
   }, {
     indexes: [
       { fields: ["user_id"] },
+      { fields: ["user_id", "createdAt", "id"] },
+      { fields: ["user_id", "type", "status", "createdAt", "id"] },
       { fields: ["createdAt"] },
       { fields: ["reference"], unique: true },
       { fields: ["order_id", "type", "status"] },
@@ -59,6 +61,8 @@ if (DB_TYPE === "mysql") {
     { timestamps: true }
   );
   transactionSchema.index({ order_id: 1, type: 1, status: 1 });
+  transactionSchema.index({ user_id: 1, createdAt: -1, _id: -1 });
+  transactionSchema.index({ user_id: 1, type: 1, status: 1, createdAt: -1, _id: -1 });
   transactionSchema.index({ type: 1, status: 1, createdAt: 1 });
   Transaction = mongoose.model("Transaction", transactionSchema);
 }

@@ -200,6 +200,18 @@
       <!-- Right Column: Details & Tables -->
       <div style="display:flex;flex-direction:column;gap:20px">
         
+        <div class="card" style="margin:0;padding:16px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <label for="user-period" class="text-sm font-bold">View period</label>
+            <select id="user-period" class="form-input" style="width:auto" onchange="changeUserPeriod()">
+              <option value="all">All time</option><option value="today">Today</option>
+              <option value="yesterday">Yesterday</option><option value="date">Choose date</option>
+            </select>
+            <input id="user-date" type="date" class="form-input" style="width:auto" aria-label="Select date" hidden onchange="changeUserPeriod()">
+            <button id="user-refresh" class="btn btn-secondary btn-sm" onclick="loadUser()">Refresh</button>
+          </div>
+          <div id="user-period-label" class="text-xs text-muted" style="margin-top:8px" role="status"></div>
+        </div>
         <!-- Info Grid (Enhanced with Distinct Financial Breakdown) -->
         <div class="info-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
           <div class="card stat-box" style="margin:0">
@@ -229,6 +241,15 @@
             <div class="font-bold" id="u-orders" style="font-size:22px;margin-top:4px">—</div>
           </div>
 
+          <div class="card stat-box" style="margin:0">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Successful Orders</div>
+            <div class="font-bold text-success" id="u-successful-orders" style="font-size:22px;margin-top:4px">0</div>
+          </div>
+          <div class="card stat-box" style="margin:0">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Total Revenue</div>
+            <div class="font-bold text-success" id="u-revenue" style="font-size:22px;margin-top:4px">0</div>
+            <div class="text-xs text-muted" style="margin-top:2px">Successful orders only</div>
+          </div>
           <div class="card stat-box" style="margin:0">
             <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Email & ID</div>
             <div class="font-bold text-xs" id="u-email" style="word-break:break-all;margin-top:4px">—</div>
@@ -287,6 +308,9 @@
               <tbody id="tx-body"></tbody>
             </table>
           </div>
+          <div style="padding:12px 20px;text-align:center">
+            <button id="tx-load-more" class="btn btn-secondary btn-sm" hidden onclick="loadTransactions(true)">Load 6 more</button>
+          </div>
         </div>
 
         <!-- Recent Orders -->
@@ -299,6 +323,9 @@
               <thead><tr><th>Service</th><th>Phone</th><th>Cost</th><th>Status</th></tr></thead>
               <tbody id="orders-body"></tbody>
             </table>
+          </div>
+          <div style="padding:12px 20px;text-align:center">
+            <button id="orders-load-more" class="btn btn-secondary btn-sm" hidden onclick="loadMoreOrders()">Load 6 more</button>
           </div>
         </div>
       </div>
@@ -395,16 +422,107 @@
 <script>
   async function init() {
     if (!await requireAdmin()) return;
-    await Promise.all([loadServiceNames(), loadServers()]);
-    await loadUser();
+    await Promise.all([loadUser(), loadServiceNames(), loadServers()]);
   }
   
-  init();
   
   const userId = window.location.pathname.split("/").pop();
   let userObj = null;
   let allUserTransactions = [];
   let currentTxTab = 'all';
+  let transactionPage = {}, ordersPage = {};
+  let profileGeneration = 0, transactionGeneration = 0, ordersGeneration = 0;
+  let transactionsLoading = false, ordersLoading = false;
+
+  function safeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  function periodQuery() {
+    const range = document.getElementById('user-period').value;
+    const query = new URLSearchParams({ range });
+    if (range === 'date') query.set('date', document.getElementById('user-date').value);
+    return query;
+  }
+
+  function changeUserPeriod() {
+    const date = document.getElementById('user-date');
+    date.hidden = document.getElementById('user-period').value !== 'date';
+    if (!date.hidden && !date.value) {
+      const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Calcutta', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+      const values = Object.fromEntries(parts.map(p => [p.type, p.value]));
+      date.value = `${values.year}-${values.month}-${values.day}`;
+    }
+    loadUser();
+  }
+
+  function updateHistoryButtons() {
+    const tx = document.getElementById('tx-load-more');
+    tx.hidden = !transactionPage.has_more;
+    tx.disabled = transactionsLoading;
+    tx.textContent = transactionsLoading ? 'Loading...' : 'Load 6 more';
+    const orders = document.getElementById('orders-load-more');
+    orders.hidden = !ordersPage.has_more;
+    orders.disabled = ordersLoading;
+    orders.textContent = ordersLoading ? 'Loading...' : 'Load 6 more';
+  }
+
+  function appendUnique(previous, next) {
+    return [...new Map([...previous, ...next].map(row => [String(row._id || row.id), row])).values()];
+  }
+
+  async function loadTransactions(append = false) {
+    if (append && (transactionsLoading || !transactionPage.has_more)) return;
+    if (!append) { transactionGeneration++; allUserTransactions = []; renderTransactionsTable(currentTxTab); }
+    const generation = transactionGeneration;
+    const query = periodQuery();
+    query.set('tab', currentTxTab);
+    query.set('offset', append ? transactionPage.next_offset : 0);
+    transactionsLoading = true;
+    updateHistoryButtons();
+    try {
+      const page = await API.get(`/api/admin/users/${userId}/transactions?${query}`);
+      if (generation !== transactionGeneration) return;
+      allUserTransactions = appendUnique(append ? allUserTransactions : [], page.items);
+      transactionPage = page;
+      renderTransactionsTable(currentTxTab);
+    } catch (e) {
+      if (generation === transactionGeneration) {
+        toast('Unable to load transactions: ' + e.message, 'error');
+        if (!append) document.getElementById('tx-body').innerHTML = '<tr><td colspan="7">Unable to load transactions. <button class="btn btn-secondary btn-sm" onclick="loadTransactions()">Retry</button></td></tr>';
+      }
+    } finally {
+      if (generation === transactionGeneration) { transactionsLoading = false; updateHistoryButtons(); }
+    }
+  }
+
+  let loadedOrders = [];
+  function renderOrders() {
+    document.getElementById('orders-body').innerHTML = loadedOrders.length ? loadedOrders.map(o => `
+      <tr onclick="window.location.href='/admin/orders/${encodeURIComponent(o._id || o.id)}'" style="cursor:pointer">
+        <td data-label="Service">${safeHtml(o.service_name)}</td>
+        <td data-label="Phone" class="mono font-bold">${safeHtml(o.phone || '-')}</td>
+        <td data-label="Cost" class="text-danger">-${fmtMoney(o.cost)}</td>
+        <td data-label="Status">${orderBadge(o.status)}</td>
+      </tr>`).join('') : '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No orders for this period</td></tr>';
+  }
+
+  async function loadMoreOrders() {
+    if (ordersLoading || !ordersPage.has_more) return;
+    const generation = ordersGeneration;
+    const query = periodQuery();
+    query.set('offset', ordersPage.next_offset);
+    ordersLoading = true;
+    updateHistoryButtons();
+    try {
+      const page = await API.get(`/api/admin/users/${userId}/orders?${query}`);
+      if (generation !== ordersGeneration) return;
+      loadedOrders = appendUnique(loadedOrders, page.items);
+      ordersPage = page;
+      renderOrders();
+    } catch (e) { if (generation === ordersGeneration) toast(e.message, 'error'); }
+    finally { if (generation === ordersGeneration) { ordersLoading = false; updateHistoryButtons(); } }
+  }
 
   function orderBadge(status) {
     if (status === "completed") return '<span class="badge badge-active">Completed</span>';
@@ -461,23 +579,14 @@
       targetBtn.classList.remove('btn-secondary');
     }
     
-    renderTransactionsTable(tab);
+    loadTransactions();
   }
 
   function renderTransactionsTable(tab) {
     const txBody = document.getElementById("tx-body");
     if (!txBody) return;
 
-    let filtered = allUserTransactions;
-    if (tab === 'success_deposits') {
-      filtered = allUserTransactions.filter(t => (t.type === 'deposit' || t.type === 'bonus') && (t.status || 'completed').toLowerCase() !== 'pending' && (t.status || '').toLowerCase() !== 'failed' && (t.status || '').toLowerCase() !== 'cancelled');
-    } else if (tab === 'pending_deposits') {
-      filtered = allUserTransactions.filter(t => (t.type === 'deposit' || t.type === 'bonus') && ((t.status || '').toLowerCase() === 'pending' || (t.description && t.description.toLowerCase().includes('pending'))));
-    } else if (tab === 'purchases') {
-      filtered = allUserTransactions.filter(t => t.type === 'purchase' || t.type === 'deduction');
-    } else if (tab === 'refunds') {
-      filtered = allUserTransactions.filter(t => t.type === 'refund');
-    }
+    const filtered = allUserTransactions;
 
     if (!filtered || !filtered.length) {
       const tabNames = {
@@ -506,8 +615,8 @@
           <td data-label="Amount" class="mono ${amtClass}">${amtStr}</td>
           <td data-label="Reference / Note">
             <div style="display:flex;flex-direction:column;gap:3px">
-              <span style="font-size:13px">${t.description || '—'}</span>
-              ${ref ? `<span class="ref-pill" onclick="copyText('${ref}', 'Copied Reference')" title="Click to copy">${ref} 📋</span>` : ''}
+              <span style="font-size:13px">${safeHtml(t.description) || '—'}</span>
+              ${ref ? `<span class="ref-pill" onclick="copyText(this.dataset.reference, 'Copied Reference')" data-reference="${safeHtml(ref)}" title="Click to copy">${safeHtml(ref)} 📋</span>` : ''}
             </div>
           </td>
           <td data-label="Balance After" class="mono text-sm">${t.balance_after != null && !isPending ? fmtMoney(t.balance_after) : '—'}</td>
@@ -548,10 +657,35 @@
   }
 
   async function loadUser() {
+    const generation = ++profileGeneration;
+    const txGeneration = ++transactionGeneration;
+    ordersGeneration++;
+    transactionsLoading = true;
+    ordersLoading = true;
+    transactionPage = {}; ordersPage = {};
+    updateHistoryButtons();
+    document.getElementById('user-refresh').disabled = true;
+    document.getElementById('user-period-label').textContent = 'Loading selected period...';
+    const query = periodQuery();
+    query.set('tab', currentTxTab);
     try {
-      const data = await API.get(`/api/admin/users/${userId}?history_limit=5000`);
+      const data = await API.get(`/api/admin/users/${userId}?${query}`);
+      if (generation !== profileGeneration) return;
       userObj = data.user;
-      allUserTransactions = data.recent_transactions || [];
+      if (txGeneration === transactionGeneration) {
+        allUserTransactions = data.recent_transactions || [];
+        transactionPage = data.transactions_pagination;
+        transactionsLoading = false;
+        renderTransactionsTable(currentTxTab);
+      }
+      loadedOrders = data.recent_orders || [];
+      ordersPage = data.orders_pagination;
+      ordersLoading = false;
+      renderOrders();
+      updateHistoryButtons();
+      document.getElementById('user-period-label').textContent = `${data.period.label} | ${data.period.timezone} | Orders and activity by creation date`;
+      document.getElementById('u-successful-orders').textContent = data.order_stats.successful_orders;
+      document.getElementById('u-revenue').textContent = fmtMoney(data.order_stats.total_revenue);
       
       document.getElementById("loader").style.display = "none";
       document.getElementById("u-content").style.display = "grid";
@@ -576,8 +710,8 @@
       document.getElementById("u-email").textContent = userObj.email || "No email";
       document.getElementById("u-id").innerHTML = `<span onclick="copyText('${userObj._id || userObj.telegram_id}', 'Copied ID')" style="cursor:pointer" title="Click to copy">${userObj._id || userObj.telegram_id} 📋</span>`;
       document.getElementById("u-balance").textContent = fmtMoney(userObj.balance);
-      document.getElementById("u-spent").textContent = fmtMoney(userObj.total_spent);
-      document.getElementById("u-orders").textContent = `${userObj.total_orders || 0} orders`;
+      document.getElementById("u-spent").textContent = fmtMoney(data.deposit_stats.total_spent);
+      document.getElementById("u-orders").textContent = `${data.order_stats.total_orders || 0} orders`;
 
       // Deposit Stats Breakdown (Pending vs Successful)
       const depStats = data.deposit_stats || {};
@@ -608,17 +742,12 @@
       }
 
       // Update Tab Counter Numbers
-      const countAll = allUserTransactions.length;
-      const countSuccess = Number(depStats.successful_deposits_count || 0);
-      const countPending = Number(depStats.pending_deposits_count || 0);
-      const countPurchases = allUserTransactions.filter(t => t.type === 'purchase' || t.type === 'deduction').length;
-      const countRefunds = allUserTransactions.filter(t => t.type === 'refund').length;
-
-      document.getElementById("count-all").textContent = countAll;
-      document.getElementById("count-success").textContent = countSuccess;
-      document.getElementById("count-pending").textContent = countPending;
-      document.getElementById("count-purchases").textContent = countPurchases;
-      document.getElementById("count-refunds").textContent = countRefunds;
+      const counts = data.transaction_counts;
+      document.getElementById("count-all").textContent = counts.all;
+      document.getElementById("count-success").textContent = counts.success_deposits;
+      document.getElementById("count-pending").textContent = counts.pending_deposits;
+      document.getElementById("count-purchases").textContent = counts.purchases;
+      document.getElementById("count-refunds").textContent = counts.refunds;
 
       // Ban Button
       const banBtn = document.getElementById("ban-btn");
@@ -644,24 +773,6 @@
         adminBtn.style.color = "var(--accent)";
       }
 
-      // Render Transactions
-      renderTransactionsTable(currentTxTab);
-
-      // Orders
-      const orBody = document.getElementById("orders-body");
-      if(!data.recent_orders || !data.recent_orders.length) {
-        orBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No orders</td></tr>`;
-      } else {
-        orBody.innerHTML = data.recent_orders.map(o => `
-          <tr onclick="window.location.href='/admin/orders/${o._id}'" style="cursor:pointer">
-            <td data-label="Service">${o.service_name}</td>
-            <td data-label="Phone" class="mono font-bold">${o.phone || '—'}</td>
-            <td data-label="Cost" class="text-danger">-${fmtMoney(o.cost)}</td>
-            <td data-label="Status">${orderBadge(o.status)}</td>
-          </tr>
-        `).join("");
-      }
-      
       // Discounts
       if (userObj.discounts && typeof userObj.discounts === 'string') {
         try { userObj.discounts = JSON.parse(userObj.discounts); } catch { userObj.discounts = []; }
@@ -671,7 +782,18 @@
       renderDiscounts(userObj.discounts);
 
     } catch (e) {
-      toast("Error loading user details: " + e.message, "error");
+      if (generation === profileGeneration) {
+        document.getElementById('user-period-label').textContent = 'Unable to load selected period. Please retry.';
+        if (!userObj) document.getElementById('loader').innerHTML = '<p>Unable to load user details.</p><button class="btn btn-secondary" onclick="loadUser()">Retry</button>';
+        toast("Error loading user details: " + e.message, "error");
+      }
+    } finally {
+      if (generation === profileGeneration) {
+        if (txGeneration === transactionGeneration) transactionsLoading = false;
+        ordersLoading = false;
+        document.getElementById('user-refresh').disabled = false;
+        updateHistoryButtons();
+      }
     }
   }
 
@@ -913,6 +1035,7 @@
   }
 
 
+  init();
 </script>
 </body>
 </html>

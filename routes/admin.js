@@ -23,6 +23,7 @@ const { clearSettingsCache } = require("../utils/settingsCache");
 const { clearCache } = require("../utils/apiCache");
 const { emitToAll, emitToUser } = require("../utils/realtimeEmitter");
 const { resolveAnalyticsPeriod } = require("../utils/analyticsPeriod");
+const userDetails = require("../utils/adminUserDetails");
 
 const formatServiceName = (name) => {
   if (!name) return "";
@@ -251,108 +252,47 @@ router.post("/users", async (req, res) => {
   }
 });
 
+// History endpoints return only one six-row page; summaries stay in the database.
+router.get("/users/:id/:history(transactions|orders)", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("_id");
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const period = userDetails.userPeriod(req.query);
+    const kind = req.params.history;
+    const page = await userDetails.historyPage(kind === "orders" ? Order : Transaction,
+      userDetails.userScope(req.params.id, period), req.query, kind);
+    res.json(page);
+  } catch (err) {
+    if (err.message.startsWith("Invalid ")) return res.status(400).json({ error: err.message });
+    console.error("ADMIN_USER_HISTORY_ERROR:", err);
+    res.status(500).json({ error: "Unable to load user history" });
+  }
+});
+
 router.get("/users/:id", async (req, res) => {
   try {
     const userId = req.params.id;
-    const historyLimit = Math.min(Math.max(parseInt(req.query.history_limit || "5000", 10) || 5000, 1), 5000);
-    const user   = await User.findById(userId).select("-password_hash");
+    const period = userDetails.userPeriod(req.query);
+    const user = await User.findById(userId).select("-password_hash");
     if (!user) return res.status(404).json({ error: "User not found" });
-
     const userObj = user.toObject ? user.toObject() : (user.toJSON ? user.toJSON() : user);
     if (userObj._id) userObj._id = userObj._id.toString();
-
-    const [orders, transactions] = await Promise.all([
-      Order.find({ user_id: userId }).sort({ createdAt: -1 }).limit(historyLimit),
-      Transaction.find({ user_id: userId }).sort({ createdAt: -1 }).limit(historyLimit)
+    const scope = userDetails.userScope(userId, period);
+    const [orders, transactions, summary] = await Promise.all([
+      userDetails.historyPage(Order, scope, {}, "orders"),
+      userDetails.historyPage(Transaction, scope, { tab: req.query.tab }),
+      userDetails.userSummary({ Order, Transaction, DB_TYPE }, scope),
     ]);
-
-    // Calculate detailed deposit & financial breakdown for this user
-    let depositStats = {
-      successful_deposits: 0,
-      successful_deposits_count: 0,
-      pending_deposits: 0,
-      pending_deposits_count: 0,
-      failed_deposits: 0,
-      failed_deposits_count: 0,
-      total_spent: 0,
-      total_refunded: 0,
-      total_bonuses: 0
-    };
-
-    if (DB_TYPE === "mysql") {
-      const allUserTxs = await Transaction.findAll({
-        where: { user_id: userId.toString() },
-        attributes: ['type', 'status', 'amount'],
-        raw: true
-      });
-      allUserTxs.forEach(tx => {
-        const amt = parseFloat(tx.amount || 0);
-        const st = (tx.status || 'completed').toLowerCase();
-        if (tx.type === 'deposit') {
-          if (st === 'pending') {
-            depositStats.pending_deposits += amt;
-            depositStats.pending_deposits_count++;
-          } else if (st === 'failed' || st === 'cancelled') {
-            depositStats.failed_deposits += amt;
-            depositStats.failed_deposits_count++;
-          } else {
-            depositStats.successful_deposits += amt;
-            depositStats.successful_deposits_count++;
-          }
-        } else if (tx.type === 'bonus') {
-          depositStats.total_bonuses += amt;
-          if (st === 'completed') {
-            depositStats.successful_deposits += amt;
-            depositStats.successful_deposits_count++;
-          }
-        } else if (tx.type === 'purchase' || tx.type === 'deduction') {
-          depositStats.total_spent += Math.abs(amt);
-        } else if (tx.type === 'refund') {
-          depositStats.total_refunded += amt;
-        }
-      });
-    } else {
-      const allUserTxs = await Transaction.find({ user_id: userId.toString() }).select("type status amount").lean();
-      allUserTxs.forEach(tx => {
-        const amt = parseFloat(tx.amount || 0);
-        const st = (tx.status || 'completed').toLowerCase();
-        if (tx.type === 'deposit') {
-          if (st === 'pending') {
-            depositStats.pending_deposits += amt;
-            depositStats.pending_deposits_count++;
-          } else if (st === 'failed' || st === 'cancelled') {
-            depositStats.failed_deposits += amt;
-            depositStats.failed_deposits_count++;
-          } else {
-            depositStats.successful_deposits += amt;
-            depositStats.successful_deposits_count++;
-          }
-        } else if (tx.type === 'bonus') {
-          depositStats.total_bonuses += amt;
-          if (st === 'completed') {
-            depositStats.successful_deposits += amt;
-            depositStats.successful_deposits_count++;
-          }
-        } else if (tx.type === 'purchase' || tx.type === 'deduction') {
-          depositStats.total_spent += Math.abs(amt);
-        } else if (tx.type === 'refund') {
-          depositStats.total_refunded += amt;
-        }
-      });
-    }
-
-    res.json({
-      user: userObj,
-      recent_orders: orders,
-      recent_transactions: transactions,
-      history_limit: historyLimit,
-      deposit_stats: depositStats
+    const { items: orderItems, ...ordersPagination } = orders;
+    const { items: transactionItems, ...transactionsPagination } = transactions;
+    res.json({ user: userObj, period, ...summary,
+      recent_orders: orderItems, orders_pagination: ordersPagination,
+      recent_transactions: transactionItems, transactions_pagination: transactionsPagination,
     });
   } catch (err) {
-    if (err.message === "INSUFFICIENT_BALANCE") return res.status(402).json({ error: "Insufficient balance" });
-    if (err.message === "INVALID_AMOUNT") return res.status(400).json({ error: "Invalid amount" });
-    console.error("ADMIN_ROUTE_ERROR:", err);
-    res.status(500).json({ error: "Server error" }); 
+    if (err.message.startsWith("Invalid ")) return res.status(400).json({ error: err.message });
+    console.error("ADMIN_USER_DETAILS_ERROR:", err);
+    res.status(500).json({ error: "Unable to load user details" });
   }
 });
 

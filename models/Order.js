@@ -49,6 +49,7 @@ if (DB_TYPE === "mysql") {
     indexes: [
       { fields: ['status'] },
       { fields: ['user_id'] },
+      { fields: ['user_id', 'createdAt', 'id'] },
       { fields: ['last_check_at'] },
       { fields: ['createdAt'] },
       { fields: ['order_id'], unique: true },
@@ -89,6 +90,7 @@ if (DB_TYPE === "mysql") {
     { timestamps: true }
   );
   orderSchema.index({ server_name: 1, external_order_id: 1 });
+  orderSchema.index({ user_id: 1, createdAt: -1, _id: -1 });
   Order = mongoose.model("Order", orderSchema);
 }
 
