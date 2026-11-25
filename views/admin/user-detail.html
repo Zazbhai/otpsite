@@ -220,9 +220,15 @@
           </div>
           
           <div class="card stat-box" style="margin:0;cursor:pointer" onclick="setTxTab('success_deposits')" title="Click to filter Successful Deposits">
-            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Success Deposits</div>
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Deposits (Selected Period)</div>
             <div class="font-bold text-success" id="u-success-deposits" style="font-size:22px;margin-top:4px">₹0.00</div>
-            <div class="text-xs text-muted" id="u-success-deposits-count" style="margin-top:2px">0 completed</div>
+            <div class="text-xs text-muted" id="u-success-deposits-count" style="margin-top:2px">0 incl. promo codes</div>
+          </div>
+
+          <div class="card stat-box" style="margin:0">
+            <div class="text-xs text-muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Total Successful Deposits</div>
+            <div class="font-bold text-success" id="u-total-deposits" style="font-size:22px;margin-top:4px">₹0.00</div>
+            <div class="text-xs text-muted" style="margin-top:2px">All time, incl. promo codes</div>
           </div>
 
           <div class="card stat-box" id="pending-deposits-card" style="margin:0;cursor:pointer" onclick="setTxTab('pending_deposits')" title="Click to filter Pending Deposits">
@@ -722,6 +728,7 @@
 
       document.getElementById("u-success-deposits").textContent = fmtMoney(successAmt);
       document.getElementById("u-success-deposits-count").textContent = `${successCount} completed`;
+      document.getElementById("u-total-deposits").textContent = fmtMoney(depStats.total_successful_deposits || 0);
       document.getElementById("u-pending-deposits").textContent = fmtMoney(pendingAmt);
       document.getElementById("u-pending-deposits-count").textContent = `${pendingCount} pending`;
 

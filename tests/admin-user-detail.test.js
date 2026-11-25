@@ -60,6 +60,22 @@ test("transaction tabs query matching records at the database, never description
   assert.equal(foreign.items.length, 0);
 });
 
+test("successful deposit history tab includes promo-code credits without counting other bonuses", async () => {
+  const sift = require("sift").default;
+  const records = [
+    { _id: "1", user_id: userId, type: "deposit", status: "completed", description: "bank deposit" },
+    { _id: "2", user_id: userId, type: "bonus", status: "completed", description: "Redeemed promo code: SAVE" },
+    { _id: "3", user_id: userId, type: "bonus", status: "completed", description: "Referral bonus" },
+    { _id: "4", user_id: userId, type: "bonus", status: "pending", description: "Redeemed promo code: LATER" },
+  ];
+  const model = { find: filter => ({
+    select() { return this; }, sort() { return this; }, skip() { return this; },
+    limit: async () => records.filter(sift(filter)),
+  }) };
+  const page = await details.historyPage(model, { user_id: userId }, { tab: "success_deposits" });
+  assert.deepEqual(page.items.map(row => row._id), ["1", "2"]);
+});
+
 const orderGroups = [
   { status: "completed", count: "13", amount: "65.50" },
   { status: "active", count: "4", amount: "12" },
@@ -75,13 +91,24 @@ const transactionGroups = [
   { type: "refund", status: "completed", count: "3", amount: "10" },
   { type: "deduction", status: "failed", count: "1", amount: "-15" },
 ];
+const promoGroups = [{ status: "completed", count: "2", amount: "30" }];
 
 for (const DB_TYPE of ["mongodb", "mysql"]) {
   test(`${DB_TYPE}: summaries use grouped queries, preserve user/date boundaries and exclude deposits from revenue`, async () => {
     const queries = [];
     const model = groups => ({
-      aggregate: async pipeline => { queries.push(pipeline); return groups; },
-      findAll: async options => { queries.push(options); return groups; },
+      aggregate: async pipeline => {
+        queries.push(pipeline);
+        if (pipeline.some(stage => stage.$match?.description)) return promoGroups;
+        if (pipeline.some(stage => stage.$group?._id === null)) return [{ amount: 160 }];
+        return groups;
+      },
+      findAll: async options => {
+        queries.push(options);
+        if (options.where?.description) return promoGroups;
+        if (options.attributes?.length === 1) return [{ amount: "160" }];
+        return groups;
+      },
       find() { throw new Error("Summary must not load individual histories"); },
     });
     const period = details.userPeriod({ range: "date", date: "2026-11-23" });
@@ -90,8 +117,9 @@ for (const DB_TYPE of ["mongodb", "mysql"]) {
     assert.equal(scope.createdAt.$lt.toISOString(), "2026-11-23T18:30:00.000Z");
     const result = await details.userSummary({ DB_TYPE, Order: model(orderGroups), Transaction: model(transactionGroups) }, scope);
     assert.deepEqual(result.order_stats, { total_orders: 20, successful_orders: 13, total_revenue: 65.5 });
-    assert.equal(result.deposit_stats.successful_deposits, 100);
-    assert.equal(result.deposit_stats.successful_deposits_count, 9);
+    assert.equal(result.deposit_stats.successful_deposits, 130);
+    assert.equal(result.deposit_stats.successful_deposits_count, 11);
+    assert.equal(result.deposit_stats.total_successful_deposits, 160);
     assert.equal(result.deposit_stats.total_spent, 60);
     assert.equal(result.transaction_counts.all, 27);
     assert.equal(result.transaction_counts.purchases, 10);
@@ -148,7 +176,7 @@ function profile() {
     transactions_pagination: { has_more: true, next_offset: 6 }, orders_pagination: { has_more: false, next_offset: 0 },
     period: { label: "All time", timezone: "Asia/Calcutta" },
     order_stats: { total_orders: 20, successful_orders: 13, total_revenue: 65.5 },
-    deposit_stats: { successful_deposits: 100, successful_deposits_count: 9 },
+    deposit_stats: { successful_deposits: 130, successful_deposits_count: 11, total_successful_deposits: 160 },
     transaction_counts: { all: 27, success_deposits: 9, pending_deposits: 2, purchases: 10, refunds: 3 },
   };
 }
@@ -166,6 +194,8 @@ test("browser loads six initially, appends the next six, and switches tabs using
   assert.equal(page.element("count-all").textContent, 27);
   assert.equal(page.element("u-successful-orders").textContent, 13);
   assert.equal(page.element("u-revenue").textContent, "65.50");
+  assert.equal(page.element("u-success-deposits").textContent, "130.00");
+  assert.equal(page.element("u-total-deposits").textContent, "160.00");
   assert.equal(page.element("tx-load-more").hidden, false);
   await page.run("loadTransactions(true)");
   assert.ok(urls[1].includes("offset=6"));

@@ -223,6 +223,43 @@ test("admin Deposits includes existing promo credits while preserving search, st
 });
 
 for (const dbType of ["mongodb", "mysql"]) {
+  test(`admin dashboard and analytics deposit totals include promo credits in ${dbType} mode`, async () => {
+    const { Op } = require("sequelize");
+    const observed = [];
+    const Transaction = {
+      aggregate: async pipeline => {
+        observed.push(pipeline);
+        if (pipeline[0].$match?.$or?.some(clause => clause.type === "bonus")) {
+          return [{ total: 125, period: 25 }];
+        }
+        return [];
+      },
+      findAll: async options => {
+        observed.push(options);
+        if (options.where?.[Op.or]?.some(clause => clause.type === "bonus")) {
+          if (options.group) return [];
+          return [{ total: options.where.createdAt ? "25" : "125" }];
+        }
+        return [];
+      },
+    };
+    const { router } = adminRouter(dbType, { Transaction });
+    const route = router.stack.find(layer => layer.route?.path === "/analytics").route;
+    let result;
+    await route.stack[0].handle({ query: { range: "today" } }, {
+      json(data) { result = data; }, status() { return this; },
+    });
+    assert.equal(result.metrics.totalDeposits, 125);
+    assert.equal(result.period.deposits, 25);
+    if (dbType === "mysql") {
+      assert.ok(observed.some(query => query.where?.[Op.or]?.some(clause => clause.type === "bonus" && clause.description?.[Op.like] === "Redeemed promo code:%")));
+    } else {
+      assert.ok(observed.some(pipeline => pipeline[0].$match?.$or?.some(clause => clause.type === "bonus" && clause.description?.$regex === "^Redeemed promo code:")));
+    }
+  });
+}
+
+for (const dbType of ["mongodb", "mysql"]) {
   test(`analytics returns total successful orders in ${dbType} mode`, async () => {
     const { router } = adminRouter(dbType);
     const route = router.stack.find(layer => layer.route?.path === "/analytics");

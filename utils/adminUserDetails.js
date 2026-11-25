@@ -4,7 +4,10 @@ const { money } = require("./money");
 const PAGE_SIZE = 6;
 const TABS = {
   all: {},
-  success_deposits: { type: "deposit", status: "completed" },
+  success_deposits: { $or: [
+    { type: "deposit", status: "completed" },
+    { type: "bonus", status: "completed", description: { $regex: "^Redeemed promo code:", $options: "i" } },
+  ] },
   pending_deposits: { type: "deposit", status: "pending" },
   purchases: { type: { $in: ["purchase", "deduction"] } },
   refunds: { type: "refund" },
@@ -39,18 +42,22 @@ async function historyPage(Model, scope, query = {}, kind = "transactions") {
 }
 
 async function userSummary({ Order, Transaction, DB_TYPE }, scope) {
-  let orders, transactions;
+  let orders, transactions, promoTransactions, lifetimeDepositRows;
   if (DB_TYPE === "mysql") {
     const { Op, fn, col } = require("sequelize");
     const where = { user_id: scope.user_id, ...(scope.createdAt ? {
       createdAt: { [Op.gte]: scope.createdAt.$gte, [Op.lt]: scope.createdAt.$lt },
     } : {}) };
-    [orders, transactions] = await Promise.all([
+    [orders, transactions, promoTransactions, lifetimeDepositRows] = await Promise.all([
       Order.findAll({ where, attributes: ["status", [fn("COUNT", col("id")), "count"], [fn("SUM", col("cost")), "amount"]], group: ["status"], raw: true }),
       Transaction.findAll({ where, attributes: ["type", "status", [fn("COUNT", col("id")), "count"], [fn("SUM", col("amount")), "amount"]], group: ["type", "status"], raw: true }),
+      Transaction.findAll({ where: { ...where, type: "bonus", description: { [Op.like]: "Redeemed promo code:%" } }, attributes: ["status", [fn("COUNT", col("id")), "count"], [fn("SUM", col("amount")), "amount"]], group: ["status"], raw: true }),
+      scope.createdAt ? Transaction.findAll({ where: { user_id: scope.user_id, status: "completed", [Op.or]: [
+        { type: "deposit" }, { type: "bonus", description: { [Op.like]: "Redeemed promo code:%" } },
+      ] }, attributes: [[fn("SUM", col("amount")), "amount"]], raw: true }) : Promise.resolve(null),
     ]);
   } else {
-    [orders, transactions] = await Promise.all([
+    [orders, transactions, promoTransactions, lifetimeDepositRows] = await Promise.all([
       Order.aggregate([
         { $match: scope },
         { $group: { _id: "$status", count: { $sum: 1 }, amount: { $sum: "$cost" } } },
@@ -61,6 +68,18 @@ async function userSummary({ Order, Transaction, DB_TYPE }, scope) {
         { $group: { _id: { type: "$type", status: "$status" }, count: { $sum: 1 }, amount: { $sum: "$amount" } } },
         { $project: { _id: 0, type: "$_id.type", status: "$_id.status", count: 1, amount: 1 } },
       ]),
+      Transaction.aggregate([
+        { $match: { ...scope, type: "bonus", description: { $regex: "^Redeemed promo code:", $options: "i" } } },
+        { $group: { _id: "$status", count: { $sum: 1 }, amount: { $sum: "$amount" } } },
+        { $project: { _id: 0, status: "$_id", count: 1, amount: 1 } },
+      ]),
+      scope.createdAt ? Transaction.aggregate([
+        { $match: { user_id: scope.user_id, status: "completed", $or: [
+          { type: "deposit" },
+          { type: "bonus", description: { $regex: "^Redeemed promo code:", $options: "i" } },
+        ] } },
+        { $group: { _id: null, amount: { $sum: "$amount" } } },
+      ]) : Promise.resolve(null),
     ]);
   }
   const order_stats = { total_orders: 0, successful_orders: 0, total_revenue: 0 };
@@ -98,6 +117,16 @@ async function userSummary({ Order, Transaction, DB_TYPE }, scope) {
     }
     if (row.type === "bonus" && row.status === "completed") deposit_stats.total_bonuses = money(deposit_stats.total_bonuses + amount);
   }
+  for (const row of promoTransactions) {
+    if (row.status !== "completed") continue;
+    const count = Number(row.count), amount = Number(row.amount || 0);
+    deposit_stats.successful_deposits = money(deposit_stats.successful_deposits + amount);
+    deposit_stats.successful_deposits_count += count;
+    transaction_counts.success_deposits += count;
+  }
+  deposit_stats.total_successful_deposits = lifetimeDepositRows
+    ? money(lifetimeDepositRows.reduce((sum, row) => sum + Number(row.amount || 0), 0))
+    : deposit_stats.successful_deposits;
   return { order_stats, deposit_stats, transaction_counts };
 }
 
