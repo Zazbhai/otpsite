@@ -13,7 +13,8 @@ async function getCachedSettings() {
             "default_theme", "site_name", "site_logo", "site_favicon", "primary_color",
             "seo_title", "seo_description", "seo_keywords", "seo_og_image",
             "maintenance_mode", "exchange_rates", "support_contact", "support_email",
-            "referral_system_enabled", "site_url", "branding_version", "checker_api_key", "checker_api_keys"
+            "referral_system_enabled", "site_url", "branding_version", "checker_api_key", "checker_api_keys",
+            "service_added_telegram_bot_token", "service_added_telegram_chat_id", "service_added_telegram_enabled"
         ];
         const settings = await Setting.find({ key: { $in: keys } });
         const obj = {};

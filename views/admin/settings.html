@@ -384,6 +384,26 @@
           </div>
         </div>
 
+        <!-- Telegram service announcements -->
+        <div class="settings-section" id="sec-telegram">
+          <div class="card">
+            <h3 style="margin-bottom:24px">Telegram Service Alerts</h3>
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <label class="form-label"><input type="checkbox" id="s-telegram-enabled" /> Announce newly added services</label>
+              <div class="form-group">
+                <label class="form-label" for="s-telegram-token">Bot Token</label>
+                <input type="password" id="s-telegram-token" class="form-input" autocomplete="new-password" placeholder="Leave blank to keep the saved token" />
+                <small id="s-telegram-token-state" style="color:var(--text-3)"></small>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="s-telegram-chat">Channel ID or Username</label>
+                <input type="text" id="s-telegram-chat" class="form-input" placeholder="@yourchannel or -1001234567890" />
+              </div>
+              <p style="color:var(--text-3)">Add your bot as a channel administrator with permission to post messages. Each new service sends: Service name service added in your site name.</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Maintenance -->
         <div class="settings-section" id="sec-maint">
           <div class="card" style="border-color:var(--danger)">
@@ -527,10 +547,17 @@
 
 <script>
   let originalSettings = {};
+  let telegramTokenConfigured = false;
   let currentTheme = 'dark';
 
   async function init() {
     if (!await requireAdmin()) return;
+
+    const telegramTab = document.createElement("button");
+    telegramTab.className = "nav-btn";
+    telegramTab.dataset.target = "sec-telegram";
+    telegramTab.textContent = "Telegram Alerts";
+    document.querySelector(".settings-nav").appendChild(telegramTab);
     
     // Fill Themes
     const grid = document.getElementById("theme-grid");
@@ -607,6 +634,7 @@
         's-support-email': 'support_email',
         's-social-whatsapp': 'social_whatsapp',
         's-support': 'support_contact',
+        's-telegram-chat': 'service_added_telegram_chat_id',
       };
       
       for(let [id, key] of Object.entries(mapping)) {
@@ -624,6 +652,12 @@
           }
         }
       }
+
+      document.getElementById("s-telegram-enabled").checked = s.service_added_telegram_enabled === true || s.service_added_telegram_enabled === "true";
+      document.getElementById("s-telegram-chat").value = s.service_added_telegram_chat_id || "";
+      telegramTokenConfigured = s.service_added_telegram_configured === true;
+      document.getElementById("s-telegram-token").value = "";
+      updateTelegramTokenState();
 
       const keyEl = document.getElementById("s-checker-api-keys");
       if (keyEl) {
@@ -698,6 +732,9 @@
     };
 
     return {
+      service_added_telegram_enabled: document.getElementById("s-telegram-enabled").checked,
+      service_added_telegram_bot_token: document.getElementById("s-telegram-token").value,
+      service_added_telegram_chat_id: document.getElementById("s-telegram-chat").value,
       site_name: document.getElementById("s-site-name").value,
       site_logo: document.getElementById("s-site-logo").value,
       site_favicon: document.getElementById("s-site-favicon").value,
@@ -788,6 +825,9 @@
     };
 
     const body = {
+      service_added_telegram_enabled: document.getElementById("s-telegram-enabled").checked,
+      service_added_telegram_bot_token: document.getElementById("s-telegram-token").value.trim(),
+      service_added_telegram_chat_id: document.getElementById("s-telegram-chat").value.trim(),
       site_name: document.getElementById("s-site-name").value,
       site_logo: document.getElementById("s-site-logo").value,
       site_favicon: document.getElementById("s-site-favicon").value,
@@ -808,10 +848,21 @@
       exchange_rates: JSON.stringify(exchangeRates)
     };
     
+    if (!body.service_added_telegram_bot_token) delete body.service_added_telegram_bot_token;
+    if (body.service_added_telegram_enabled && (!body.service_added_telegram_chat_id ||
+        (!body.service_added_telegram_bot_token && !telegramTokenConfigured))) {
+      toast("Enter a bot token and channel ID before enabling Telegram alerts", "error");
+      return;
+    }
+
     try {
       const btn = event?.target;
       if(btn) btn.disabled = true;
       await API.post("/api/admin/settings", body);
+      if (body.service_added_telegram_bot_token) telegramTokenConfigured = true;
+      document.getElementById("s-telegram-token").value = "";
+      document.getElementById("s-telegram-chat").value = body.service_added_telegram_chat_id;
+      updateTelegramTokenState();
       toast("Configuration updated successfully!", "success");
       
       // Update the snapshot so the save bar knows we are at "even" again
@@ -822,6 +873,12 @@
       // Propagate branding
       if (typeof applySiteSettings === 'function') applySiteSettings(true);
     } catch (e) { toast(e.message, "error"); if(event?.target) event.target.disabled = false; }
+  }
+
+  function updateTelegramTokenState() {
+    document.getElementById("s-telegram-token-state").textContent = telegramTokenConfigured
+      ? "A bot token is saved. Leave blank to keep it, or enter a replacement."
+      : "No bot token saved.";
   }
 
   init();

@@ -624,6 +624,8 @@ router.post("/services", upload.single("logo"), async (req, res) => {
 
     const service = await Service.create(serviceData);
     clearCache("services");
+    require("../utils/telegramNotifications").notifyServiceAdded(service)
+      .catch(error => console.error("[Telegram service notification] Failed:", error.name || "Error"));
     res.status(201).json(service);
   } catch (err) { 
     console.error("[Admin/Services] Create Error:", err.message);
@@ -953,6 +955,8 @@ async function processAutoAddServices(server, body) {
     for (const item of servicesData) {
       const code = item.code || item.service_code;
       if (existingCodes.has(code) || existingNames.has(item.name.toLowerCase())) continue;
+      existingCodes.add(code);
+      existingNames.add(item.name.toLowerCase());
 
       servicesToCreate.push({
         name: formatServiceName(item.name),
@@ -968,7 +972,11 @@ async function processAutoAddServices(server, body) {
 
     if (servicesToCreate.length > 0) {
       console.log(`[Admin/Servers] Auto-adding ${servicesToCreate.length} for server: ${server.id || server._id}`);
-      await Service.insertMany(servicesToCreate);
+      const createdServices = await Service.insertMany(servicesToCreate);
+      for (const service of createdServices) {
+        require("../utils/telegramNotifications").notifyServiceAdded(service)
+          .catch(error => console.error("[Telegram service notification] Failed:", error.name || "Error"));
+      }
       console.log(`[Admin/Servers] Auto-added ${servicesToCreate.length} NEW services to server`);
       clearCache("services");
     }
@@ -1197,6 +1205,9 @@ router.get("/settings", async (_, res) => {
       const data = s.toJSON ? s.toJSON() : s;
       obj[data.key] = data.value;
     });
+    const telegramNotifications = require("../utils/telegramNotifications");
+    obj.service_added_telegram_configured = Boolean(obj[telegramNotifications.BOT_TOKEN_KEY]);
+    delete obj[telegramNotifications.BOT_TOKEN_KEY];
     res.json(obj);
   } catch (err) {
     console.error("ADMIN_SETTINGS_GET_ERROR:", err);
@@ -1206,12 +1217,48 @@ router.get("/settings", async (_, res) => {
 
 router.post("/settings", async (req, res) => {
   try {
+    const telegramNotifications = require("../utils/telegramNotifications");
+    const botToken = req.body[telegramNotifications.BOT_TOKEN_KEY];
+    const chatId = req.body[telegramNotifications.CHAT_ID_KEY];
+    if (botToken !== undefined && (typeof botToken !== "string" || botToken.trim() !== "")) {
+      if (typeof botToken !== "string" || !/^\d{5,15}:[A-Za-z0-9_-]{20,}$/.test(botToken.trim())) {
+        return res.status(400).json({ error: "Telegram bot token format is invalid" });
+      }
+    }
+    if (chatId !== undefined && chatId !== "" &&
+        (typeof chatId !== "string" || chatId.trim().length > 100 ||
+         !/^(?:@[A-Za-z0-9_]{5,}|-?\d{5,20})$/.test(chatId.trim()))) {
+      return res.status(400).json({ error: "Telegram channel ID must be @channelname or a numeric chat ID" });
+    }
+    if (req.body[telegramNotifications.ENABLED_KEY] !== undefined &&
+        ![true, false, "true", "false"].includes(req.body[telegramNotifications.ENABLED_KEY])) {
+      return res.status(400).json({ error: "Telegram notification setting must be enabled or disabled" });
+    }
+    // An empty password field means keep the existing secret.
+    const settingsBody = { ...req.body };
+    delete settingsBody.service_added_telegram_configured;
+    if (typeof botToken === "string") {
+      if (!botToken.trim()) delete settingsBody[telegramNotifications.BOT_TOKEN_KEY];
+      else settingsBody[telegramNotifications.BOT_TOKEN_KEY] = botToken.trim();
+    }
+    if (typeof chatId === "string") settingsBody[telegramNotifications.CHAT_ID_KEY] = chatId.trim();
+    if (telegramNotifications.isConfigured(settingsBody[telegramNotifications.ENABLED_KEY])) {
+      for (const key of [telegramNotifications.BOT_TOKEN_KEY, telegramNotifications.CHAT_ID_KEY]) {
+        let value = settingsBody[key];
+        if (value === undefined) {
+          const saved = await Setting.findOne(DB_TYPE === "mysql" ? { where: { key } } : { key });
+          value = saved?.value;
+        }
+        if (!value) return res.status(400).json({ error: "A bot token and channel ID are required to enable Telegram alerts" });
+      }
+    }
+
     if (DB_TYPE === "mysql") {
       // Deduplicate: ensure old 'maintenance' key doesn't conflict with 'maintenance_mode'
       const { Op } = require("sequelize");
       await Setting.destroy({ where: { key: { [Op.in]: ["maintenance", "isMaintenance"] } } });
       
-      for (const [key, value] of Object.entries(req.body)) {
+      for (const [key, value] of Object.entries(settingsBody)) {
         const found = await Setting.findOne({ where: { key } });
         if (found) {
           await found.update({ value });
@@ -1223,7 +1270,7 @@ router.post("/settings", async (req, res) => {
       // Deduplicate for MongoDB
       await Setting.deleteMany({ key: { $in: ["maintenance", "isMaintenance"] } });
       
-      const updateData = { ...req.body, branding_version: Date.now().toString() };
+      const updateData = { ...settingsBody, branding_version: Date.now().toString() };
       const ops = Object.entries(updateData).map(([key, value]) => ({
         updateOne: { filter: { key }, update: { $set: { key, value } }, upsert: true },
       }));
@@ -1235,7 +1282,7 @@ router.post("/settings", async (req, res) => {
     emitToAll("settings", {});
     res.json({ ok: true });
   } catch (err) { 
-    console.error("ADMIN_SETTINGS_POST_ERROR:", err);
+    console.error("ADMIN_SETTINGS_POST_ERROR:", err.name || "Error");
     res.status(500).json({ error: "Server error" }); 
   }
 });
