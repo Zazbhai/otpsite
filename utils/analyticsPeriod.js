@@ -33,6 +33,9 @@ function addDays(dateKey, days) {
 
 function resolveAnalyticsPeriod(query = {}, now = new Date(), timeZone = DEFAULT_TIMEZONE) {
   const requestedRange = String(query.range || "today").toLowerCase();
+  if (requestedRange === "all") {
+    return { key: "all", label: "All time", timezone: timeZone, start: null, end: null };
+  }
   const today = dateKeyInZone(now, timeZone);
   let date = query.date ? String(query.date) : today;
   if (requestedRange === "yesterday") date = addDays(today, -1);

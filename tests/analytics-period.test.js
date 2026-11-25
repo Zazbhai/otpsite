@@ -21,3 +21,11 @@ test("analytics supports yesterday and explicit dates", () => {
   assert.equal(selected.start.toISOString(), "2026-10-31T18:30:00.000Z");
   assert.throws(() => resolveAnalyticsPeriod({ range: "date", date: "2026-02-31" }, now), /Invalid analytics date/);
 });
+
+test("analytics all-time period has no date bounds", () => {
+  const all = resolveAnalyticsPeriod({ range: "all" }, new Date("2026-11-23T10:00:00.000Z"));
+  assert.equal(all.key, "all");
+  assert.equal(all.label, "All time");
+  assert.equal(all.start, null);
+  assert.equal(all.end, null);
+});

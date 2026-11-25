@@ -160,7 +160,7 @@ function adminRouter(dbType, overrides = {}) {
     User: { countDocuments: async () => 20, aggregate: async () => [], findAll: async () => [] },
     Order: {
       count: async options => options?.where?.status === 'completed' ? 7 : options?.where?.status === 'active' ? 3 : 12,
-      aggregate: async pipeline => pipeline[0].$project?.normalizedStatus ? distribution : pipeline[0].$match?.createdAt ? [{ orders: 12, successful: 7, active: 3 }] : [],
+      aggregate: async pipeline => pipeline[0].$project?.normalizedStatus ? distribution : pipeline[0].$group?.orders ? [{ orders: 12, successful: 7, active: 3 }] : pipeline[0].$match?.createdAt ? [{ orders: 12, successful: 7, active: 3 }] : [],
       findAll: async options => options.group?.[0] === "status"
         ? distribution.map(row => ({ status: row._id, get: () => String(row.count) }))
         : [],
@@ -174,7 +174,9 @@ function adminRouter(dbType, overrides = {}) {
     if (name.startsWith("../models/")) return models[path.basename(name)] || {};
     if (name === "../middleware/auth") return { adminRequired: authorized };
     if (name === "../utils/db") return { DB_TYPE: dbType };
-    if (name === "../utils/analyticsPeriod") return { resolveAnalyticsPeriod: () => ({ key: "today", date: "2026-11-23", start: new Date(0), end: new Date(86400000), timezone: "Asia/Calcutta", label: "Today" }) };
+    if (name === "../utils/analyticsPeriod") return { resolveAnalyticsPeriod: (query = {}) => query.range === "all"
+      ? ({ key: "all", date: null, start: null, end: null, timezone: "Asia/Calcutta", label: "All time" })
+      : ({ key: "today", date: "2026-11-23", start: new Date(0), end: new Date(86400000), timezone: "Asia/Calcutta", label: "Today" }) };
     if (name === "../utils/adminRealtime") return { streamAdminChanges: (req, res) => res.json({ streamed: true }) };
     if (name.startsWith("../utils/")) return {};
     return require(name);
@@ -260,6 +262,21 @@ for (const dbType of ["mongodb", "mysql"]) {
 }
 
 for (const dbType of ["mongodb", "mysql"]) {
+  test(`admin dashboard all-time filter returns lifetime orders, users, deposits and revenue in ${dbType} mode`, async () => {
+    const { router } = adminRouter(dbType);
+    const handler = router.stack.find(layer => layer.route?.path === "/analytics").route.stack[0].handle;
+    let result;
+    await handler({ query: { range: "all" } }, {
+      json(data) { result = data; }, status() { return this; },
+    });
+    assert.equal(result.period.label, "All time");
+    assert.equal(result.period.orders, 12);
+    assert.equal(result.period.successfulOrders, 7);
+    assert.equal(result.period.users, 20);
+    assert.equal(result.period.deposits, result.metrics.totalDeposits);
+    assert.equal(result.period.revenue, result.metrics.totalRevenue);
+  });
+
   test(`analytics returns total successful orders in ${dbType} mode`, async () => {
     const { router } = adminRouter(dbType);
     const route = router.stack.find(layer => layer.route?.path === "/analytics");
@@ -291,4 +308,5 @@ test("modified browser scripts and inline admin scripts parse", () => {
       if (!/src\s*=|application\/ld\+json/.test(match[1])) new vm.Script(match[2], { filename: `${file}.html` });
     }
   }
+  assert.match(source("views/admin/index.html"), /<option value="all">All time<\/option>/);
 });
