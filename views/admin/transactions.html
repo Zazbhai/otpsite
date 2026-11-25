@@ -49,11 +49,11 @@
     </div>
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-      <button class="btn btn-primary btn-sm" onclick="setFilter('all',this)">All</button>
-      <button class="btn btn-secondary btn-sm" onclick="setFilter('deposit',this)">Deposits</button>
-      <button class="btn btn-secondary btn-sm" onclick="setFilter('purchase',this)">Purchases</button>
-      <button class="btn btn-secondary btn-sm" onclick="setFilter('refund',this)">Refunds</button>
-      <button class="btn btn-secondary btn-sm" onclick="setFilter('bonus',this)">Bonuses</button>
+      <button class="btn btn-primary btn-sm" data-tx-filter="all" onclick="setFilter('all',this)">All</button>
+      <button class="btn btn-secondary btn-sm" data-tx-filter="deposit" onclick="setFilter('deposit',this)">Deposits</button>
+      <button class="btn btn-secondary btn-sm" data-tx-filter="purchase" onclick="setFilter('purchase',this)">Purchases</button>
+      <button class="btn btn-secondary btn-sm" data-tx-filter="refund" onclick="setFilter('refund',this)">Refunds</button>
+      <button class="btn btn-secondary btn-sm" data-tx-filter="bonus" onclick="setFilter('bonus',this)">Bonuses</button>
     </div>
     <p class="text-xs text-muted" style="margin-bottom:12px">Deposits includes payment deposits and promo-code credits.</p>
     <div class="card" style="padding:0;overflow:hidden">
@@ -75,10 +75,19 @@
 <script>
   async function init() {
     if (!await requireAdmin()) return;
+    const params = new URLSearchParams(window.location.search);
+    const requestedType = params.get("type");
+    const requestedStatus = params.get("status");
+    if (["deposit", "purchase", "refund", "bonus"].includes(requestedType)) txFilter = requestedType;
+    if (["pending", "completed", "failed"].includes(requestedStatus)) txStatus = requestedStatus;
+    document.querySelectorAll("[data-tx-filter]").forEach(button => {
+      button.className = button.dataset.txFilter === txFilter ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
+    });
     await loadTx();
     subscribeAdminUpdates(() => loadTx(currentPage, true));
   }
   let txFilter = "all";
+  let txStatus = "all";
   let currentPage = 1, txRequest = 0;
 
   async function loadTx(page = currentPage, silent = false) {
@@ -88,7 +97,7 @@
     if (!silent) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
     try {
     const q = document.getElementById("tx-search").value.trim();
-    const data = await API.get(`/api/admin/transactions?type=${txFilter}&page=${page}&limit=50&q=${encodeURIComponent(q)}`);
+    const data = await API.get(`/api/admin/transactions?type=${txFilter}&status=${txStatus}&page=${page}&limit=50&q=${encodeURIComponent(q)}`);
     if (request !== txRequest) return;
 
     document.getElementById("total-count").textContent = `(${data.total.toLocaleString()})`;
@@ -115,7 +124,8 @@
   function setFilter(type, btn) {
 
     txFilter = type;
-    document.querySelectorAll("[onclick^='setFilter']").forEach(b => b.className = "btn btn-secondary btn-sm");
+    txStatus = "all";
+    document.querySelectorAll("[data-tx-filter]").forEach(b => b.className = "btn btn-secondary btn-sm");
     btn.className = "btn btn-primary btn-sm";
     loadTx(1);
   }

@@ -309,4 +309,9 @@ test("modified browser scripts and inline admin scripts parse", () => {
     }
   }
   assert.match(source("views/admin/index.html"), /<option value="all">All time<\/option>/);
+  for (const file of ["index", "analytics"]) {
+    assert.match(source(`views/admin/${file}.html`), /href="\/admin\/transactions\?type=deposit&amp;status=completed">Details<\/a>/);
+  }
+  assert.match(source("views/admin/transactions.html"), /URLSearchParams\(window\.location\.search\)/);
+  assert.match(source("views/admin/transactions.html"), /status=\$\{txStatus\}/);
 });

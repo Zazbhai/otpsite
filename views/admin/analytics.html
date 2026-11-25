@@ -56,7 +56,14 @@
       <div class="stat-card"><div class="stat-icon" style="color:#3b82f6;background:rgba(59,130,246,0.1)">👤</div><div class="stat-value" id="a-users">—</div><div class="stat-label">New Users Today</div></div>
       <div class="stat-card"><div class="stat-icon" style="color:#10b981;background:rgba(16,185,129,0.1)">💵</div><div class="stat-value text-success" id="a-t-rev">—</div><div class="stat-label">Total Revenue</div></div>
       <div class="stat-card"><div class="stat-icon" style="color:#059669;background:rgba(5,150,105,0.1)">📈</div><div class="stat-value text-success" id="a-rev">—</div><div class="stat-label">Today's Revenue</div></div>
-      <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;background:rgba(245,158,11,0.1)">💰</div><div class="stat-value text-warning" id="a-t-dep">—</div><div class="stat-label">Total Deposits</div></div>
+      <div class="stat-card">
+        <div class="stat-icon" style="color:#f59e0b;background:rgba(245,158,11,0.1)">💰</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <div class="stat-label">Total Deposits</div>
+          <a class="btn btn-secondary btn-sm" href="/admin/transactions?type=deposit&amp;status=completed">Details</a>
+        </div>
+        <div class="stat-value text-warning" id="a-t-dep">—</div>
+      </div>
       <div class="stat-card"><div class="stat-icon" style="color:#d97706;background:rgba(217,119,6,0.1)">💸</div><div class="stat-value text-warning" id="a-dep">—</div><div class="stat-label">Today's Deposits</div></div>
       <div class="stat-card"><div class="stat-icon" style="color:#6366f1;background:rgba(99,102,241,0.1)">📦</div><div class="stat-value" id="a-t-ord">—</div><div class="stat-label">Total Orders</div></div>
       <div class="stat-card"><div class="stat-icon" style="color:#ec4899;background:rgba(236,72,153,0.1)">⚡</div><div class="stat-value text-accent" id="a-active">—</div><div class="stat-label">Active Orders</div></div>
