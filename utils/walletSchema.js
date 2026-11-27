@@ -43,4 +43,11 @@ async function ensureWalletSchema(sequelize) {
     if (changes.length) await sequelize.query(`ALTER TABLE \`${table}\` ${changes.join(', ')}`);
   }
 }
-module.exports = { ensureWalletSchema, ensureReferenceSchema };
+async function ensureRebuySchema(sequelize) {
+  const { QueryTypes } = require("sequelize");
+  for (const [table, column, definition] of [["Servers", "api_rebuy_url", "TEXT NULL"], ["Orders", "rebuy_of", "VARCHAR(255) NOT NULL DEFAULT ''"], ["Orders", "rebuy_order_id", "VARCHAR(255) NULL DEFAULT NULL"], ["Orders", "rebuy_cancelled", "TINYINT(1) NOT NULL DEFAULT 0"]]) {
+    const columns = await sequelize.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column", { replacements: { table, column }, type: QueryTypes.SELECT });
+    if (!columns.length) await sequelize.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`);
+  }
+}
+module.exports = { ensureWalletSchema, ensureReferenceSchema, ensureRebuySchema };

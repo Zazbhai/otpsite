@@ -225,6 +225,7 @@
       const q = document.getElementById('order-search').value.trim();
       const qs = `status=${currentFilter}&page=${page}&limit=15` + (q ? `&q=${encodeURIComponent(q)}` : '');
       const data = await API.get(`/api/user/orders?${qs}`);
+      window.__ordersForRebuy = data.orders || [];
       
       if (!data.orders.length) {
         list.innerHTML = `
@@ -300,7 +301,11 @@
           </td>
           <td class="py-3 px-6 font-label-md text-[13px] font-bold text-on-surface">${fmtMoney(o.cost)}</td>
           <td class="py-3 px-6">
-            <span class="font-label-md text-[9px] font-bold tracking-wider px-2 py-1 rounded-md border ${statusClass} inline-block uppercase">${statusText}</span>
+            <div class="flex flex-col items-start gap-2">
+              <span class="font-label-md text-[9px] font-bold tracking-wider px-2 py-1 rounded-md border ${statusClass} inline-block uppercase">${statusText}</span>
+              ${o.can_rebuy ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); rebuyFromHistory('${o.order_id}')">Rebuy same number</button>` : ''}
+              ${o.can_rebuy_after_cancel ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); cancelForRebuyFromHistory('${o.order_id}')">Cancel for rebuy</button>` : ''}
+            </div>
           </td>
           <td class="py-3 px-6 font-label-md text-[11px] text-on-surface-variant">${fmtDateShort(o.createdAt)}</td>
         </tr>
@@ -366,6 +371,8 @@
               <span>${fmtDateShort(o.createdAt)}</span>
             </div>
           </div>
+          ${o.can_rebuy ? `<button class="btn btn-secondary btn-sm w-fit" onclick="event.stopPropagation(); rebuyFromHistory('${o.order_id}')">Rebuy same number</button>` : ''}
+          ${o.can_rebuy_after_cancel ? `<button class="btn btn-secondary btn-sm w-fit" onclick="event.stopPropagation(); cancelForRebuyFromHistory('${o.order_id}')">Cancel for rebuy</button>` : ''}
         </div>
       `}).join('');
       
@@ -413,6 +420,26 @@
   };
 
   window.loadOrders = loadOrders;
+  window.rebuyFromHistory = async function (id) {
+    const order = (window.__ordersForRebuy || []).find(item => String(item.order_id) === String(id));
+    if (!order?.can_rebuy) return toast('This order is not available to rebuy', 'error');
+    if (!await uiConfirm(`Rebuy this number for ${fmtMoney(order.cost)}? The cost will be deducted from your wallet.`)) return;
+    try {
+      const result = await API.post(`/api/user/orders/${encodeURIComponent(id)}/rebuy`);
+      toast('Same number rebought successfully', 'success');
+      SPA.navigate(`/dashboard/orders/${encodeURIComponent(result.order.order_id)}`);
+    } catch (error) { toast(error.message || 'Could not rebuy this number', 'error'); }
+  };
+  window.cancelForRebuyFromHistory = async function (id) {
+    const order = (window.__ordersForRebuy || []).find(item => String(item.order_id) === String(id));
+    if (!order?.can_rebuy_after_cancel) return toast('This order is not available for rebuy cancellation', 'error');
+    if (!await uiConfirm('Cancel the completed provider activation so this number can be rebought?')) return;
+    try {
+      await API.post(`/api/user/orders/${encodeURIComponent(id)}/cancel-for-rebuy`);
+      toast('Activation cancelled. You can now rebuy the same number.', 'success');
+      loadOrders(currentPage);
+    } catch (error) { toast(error.message || 'Could not cancel activation', 'error'); }
+  };
   window.initOrders = () => {
      loadOrders(currentPage, true);
      updateBalanceHeader();

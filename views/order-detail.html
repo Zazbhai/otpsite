@@ -1915,6 +1915,16 @@
             <div class="modern-phone-number">${displayPhone}</div>
           </div>
           <div style="display:flex; gap:6px; align-items: center;">
+            ${o.can_rebuy && !o.rebuy_order_id ? `
+              <button class="modern-copy-btn" onclick="event.stopPropagation(); rebuyNumber('${oid}')" title="Rebuy this number" style="display:flex;align-items:center;gap:6px;padding:0 10px;width:auto">
+                <span class="material-symbols-outlined" style="font-size:16px">replay</span><span>Rebuy</span>
+              </button>
+            ` : ''}
+            ${o.can_rebuy_after_cancel && !o.rebuy_order_id ? `
+              <button class="modern-copy-btn" onclick="event.stopPropagation(); cancelForRebuy('${oid}')" title="Cancel activation before rebuy" style="display:flex;align-items:center;gap:6px;padding:0 10px;width:auto">
+                <span class="material-symbols-outlined" style="font-size:16px">cancel</span><span>Cancel for rebuy</span>
+              </button>
+            ` : ''}
             ${hasChecker && o.phone ? `
               <button class="modern-copy-btn checker-btn" id="check-btn-${oid}" onclick="event.stopPropagation(); checkOrderRegistration('${oid}', '${o.service_name}')" title="Check if number is already registered on ${getCheckerDisplayName(o.service_name)}">
                 <span class="material-symbols-outlined" style="font-size:15px;">verified_user</span>
@@ -2241,6 +2251,42 @@
       }
     };
 
+    window.rebuyNumber = async function (id) {
+      const order = (window.__activeOrdersCache || []).find(item => String(item.order_id || item.id) === String(id)) || orderData;
+      if (!order || String(order.order_id || order.id) !== String(id) || !order.can_rebuy || order.rebuy_order_id) {
+        return toast('This order is not available to rebuy', 'error');
+      }
+      if (!await uiConfirm(`Rebuy this number for ${fmtMoney(order.cost)}? This will deduct the amount from your wallet.`)) return;
+      if (window._isRebuying) return;
+      window._isRebuying = true;
+      try {
+        if (typeof window.showPageLoader === 'function') window.showPageLoader();
+        const result = await API.post(`/api/user/orders/${encodeURIComponent(id)}/rebuy`);
+        toast('Same number rebought successfully', 'success');
+        SPA.navigate(`/dashboard/orders/${encodeURIComponent(result.order.order_id)}`);
+      } catch (error) {
+        if (typeof window.hidePageLoader === 'function') window.hidePageLoader();
+        toast(error.message || 'Could not rebuy this number', 'error');
+      } finally {
+        window._isRebuying = false;
+      }
+    };
+
+    window.cancelForRebuy = async function (id) {
+      const order = (window.__activeOrdersCache || []).find(item => String(item.order_id || item.id) === String(id)) || orderData;
+      if (!order?.can_rebuy_after_cancel || order.rebuy_order_id) return toast('This order is not available for rebuy cancellation', 'error');
+      if (!await uiConfirm('Cancel the completed provider activation so this same number can be rebought? The original purchase will remain completed.')) return;
+      try {
+        await API.post(`/api/user/orders/${encodeURIComponent(id)}/cancel-for-rebuy`);
+        const refreshed = await API.get(`/api/user/orders/${encodeURIComponent(id)}`);
+        window.__activeOrdersCache = (window.__activeOrdersCache || []).map(item =>
+          String(item.order_id || item.id) === String(id) ? refreshed : item);
+        if (String(orderData?.order_id || orderData?.id) === String(id)) orderData = refreshed;
+        toast('Activation cancelled. You can now rebuy the same number.', 'success');
+        loadActiveOrders();
+      } catch (error) { toast(error.message || 'Could not cancel activation', 'error'); }
+    };
+
     window.copyText = function (text, label = 'Text') {
       window.copyToClipboard(text, null, `${label} copied!`);
     }
@@ -2381,7 +2427,7 @@
               globalStatus.className = 'status-badge completed';
               globalStatus.innerHTML = '<span>Completed</span>';
               
-              if (window.__hadActiveOrders && !window.__redirecting) {
+              if (window.__hadActiveOrders && !window.__redirecting && !allToShow.some(o => o.can_rebuy || o.can_rebuy_after_cancel)) {
                 window.__redirecting = true;
                 setTimeout(() => {
                   window.location.href = '/dashboard/buy';

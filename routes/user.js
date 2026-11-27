@@ -24,6 +24,7 @@ const rateLimit = require("express-rate-limit");
 const UserWebhook = require("../models/UserWebhook");
 const { DB_TYPE } = require("../utils/db");
 const { parseWebhookUrl, buildSmsPayload, deliverWebhook } = require("../utils/customerWebhook");
+const { rebuyCancelledOrder, cancelCompletedOrderForRebuy } = require("../utils/rebuy");
 
 // --- CACHE SYSTEM ---
 const { getFromCache, setToCache } = require("../utils/apiCache");
@@ -603,7 +604,7 @@ router.post("/orders", async (req, res) => {
 // ── GET /api/user/orders ─────────────────────────────────────────
 router.get("/orders", async (req, res) => {
   try {
-    const { status, page = 1, limit = 20, q } = req.query;
+    const { status, page = 1, limit = 20, q, rebuy_candidates } = req.query;
     const filter = { user_id: req.userId };
     if (q) {
       filter.$or = [
@@ -621,10 +622,14 @@ router.get("/orders", async (req, res) => {
       }
     }
 
+    if (rebuy_candidates === "1") {
+      filter.status = { $in: ["cancelled", "expired", "refunded", "completed"] };
+      filter.$and = [{ $or: [{ rebuy_order_id: "" }, { rebuy_order_id: null }] }];
+    }
     const total  = await Order.countDocuments(filter);
     const orders = await Order.find(filter)
-      .select("order_id service_id service_name cost status phone createdAt all_otps otp server_name service_image service_color expires_at min_cancel_at")
-      .sort({ createdAt: -1 })
+      .select("order_id service_id service_name cost status phone createdAt all_otps otp server_name service_image service_color expires_at min_cancel_at rebuy_order_id rebuy_cancelled refund_issued")
+      .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .lean();
@@ -632,7 +637,7 @@ router.get("/orders", async (req, res) => {
     // Enrich with server_country
     const serverNames = [...new Set(orders.map(o => o.server_name).filter(Boolean))];
     const servers = await Server.find({ name: { $in: serverNames } })
-      .select("name country_id")
+      .select("name country_id is_active api_cancel_url api_rebuy_url")
       .populate('country_id', 'name')
       .lean();
     const serverMap = new Map(servers.map(s => [s.name, s]));
@@ -641,6 +646,12 @@ router.get("/orders", async (req, res) => {
       o._id = o._id?.toString() || o.id;
       const srv = serverMap.get(o.server_name);
       o.server_country = srv?.country_id?.name || o.country;
+      o.can_rebuy = Boolean(srv?.is_active && srv.api_rebuy_url && ["cancelled", "expired", "refunded"].includes(o.status) &&
+        o.refund_issued && !o.otp && !(o.all_otps && o.all_otps.length) && !o.rebuy_order_id);
+      o.can_rebuy = o.can_rebuy || Boolean(srv?.is_active && srv.api_rebuy_url && o.status === "completed" && o.rebuy_cancelled &&
+        (o.otp || o.all_otps?.length) && !o.rebuy_order_id);
+      o.can_rebuy_after_cancel = Boolean(srv?.is_active && srv.api_cancel_url && srv?.api_rebuy_url && o.status === "completed" &&
+        !o.rebuy_cancelled && !o.rebuy_order_id && (o.otp || o.all_otps?.length));
     });
 
     res.json({ orders, total, page: parseInt(page), pages: Math.ceil(total / limit) });
@@ -665,8 +676,15 @@ router.get("/orders/:id", async (req, res) => {
     }
 
     if (!order) return res.status(404).json({ error: "Order not found" });
-    const finalOrder = typeof order.toObject === 'function' ? order.toObject() : order;
+    const finalOrder = typeof order.toObject === 'function' ? order.toObject() : typeof order.toJSON === 'function' ? order.toJSON() : { ...order };
     finalOrder.server_country = serverConf?.country_id?.name || order.country;
+    finalOrder.can_rebuy = Boolean(serverConf?.is_active && serverConf.api_rebuy_url &&
+      ["cancelled", "expired", "refunded"].includes(order.status) && order.refund_issued &&
+      !order.otp && !(order.all_otps && order.all_otps.length) && !order.rebuy_order_id);
+    finalOrder.can_rebuy = finalOrder.can_rebuy || Boolean(serverConf?.is_active && serverConf.api_rebuy_url && order.status === "completed" &&
+      order.rebuy_cancelled && (order.otp || order.all_otps?.length) && !order.rebuy_order_id);
+    finalOrder.can_rebuy_after_cancel = Boolean(serverConf?.is_active && serverConf.api_cancel_url && serverConf?.api_rebuy_url &&
+      order.status === "completed" && !order.rebuy_cancelled && !order.rebuy_order_id && (order.otp || order.all_otps?.length));
     res.json(finalOrder);
 
   } catch (err) { 
@@ -777,9 +795,18 @@ router.post("/orders/:id/cancel", async (req, res) => {
 
 // ── POST /api/user/orders/:id/retry ──────────────────────────────
 router.post("/orders/:id/retry", async (req, res) => {
+  const { acquireLockWithTimeout, releaseLock } = require("../utils/orderLocks");
+  let retryLockId;
   try {
     let order = await Order.findOne({ order_id: req.params.id, user_id: req.userId });
     if (!order) return res.status(404).json({ error: "Order not found" });
+    retryLockId = String(order._id || order.id);
+    if (!(await acquireLockWithTimeout(retryLockId, 6000))) {
+      retryLockId = null;
+      return res.status(409).json({ error: "Order is busy. Try again" });
+    }
+    order = await Order.findOne({ order_id: req.params.id, user_id: req.userId });
+    if (!order || order.rebuy_cancelled || order.rebuy_order_id) return res.status(400).json({ error: "This activation has been cancelled for rebuy" });
     const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
     if (!hasOtp || !["completed", "active"].includes(order.status)) {
         return res.status(400).json({ error: "Can only request next SMS for completed orders or active orders with at least one OTP" });
@@ -806,7 +833,7 @@ router.post("/orders/:id/retry", async (req, res) => {
       }
     }
     order.expires_at = new Date(Date.now() + addMinutes * 60 * 1000);
-    order = await Order.findOneAndUpdate({ _id: order._id, status: { $in: ["active", "completed"] }, refund_issued: true }, {
+    order = await Order.findOneAndUpdate({ _id: order._id, status: { $in: ["active", "completed"] }, rebuy_cancelled: { $ne: true }, $or: [{ rebuy_order_id: "" }, { rebuy_order_id: null }], refund_issued: true }, {
       $set: { status: "active", otp: "", refund_issued: true, expires_at: order.expires_at },
     }, { new: true });
     if (!order) return res.status(409).json({ error: "Order state changed" });
@@ -815,6 +842,52 @@ router.post("/orders/:id/retry", async (req, res) => {
   } catch (err) { 
     console.error("ROUTE_ERROR:", err);
     res.status(500).json({ error: "Server error" }); 
+  } finally {
+    if (retryLockId) releaseLock(retryLockId);
+  }
+});
+
+router.post("/orders/:id/rebuy", async (req, res) => {
+  try {
+    const result = await rebuyCancelledOrder({ orderId: req.params.id, userId: req.userId });
+    emitToUser(String(req.userId), "balance", { balance: result.balance });
+    emitToUser(String(req.userId), "order", { orderId: result.order.order_id, status: "active" });
+    res.status(201).json({ success: true, order: result.order });
+  } catch (err) {
+    const messages = {
+      ORDER_NOT_FOUND: [404, "Order not found"],
+      ORDER_NOT_REBUYABLE: [400, "Cancel the activation before rebuying; orders without an OTP must be refunded"],
+      REBUY_NOT_CONFIGURED: [409, "Rebuy is not configured for this server"],
+      REBUY_ALREADY_USED: [409, "This order has already been rebought"],
+      ORIGINAL_REFUND_UNVERIFIED: [409, "The original refund needs review before rebuy"],
+      INSUFFICIENT_BALANCE: [402, "Insufficient balance"],
+      PROVIDER_NUMBER_MISMATCH: [502, "Provider returned a different number"],
+      PROVIDER_REBUY_FAILED: [400, "Number could not be rebought"],
+      REBUY_IN_PROGRESS: [429, "Rebuy is already in progress"],
+    };
+    const [status, error] = messages[err.message] || [500, "Server error"];
+    if (status >= 500) console.error("Rebuy error:", err);
+    res.status(status).json({ error });
+  }
+});
+
+router.post("/orders/:id/cancel-for-rebuy", async (req, res) => {
+  try {
+    const order = await cancelCompletedOrderForRebuy({ orderId: req.params.id, userId: req.userId });
+    emitToUser(String(req.userId), "order", { orderId: order.order_id, status: order.status, rebuy_cancelled: true });
+    res.json({ success: true, order, can_rebuy: true });
+  } catch (err) {
+    const messages = {
+      ORDER_NOT_FOUND: [404, "Order not found"],
+      ORDER_NOT_CANCELLABLE_FOR_REBUY: [400, "Only completed orders with an OTP can be cancelled for rebuy"],
+      REBUY_CANCEL_NOT_CONFIGURED: [409, "Cancel and rebuy endpoints are not configured for this server"],
+      PROVIDER_CANCEL_FAILED: [502, "Provider could not cancel this activation"],
+      ORDER_STATE_CHANGED: [409, "Order state changed. Refresh and try again"],
+      REBUY_IN_PROGRESS: [429, "Rebuy is already in progress"],
+    };
+    const [status, error] = messages[err.message] || [500, "Server error"];
+    if (status >= 500) console.error("Cancel for rebuy error:", err);
+    res.status(status).json({ error });
   }
 });
 

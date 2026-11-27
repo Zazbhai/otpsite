@@ -149,16 +149,31 @@ async function reservePurchase({ userId, orderId, amount, description }) {
 async function finalizePurchase(orderData) {
   try { return await withTransaction(async session => {
     const options = optionsFor(session);
+    const providerIdentity = [orderData.server_name, String(orderData.external_order_id)];
+    if (orderData.rebuy_of) providerIdentity.push(String(orderData.order_id));
     const providerReference = "PROVIDER-ORDER:" + require("crypto").createHash("sha256")
-      .update(JSON.stringify([orderData.server_name, String(orderData.external_order_id)])).digest("hex");
+      .update(JSON.stringify(providerIdentity)).digest("hex");
     const claimed = await Transaction.findOneAndUpdate({ order_id: orderData.order_id, user_id: String(orderData.user_id), type: "purchase", status: "pending" }, {
       $set: { status: "completed", reference: providerReference },
     }, { ...options, new: true });
     if (!claimed) throw new Error("PURCHASE_NOT_RESERVED");
     if (money(orderData.cost) !== -money(claimed.amount)) throw new Error("ORDER_COST_MISMATCH");
     // External IDs are scoped to the provider, not globally across servers.
-    const duplicate = await Order.findOne({ server_name: orderData.server_name, external_order_id: orderData.external_order_id }, null, options);
-    if (duplicate) throw new Error("DUPLICATE_EXTERNAL_ORDER");
+    const identity = { server_name: orderData.server_name, external_order_id: orderData.external_order_id };
+    if (orderData.rebuy_of) {
+      const parent = await Order.findOne({ order_id: orderData.rebuy_of, user_id: String(orderData.user_id),
+        rebuy_order_id: orderData.order_id }, null, options);
+      if (!parent || parent.phone !== orderData.phone || parent.server_name !== orderData.server_name ||
+          !(["cancelled", "expired", "refunded"].includes(parent.status) ||
+            (parent.status === "completed" && parent.rebuy_cancelled))) throw new Error("ORDER_NOT_REBUYABLE");
+      // Retired activations may share a provider ID across a chain of rebuys.
+      // Inspect every conflicting activation, rather than only the oldest one.
+      const conflict = await Order.findOne({ ...identity, $or: [
+        { user_id: { $ne: String(orderData.user_id) } }, { phone: { $ne: orderData.phone } },
+        { $and: [{ status: { $nin: ["cancelled", "expired", "refunded"] } }, { rebuy_cancelled: { $ne: true } }] },
+      ] }, null, options);
+      if (conflict) throw new Error("DUPLICATE_EXTERNAL_ORDER");
+    } else if (await Order.findOne(identity, null, options)) throw new Error("DUPLICATE_EXTERNAL_ORDER");
     return DB_TYPE === "mysql" ? Order.create(orderData, options) : (await Order.create([orderData], options))[0];
   }); } catch (err) {
     if (err.code === 11000 || err.name === "SequelizeUniqueConstraintError") throw new Error("DUPLICATE_EXTERNAL_ORDER");
@@ -187,7 +202,12 @@ async function recoverPendingPurchases() {
   const cutoff = new Date(Date.now() - 15 * 60 * 1000);
   const pending = await Transaction.find({ type: "purchase", status: "pending", createdAt: { $lt: cutoff } }).limit(100);
   for (const tx of pending) {
-    try { await reversePurchase(tx.order_id); }
+    try {
+      const reversed = await reversePurchase(tx.order_id);
+      if (reversed) {
+        await Order.findOneAndUpdate({ rebuy_order_id: tx.order_id }, { $set: { rebuy_order_id: "" } });
+      }
+    }
     catch (err) { console.error("[Purchase recovery]", tx.order_id, err.message); }
   }
 }

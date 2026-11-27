@@ -315,6 +315,15 @@
         </div>
       </div>
     </div>
+    <section class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 md:p-5 shadow-sm" id="rebuy-panel">
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <h2 class="text-lg font-bold text-on-surface">Rebuy a number</h2>
+        <button class="btn btn-secondary btn-sm" onclick="loadBuyRebuyOrders(true)">Refresh</button>
+      </div>
+      <p class="text-sm text-on-surface-variant mb-3">For completed OTP orders, cancel the activation first. The original purchase stays completed. Rebuy creates a new paid order.</p>
+      <div id="rebuy-orders" class="space-y-3" aria-live="polite"></div>
+      <button id="rebuy-load-more" class="btn btn-secondary btn-sm mt-3" onclick="loadBuyRebuyOrders(false)" hidden>Load 6 more</button>
+    </section>
   </div>
 </main>
 
@@ -405,7 +414,89 @@
   let currentSearch = "";
   const LIMIT = 30;
 
+  let rebuyPage = 0;
+  let rebuyLoading = false;
+  let rebuyReloadPending = false;
+  const rebuyOrders = new Map();
+  function renderBuyRebuyOrders() {
+    const container = document.getElementById('rebuy-orders');
+    if (!container) return;
+    container.replaceChildren();
+    if (!rebuyOrders.size) container.textContent = 'No finished orders yet.';
+    for (const order of rebuyOrders.values()) {
+      const row = document.createElement('div');
+      row.className = 'flex flex-wrap items-center justify-between gap-3 border border-outline-variant/30 rounded-lg p-3';
+      const label = document.createElement('div');
+      label.className = 'text-sm text-on-surface';
+      label.textContent = `${order.service_name} | ${order.phone} | ${fmtMoney(order.cost)}`;
+      const detail = document.createElement('div');
+      detail.className = 'text-xs text-on-surface-variant mt-1';
+      detail.textContent = `${order.order_id} | ${order.status}`;
+      label.append(detail);
+      row.append(label);
+      if (order.can_rebuy || order.can_rebuy_after_cancel) {
+        const button = document.createElement('button');
+        button.className = 'btn btn-secondary btn-sm';
+        button.textContent = order.can_rebuy ? 'Rebuy same number' : 'Cancel for rebuy';
+        button.onclick = async () => {
+          if (button.disabled) return;
+          button.disabled = true;
+          try {
+            const rebuy = order.can_rebuy;
+            const message = rebuy
+              ? `Rebuy ${order.phone} for ${fmtMoney(order.cost)}? This creates a new paid order.`
+              : 'Cancel this completed activation for rebuy? The original purchase stays completed and is not refunded.';
+            if (!await uiConfirm(message)) return;
+            const result = await API.post(`/api/user/orders/${encodeURIComponent(order.order_id)}/${rebuy ? 'rebuy' : 'cancel-for-rebuy'}`);
+            if (rebuy) {
+              toast('Same number rebought successfully', 'success');
+              window.location.href = `/dashboard/orders/${encodeURIComponent(result.order.order_id)}`;
+            } else {
+              toast('Activation cancelled. You can now rebuy this number.', 'success');
+              await window.loadBuyRebuyOrders(true);
+            }
+          } catch (error) { toast(error.message || 'Could not update this activation', 'error'); }
+          finally { button.disabled = false; }
+        };
+        row.append(button);
+      } else {
+        const link = document.createElement('a');
+        link.className = 'text-sm text-primary';
+        link.textContent = 'View order';
+        link.href = `/dashboard/orders/${encodeURIComponent(order.order_id)}`;
+        row.append(link);
+      }
+      container.append(row);
+    }
+  }
+  window.loadBuyRebuyOrders = async function(reset = true) {
+    if (!document.getElementById('rebuy-orders')) return;
+    if (rebuyLoading) { rebuyReloadPending = rebuyReloadPending || reset; return; }
+    rebuyLoading = true;
+    const nextPage = reset ? 1 : rebuyPage + 1;
+    const more = document.getElementById('rebuy-load-more');
+    more.disabled = true;
+    try {
+      const result = await API.get(`/api/user/orders?rebuy_candidates=1&limit=6&page=${nextPage}`);
+      if (reset) rebuyOrders.clear();
+      for (const order of result.orders || []) rebuyOrders.set(order.order_id, order);
+      rebuyPage = nextPage;
+      renderBuyRebuyOrders();
+      more.hidden = nextPage >= result.pages;
+    } catch (error) {
+      toast(error.message || 'Could not load previous orders', 'error');
+    } finally {
+      rebuyLoading = false;
+      more.disabled = false;
+      if (rebuyReloadPending) { rebuyReloadPending = false; window.loadBuyRebuyOrders(true); }
+    }
+  };
+  if (window.__buyRebuyListener) window.removeEventListener('socket:order', window.__buyRebuyListener);
+  window.__buyRebuyListener = () => { if (document.getElementById('rebuy-panel')) window.loadBuyRebuyOrders(true); };
+  window.addEventListener('socket:order', window.__buyRebuyListener);
+
   window.initBuy = async function() {
+    window.loadBuyRebuyOrders(true);
     try {
       const dbUrl = new URLSearchParams(window.location.search).get('q');
       if (dbUrl) {

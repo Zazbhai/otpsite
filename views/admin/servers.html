@@ -661,6 +661,13 @@
               placeholder="https://api.provider.com/?action=setStatus&status=3..." />
           </div>
 
+          <div class="form-group">
+            <label class="form-label">Rebuy URL (provider-specific)</label>
+            <input type="text" id="srv-rebuy-url" class="form-input url-input"
+              placeholder="https://api.provider.com/rebuy?api_key=$api_key&id=$id&phone=$phone" />
+            <small class="text-muted">Supported placeholders: $api_key, $id (provider order), $phone/$number, $service, $country. Provider must return ACCESS_NUMBER:id:phone or JSON with id and phone. Completed OTP orders require the Cancel URL to confirm cancellation (ACCESS_CANCEL, ACCESS_ACTIVATION_CANCELED, or JSON success:true) before rebuy.</small>
+          </div>
+
           <div class="form-row" style="grid-template-columns: 1fr 1fr">
             <div class="form-group">
               <label class="form-label">Auto-Cancel (min)</label>
@@ -1165,6 +1172,7 @@
       setVal("srv-check-url", s.api_check_status_url || "");
       setVal("srv-cancel-url", s.api_cancel_url || "");
       setVal("srv-retry-url", s.api_retry_url || "");
+      setVal("srv-rebuy-url", s.api_rebuy_url || "");
       setVal("srv-cancel-mins", s.auto_cancel_minutes || 20);
       setVal("srv-min-cancel", s.min_cancel_minutes || 0);
       setVal("srv-retry-count", s.retry_count || 0);
@@ -1207,6 +1215,7 @@
         api_check_status_url: document.getElementById("srv-check-url").value.trim(),
         api_cancel_url: document.getElementById("srv-cancel-url").value.trim(),
         api_retry_url: document.getElementById("srv-retry-url").value.trim(),
+        api_rebuy_url: document.getElementById("srv-rebuy-url").value.trim(),
         auto_cancel_minutes: parseInt(document.getElementById("srv-cancel-mins").value) || 20,
         min_cancel_minutes: parseInt(document.getElementById("srv-min-cancel").value) || 0,
         retry_count: parseInt(document.getElementById("srv-retry-count").value) || 0,

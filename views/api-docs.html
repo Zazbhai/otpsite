@@ -170,6 +170,8 @@
     <a href="#getNumber" class="apidocs-nav-item" onclick="setSidebarActive(this)">📱 Request Number</a>
     <a href="#getStatus" class="apidocs-nav-item" onclick="setSidebarActive(this)">✉️ Get SMS</a>
     <a href="#setStatus" class="apidocs-nav-item" onclick="setSidebarActive(this)">🔄 Change Status</a>
+    <a href="#cancelForRebuy" class="apidocs-nav-item" onclick="setSidebarActive(this)">Cancel for Rebuy</a>
+    <a href="#rebuy" class="apidocs-nav-item" onclick="setSidebarActive(this)">🔁 Rebuy Number</a>
     <a href="#getCountries" class="apidocs-nav-item" onclick="setSidebarActive(this)">🌍 Get Countries</a>
     <a href="#getServices" class="apidocs-nav-item" onclick="setSidebarActive(this)">🛠️ Get Services</div></a>
   </nav>
@@ -475,6 +477,59 @@ getBalance();</pre>
     </div>
 
     
+    <!-- cancelForRebuy -->
+    <div id="cancelForRebuy" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box"><span class="endpoint-icon">cancel</span><span class="endpoint-name">Cancel Completed Activation for Rebuy</span></div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">For a completed order that received an OTP, cancel the provider activation before rebuying it. The original purchase stays completed and is not refunded.</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&amp;action=cancelForRebuy&amp;id=$id</div>
+            <div class="section-tag">Parameters</div>
+            <div class="table-wrapper"><table class="doc-table"><thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead><tbody>
+              <tr><td>api_key</td><td>Yes</td><td>Your API key (<code>apikey</code> is also accepted).</td></tr>
+              <tr><td>action</td><td>Yes</td><td>Must be <code>cancelForRebuy</code>.</td></tr>
+              <tr><td>id</td><td>Yes</td><td>Original platform activation ID.</td></tr>
+            </tbody></table></div>
+            <div class="section-tag">Responses</div>
+            <pre class="code-sample">ACCESS_CANCEL_FOR_REBUY
+BAD_STATUS
+NO_ACTIVATION</pre>
+            <p class="endpoint-desc">After <code>ACCESS_CANCEL_FOR_REBUY</code>, call <code>action=rebuy&amp;id=$id</code> to request the same phone number again.</p>
+        </div>
+    </div>
+
+    <!-- rebuy -->
+    <div id="rebuy" class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+            <span class="method-badge">GET</span>
+            <div class="endpoint-title-box"><span class="endpoint-icon">🔁</span><span class="endpoint-name">Rebuy Number</span></div>
+            <div class="chevron-box">❱</div>
+        </div>
+        <div class="card-body">
+            <p class="endpoint-desc">Request the same phone number again from its provider. For orders without an OTP, the original cancellation and refund must be complete. For completed OTP orders, first call <code>cancelForRebuy</code> and wait for <code>ACCESS_CANCEL_FOR_REBUY</code>. Rebuy charges the number cost again and returns a new order ID.</p>
+            <div class="section-tag">Endpoint</div>
+            <div class="url-box">{{SITE_URL}}/stubs/handler_api.php?api_key=$api_key&amp;action=rebuy&amp;id=$id</div>
+            <div class="section-tag">Parameters</div>
+            <div class="table-wrapper"><table class="doc-table"><thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead><tbody>
+              <tr><td>api_key</td><td>Yes</td><td>Your API key (<code>apikey</code> is also accepted).</td></tr>
+              <tr><td>action</td><td>Yes</td><td>Must be <code>rebuy</code>.</td></tr>
+              <tr><td>id</td><td>Yes</td><td>Original platform activation ID returned by <code>getNumber</code>.</td></tr>
+            </tbody></table></div>
+            <div class="section-tag">Responses</div>
+            <div class="table-wrapper"><table class="doc-table"><thead><tr><th>Response</th><th>Description</th></tr></thead><tbody>
+              <tr><td><code>ACCESS_NUMBER:new_id:phone</code></td><td>Same phone rebought; use the new ID for status requests.</td></tr>
+              <tr><td><code>NO_BALANCE</code></td><td>Insufficient wallet balance.</td></tr>
+              <tr><td><code>BAD_STATUS</code></td><td>Order is not eligible or rebuy is not configured.</td></tr>
+              <tr><td><code>NO_NUMBERS</code></td><td>Provider could not rebuy the same number.</td></tr>
+            </tbody></table></div>
+            <div class="code-example"><div class="code-label">Example</div><pre>GET {{SITE_URL}}/stubs/handler_api.php?api_key=YOUR_API_KEY&amp;action=rebuy&amp;id=ORD-EXAMPLE</pre></div>
+        </div>
+    </div>
+
     <!-- getCountries -->
     <div id="getCountries" class="endpoint-card">
         <div class="endpoint-header" onclick="toggleEndpoint(this)">

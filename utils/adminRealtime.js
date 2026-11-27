@@ -42,7 +42,7 @@ function trackAdminChanges(req, res, next) {
   const isAppWrite = isWrite && /^\/api\/(admin|user|accounts|auth|payment)(\/|$)/.test(path);
   const isPaymentCallback = /^\/api\/payment\/[^/]+\/(callback|webhook|payout-callback)$/.test(path);
   const action = req.method === "POST" ? req.body?.action : req.query?.action;
-  const isGatewayWrite = path === "/stubs/handler_api.php" && ["getNumber", "setStatus"].includes(action);
+  const isGatewayWrite = path === "/stubs/handler_api.php" && ["getNumber", "setStatus", "rebuy", "reBuy", "cancelForRebuy", "cancel_for_rebuy"].includes(action);
   if (isAppWrite || isPaymentCallback || isGatewayWrite) {
     res.on("finish", () => {
       if (res.statusCode >= 200 && res.statusCode < 300) notifyAdminChange();

@@ -99,6 +99,8 @@ function walletFixture(dbType = "mysql") {
   let tail = Promise.resolve(), failLedger = false;
   const bonuses = [];
   const matches = (row, query) => Object.entries(query).every(([key, value]) => {
+    if (key === "$or") return value.some(q => matches(row, q));
+    if (key === "$and") return value.every(q => matches(row, q));
     const current = row[key];
     if (value && typeof value === "object" && !(value instanceof Date)) {
       return Object.entries(value).every(([op, target]) => {
@@ -106,6 +108,7 @@ function walletFixture(dbType = "mysql") {
         if (op === "$lt") return new Date(current) < target;
         if (op === "$ne") return current !== target;
         if (op === "$in") return target.includes(current);
+        if (op === "$nin") return !target.includes(current);
         throw new Error("Unsupported test operator " + op);
       });
     }
@@ -261,6 +264,26 @@ for (const dbType of ["mysql", "mongodb"]) {
     assert.equal(f.tables.users[0].balance, 6);
   });
 
+  test(`${dbType}: provider ID can be rebought through retired ancestors but a live duplicate is rejected`, async () => {
+    const f = walletFixture(dbType);
+    const data = { user_id: "u1", cost: 2, phone: "+919876543210", server_name: "s", external_order_id: "same", status: "active", otp: "" };
+    f.tables.orders.push({ ...data, _id: "old", order_id: "old", status: "completed", otp: "1234", all_otps: ["1234"], refund_issued: true, rebuy_cancelled: true, rebuy_order_id: "next" });
+    await f.wallet.reservePurchase({ userId: "u1", orderId: "next", amount: 2, description: "rebuy" });
+    await f.wallet.finalizePurchase({ ...data, order_id: "next", rebuy_of: "old" });
+    assert.equal(f.tables.users[0].balance, 8);
+    assert.equal((await f.wallet.refundOrder("old", "cancelled", "test")).refunded, false);
+    Object.assign(f.tables.orders[1], { status: "completed", otp: "5678", rebuy_cancelled: true, rebuy_order_id: "third" });
+    await f.wallet.reservePurchase({ userId: "u1", orderId: "third", amount: 2, description: "rebuy" });
+    await f.wallet.finalizePurchase({ ...data, order_id: "third", rebuy_of: "next" });
+    assert.equal(f.tables.users[0].balance, 6);
+    f.tables.orders[1].rebuy_order_id = "bad";
+    await f.wallet.reservePurchase({ userId: "u1", orderId: "bad", amount: 2, description: "rebuy" });
+    await assert.rejects(f.wallet.finalizePurchase({ ...data, order_id: "bad", rebuy_of: "next" }), /DUPLICATE_EXTERNAL_ORDER/);
+    await f.wallet.reversePurchase("bad");
+    assert.equal(f.tables.users[0].balance, 6);
+    assert.equal(f.tables.orders.length, 3);
+  });
+
   test(`${dbType}: legacy purchase entries are handled according to whether the old debit was reliable`, async () => {
     const f = walletFixture(dbType);
     f.tables.orders.push({ _id: "old", order_id: "old", user_id: "u1", cost: 4, status: "active", otp: "" });
@@ -379,7 +402,7 @@ function response() {
     json(body) { this.body = body; return this; }, send(body) { this.body = body; return this; }, set() { return this; } };
 }
 
-function routesFixture(f, getNumber) {
+function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw new Error("Rebuy not configured"); }, cancelCompletedOrderForRebuy = async () => { throw new Error("Cancel not configured"); }) {
   const originalFind = f.models.User.findById;
   f.models.User.findById = (...args) => {
     const query = originalFind(...args);
@@ -390,9 +413,10 @@ function routesFixture(f, getNumber) {
   const server = { _id: "srv", name: "s", is_active: true };
   const dependencies = {
     "../utils/wallet": f.wallet, "../utils/db": f.db,
+    "../utils/rebuy": { rebuyCancelledOrder, cancelCompletedOrderForRebuy },
     "../models/User": f.models.User, "../models/Order": f.models.Order, "../models/Transaction": f.models.Transaction,
     "../models/Service": { findById: async () => service, find: () => ({ sort: async () => [service] }) },
-    "../models/Server": { findById: async () => server },
+    "../models/Server": { findById: async () => server, find: (...args) => f.serverFind(...args) },
     "../utils/providerApi": { getNumber, cancelOrder: async () => ({}) },
     "../middleware/auth": { loginRequired() {}, optionalLogin() {} },
     "../utils/realtimeEmitter": { emitToUser() {} }, "../utils/adminRealtime": { notifyAdminChange() {} },
@@ -402,8 +426,8 @@ function routesFixture(f, getNumber) {
   const extra = { process: { env: { DB_TYPE: "mysql" } }, console: { log() {}, error() {}, warn() {} } };
   const user = moduleFrom("routes/user.js", dependencies, extra);
   const api = moduleFrom("routes/apiGateway.js", dependencies, extra);
-  const handler = (router, route) => router.stack.find(layer => layer.route?.path === route).route.stack.at(-1).handle;
-  return { purchase: handler(user, "/orders"), gateway: handler(api, "/") };
+  const handler = (router, route, method) => router.stack.find(layer => layer.route?.path === route && (!method || layer.route.methods[method])).route.stack.at(-1).handle;
+  return { listOrders: handler(user, "/orders", "get"), cancelForRebuy: handler(user, "/orders/:id/cancel-for-rebuy"), retry: handler(user, "/orders/:id/retry"), purchase: handler(user, "/orders"), rebuy: handler(user, "/orders/:id/rebuy"), gateway: handler(api, "/") };
 }
 
 test("website purchase refuses insufficient balance before calling provider and records a successful debit", async () => {
@@ -433,6 +457,25 @@ test("website provider failure reverses exactly the reserved debit and logs the 
   assert.equal(f.tables.users[0].balance, 10);
   assert.equal(f.tables.transactions.filter(tx => tx.type === "refund").length, 1);
   assert.equal(f.tables.orders.length, 0);
+});
+
+test("rebuy provider URL uses the original order ID and phone placeholders", async () => {
+  const calls = [];
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    calls.push(url);
+    return { ok: true, status: 200, text: async () => "ACCESS_NUMBER:new-provider-id:919876543210" };
+  };
+  try {
+    const result = await provider.rebuyOrder({ api_key: "key", api_rebuy_url: "https://provider.example/rebuy?key=$api_key&id=$id&phone=$phone" }, {
+      external_order_id: "old-provider-id", phone: "919876543210", service_code: "wa", country: "22",
+    });
+    assert.deepEqual({ api_order_id: result.api_order_id, phone: result.phone }, { api_order_id: "new-provider-id", phone: "919876543210" });
+    assert.match(calls[0], /key=key/);
+    assert.match(calls[0], /id=old-provider-id/);
+    assert.match(calls[0], /phone=919876543210/);
+  } finally { global.fetch = originalFetch; }
 });
 
 test("provider timeout is exposed as no numbers on the website and NO_NUMBERS to API clients", async () => {
@@ -493,6 +536,29 @@ test("API purchase also checks funds before provider and charges a successful or
   assert.equal(f.tables.users[0].balance, 4);
 });
 
+test("website and API rebuy endpoints use the caller-owned activation ID and return the new activation", async () => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  const calls = [];
+  const sharedRebuy = async args => {
+    calls.push(args);
+    return { order: { order_id: "ORD-NEW", phone: "919876543210" }, balance: 4 };
+  };
+  const routes = routesFixture(f, async () => ({}), sharedRebuy);
+  const webResponse = response();
+  await routes.rebuy({ userId: "u1", params: { id: "ORD-OLD" } }, webResponse);
+  assert.equal(webResponse.statusCode, 201);
+  assert.equal(webResponse.body.order.order_id, "ORD-NEW");
+  assert.equal(calls[0].orderId, "ORD-OLD");
+  assert.equal(calls[0].userId, "u1");
+
+  const apiResponse = response();
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "rebuy", id: "ORD-OLD" } }, apiResponse);
+  assert.equal(apiResponse.body, "ACCESS_NUMBER:ORD-NEW:919876543210");
+  assert.equal(calls[1].orderId, "ORD-OLD");
+  assert.equal(calls[1].userId, "u1");
+});
+
 test("OmniPay callback cannot credit from an unsigned body or a provider UNPAID status", async () => {
   let credits = 0, gatewayResult = null;
   const router = moduleFrom("routes/omnipayWebhook.js", {
@@ -542,4 +608,123 @@ test("legacy optional references become nullable before Sequelize adds the uniqu
   } });
   assert.ok(queries[1].startsWith("ALTER TABLE `Transactions`"));
   assert.equal(queries[2], "UPDATE `Transactions` SET `reference` = NULL WHERE `reference` = ''");
+});
+
+test("rebuy schema migration adds server endpoint and order claim/link columns only when missing", async () => {
+  const { ensureRebuySchema } = require("../utils/walletSchema");
+  const queries = [];
+  const present = new Set(["Servers.api_rebuy_url"]);
+  await ensureRebuySchema({ query: async (sql, options) => {
+    queries.push(sql);
+    if (sql.includes("INFORMATION_SCHEMA")) {
+      const key = `${options.replacements.table}.${options.replacements.column}`;
+      return present.has(key) ? [{ COLUMN_NAME: options.replacements.column }] : [];
+    }
+    return [];
+  } });
+  assert.deepEqual(queries.filter(sql => sql.startsWith("ALTER TABLE")), [
+    "ALTER TABLE `Orders` ADD COLUMN `rebuy_of` VARCHAR(255) NOT NULL DEFAULT ''",
+    "ALTER TABLE `Orders` ADD COLUMN `rebuy_order_id` VARCHAR(255) NULL DEFAULT NULL",
+    "ALTER TABLE `Orders` ADD COLUMN `rebuy_cancelled` TINYINT(1) NOT NULL DEFAULT 0",
+  ]);
+});
+
+test("cancel-for-rebuy originals cannot be reactivated by website or API next-SMS requests", async () => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  f.tables.orders.push({ _id: "old", user_id: "u1", order_id: "old", status: "completed", otp: "1234", all_otps: ["1234"], refund_issued: true, rebuy_cancelled: true });
+  const routes = routesFixture(f, async () => ({}));
+  const web = response();
+  await routes.retry({ userId: "u1", params: { id: "old" } }, web);
+  assert.equal(web.statusCode, 400);
+  const api = response();
+  await routes.gateway({ method: "GET", query: { apikey: "test-key", action: "setStatus", id: "old", status: "3" } }, api);
+  assert.equal(api.body, "BAD_STATUS");
+  assert.equal(f.tables.orders[0].status, "completed");
+  assert.equal(f.tables.orders[0].otp, "1234");
+});
+
+test("cancel-for-rebuy requires explicit provider confirmation and successful HTTP status", async () => {
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  try {
+    const server = { api_cancel_url: "https://provider.example/cancel?id=$id" };
+    for (const [status, body, success] of [
+      [200, "ACCESS_CANCEL", true], [200, "ACCESS_ACTIVATION_CANCELED", true],
+      [200, '{"success":true}', true], [200, "STATUS_OK", false],
+      [200, "NO_ACTIVATION", false], [200, "UNKNOWN", false],
+      [200, '<html>login required</html>', false], [403, "ACCESS_CANCEL", false],
+    ]) {
+      global.fetch = async () => ({ status, ok: status === 200, text: async () => body });
+      assert.equal((await provider.cancelOrder(server, "old", { requireConfirmation: true })).success, success, `${status}: ${body}`);
+    }
+  } finally { global.fetch = originalFetch; }
+});
+
+test("website and API cancellation endpoints scope completed-OTP cancellation to the caller", async () => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  const calls = [];
+  const cancel = async args => { calls.push(args); return { order_id: args.orderId, status: "completed", otp: "1234", rebuy_cancelled: true }; };
+  const routes = routesFixture(f, async () => ({}), undefined, cancel);
+  const web = response();
+  await routes.cancelForRebuy({ userId: "u1", params: { id: "old" } }, web);
+  assert.equal(web.statusCode, 200);
+  assert.equal(web.body.can_rebuy, true);
+  assert.equal(web.body.order.status, "completed");
+  const api = response();
+  await routes.gateway({ method: "GET", query: { apikey: "test-key", action: "cancelForRebuy", id: "old" } }, api);
+  assert.equal(api.body, "ACCESS_CANCEL_FOR_REBUY");
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every(call => call.userId === "u1" && call.orderId === "old"));
+  const failed = routesFixture(f, async () => ({}), undefined, async () => { throw new Error("PROVIDER_CANCEL_FAILED"); });
+  const failure = response();
+  await failed.cancelForRebuy({ userId: "u1", params: { id: "old" } }, failure);
+  assert.equal(failure.statusCode, 502);
+  assert.equal(failure.body.can_rebuy, undefined);
+});
+
+test("fresh database SQL defines each table column once", () => {
+  for (const table of source("database.sql").matchAll(/CREATE TABLE IF NOT EXISTS `([^`]+)` \(([\s\S]*?)\n\)/g)) {
+    const names = [...table[2].matchAll(/^\s*`([^`]+)`\s+/gm)].map(match => match[1]);
+    assert.equal(new Set(names).size, names.length, `Duplicate column in ${table[1]}`);
+  }
+});
+
+test("order list exposes completed cancellation and rebuy buttons with six-row server pagination", async () => {
+  const f = walletFixture();
+  const rows = [
+    { order_id: "otp", server_name: "s", status: "completed", otp: "1234", all_otps: ["1234"], refund_issued: true },
+    { order_id: "otp-cancelled", server_name: "s", status: "completed", otp: "5678", all_otps: ["5678"], refund_issued: true, rebuy_cancelled: true },
+    { order_id: "refunded", server_name: "s", status: "cancelled", otp: "", all_otps: [], refund_issued: true },
+    { order_id: "unrefunded", server_name: "s", status: "cancelled", otp: "", all_otps: [], refund_issued: false },
+  ];
+  const calls = {};
+  f.models.Order.countDocuments = async filter => { calls.filter = filter; return 12; };
+  f.models.Order.find = () => ({
+    select(fields) { calls.fields = fields; return this; }, sort(value) { calls.sort = value; return this; },
+    skip(value) { calls.skip = value; return this; }, limit(value) { calls.limit = value; return this; },
+    lean: async () => rows,
+  });
+  f.serverFind = () => ({
+    select(fields) { calls.serverFields = fields; return this; }, populate() { return this; },
+    lean: async () => [{ name: "s", is_active: true, api_cancel_url: "cancel", api_rebuy_url: "rebuy" }],
+  });
+  const routes = routesFixture(f, async () => ({}));
+  const res = response();
+  await routes.listOrders({ userId: "u1", query: { rebuy_candidates: "1", page: "2", limit: "6" } }, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls.filter.user_id, "u1");
+  assert.equal(calls.skip, 6);
+  assert.equal(calls.limit, 6);
+  assert.equal(calls.sort._id, -1);
+  assert.ok(calls.serverFields.includes("api_cancel_url"));
+  assert.ok(calls.fields.includes("rebuy_cancelled"));
+  assert.equal(res.body.pages, 2);
+  assert.equal(rows[0].can_rebuy, false);
+  assert.equal(rows[0].can_rebuy_after_cancel, true);
+  assert.equal(rows[1].can_rebuy, true);
+  assert.equal(rows[1].can_rebuy_after_cancel, false);
+  assert.equal(rows[2].can_rebuy, true);
+  assert.equal(rows[3].can_rebuy, false);
 });

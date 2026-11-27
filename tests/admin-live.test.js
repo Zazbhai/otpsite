@@ -308,6 +308,19 @@ test("modified browser scripts and inline admin scripts parse", () => {
       if (!/src\s*=|application\/ld\+json/.test(match[1])) new vm.Script(match[2], { filename: `${file}.html` });
     }
   }
+  for (const file of ["buy", "orders", "api-docs", "admin/servers"]) {
+    const html = source(`views/${file}.html`);
+    for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+      if (!/src\s*=|application\/ld\+json/.test(match[1])) new vm.Script(match[2], { filename: `${file}.html` });
+    }
+  }
+  const orderDetail = source("views/order-detail.html");
+  for (const match of orderDetail.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    if (!/src\s*=|application\/ld\+json/.test(match[1])) new vm.Script(match[2], { filename: "order-detail.html" });
+  }
+  assert.match(orderDetail, /o\.can_rebuy && !o\.rebuy_order_id/);
+  assert.match(orderDetail, /o\.can_rebuy_after_cancel/);
+  assert.match(source("views/admin/servers.html"), /id="srv-rebuy-url"/);
   assert.match(source("views/admin/index.html"), /<option value="all">All time<\/option>/);
   for (const file of ["index", "analytics"]) {
     assert.match(source(`views/admin/${file}.html`), /href="\/admin\/transactions\?type=deposit&amp;status=completed">Details<\/a>/);

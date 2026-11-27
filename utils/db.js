@@ -58,6 +58,7 @@ const connectDB = async () => {
       await require("./walletSchema").ensureReferenceSchema(sequelize);
       await sequelize.sync({ alter: false });
       await require("./walletSchema").ensureWalletSchema(sequelize);
+      await require("./walletSchema").ensureRebuySchema(sequelize);
 
       log("✅ MySQL Models synchronized");
     } catch (err) {

@@ -13,11 +13,13 @@ const { nanoid } = require("nanoid");
 const { withTransaction } = require("../utils/db");
 const { notifyAdminChange } = require("../utils/adminRealtime");
 const { recordOrderSms } = require("../utils/orderSms");
+const { rebuyCancelledOrder, cancelCompletedOrderForRebuy } = require("../utils/rebuy");
 
 router.all("/", async (req, res) => {
   try {
     const query = req.method === "POST" ? req.body : req.query;
-    const { api_key, action } = query;
+    const { action } = query;
+    const api_key = query.api_key || query.apikey;
 
     if (!api_key) return res.send("BAD_KEY");
 
@@ -254,6 +256,34 @@ router.all("/", async (req, res) => {
         return res.send("STATUS_WAIT_CODE");
       }
 
+      case "reBuy":
+      case "rebuy": {
+        const { id } = query;
+        if (!id) return res.send("BAD_REQUEST");
+        try {
+          const rebuy = await rebuyCancelledOrder({ orderId: id, userId: String(user._id) });
+          return res.send(`ACCESS_NUMBER:${rebuy.order.order_id}:${String(rebuy.order.phone).replace(/\D/g, "")}`);
+        } catch (err) {
+          if (err.message === "INSUFFICIENT_BALANCE") return res.send("NO_BALANCE");
+          if (["ORDER_NOT_FOUND", "ORDER_NOT_REBUYABLE", "REBUY_ALREADY_USED", "REBUY_NOT_CONFIGURED", "ORIGINAL_REFUND_UNVERIFIED"].includes(err.message)) return res.send("BAD_STATUS");
+          return res.send("NO_NUMBERS");
+        }
+      }
+
+      case "cancelForRebuy":
+      case "cancel_for_rebuy": {
+        const { id } = query;
+        if (!id) return res.send("BAD_REQUEST");
+        try {
+          await cancelCompletedOrderForRebuy({ orderId: id, userId: String(user._id) });
+          return res.send("ACCESS_CANCEL_FOR_REBUY");
+        } catch (err) {
+          if (err.message === "ORDER_NOT_FOUND") return res.send("NO_ACTIVATION");
+          if (["ORDER_NOT_CANCELLABLE_FOR_REBUY", "REBUY_CANCEL_NOT_CONFIGURED", "ORDER_STATE_CHANGED"].includes(err.message)) return res.send("BAD_STATUS");
+          return res.send("ERROR");
+        }
+      }
+
       case "getStatusV2": {
         const { id } = query;
         if (!id) return res.send("BAD_REQUEST");
@@ -325,6 +355,12 @@ router.all("/", async (req, res) => {
 
         // status=3 -> Request another SMS (retry)
         if (status == "3") {
+           const { acquireLockWithTimeout, releaseLock } = require("../utils/orderLocks");
+           const retryLockId = String(order._id || order.id);
+           if (!(await acquireLockWithTimeout(retryLockId, 6000))) return res.send("BAD_STATUS");
+           try {
+           order = await Order.findOne({ order_id: id, user_id: String(user._id) });
+           if (!order || order.rebuy_cancelled || order.rebuy_order_id) return res.send("BAD_STATUS");
            const hasOtp = !!(order.otp || (order.all_otps && order.all_otps.length > 0));
            // Allow if completed OR if active with an OTP
            if (!hasOtp || !["active", "completed"].includes(order.status)) {
@@ -338,14 +374,16 @@ router.all("/", async (req, res) => {
            // Call provider retry
            const serverConf = await Server.findOne({ name: order.server_name });
            if (serverConf && order.external_order_id) {
-             await providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
+             const result = await providerApi.retryOrder(serverConf, order.external_order_id);
+             if (result.error) return res.send("NO_NUMBERS");
            }
 
-           const retried = await Order.findOneAndUpdate({ _id: order._id, status: { $in: ["active", "completed"] }, refund_issued: true }, {
+           const retried = await Order.findOneAndUpdate({ _id: order._id, status: { $in: ["active", "completed"] }, rebuy_cancelled: { $ne: true }, $or: [{ rebuy_order_id: "" }, { rebuy_order_id: null }], refund_issued: true }, {
              $set: { status: "active", otp: "", refund_issued: true, expires_at: order.expires_at },
            }, { new: true });
            if (!retried) return res.send("BAD_STATUS");
            return res.send("ACCESS_RETRY_GET");
+           } finally { releaseLock(retryLockId); }
         }
 
         return res.send("BAD_STATUS");

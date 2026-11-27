@@ -82,16 +82,17 @@ function logToProviderFile(msg) {
   fs.appendFileSync(LOG_FILE, line);
 }
 
-function buildUrl(urlTemplate, { api_key, service, country, order_id }) {
+function buildUrl(urlTemplate, { api_key, service, country, order_id, phone }) {
   let url = urlTemplate || "";
   if (api_key) url = url.replace(/\{api_key\}|\$api_key/g, api_key);
   if (service) url = url.replace(/\{service\}|\$service/g, service);
   if (country) url = url.replace(/\{country\}|\$country/g, country);
   if (order_id) url = url.replace(/\{order_id\}|\$order_id|\{id\}|\$id/g, order_id);
+  if (phone) url = url.replace(/\{phone\}|\$phone|\{number\}|\$number/g, phone);
   return url;
 }
 
-async function callProvider(url, server, method = "GET") {
+async function callProvider(url, server, method = "GET", timeoutMs = 4000) {
   const options = {
     method,
     headers: {
@@ -106,7 +107,7 @@ async function callProvider(url, server, method = "GET") {
   console.log(`\n[DEBUG] === CALLING 3RD PARTY PROVIDER ===\nMETHOD: ${method}\nURL: ${url}\nHEADERS:`, options.headers, `\n`);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   // Prevent any Node 18+ fetch caching issues
   const sep = url.includes('?') ? '&' : '?';
@@ -155,7 +156,7 @@ async function getNumber(server, serviceCode, countryCode) {
   while (attempt < maxRetries || attempt === 0) {
     if (attempt > 0) console.log(`[RETRY] Attempt ${attempt}/${maxRetries - 1} for getNumber...`);
     
-    const response = await callProvider(url, server);
+    const response = await callProvider(url, server, "GET", 10000);
     logToProviderFile(`getNumber | URL=${url} | RESP=${response.data.text || JSON.stringify(response.data)}`);
     const text = response.data.text || "";
     if (isRateLimitedResponse(response)) {
@@ -247,7 +248,7 @@ async function checkStatus(server, api_order_id) {
 }
 
 // 3. Cancel Order (setStatus=8)
-async function cancelOrder(server, api_order_id) {
+async function cancelOrder(server, api_order_id, { requireConfirmation = false } = {}) {
   if (!server.api_cancel_url) return { error: "Server missing API Cancel url" };
   
   let url = buildUrl(server.api_cancel_url, { 
@@ -259,6 +260,8 @@ async function cancelOrder(server, api_order_id) {
   logToProviderFile(`cancelOrder | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
   const text = response.data.text || "";
 
+  if (!response.ok) return { success: false, error: "Provider cancellation failed" };
+
   if (text === "ACCESS_CANCEL" || text === "ACCESS_ACTIVATION_CANCELED") {
      return { success: true };
   }
@@ -267,7 +270,9 @@ async function cancelOrder(server, api_order_id) {
      return { success: false, error: "Cannot cancel, OTP already delivered" };
   }
 
-  return { success: response.ok, details: response.data };
+  const confirmed = response.data.success === true || response.data.status === "CANCELLED" ||
+    response.data.status === "CANCELED";
+  return { success: requireConfirmation ? confirmed : response.ok, details: response.data };
 }
 
 // 4. Request Another SMS (setStatus=3)
@@ -301,9 +306,35 @@ async function retryOrder(server, api_order_id) {
   return { success: false, error: "Number Not Available", originalError: text || "Retry failed" };
 }
 
+async function rebuyOrder(server, order) {
+  if (!server.api_rebuy_url) return { error: "Rebuy is not configured for this server" };
+  const url = buildUrl(server.api_rebuy_url, {
+    api_key: server.api_key,
+    service: order.service_code || order.service_id,
+    country: order.country,
+    order_id: order.external_order_id,
+    phone: order.phone,
+  });
+  const response = await callProvider(url, server, "GET", 10000);
+  logToProviderFile(`rebuyOrder | ID=${order.external_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
+  if (!response.ok) return { error: response.data.error || "Provider rebuy failed", originalError: response.data.text || response.data.error };
+  const text = response.data.text || "";
+  if (text.startsWith("ACCESS_NUMBER:")) {
+    const [, api_order_id, rawPhone] = text.split(":");
+    const phone = String(rawPhone || "").replace(/\D/g, "");
+    if (api_order_id && phone) return { api_order_id, phone };
+  }
+  if (response.data.id && response.data.phone) {
+    return { api_order_id: String(response.data.id), phone: String(response.data.phone).replace(/\D/g, "") };
+  }
+  return { error: "Provider rebuy failed", originalError: text || JSON.stringify(response.data) };
+}
+
 module.exports = {
   getNumber,
   checkStatus,
   cancelOrder,
-  retryOrder
+  retryOrder,
+  rebuyOrder,
+  buildUrl
 };
