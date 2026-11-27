@@ -51,7 +51,11 @@ async function recordOrderSms(order, rawMessage, { complete = false, checkedAt }
   // Some providers reuse activation IDs and keep returning the previous SMS
   // briefly after rebuy. That SMS must not complete the new paid order.
   if (Array.isArray(order.rebuy_ignored_otps) && order.rebuy_ignored_otps.includes(message)) return null;
-  const fields = { otp: message, refund_issued: true, verification_count: 0 };
+  const interval = Math.max(3000, Number(order.check_interval) * 1000 || 3000);
+  const fields = {
+    otp: message, refund_issued: true, verification_count: 0,
+    ...(checkedAt ? { next_check_at: new Date(new Date(checkedAt).getTime() + interval) } : {}),
+  };
   if (complete) fields.status = "completed";
   if (checkedAt) fields.last_check_at = checkedAt;
 

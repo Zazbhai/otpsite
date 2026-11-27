@@ -9,15 +9,19 @@ function startWatcher() {
   console.log("🕒 Order Monitor: Background service started.");
 
   let isRunning = false;
+  let lastRecoveryAt = 0;
 
-  // Run every 10 seconds (faster response for users)
+  // Wake frequently, but only load orders whose indexed check time has arrived.
   setInterval(async () => {
     if (isRunning) return; // Prevent overlapping runs
     isRunning = true;
 
     try {
-      await require("./wallet").recoverPendingPurchases();
       const now = new Date();
+      if (now.getTime() - lastRecoveryAt >= 60000) {
+        lastRecoveryAt = now.getTime();
+        await require("./wallet").recoverPendingPurchases();
+      }
       const { Op } = require("sequelize");
       const { DB_TYPE } = require("./db");
 
@@ -30,22 +34,25 @@ function startWatcher() {
               where: {
                   status: "active",
                   [Op.or]: [
-                      { last_check_at: null },
-                      { last_check_at: { [Op.lte]: new Date(now.getTime() - 3000) } } // Use small default if check_interval is missing
+                  { next_check_at: null },
+                  { next_check_at: { [Op.lte]: now } }
                   ]
               },
               // Project only fields needed for syncOrder to save memory
-              attributes: ['id', 'order_id', 'user_id', 'status', 'external_order_id', 'server_name', 'check_interval', 'last_check_at', 'expires_at', 'min_cancel_at', 'cost', 'multi_otp_enabled', 'otp', 'all_otps', 'rebuy_ignored_otps', 'verification_count', 'refund_issued']
+              attributes: ['id', 'order_id', 'user_id', 'status', 'external_order_id', 'server_name', 'check_interval', 'last_check_at', 'next_check_at', 'expires_at', 'min_cancel_at', 'cost', 'multi_otp_enabled', 'otp', 'all_otps', 'rebuy_ignored_otps', 'verification_count', 'refund_issued'],
+              order: [['next_check_at', 'ASC'], ['id', 'ASC']],
+              limit: 100,
           });
       } else {
           // MongoDB logic
           dueOrders = await Order.find({
               status: "active",
               $or: [
-                  { last_check_at: { $exists: false } },
-                  { last_check_at: { $lte: new Date(now.getTime() - 3000) } }
+                  { next_check_at: { $exists: false } },
+                  { next_check_at: null },
+                  { next_check_at: { $lte: now } }
               ]
-          });
+          }).sort({ next_check_at: 1, _id: 1 }).limit(100);
       }
 
       if (dueOrders.length === 0) {

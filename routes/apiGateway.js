@@ -23,6 +23,7 @@ function numberResponse(order) {
 router.all("/", async (req, res) => {
   try {
     const query = req.method === "POST" ? req.body : req.query;
+    if (!query || typeof query !== "object" || Array.isArray(query)) return res.send("BAD_REQUEST");
     const { action } = query;
     const api_key = query.api_key || query.apikey;
 
@@ -200,79 +201,26 @@ router.all("/", async (req, res) => {
 
         let order = await Order.findOne({ order_id: id, user_id: String(user._id) });
         if (!order) return res.send("NO_ACTIVATION");
-
-        // ── Check 1: Already has OTP — return OTP but DO NOT force completion ──
-        if (order.otp || (order.all_otps && order.all_otps.length > 0)) {
-          return res.send(`STATUS_OK:${order.otp || order.all_otps[0]}`);
+        const getPublicStatus = current => {
+          const history = wallet.otpHistory(current);
+          const otp = current.otp || history[history.length - 1];
+          if (otp) return `STATUS_OK:${otp}`;
+          if (["cancelled", "expired", "refunded"].includes(current.status)) return "STATUS_CANCEL";
+          if (current.status === "completed") return "STATUS_OK:";
+          return "STATUS_WAIT_CODE";
+        };
+        if (order.status !== "active") return res.send(getPublicStatus(order));
+        const interval = Math.max(3000, Number(order.check_interval || 3) * 1000);
+        const nextCheckAt = order.next_check_at ? new Date(order.next_check_at) :
+          (order.last_check_at ? new Date(new Date(order.last_check_at).getTime() + interval) : null);
+        if (nextCheckAt && Date.now() < nextCheckAt.getTime() &&
+            (!order.expires_at || Date.now() < new Date(order.expires_at).getTime())) {
+          return res.send(getPublicStatus(order));
         }
-
-        // ── Check 2: Already terminal (cancelled/expired/refunded) ──
-        if (order.status === "cancelled" || order.status === "expired" || order.status === "refunded") {
-          return res.send("STATUS_CANCEL");
-        }
-
-        // ── Check 3: Completed but somehow missing OTP ──
-        if (order.status === "completed") {
-          return res.send(`STATUS_OK:${order.otp || ""}`);
-        }
-
-        // ── Check 4: Poll provider for live status ──
-        const serverConf = await Server.findOne({ name: order.server_name });
-        if (serverConf && serverConf.api_check_status_url && order.external_order_id) {
-          const { acquireLock, releaseLock } = require("../utils/orderLocks");
-          const orderIdStr = String(order._id || order.id);
-          if (!acquireLock(orderIdStr)) {
-            return res.send("STATUS_WAIT_CODE"); // Skip concurrent poll and return wait code safely
-          }
-
-          try {
-            const checkRes = await providerApi.checkStatus(serverConf, order.external_order_id);
-
-            if (!checkRes.error && checkRes.status !== "waiting") {
-              if (checkRes.otp) {
-                const saved = await recordOrderSms(order, checkRes.otp, {
-                  complete: checkRes.status === "completed" && !order.multi_otp_enabled,
-                });
-                if (saved) {
-                  if (saved.multi_otp_enabled && checkRes.status === "completed") {
-                    providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
-                  }
-                  return res.send(`STATUS_OK:${saved.otp}`);
-                }
-                const current = await Order.findById(order._id);
-                if (current?.otp) {
-                  if (checkRes.status === "completed" && !current.multi_otp_enabled && current.status === "active") {
-                    const completed = await Order.findOneAndUpdate({ _id: current._id, status: "active", otp: current.otp }, {
-                      $set: { status: "completed", refund_issued: true },
-                    }, { new: true });
-                    if (completed) emitToUser(String(user._id), "order", { orderId: completed.order_id, status: completed.status, otp: completed.otp, all_otps: completed.all_otps });
-                  }
-                  return res.send(`STATUS_OK:${current.otp}`);
-                }
-                if (!current || ["cancelled", "expired", "refunded"].includes(current.status)) {
-                  return res.send("STATUS_CANCEL");
-                }
-                return res.send("STATUS_WAIT_CODE");
-              }
-
-              if (checkRes.status === "cancelled" || checkRes.status === "refunded" || checkRes.status === "expired") {
-                // Provider cancelled with no OTP — issue refund atomically in transaction
-                const result = await wallet.refundOrder(order._id, "cancelled", `Provider cancelled order ${order.order_id} (no OTP)`);
-                if (result.refunded) {
-                  notifyAdminChange();
-                  emitToUser(String(user._id), "balance", { balance: result.newBalance });
-                  emitToUser(String(user._id), "order", { orderId: order.order_id, status: "cancelled" });
-                }
-                if (wallet.hasOtp(result.order)) return res.send(`STATUS_OK:${result.order.otp || result.order.all_otps[0]}`);
-
-                return res.send("STATUS_CANCEL");
-              }
-            }
-          } finally {
-            releaseLock(orderIdStr);
-          }
-        }
-        return res.send("STATUS_WAIT_CODE");
+        const { syncOrder } = require("../utils/orderStatusManager");
+        order = await syncOrder(order) || await Order.findById(order._id);
+        if (!order) return res.send("NO_ACTIVATION");
+        return res.send(getPublicStatus(order));
       }
 
       case "reBuy":

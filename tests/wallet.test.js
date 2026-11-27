@@ -105,6 +105,7 @@ function walletFixture(dbType = "mysql") {
     if (value && typeof value === "object" && !(value instanceof Date)) {
       return Object.entries(value).every(([op, target]) => {
         if (op === "$gte") return current >= target;
+        if (op === "$lte") return current <= target;
         if (op === "$lt") return new Date(current) < target;
         if (op === "$ne") return current !== target;
         if (op === "$in") return target.includes(current);
@@ -384,6 +385,7 @@ test("watcher persists triple-check count and refunds only after the third confi
   const watcher = watcherFixture(f, async () => ({ status: "cancelled" }));
   for (let i = 1; i <= 3; i++) {
     f.tables.orders[0].last_check_at = new Date(0);
+    f.tables.orders[0].next_check_at = new Date(0);
     await watcher.syncOrder({ _id: order._id }); // deliberately omit projected bookkeeping fields
     assert.equal(f.tables.orders[0].verification_count, i);
     assert.equal(f.tables.users[0].balance, i === 3 ? 10 : 6);
@@ -412,8 +414,27 @@ test("watcher honors each order's configured provider check interval", async () 
   await watcher.syncOrder({ _id: "poll-interval" });
   assert.equal(calls, 0);
   f.tables.orders[0].last_check_at = new Date(Date.now() - 6000);
+  f.tables.orders[0].next_check_at = new Date(Date.now() - 6000);
   await watcher.syncOrder({ _id: "poll-interval" });
   assert.equal(calls, 1);
+});
+
+test("separate workers share the database polling lease for an active order", async () => {
+  const f = walletFixture();
+  const order = await f.models.Order.create({ _id: "shared-lease", order_id: "shared-lease", user_id: "u1",
+    server_name: "s", external_order_id: "provider", status: "active", otp: "", all_otps: [], check_interval: 3 });
+  let finish, started, calls = 0;
+  const pollStarted = new Promise(resolve => { started = resolve; });
+  const slowPoll = async () => { calls++; started(); return new Promise(resolve => { finish = resolve; }); };
+  const workerA = watcherFixture(f, slowPoll);
+  const workerB = watcherFixture(f, slowPoll);
+  const running = workerA.syncOrder(order);
+  await pollStarted;
+  assert.ok(f.tables.orders[0].next_check_at > new Date());
+  await workerB.syncOrder({ _id: "shared-lease" });
+  assert.equal(calls, 1);
+  finish({ status: "waiting" });
+  await running;
 });
 
 test("watcher completes an active order when the provider repeats an OTP already saved by an API poll", async () => {
@@ -433,8 +454,12 @@ test("website order-status polling saves provider OTPs once and completes comple
   f.tables.users[0].api_key = "test-key";
   await f.models.Order.create({ _id: "api-poll", order_id: "api-poll", user_id: "u1", status: "active",
     otp: "", all_otps: [], refund_issued: false, external_order_id: "provider-poll", server_name: "s" });
-  const routes = routesFixture(f, async () => ({}), undefined, undefined, async () => ({ status: "completed", otp: "000123" }));
-  routes.server.api_check_status_url = "provider";
+  const routes = routesFixture(f, async () => ({}), undefined, undefined, undefined, async order => {
+    await f.models.Order.findOneAndUpdate({ _id: order._id, status: "active" }, { $set: {
+      status: "completed", otp: "000123", all_otps: ["000123"], refund_issued: true,
+    } });
+    return f.models.Order.findById(order._id);
+  });
   const result = response();
   await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "api-poll" } }, result);
   assert.equal(result.body, "STATUS_OK:000123");
@@ -442,6 +467,25 @@ test("website order-status polling saves provider OTPs once and completes comple
   assert.equal(f.tables.orders[0].otp, "000123");
   assert.deepEqual(f.tables.orders[0].all_otps, ["000123"]);
   assert.equal(f.tables.users[0].balance, 10);
+});
+
+test("API getStatus honors the order interval and syncs only after its scheduled time", async () => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  const order = await f.models.Order.create({ _id: "paced-api", order_id: "paced-api", user_id: "u1", status: "active",
+    otp: "", all_otps: [], external_order_id: "provider", server_name: "s", check_interval: 5, next_check_at: new Date(Date.now() + 60000) });
+  let syncCalls = 0;
+  const routes = routesFixture(f, async () => ({}), undefined, undefined, undefined, async current => { syncCalls++; return current; });
+  const req = { method: "GET", query: { api_key: "test-key", action: "getStatus", id: "paced-api" } };
+  const first = response();
+  await routes.gateway(req, first);
+  assert.equal(first.body, "STATUS_WAIT_CODE");
+  assert.equal(syncCalls, 0);
+  f.tables.orders[0].next_check_at = new Date(Date.now() - 1000);
+  const due = response();
+  await routes.gateway(req, due);
+  assert.equal(due.body, "STATUS_WAIT_CODE");
+  assert.equal(syncCalls, 1);
 });
 
 function response() {
@@ -554,7 +598,7 @@ for (const dbType of ["mysql", "mongodb"]) {
   });
 }
 
-function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw new Error("Rebuy not configured"); }, cancelCompletedOrderForRebuy = async () => { throw new Error("Cancel not configured"); }, checkStatus = async () => ({ status: "waiting" })) {
+function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw new Error("Rebuy not configured"); }, cancelCompletedOrderForRebuy = async () => { throw new Error("Cancel not configured"); }, checkStatus = async () => ({ status: "waiting" }), syncOrder = async order => order) {
   const originalFind = f.models.User.findById;
   f.models.User.findById = (...args) => {
     const query = originalFind(...args);
@@ -566,6 +610,7 @@ function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw n
   const dependencies = {
     "../utils/wallet": f.wallet, "../utils/db": f.db,
     "../utils/rebuy": { rebuyCancelledOrder, cancelCompletedOrderForRebuy },
+    "../utils/orderStatusManager": { syncOrder },
     "../models/User": f.models.User, "../models/Order": f.models.Order, "../models/Transaction": f.models.Transaction,
     "../models/Service": { findById: async () => service, find: () => ({ sort: async () => [service] }) },
     "../models/Server": { findById: async () => server, findOne: async () => server, find: (...args) => f.serverFind(...args) },
@@ -784,6 +829,7 @@ test("rebuy schema migration adds server endpoint and order claim/link columns o
   await ensureRebuySchema({ query: async (sql, options) => {
     queries.push(sql);
     if (sql.includes("INFORMATION_SCHEMA")) {
+      if (sql.includes("STATISTICS")) return [];
       const key = `${options.replacements.table}.${options.replacements.column}`;
       return present.has(key) ? [{ COLUMN_NAME: options.replacements.column }] : [];
     }
@@ -794,7 +840,9 @@ test("rebuy schema migration adds server endpoint and order claim/link columns o
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_order_id` VARCHAR(255) NULL DEFAULT NULL",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_cancelled` TINYINT(1) NOT NULL DEFAULT 0",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_ignored_otps` TEXT NULL",
+    "ALTER TABLE `Orders` ADD COLUMN `next_check_at` DATETIME NULL",
   ]);
+  assert.ok(queries.includes("CREATE INDEX `idx_orders_status_next_check` ON `Orders` (`status`, `next_check_at`)"));
 });
 
 test("cancel-for-rebuy originals cannot be reactivated by website or API next-SMS requests", async () => {

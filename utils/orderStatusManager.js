@@ -24,8 +24,24 @@ async function syncOrder(orderIdOrDoc) {
     const expired = order.expires_at && new Date(order.expires_at) <= now;
     const interval = Math.max(3000, Number(order.check_interval || server?.check_interval || 3) * 1000);
     let response;
-    if (order.external_order_id && server?.api_check_status_url &&
-        (expired || now - new Date(order.last_check_at || 0) >= interval)) {
+    const nextCheckAt = order.next_check_at ? new Date(order.next_check_at) :
+      (order.last_check_at ? new Date(new Date(order.last_check_at).getTime() + interval) : null);
+    const checkDue = !nextCheckAt || now >= nextCheckAt;
+    if (nextCheckAt && now < nextCheckAt) {
+      if (!order.next_check_at) {
+        return await Order.findOneAndUpdate({ _id: id, status: "active", next_check_at: null }, {
+          $set: { next_check_at: nextCheckAt },
+        }, { new: true }) || order;
+      }
+      return order;
+    }
+    const leaseUntil = new Date(now.getTime() + Math.max(interval, 12000));
+    const claimed = await Order.findOneAndUpdate({
+      _id: id, status: "active", $or: [{ next_check_at: null }, { next_check_at: { $lte: now } }],
+    }, { $set: { next_check_at: leaseUntil } }, { new: true });
+    if (!claimed) return Order.findById(id);
+    order = claimed;
+    if (order.external_order_id && server?.api_check_status_url) {
       response = await providerApi.checkStatus(server, order.external_order_id);
       if (!response.error && response.otp?.trim()) {
         const saved = await recordOrderSms(order, response.otp, {
@@ -36,10 +52,18 @@ async function syncOrder(orderIdOrDoc) {
         }
       }
       // Only bookkeeping fields are updated. Never save a pre-network document.
+      const checkedAt = new Date();
+      const scheduledAt = response.retry_at ? new Date(response.retry_at) : new Date(checkedAt.getTime() + interval);
       order = await Order.findOneAndUpdate({ _id: id, status: "active" }, {
-        $set: { last_check_at: now, ...(response.status === "waiting" ? { verification_count: 0 } : {}) },
+        $set: { last_check_at: checkedAt, next_check_at: scheduledAt, ...(response.status === "waiting" ? { verification_count: 0 } : {}) },
         ...(!response.error && response.status !== "waiting" && !response.otp?.trim()
           ? { $inc: { verification_count: 1 } } : {}),
+      }, { new: true });
+      if (!order) return Order.findById(id);
+    } else {
+      const checkedAt = new Date();
+      order = await Order.findOneAndUpdate({ _id: id, status: "active" }, {
+        $set: { last_check_at: checkedAt, next_check_at: new Date(checkedAt.getTime() + interval) },
       }, { new: true });
       if (!order) return Order.findById(id);
     }
@@ -60,7 +84,7 @@ async function syncOrder(orderIdOrDoc) {
       return completed;
     }
     const providerEnded = !response?.error && ["cancelled", "expired", "refunded"].includes(response?.status) && order.verification_count >= 3;
-    if (!hasOtp(order) && (expired || providerEnded)) {
+    if (!hasOtp(order) && (providerEnded || (expired && checkDue))) {
       if (expired && server?.api_cancel_url && order.external_order_id) {
         const cancelled = await providerApi.cancelOrder(server, order.external_order_id, { requireConfirmation: true, allowMissing: true }).catch(() => null);
         if (cancelled?.otp) {

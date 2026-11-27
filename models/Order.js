@@ -45,6 +45,7 @@ if (DB_TYPE === "mysql") {
     multi_otp_enabled: { type: DataTypes.BOOLEAN, defaultValue: false },
     refund_issued: { type: DataTypes.BOOLEAN, defaultValue: false },
     last_check_at: { type: DataTypes.DATE },
+    next_check_at: { type: DataTypes.DATE },
     service_image: { type: DataTypes.STRING, defaultValue: "" },
     service_color: { type: DataTypes.STRING, defaultValue: "" },
     check_interval: { type: DataTypes.INTEGER, defaultValue: 3 },
@@ -59,6 +60,7 @@ if (DB_TYPE === "mysql") {
       { fields: ['user_id'] },
       { fields: ['user_id', 'createdAt', 'id'] },
       { fields: ['last_check_at'] },
+      { fields: ['status', 'next_check_at'] },
       { fields: ['createdAt'] },
       { fields: ['order_id'], unique: true },
       { fields: ['server_name', 'external_order_id'] }
@@ -94,6 +96,7 @@ if (DB_TYPE === "mysql") {
       multi_otp_enabled: { type: Boolean, default: false },
       refund_issued:     { type: Boolean, default: false },
       last_check_at:     { type: Date },
+      next_check_at:     { type: Date },
       service_image:     { type: String, default: "" },
       service_color:     { type: String, default: "" },
       check_interval:    { type: Number, default: 3 },
@@ -103,6 +106,7 @@ if (DB_TYPE === "mysql") {
   );
   orderSchema.index({ server_name: 1, external_order_id: 1 });
   orderSchema.index({ user_id: 1, createdAt: -1, _id: -1 });
+  orderSchema.index({ status: 1, next_check_at: 1 });
   Order = mongoose.model("Order", orderSchema);
 }
 

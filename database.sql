@@ -157,6 +157,7 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   `rebuy_ignored_otps` TEXT NULL,
   `multi_otp_enabled` TINYINT(1)     NOT NULL DEFAULT 0,
   `last_check_at`     DATETIME                DEFAULT NULL,
+  `next_check_at`     DATETIME                DEFAULT NULL,
   `service_image`     VARCHAR(500)   NOT NULL DEFAULT '',
   `service_color`     VARCHAR(20)    NOT NULL DEFAULT '',
   `check_interval`    INT            NOT NULL DEFAULT 3,
@@ -167,6 +168,7 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   UNIQUE KEY `uq_orders_order_id`     (`order_id`),
   KEY        `idx_orders_user_id`     (`user_id`),
   KEY        `idx_orders_status`      (`status`),
+  KEY        `idx_orders_status_next_check` (`status`, `next_check_at`),
   KEY        `idx_orders_created_at`  (`createdAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
