@@ -54,14 +54,19 @@ async function syncOrder(orderIdOrDoc) {
     }
     const providerEnded = !response?.error && ["cancelled", "expired", "refunded"].includes(response?.status) && order.verification_count >= 3;
     if (!hasOtp(order) && (expired || providerEnded)) {
+      if (expired && server?.api_cancel_url && order.external_order_id) {
+        const cancelled = await providerApi.cancelOrder(server, order.external_order_id, { requireConfirmation: true, allowMissing: true }).catch(() => null);
+        if (cancelled?.otp) {
+          const completed = await recordOrderSms(order, cancelled.otp, { complete: true, checkedAt: now });
+          return completed || Order.findById(id);
+        }
+        if (!cancelled?.success) return Order.findById(id);
+      }
       const result = await refundOrder(id, expired ? "expired" : response.status,
         `${expired ? "Expired" : "Provider ended"} order ${order.order_id} (no OTP)`);
       if (result.refunded) {
         emitToUser(String(order.user_id), "balance", { balance: result.newBalance });
         announce(result.order);
-        if (expired && server?.api_cancel_url && order.external_order_id) {
-          providerApi.cancelOrder(server, order.external_order_id).catch(() => {});
-        }
       }
       return result.order;
     }

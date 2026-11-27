@@ -475,6 +475,7 @@ router.get("/orders", async (req, res) => {
 
 router.patch("/orders/:id", async (req, res) => {
   const { withTransaction } = require("../utils/db");
+  let refundBalance;
   try {
     const { status, otp } = req.body;
     const allowedStatuses = ["active", "completed", "refunded", "cancelled", "expired"];
@@ -485,47 +486,44 @@ router.patch("/orders/:id", async (req, res) => {
       return res.status(400).json({ error: "Invalid OTP value" });
     }
 
+    if (!otp && status && ["cancelled", "expired", "refunded"].includes(status)) {
+      const candidate = await Order.findOne({ order_id: req.params.id });
+      if (!candidate) return res.status(404).json({ error: "Order not found" });
+      if (candidate.status === "active" && !wallet.hasOtp(candidate)) {
+        const providerServer = await Server.findOne({ name: candidate.server_name });
+        if (!providerServer?.api_cancel_url || !candidate.external_order_id) {
+          return res.status(409).json({ error: "Configure the provider cancellation endpoint before refunding this order." });
+        }
+        const cancellation = await require("../utils/providerApi").cancelOrder(providerServer,
+          candidate.external_order_id, { requireConfirmation: true, allowMissing: true });
+        if (cancellation?.otp) {
+          await require("../utils/orderSms").recordOrderSms(candidate, cancellation.otp, { complete: true });
+          return res.status(409).json({ error: "The provider returned an OTP. The order was completed without a refund." });
+        }
+        if (!cancellation?.success) return res.status(409).json({ error: "Provider cancellation could not be confirmed; no refund was issued." });
+      }
+    }
+
     const order = await withTransaction(async session => {
+      refundBalance = undefined;
       const queryOptions = DB_TYPE === "mysql" ? { transaction: session, lock: true } : { session };
       const current = await Order.findOne({ order_id: req.params.id }, null, queryOptions);
       if (!current) return null;
-      if (status === "active" && ["cancelled", "expired", "refunded"].includes(current.status)) throw new Error("ORDER_ALREADY_REFUNDED");
-      if (status === "refunded" && otp) throw new Error("ORDER_NOT_REFUNDABLE");
-
-      if (status === "refunded" && current.status !== "refunded") {
-        if (current.refund_issued || current.otp || (current.all_otps && current.all_otps.length)) {
-          const error = new Error("ORDER_NOT_REFUNDABLE");
-          throw error;
-        }
-        const existingRefund = await Transaction.findOne({ order_id: current.order_id, type: "refund" }, null, queryOptions);
-        if (existingRefund) throw new Error("ORDER_ALREADY_REFUNDED");
-
-        const purchase = await Transaction.findOne({ order_id: current.order_id, user_id: String(current.user_id), type: "purchase", status: "completed" }, null, queryOptions);
-        wallet.assertVerifiedPurchase(purchase, current.cost);
-        const updatedOrder = await Order.findOneAndUpdate(
-          { _id: current._id, refund_issued: { $ne: true }, status: "active" },
-          { $set: { status: "refunded", refund_issued: true } },
-          { ...queryOptions, new: true }
-        );
-        if (!updatedOrder) throw new Error("ORDER_ALREADY_REFUNDED");
-        const user = await User.findOneAndUpdate(
-          { _id: current.user_id },
-          { $inc: { balance: current.cost } },
-          { ...queryOptions, new: true }
-        );
-        if (!user) throw new Error("USER_NOT_FOUND");
-        const refund = {
-          user_id: current.user_id, type: "refund", amount: current.cost,
-          balance_after: user.balance,
-          description: `Refund for order ${current.order_id}`, order_id: current.order_id, reference: `ORDER-REFUND:${current.order_id}`,
-        };
-        if (DB_TYPE === "mysql") await Transaction.create(refund, queryOptions);
-        else await Transaction.create([refund], queryOptions);
-        current.status = "refunded";
-        current.refund_issued = true;
-      } else if (status) {
+      const terminalStatuses = ["refunded", "cancelled", "expired"];
+      if (status && !terminalStatuses.includes(status) && terminalStatuses.includes(current.status)) throw new Error("ORDER_ALREADY_REFUNDED");
+      if (status === "active" && (terminalStatuses.includes(current.status) || current.rebuy_cancelled || current.rebuy_order_id)) throw new Error("ORDER_ALREADY_REFUNDED");
+      if (otp && terminalStatuses.includes(current.status)) throw new Error("ORDER_ALREADY_REFUNDED");
+      if (status && terminalStatuses.includes(status)) {
+        if (otp || wallet.hasOtp(current)) throw new Error("ORDER_NOT_REFUNDABLE");
+        if (terminalStatuses.includes(current.status)) return current;
+        const result = await wallet.refundOrder(current._id, status, `Admin ${status} order ${current.order_id}`, session);
+        if (!result.refunded) throw new Error("ORDER_NOT_REFUNDABLE");
+        refundBalance = result.newBalance;
+        return result.order;
+      }
+      if (status) {
         current.status = status;
-        if (["cancelled", "expired", "completed"].includes(status)) current.refund_issued = true;
+        if (status === "completed") current.refund_issued = true;
       }
       if (otp && otp !== current.otp) {
         current.otp = otp;
@@ -536,6 +534,7 @@ router.patch("/orders/:id", async (req, res) => {
       return current;
     });
     if (!order) return res.status(404).json({ error: "Order not found" });
+    if (refundBalance !== undefined) emitToUser(String(order.user_id), "balance", { balance: refundBalance });
     emitToUser(String(order.user_id), "order", { orderId: order.order_id, status: order.status, otp: order.otp, all_otps: order.all_otps });
     res.json({ order });
   } catch (err) { 

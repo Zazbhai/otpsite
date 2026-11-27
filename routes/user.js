@@ -18,6 +18,7 @@ const omnipay = require("../utils/omnipay");
 const heleket = require("../utils/heleket");
 const eaglepay = require("../utils/eaglepay");
 const providerApi = require("../utils/providerApi");
+const { recordOrderSms } = require("../utils/orderSms");
 const { nanoid }  = require("nanoid");
 const { emitToUser } = require("../utils/realtimeEmitter");
 const rateLimit = require("express-rate-limit");
@@ -583,13 +584,13 @@ router.post("/orders", async (req, res) => {
       });
 
       if (reversed && err.message !== "DUPLICATE_EXTERNAL_ORDER" && localProviderRes?.api_order_id && localServerConf) {
-        providerApi.cancelOrder(localServerConf, localProviderRes.api_order_id).catch(() => {});
+        await providerApi.cancelOrder(localServerConf, localProviderRes.api_order_id).catch(() => {});
       }
     }
 
     if (err.message === "INSUFFICIENT_BALANCE") return res.status(402).json({ error: "Insufficient balance" });
     if (err.message === "INVALID_SERVICE_PRICE") return res.status(409).json({ error: "Service price is invalid" });
-    if (err.message === "PROVIDER_REJECTION" || err.message === "PROVIDER_TIMEOUT") {
+    if (["PROVIDER_REJECTION", "PROVIDER_TIMEOUT", "DUPLICATE_EXTERNAL_ORDER"].includes(err.message)) {
       return res.status(400).json({ error: "No numbers available", code: "NO_NUMBERS" });
     }
     if (err.message === "Service not found or inactive") return res.status(404).json({ error: err.message });
@@ -628,7 +629,7 @@ router.get("/orders", async (req, res) => {
     }
     const total  = await Order.countDocuments(filter);
     const orders = await Order.find(filter)
-      .select("order_id service_id service_name cost status phone createdAt all_otps otp server_name service_image service_color expires_at min_cancel_at rebuy_order_id rebuy_cancelled refund_issued")
+      .select("order_id service_id service_name cost status phone createdAt all_otps otp country server_name service_image service_color expires_at min_cancel_at rebuy_order_id rebuy_cancelled refund_issued")
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
@@ -644,6 +645,7 @@ router.get("/orders", async (req, res) => {
     
     orders.forEach(o => {
       o._id = o._id?.toString() || o.id;
+      o.all_otps = wallet.otpHistory(o);
       const srv = serverMap.get(o.server_name);
       o.server_country = srv?.country_id?.name || o.country;
       o.can_rebuy = Boolean(srv?.is_active && srv.api_rebuy_url && ["cancelled", "expired", "refunded"].includes(o.status) &&
@@ -770,13 +772,19 @@ router.post("/orders/:id/cancel", async (req, res) => {
       }
 
       // ── Step 3: Atomically claim the refund slot ──────────────────
+      // Complete provider cancellation before exposing a refunded activation to rebuy.
+      const serverConf = await Server.findOne({ name: order.server_name });
+      if (!serverConf?.api_cancel_url || !order.external_order_id) throw new Error("PROVIDER_CANCEL_FAILED");
+      if (serverConf?.api_cancel_url && order.external_order_id) {
+        const cancelled = await providerApi.cancelOrder(serverConf, order.external_order_id, { requireConfirmation: true, allowMissing: true });
+        if (cancelled?.otp) {
+          const completed = await recordOrderSms(order, cancelled.otp, { complete: true });
+          return res.json({ success: true, order: completed || await Order.findById(order._id), refunded: false });
+        }
+        if (!cancelled?.success) throw new Error("PROVIDER_CANCEL_FAILED");
+      }
       const result = await wallet.refundOrder(order._id, "cancelled", `User cancelled order ${order.order_id} (no OTP)`);
       if (!result.refunded) return res.json({ success: true, ...result });
-
-      const serverConf = await Server.findOne({ name: order.server_name });
-      if (serverConf && serverConf.api_cancel_url && order.external_order_id) {
-         providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
-      }
 
       emitToUser(String(req.userId), "balance", { balance: result.newBalance });
       emitToUser(String(req.userId), "order", { orderId: order.order_id, status: "cancelled" });
@@ -788,6 +796,7 @@ router.post("/orders/:id/cancel", async (req, res) => {
   } catch (err) {
     if (err.message === "USER_NOT_FOUND") return res.status(500).json({ error: "User not found" });
     if (["PURCHASE_DEBIT_UNVERIFIED", "PURCHASE_LEDGER_MISSING", "ORDER_COST_MISMATCH"].includes(err.message)) return res.status(409).json({ error: "The original charge needs review before this order can be refunded. Please contact support." });
+    if (err.message === "PROVIDER_CANCEL_FAILED") return res.status(409).json({ error: "Cancellation could not be confirmed. Try again shortly." });
     console.error("Cancel error:", err);
     res.status(500).json({ error: "Server error" });
   }
@@ -863,6 +872,7 @@ router.post("/orders/:id/rebuy", async (req, res) => {
       INSUFFICIENT_BALANCE: [402, "Insufficient balance"],
       PROVIDER_NUMBER_MISMATCH: [502, "Provider returned a different number"],
       PROVIDER_REBUY_FAILED: [400, "Number could not be rebought"],
+      PROVIDER_CANCEL_FAILED: [409, "The previous activation could not be confirmed as cancelled. Try again shortly."],
       REBUY_IN_PROGRESS: [429, "Rebuy is already in progress"],
     };
     const [status, error] = messages[err.message] || [500, "Server error"];

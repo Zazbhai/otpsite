@@ -118,6 +118,10 @@ test("new SMS messages notify the order owner once and only after they are saved
   const moduleShim = { exports: {} };
   vm.runInNewContext(fs.readFileSync(path, "utf8"), { module: moduleShim, require: name => modules[name], console });
   const { recordOrderSms } = moduleShim.exports;
+  stored.rebuy_ignored_otps = ["old-otp"];
+  assert.equal(await recordOrderSms(stored, "old-otp", { complete: true }), null);
+  assert.equal(events.length, 0);
+  assert.equal(stored.refund_issued, undefined);
   const first = await Promise.all([recordOrderSms(stored, "001234"), recordOrderSms(stored, "001234")]);
   assert.equal(first.filter(Boolean).length, 1);
   await recordOrderSms(stored, "654321");

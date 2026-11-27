@@ -39,6 +39,8 @@ function fixture({ reserveError, providerResult, cancelResult, finalizeError } =
     },
   };
   const wallet = {
+    hasOtp: order => Boolean(order?.otp || order?.all_otps?.length),
+    otpHistory: order => Array.isArray(order?.all_otps) ? order.all_otps : [],
     reservePurchase: async args => {
       calls.reserved.push(args);
       if (reserveError) throw new Error(reserveError);
@@ -74,7 +76,7 @@ function fixture({ reserveError, providerResult, cancelResult, finalizeError } =
     },
     Date, String, Boolean, Number, Error, Set, Promise,
   }, { filename: "utils/rebuy.js" });
-  return { rebuy: module.exports.rebuyCancelledOrder, cancel: module.exports.cancelCompletedOrderForRebuy, original, calls };
+  return { rebuy: module.exports.rebuyCancelledOrder, cancel: module.exports.cancelCompletedOrderForRebuy, original, calls, dependencies };
 }
 
 test("completed OTP order requires confirmed cancellation, retains its paid history and rebuys as a new purchase", async () => {
@@ -119,7 +121,8 @@ test("failed provider cancellation never enables rebuy or changes the original O
 test("a duplicate provider activation is never cancelled as failed-rebuy compensation", async () => {
   const f = fixture({ finalizeError: "DUPLICATE_EXTERNAL_ORDER" });
   await assert.rejects(f.rebuy({ orderId: "ORD-OLD", userId: "user-1" }), /DUPLICATE_EXTERNAL_ORDER/);
-  assert.equal(f.calls.cancelled.length, 0);
+  assert.equal(f.calls.cancelled.length, 1);
+  assert.equal(f.calls.cancelled[0][1], "provider-old");
   assert.equal(f.calls.reversed.length, 1);
   assert.equal(f.original.rebuy_order_id, "");
 });
@@ -148,7 +151,7 @@ test("rebuy is owner-scoped, claim-once, and rejects orders that already receive
 });
 
 test("failed rebuy reverses the reserved debit and releases the one-time claim", async () => {
-  const f = fixture({ providerResult: { error: "Provider unavailable" } });
+  const f = fixture({ providerResult: { error: "Provider unavailable", no_allocation: true } });
   await assert.rejects(f.rebuy({ orderId: "ORD-OLD", userId: "user-1" }), /PROVIDER_REBUY_FAILED/);
   assert.deepEqual(f.calls.reversed, ["ORD-NEW-ORDER-ID"]);
   assert.equal(f.original.rebuy_order_id, "");
@@ -179,6 +182,59 @@ test("simultaneous rebuy calls allocate once and return the losing debit", async
   assert.equal(f.calls.provider.length, 1);
   assert.equal(f.calls.reversed.length, 1);
   assert.equal(f.original.rebuy_order_id, "ORD-NEW-ORDER-ID");
+});
+
+test("refunded rebuy confirms cancellation before allocation and reverses failed confirmation", async () => {
+  const f = fixture({ cancelResult: { success: false } });
+  await assert.rejects(f.rebuy({ orderId: "ORD-OLD", userId: "user-1" }), /PROVIDER_CANCEL_FAILED/);
+  assert.equal(f.calls.provider.length, 0);
+  assert.equal(f.calls.reserved.length, 1);
+  assert.equal(f.calls.reversed.length, 1);
+  assert.equal(f.original.rebuy_order_id, "");
+});
+
+test("ambiguous provider rebuy failure reverses the debit but retains its one-time claim", async () => {
+  const f = fixture({ providerResult: { error: "Malformed response" } });
+  await assert.rejects(f.rebuy({ orderId: "ORD-OLD", userId: "user-1" }), /PROVIDER_REBUY_FAILED/);
+  assert.equal(f.calls.reversed.length, 1);
+  assert.equal(f.calls.cancelled.length, 1);
+  assert.equal(f.calls.cancelled[0][1], "provider-old");
+  assert.equal(f.original.rebuy_order_id, "ORD-NEW-ORDER-ID");
+});
+
+test("failed rebuy waits for provider cleanup before releasing the parent claim", async () => {
+  const f = fixture({ providerResult: { api_order_id: "new-bad", phone: "1111111111" } });
+  let cleanupStarted, finish;
+  const started = new Promise(resolve => { cleanupStarted = resolve; });
+  f.dependencies["../utils/providerApi"].cancelOrder = async (_server, id) => {
+    if (id === "provider-old") return { success: true };
+    cleanupStarted();
+    return new Promise(resolve => { finish = resolve; });
+  };
+  const rebuy = f.rebuy({ orderId: "ORD-OLD", userId: "user-1" });
+  await started;
+  assert.equal(f.original.rebuy_order_id, "ORD-NEW-ORDER-ID");
+  finish({ success: true });
+  await assert.rejects(rebuy, /PROVIDER_NUMBER_MISMATCH/);
+  assert.equal(f.original.rebuy_order_id, "");
+});
+
+test("provider cleanup failure retains the parent claim to prevent a duplicate allocation", async () => {
+  const f = fixture({ providerResult: { api_order_id: "new-bad", phone: "1111111111" } });
+  f.dependencies["../utils/providerApi"].cancelOrder = async (_server, id) =>
+    id === "provider-old" ? { success: true } : { success: false };
+  await assert.rejects(f.rebuy({ orderId: "ORD-OLD", userId: "user-1" }), /PROVIDER_NUMBER_MISMATCH/);
+  assert.equal(f.calls.reversed.length, 1);
+  assert.equal(f.original.rebuy_order_id, "ORD-NEW-ORDER-ID");
+});
+
+test("rebuy carries previous activation OTPs through successive rebuys without exposing them as new SMS", async () => {
+  const f = fixture();
+  Object.assign(f.original, { status: "completed", otp: "1234", all_otps: ["1234", "5678"], rebuy_cancelled: true, rebuy_ignored_otps: ["0000"] });
+  const result = await f.rebuy({ orderId: "ORD-OLD", userId: "user-1" });
+  assert.deepEqual([...result.order.rebuy_ignored_otps].sort(), ["0000", "1234", "5678"]);
+  assert.equal(result.order.all_otps.length, 0);
+  assert.equal(result.order.otp, "");
 });
 
 test("Buy page loads six orders at a time and reveals rebuy only after cancellation succeeds", async () => {

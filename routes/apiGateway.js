@@ -26,7 +26,9 @@ router.all("/", async (req, res) => {
     const { action } = query;
     const api_key = query.api_key || query.apikey;
 
-    if (!api_key) return res.send("BAD_KEY");
+    if (typeof api_key !== "string" || !api_key.trim()) return res.send("BAD_KEY");
+    if (typeof action !== "string") return res.send("BAD_ACTION");
+    if (query.id !== undefined && (typeof query.id !== "string" || !query.id.trim())) return res.send("BAD_REQUEST");
 
     const user = await User.findOne({ api_key });
     if (!user) return res.send("BAD_KEY");
@@ -185,7 +187,7 @@ router.all("/", async (req, res) => {
             });
 
             if (reversed && err.message !== "DUPLICATE_EXTERNAL_ORDER" && providerRes?.api_order_id) {
-              providerApi.cancelOrder(serverConf, providerRes.api_order_id).catch(() => {});
+              await providerApi.cancelOrder(serverConf, providerRes.api_order_id).catch(() => {});
             }
           }
           return res.send("NO_NUMBERS");
@@ -246,7 +248,11 @@ router.all("/", async (req, res) => {
               if (checkRes.status === "cancelled" || checkRes.status === "refunded" || checkRes.status === "expired") {
                 // Provider cancelled with no OTP — issue refund atomically in transaction
                 const result = await wallet.refundOrder(order._id, "cancelled", `Provider cancelled order ${order.order_id} (no OTP)`);
-                if (result.refunded) notifyAdminChange();
+                if (result.refunded) {
+                  notifyAdminChange();
+                  emitToUser(String(user._id), "balance", { balance: result.newBalance });
+                  emitToUser(String(user._id), "order", { orderId: order.order_id, status: "cancelled" });
+                }
                 if (wallet.hasOtp(result.order)) return res.send(`STATUS_OK:${result.order.otp || result.order.all_otps[0]}`);
 
                 return res.send("STATUS_CANCEL");
@@ -268,6 +274,7 @@ router.all("/", async (req, res) => {
           return res.send(numberResponse(rebuy.order));
         } catch (err) {
           if (err.message === "INSUFFICIENT_BALANCE") return res.send("NO_BALANCE");
+          if (err.message === "PROVIDER_CANCEL_FAILED") return res.send("BAD_STATUS");
           if (["ORDER_NOT_FOUND", "ORDER_NOT_REBUYABLE", "REBUY_ALREADY_USED", "REBUY_NOT_CONFIGURED", "ORIGINAL_REFUND_UNVERIFIED"].includes(err.message)) return res.send("BAD_STATUS");
           return res.send("NO_NUMBERS");
         }
@@ -343,12 +350,20 @@ router.all("/", async (req, res) => {
                  return res.send(`BAD_STATUS`);
               }
 
+              const serverConf = await Server.findOne({ name: order.server_name });
+              if (!serverConf?.api_cancel_url || !order.external_order_id) return res.send("BAD_STATUS");
+              if (serverConf?.api_cancel_url && order.external_order_id) {
+                const cancelled = await providerApi.cancelOrder(serverConf, order.external_order_id, { requireConfirmation: true, allowMissing: true });
+                if (cancelled?.otp) {
+                  await recordOrderSms(order, cancelled.otp, { complete: true });
+                  return res.send("ACCESS_CANCEL");
+                }
+                if (!cancelled?.success) return res.send("BAD_STATUS");
+              }
               const result = await wallet.refundOrder(order._id, "cancelled", `API cancelled order ${order.order_id}`);
               if (result.refunded) {
-                const serverConf = await Server.findOne({ name: order.server_name });
-                if (serverConf?.api_cancel_url && order.external_order_id) {
-                  providerApi.cancelOrder(serverConf, order.external_order_id).catch(() => {});
-                }
+                emitToUser(String(user._id), "balance", { balance: result.newBalance });
+                emitToUser(String(user._id), "order", { orderId: order.order_id, status: "cancelled" });
               }
               return res.send("ACCESS_CANCEL");
            } finally {

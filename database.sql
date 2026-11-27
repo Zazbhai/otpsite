@@ -154,6 +154,7 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   `rebuy_of` VARCHAR(100) NOT NULL DEFAULT '',
   `rebuy_order_id` VARCHAR(100) NULL DEFAULT NULL,
   `rebuy_cancelled` TINYINT(1) NOT NULL DEFAULT 0,
+  `rebuy_ignored_otps` TEXT NULL,
   `multi_otp_enabled` TINYINT(1)     NOT NULL DEFAULT 0,
   `last_check_at`     DATETIME                DEFAULT NULL,
   `service_image`     VARCHAR(500)   NOT NULL DEFAULT '',

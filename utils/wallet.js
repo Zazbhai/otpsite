@@ -8,7 +8,14 @@ const optionsFor = session => DB_TYPE === "mysql" ? { transaction: session, lock
 const createTransaction = async (data, options) => DB_TYPE === "mysql"
   ? Transaction.create(data, options)
   : (await Transaction.create([data], options))[0];
-const hasOtp = order => !!(order.otp || order.all_otps?.length);
+function otpHistory(order) {
+  let history = order?.all_otps;
+  if (typeof history === "string") {
+    try { history = JSON.parse(history); } catch { history = []; }
+  }
+  return Array.isArray(history) ? history.filter(value => typeof value === "string" && value.trim()) : [];
+}
+const hasOtp = order => !!(String(order?.otp || "").trim() || otpHistory(order).length);
 function assertVerifiedPurchase(purchase, cost) {
   if (!purchase || money(purchase.amount) >= 0) throw new Error("PURCHASE_LEDGER_MISSING");
   if (positiveMoney(-Number(purchase.amount)) !== money(cost)) throw new Error("ORDER_COST_MISMATCH");
@@ -32,9 +39,9 @@ function publishDeposit(result) {
 
 // The database claim, credit and ledger entry commit together. Memory locks
 // reduce redundant work but are never part of the financial safety guarantee.
-async function refundOrder(orderId, status, description) {
+async function refundOrder(orderId, status, description, session) {
   if (!["cancelled", "expired", "refunded"].includes(status)) throw new Error("INVALID_STATUS");
-  return withTransaction(async session => {
+  const refund = async session => {
     const options = optionsFor(session);
     const current = await Order.findById(orderId, null, options);
     if (!current) throw new Error("ORDER_NOT_FOUND");
@@ -49,7 +56,7 @@ async function refundOrder(orderId, status, description) {
     assertVerifiedPurchase(purchase, current.cost);
     const amount = positiveMoney(-Number(purchase.amount));
     const claimed = await Order.findOneAndUpdate(
-      { _id: current._id, status: "active", refund_issued: { $ne: true }, otp: { $in: ["", null] } },
+      { _id: current._id, status: "active", refund_issued: { $ne: true }, $or: [{ otp: "" }, { otp: null }] },
       { $set: { status, refund_issued: true } }, { ...options, new: true });
     if (!claimed) return { refunded: false, order: current };
     const user = await User.findOneAndUpdate({ _id: current.user_id }, { $inc: { balance: amount } }, { ...options, new: true });
@@ -60,7 +67,8 @@ async function refundOrder(orderId, status, description) {
       reference: `ORDER-REFUND:${current.order_id}`, description,
     }, options);
     return { refunded: true, order: claimed, newBalance: user.balance };
-  });
+  };
+  return session ? refund(session) : withTransaction(refund);
 }
 
 // Claim an existing payment using its primary key and owner, not an untrusted
@@ -150,14 +158,8 @@ async function finalizePurchase(orderData) {
   try { return await withTransaction(async session => {
     const options = optionsFor(session);
     const providerIdentity = [orderData.server_name, String(orderData.external_order_id)];
-    if (orderData.rebuy_of) providerIdentity.push(String(orderData.order_id));
     const providerReference = "PROVIDER-ORDER:" + require("crypto").createHash("sha256")
       .update(JSON.stringify(providerIdentity)).digest("hex");
-    const claimed = await Transaction.findOneAndUpdate({ order_id: orderData.order_id, user_id: String(orderData.user_id), type: "purchase", status: "pending" }, {
-      $set: { status: "completed", reference: providerReference },
-    }, { ...options, new: true });
-    if (!claimed) throw new Error("PURCHASE_NOT_RESERVED");
-    if (money(orderData.cost) !== -money(claimed.amount)) throw new Error("ORDER_COST_MISMATCH");
     // External IDs are scoped to the provider, not globally across servers.
     const identity = { server_name: orderData.server_name, external_order_id: orderData.external_order_id };
     if (orderData.rebuy_of) {
@@ -173,7 +175,28 @@ async function finalizePurchase(orderData) {
         { $and: [{ status: { $nin: ["cancelled", "expired", "refunded"] } }, { rebuy_cancelled: { $ne: true } }] },
       ] }, null, options);
       if (conflict) throw new Error("DUPLICATE_EXTERNAL_ORDER");
+      // Keep one unique ledger reference for the current provider activation.
+      // Retire the old reference in this transaction so concurrent rebuys of
+      // different ancestors cannot both claim the same upstream activation.
+      const previous = await Transaction.findOne({ reference: providerReference }, null, options);
+      if (previous) {
+        const retired = await Order.findOne({ ...identity, order_id: previous.order_id,
+          user_id: String(orderData.user_id), phone: orderData.phone }, null, options);
+        if (previous.type !== "purchase" || previous.status !== "completed" || !retired ||
+            !(["cancelled", "expired", "refunded"].includes(retired.status) ||
+              (retired.status === "completed" && retired.rebuy_cancelled))) throw new Error("DUPLICATE_EXTERNAL_ORDER");
+        const retiredReference = "PROVIDER-ORDER:RETIRED:" + require("crypto").createHash("sha256")
+          .update(String(previous.order_id)).digest("hex");
+        await Transaction.findOneAndUpdate({ _id: previous._id, reference: providerReference }, {
+          $set: { reference: retiredReference },
+        }, { ...options, new: true });
+      }
     } else if (await Order.findOne(identity, null, options)) throw new Error("DUPLICATE_EXTERNAL_ORDER");
+    const claimed = await Transaction.findOneAndUpdate({ order_id: orderData.order_id, user_id: String(orderData.user_id), type: "purchase", status: "pending" }, {
+      $set: { status: "completed", reference: providerReference },
+    }, { ...options, new: true });
+    if (!claimed) throw new Error("PURCHASE_NOT_RESERVED");
+    if (money(orderData.cost) !== -money(claimed.amount)) throw new Error("ORDER_COST_MISMATCH");
     return DB_TYPE === "mysql" ? Order.create(orderData, options) : (await Order.create([orderData], options))[0];
   }); } catch (err) {
     if (err.code === 11000 || err.name === "SequelizeUniqueConstraintError") throw new Error("DUPLICATE_EXTERNAL_ORDER");
@@ -182,20 +205,24 @@ async function finalizePurchase(orderData) {
 }
 
 async function reversePurchase(orderId) {
-  return withTransaction(async session => {
+  const result = await withTransaction(async session => {
     const options = optionsFor(session);
     const claimed = await Transaction.findOneAndUpdate({ order_id: orderId, type: "purchase", status: "pending" }, {
       $set: { status: "failed" },
     }, { ...options, new: true });
-    if (!claimed) return false; // already completed/reversed, including an uncertain commit
+    if (!claimed) return null; // already completed/reversed, including an uncertain commit
     if (await Order.findOne({ order_id: orderId }, null, options)) throw new Error("PURCHASE_ALREADY_FULFILLED");
     const amount = positiveMoney(-Number(claimed.amount));
     const user = await User.findOneAndUpdate({ _id: claimed.user_id }, { $inc: { balance: amount, total_spent: -amount, total_orders: -1 } }, { ...options, new: true });
     if (!user) throw new Error("USER_NOT_FOUND");
     await createTransaction({ user_id: claimed.user_id, type: "refund", amount, balance_after: user.balance,
       order_id: orderId, reference: `ORDER-REFUND:${orderId}`, description: `Reversed failed purchase ${orderId}` }, options);
-    return true;
+    return { userId: String(claimed.user_id), balance: user.balance };
   });
+  if (!result) return false;
+  try { require("./realtimeEmitter").emitToUser(result.userId, "balance", { balance: result.balance }); }
+  catch (err) { console.error("[Purchase reversal notification]", err.message); }
+  return true;
 }
 
 async function recoverPendingPurchases() {
@@ -203,10 +230,9 @@ async function recoverPendingPurchases() {
   const pending = await Transaction.find({ type: "purchase", status: "pending", createdAt: { $lt: cutoff } }).limit(100);
   for (const tx of pending) {
     try {
-      const reversed = await reversePurchase(tx.order_id);
-      if (reversed) {
-        await Order.findOneAndUpdate({ rebuy_order_id: tx.order_id }, { $set: { rebuy_order_id: "" } });
-      }
+      // A stale reservation may represent an upstream allocation that succeeded
+      // before a process crash. Keep its rebuy claim for manual reconciliation.
+      await reversePurchase(tx.order_id);
     }
     catch (err) { console.error("[Purchase recovery]", tx.order_id, err.message); }
   }
@@ -243,5 +269,5 @@ async function setBalance(userId, target) {
   });
 }
 
-module.exports = { optionsFor, createTransaction, hasOtp, refundOrder, creditDeposit, creditReceipt,
+module.exports = { optionsFor, createTransaction, otpHistory, hasOtp, refundOrder, creditDeposit, creditReceipt,
   reservePurchase, finalizePurchase, reversePurchase, recoverPendingPurchases, adjustBalance, setBalance, assertVerifiedPurchase };

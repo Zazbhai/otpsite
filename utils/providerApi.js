@@ -120,6 +120,7 @@ async function callProvider(url, server, method = "GET", timeoutMs = 4000) {
     let data;
     try {
       data = JSON.parse(text);
+      if (!data || typeof data !== "object" || Array.isArray(data)) data = { text: text.trim() };
     } catch {
       data = { text: text.trim() };
     }
@@ -231,6 +232,8 @@ async function checkStatus(server, api_order_id) {
      return { error: "Provider rate limited", rate_limited: true, retry_at: retryAt };
   }
 
+  if (!response.ok) return { error: "Provider status request failed" };
+
   if (text === "STATUS_WAIT_CODE" || text === "TZ_NUM_WAIT") {
      return { status: "waiting", otp: null };
   }
@@ -248,7 +251,7 @@ async function checkStatus(server, api_order_id) {
 }
 
 // 3. Cancel Order (setStatus=8)
-async function cancelOrder(server, api_order_id, { requireConfirmation = false } = {}) {
+async function cancelOrder(server, api_order_id, { requireConfirmation = false, allowMissing = false } = {}) {
   if (!server.api_cancel_url) return { error: "Server missing API Cancel url" };
   
   let url = buildUrl(server.api_cancel_url, { 
@@ -262,12 +265,14 @@ async function cancelOrder(server, api_order_id, { requireConfirmation = false }
 
   if (!response.ok) return { success: false, error: "Provider cancellation failed" };
 
-  if (text === "ACCESS_CANCEL" || text === "ACCESS_ACTIVATION_CANCELED") {
+  if (["ACCESS_CANCEL", "ACCESS_ACTIVATION_CANCELED", "ACCESS_CANCEL_ALREADY", "STATUS_CANCEL"].includes(text) ||
+      (allowMissing && text === "NO_ACTIVATION")) {
      return { success: true };
   }
 
-  if (text === "STATUS_OK" || text === "NO_ACTIVATION") {
-     return { success: false, error: "Cannot cancel, OTP already delivered" };
+  if (text === "STATUS_OK" || text.startsWith("STATUS_OK:") || text === "NO_ACTIVATION") {
+     return { success: false, otp: text.startsWith("STATUS_OK:") ? text.slice("STATUS_OK:".length).trim() : null,
+       error: "Cannot confirm cancellation" };
   }
 
   const confirmed = response.data.success === true || response.data.status === "CANCELLED" ||
@@ -317,8 +322,9 @@ async function rebuyOrder(server, order) {
   });
   const response = await callProvider(url, server, "GET", 10000);
   logToProviderFile(`rebuyOrder | ID=${order.external_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
-  if (!response.ok) return { error: response.data.error || "Provider rebuy failed", originalError: response.data.text || response.data.error };
   const text = response.data.text || "";
+  const noAllocation = /^(NO_NUMBERS|NO_BALANCE|NO_MONEY|BAD_SERVICE|BAD_STATUS|NO_ACTIVATION)$/i.test(text);
+  if (!response.ok) return { error: response.data.error || "Provider rebuy failed", originalError: text || response.data.error, no_allocation: noAllocation };
   if (text.startsWith("ACCESS_NUMBER:")) {
     const [, api_order_id, rawPhone] = text.split(":");
     const phone = String(rawPhone || "").replace(/\D/g, "");
@@ -327,7 +333,7 @@ async function rebuyOrder(server, order) {
   if (response.data.id && response.data.phone) {
     return { api_order_id: String(response.data.id), phone: String(response.data.phone).replace(/\D/g, "") };
   }
-  return { error: "Provider rebuy failed", originalError: text || JSON.stringify(response.data) };
+  return { error: "Provider rebuy failed", originalError: text || JSON.stringify(response.data), no_allocation: noAllocation };
 }
 
 module.exports = {

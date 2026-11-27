@@ -1093,6 +1093,7 @@
 
   let allocationController = null;
   window.placeOrder = async function() {
+    if (allocationController) return;
     if (!requireLogin()) return;
     if (!selectedService || !selectedCountry) {
       toast('Please select service and country', 'error');
@@ -1117,24 +1118,18 @@
       }
       
     } catch (e) {
-      if (e.name === 'AbortError') return;
+      if (e.name === 'AbortError') {
+        toast('Could not confirm the order. Check your order history before buying again.', 'info');
+        window.failAllocation();
+        return;
+      }
 
       const isNetworkError = e.message === 'Failed to fetch' || e.message === 'NetworkError when attempting to fetch resource.' || e.name === 'TypeError';
 
       if (isNetworkError) {
-        // Server may have restarted mid-request, but the order could still have been saved.
-        // Wait a moment and then check for a recently created active order.
-        try {
-          await new Promise(r => setTimeout(r, 2000));
-          const recent = await API.get('/api/user/orders?status=active&limit=1');
-          const latestOrder = recent?.orders?.[0];
-          if (latestOrder && latestOrder.order_id) {
-            // Order was created successfully — navigate to it
-            window.finishAllocation(latestOrder.phone || '');
-            setTimeout(() => window.location.href = `/dashboard/orders/${latestOrder.order_id}`, 400);
-            return;
-          }
-        } catch (_) { /* ignore — fall through to failure */ }
+        toast('Could not confirm the order. Check your order history before buying again.', 'info');
+        window.failAllocation();
+        return;
       }
 
       const msg = /aborted|timed.?out|number not available|no_numbers/i.test(e.message || '')

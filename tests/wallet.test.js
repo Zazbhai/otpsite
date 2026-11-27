@@ -112,7 +112,7 @@ function walletFixture(dbType = "mysql") {
         throw new Error("Unsupported test operator " + op);
       });
     }
-    return current === value;
+    return value === null ? current == null : current === value;
   });
   function model(name) {
     const wrap = row => row && Object.assign(structuredClone(row), {
@@ -157,12 +157,13 @@ function walletFixture(dbType = "mysql") {
     return result;
   } };
   const models = { User: model("users"), Order: model("orders"), Transaction: model("transactions") };
+  const balanceEvents = [];
   const wallet = moduleFrom("utils/wallet.js", {
     "../models/User": models.User, "../models/Order": models.Order, "../models/Transaction": models.Transaction,
     "./db": db, "./referralBonus": { processReferralBonus: async (user, base, had) => bonuses.push({ base, had }) },
-    "./realtimeEmitter": { emitToUser() {} },
+    "./realtimeEmitter": { emitToUser(userId, event, payload) { balanceEvents.push({ userId, event, payload }); } },
   });
-  return { wallet, tables, models, db, bonuses, failLedger(value) { failLedger = value; } };
+  return { wallet, tables, models, db, bonuses, balanceEvents, failLedger(value) { failLedger = value; } };
 }
 
 for (const dbType of ["mysql", "mongodb"]) {
@@ -175,6 +176,7 @@ for (const dbType of ["mysql", "mongodb"]) {
     assert.equal(f.tables.users[0].balance, 10);
     assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 1);
     assert.equal(f.tables.users[0].total_orders, 0);
+    assert.ok(f.balanceEvents.some(event => event.event === "balance" && event.payload.balance === 10));
     await f.wallet.reservePurchase({ userId: "u1", orderId: "crash", amount: 2, description: "test" });
     f.tables.transactions.find(t => t.order_id === "crash").createdAt = new Date(0);
     await f.wallet.recoverPendingPurchases();
@@ -341,13 +343,13 @@ test("Mongoose executes the wallet rounding hook with timestamps enabled", async
   assert.equal(sentFilter.$and[0].$expr.$gte[1], 0.1);
 });
 
-function watcherFixture(f, checkStatus) {
+function watcherFixture(f, checkStatus, cancelOrder = async () => ({})) {
   return moduleFrom("utils/orderStatusManager.js", {
     "../models/Order": f.models.Order,
     "../models/Server": { findOne: async () => ({ api_check_status_url: "provider", api_cancel_url: "cancel" }) },
     "./wallet": f.wallet, "./realtimeEmitter": { emitToUser() {} },
-    "./orderSms": { recordOrderSms: async (order, otp) => f.models.Order.findOneAndUpdate({ _id: order._id, status: "active" }, { $set: { otp, all_otps: [otp], refund_issued: true } }) },
-    "./providerApi": { checkStatus, cancelOrder: async () => ({}) },
+    "./orderSms": { recordOrderSms: async (order, otp, { complete } = {}) => f.models.Order.findOneAndUpdate({ _id: order._id, status: "active" }, { $set: { otp, all_otps: [otp], refund_issued: true, ...(complete ? { status: "completed" } : {}) } }) },
+    "./providerApi": { checkStatus, cancelOrder },
     "./orderLocks": { acquireLock: () => true, releaseLock() {} },
   });
 }
@@ -402,6 +404,111 @@ function response() {
     json(body) { this.body = body; return this; }, send(body) { this.body = body; return this; }, set() { return this; } };
 }
 
+function adminOrderFixture(f, options = {}) {
+  const router = moduleFrom("routes/admin.js", {
+    "../utils/wallet": f.wallet, "../utils/db": f.db,
+    "../models/User": f.models.User, "../models/Order": f.models.Order, "../models/Transaction": f.models.Transaction,
+    "../models/Service": {}, "../models/Server": { findOne: async () => options.server || { api_cancel_url: "cancel" } }, "../models/Country": {}, "../models/Setting": {},
+    "../models/AdminBankAccount": {}, "../models/Payout": {},
+    "../utils/omnipay": {}, "../utils/heleket": {}, "../utils/analyticsPeriod": {}, "../utils/adminUserDetails": {},
+    "../utils/providerApi": { cancelOrder: (...args) => options.cancelOrder ? options.cancelOrder(...args) : Promise.resolve({ success: true }) },
+    "../utils/orderSms": { recordOrderSms: (...args) => options.recordOrderSms ? options.recordOrderSms(...args) : Promise.resolve(null) },
+    "../utils/settingsCache": {}, "../utils/apiCache": {}, "../utils/realtimeEmitter": { emitToUser() {}, emitToAll() {} },
+    "../utils/adminRealtime": { streamAdminChanges() {} }, "../middleware/auth": { adminRequired() {} },
+  }, { console: { log() {}, error() {} } });
+  return router.stack.find(layer => layer.route?.path === "/orders/:id" && layer.route.methods.patch).route.stack.at(-1).handle;
+}
+
+for (const dbType of ["mysql", "mongodb"]) {
+  test(`${dbType}: fractional buy and simultaneous refunds restore exactly the debit once`, async () => {
+    const f = walletFixture(dbType);
+    f.tables.users[0].balance = 2.1234;
+    await f.wallet.reservePurchase({ userId: "u1", orderId: "fraction", amount: 1.2345, description: "test" });
+    assert.equal(f.tables.users[0].balance, 0.8889);
+    const order = await f.wallet.finalizePurchase({ order_id: "fraction", user_id: "u1", server_name: "s", external_order_id: "fraction", cost: 1.2345, otp: null, all_otps: [], status: "active" });
+    const results = await Promise.all(Array.from({ length: 20 }, () => f.wallet.refundOrder(order._id, "cancelled", "test")));
+    assert.equal(results.filter(r => r.refunded).length, 1);
+    assert.equal(f.tables.users[0].balance, 2.1234);
+    assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 1);
+    assert.equal(f.tables.transactions.find(t => t.type === "refund").amount, 1.2345);
+  });
+
+  test(`${dbType}: stale rebuy recovery reverses once and retains the uncertain allocation claim`, async () => {
+    const f = walletFixture(dbType);
+    await f.wallet.reservePurchase({ userId: "u1", orderId: "rebuy-crash", amount: 3.25, description: "test" });
+    f.tables.transactions[0].createdAt = new Date(0);
+    f.tables.orders.push({ _id: "parent", order_id: "parent", rebuy_order_id: "rebuy-crash", status: "completed", otp: "1234" });
+    await f.wallet.recoverPendingPurchases();
+    await f.wallet.recoverPendingPurchases();
+    assert.equal(f.tables.users[0].balance, 10);
+    assert.equal(f.tables.orders[0].rebuy_order_id, "rebuy-crash");
+    assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 1);
+  });
+
+  test(`${dbType}: admin cancelled, expired and refunded statuses all return one verified debit`, async () => {
+    for (const status of ["cancelled", "expired", "refunded"]) {
+      const f = walletFixture(dbType);
+      await f.wallet.reservePurchase({ userId: "u1", orderId: "admin", amount: 3.125, description: "test" });
+      await f.wallet.finalizePurchase({ order_id: "admin", user_id: "u1", server_name: "s", external_order_id: status, cost: 3.125, otp: "", all_otps: [], status: "active" });
+      const handler = adminOrderFixture(f);
+      const args = { params: { id: "admin" }, body: { status } };
+      const result = response();
+      await handler(args, result);
+      assert.equal(result.statusCode, 200, status);
+      assert.equal(f.tables.users[0].balance, 10);
+      assert.equal(f.tables.orders[0].status, status);
+      const repeated = response();
+      await handler(args, repeated);
+      assert.equal(repeated.statusCode, 200);
+      assert.equal(f.tables.users[0].balance, 10);
+      assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 1);
+    }
+  });
+
+  test(`${dbType}: admin cannot refund OTPs, reactivate a rebought original or refund an uncharged order`, async () => {
+    const f = walletFixture(dbType);
+    await f.wallet.reservePurchase({ userId: "u1", orderId: "admin-otp", amount: 4, description: "test" });
+    await f.wallet.finalizePurchase({ order_id: "admin-otp", user_id: "u1", server_name: "s", external_order_id: "otp", cost: 4, otp: "1234", all_otps: ["1234"], status: "completed", refund_issued: true, rebuy_cancelled: true });
+    const handler = adminOrderFixture(f);
+    for (const status of ["cancelled", "expired", "refunded", "active"]) {
+      const result = response();
+      await handler({ params: { id: "admin-otp" }, body: { status } }, result);
+      assert.equal(result.statusCode, 409, status);
+      assert.equal(f.tables.users[0].balance, 6);
+    }
+    f.tables.orders.push({ _id: "uncharged", order_id: "uncharged", user_id: "u1", status: "active", cost: 20, otp: "", all_otps: [] });
+    const result = response();
+    await handler({ params: { id: "uncharged" }, body: { status: "cancelled" } }, result);
+    assert.equal(result.statusCode, 409);
+    assert.equal(f.tables.users[0].balance, 6);
+    assert.equal(f.tables.orders[1].status, "active");
+  });
+
+  test(`${dbType}: website cancellation waits for confirmation and captures cancellation-time OTP`, async () => {
+    for (const providerResult of [{ success: false }, { success: false, otp: "9876" }, { success: true }]) {
+      const f = walletFixture(dbType);
+      await f.wallet.reservePurchase({ userId: "u1", orderId: "web-cancel", amount: 4, description: "test" });
+      await f.wallet.finalizePurchase({ order_id: "web-cancel", user_id: "u1", server_name: "s", external_order_id: "cancel", cost: 4, otp: "", all_otps: [], status: "active" });
+      let finishCancel, started;
+      const hasStarted = new Promise(resolve => { started = resolve; });
+      f.cancelOrder = async (_server, _id, options) => { assert.equal(options.requireConfirmation, true); started(); return new Promise(resolve => { finishCancel = resolve; }); };
+      const routes = routesFixture(f, async () => ({}));
+      routes.server.api_cancel_url = "cancel";
+      const result = response();
+      const cancelling = routes.cancel({ userId: "u1", params: { id: "web-cancel" } }, result);
+      await hasStarted;
+      assert.equal(f.tables.orders[0].status, "active");
+      assert.equal(f.tables.users[0].balance, 6);
+      finishCancel(providerResult);
+      await cancelling;
+      assert.equal(f.tables.users[0].balance, providerResult.success ? 10 : 6);
+      assert.equal(f.tables.orders[0].status, providerResult.success ? "cancelled" : providerResult.otp ? "completed" : "active");
+      assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, providerResult.success ? 1 : 0);
+      assert.equal(result.statusCode, providerResult.success || providerResult.otp ? 200 : 409);
+    }
+  });
+}
+
 function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw new Error("Rebuy not configured"); }, cancelCompletedOrderForRebuy = async () => { throw new Error("Cancel not configured"); }) {
   const originalFind = f.models.User.findById;
   f.models.User.findById = (...args) => {
@@ -416,18 +523,18 @@ function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw n
     "../utils/rebuy": { rebuyCancelledOrder, cancelCompletedOrderForRebuy },
     "../models/User": f.models.User, "../models/Order": f.models.Order, "../models/Transaction": f.models.Transaction,
     "../models/Service": { findById: async () => service, find: () => ({ sort: async () => [service] }) },
-    "../models/Server": { findById: async () => server, find: (...args) => f.serverFind(...args) },
-    "../utils/providerApi": { getNumber, cancelOrder: async () => ({}) },
+    "../models/Server": { findById: async () => server, findOne: async () => server, find: (...args) => f.serverFind(...args) },
+    "../utils/providerApi": { getNumber, cancelOrder: (...args) => f.cancelOrder ? f.cancelOrder(...args) : Promise.resolve({ success: true }) },
     "../middleware/auth": { loginRequired() {}, optionalLogin() {} },
     "../utils/realtimeEmitter": { emitToUser() {} }, "../utils/adminRealtime": { notifyAdminChange() {} },
-    "../utils/orderSms": {}, "../utils/bharatpe": {}, "../utils/paytm": {}, "../utils/omnipay": {}, "../utils/heleket": {}, "../utils/eaglepay": {},
+    "../utils/orderSms": { recordOrderSms: async (order, otp) => f.models.Order.findOneAndUpdate({ _id: order._id, status: "active" }, { $set: { otp, all_otps: [otp], refund_issued: true, status: "completed" } }) }, "../utils/bharatpe": {}, "../utils/paytm": {}, "../utils/omnipay": {}, "../utils/heleket": {}, "../utils/eaglepay": {},
     "../models/Country": {}, "../models/Setting": {}, "../models/UserWebhook": {}, "../models/PromoCode": {},
   };
   const extra = { process: { env: { DB_TYPE: "mysql" } }, console: { log() {}, error() {}, warn() {} } };
   const user = moduleFrom("routes/user.js", dependencies, extra);
   const api = moduleFrom("routes/apiGateway.js", dependencies, extra);
   const handler = (router, route, method) => router.stack.find(layer => layer.route?.path === route && (!method || layer.route.methods[method])).route.stack.at(-1).handle;
-  return { listOrders: handler(user, "/orders", "get"), cancelForRebuy: handler(user, "/orders/:id/cancel-for-rebuy"), retry: handler(user, "/orders/:id/retry"), purchase: handler(user, "/orders"), rebuy: handler(user, "/orders/:id/rebuy"), gateway: handler(api, "/") };
+  return { service, server, cancel: handler(user, "/orders/:id/cancel"), listOrders: handler(user, "/orders", "get"), cancelForRebuy: handler(user, "/orders/:id/cancel-for-rebuy"), retry: handler(user, "/orders/:id/retry"), purchase: handler(user, "/orders"), rebuy: handler(user, "/orders/:id/rebuy"), gateway: handler(api, "/") };
 }
 
 test("website purchase refuses insufficient balance before calling provider and records a successful debit", async () => {
@@ -446,6 +553,21 @@ test("website purchase refuses insufficient balance before calling provider and 
   assert.equal(success.body.order.cost, 6);
   assert.equal(f.tables.users[0].balance, 4);
   assert.equal(f.tables.transactions[0].status, "completed");
+});
+
+test("website purchase applies the server price and user discount to its single ledger debit", async () => {
+  const f = walletFixture();
+  f.tables.users[0].discounts = [{ service_name: "test", server_id: "srv", percentage: 20 }];
+  const routes = routesFixture(f, async () => ({ api_order_id: "discounted", phone: "919876543210" }));
+  const result = response();
+  await routes.purchase({ userId: "u1", body: { service_id: "svc" } }, result);
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.body.order.cost, 4.8);
+  assert.equal(f.tables.users[0].balance, 5.2);
+  assert.equal(f.tables.users[0].total_spent, 4.8);
+  assert.equal(f.tables.users[0].total_orders, 1);
+  assert.equal(f.tables.transactions.filter(tx => tx.type === "purchase").length, 1);
+  assert.equal(f.tables.transactions[0].amount, -4.8);
 });
 
 test("website provider failure reverses exactly the reserved debit and logs the refund", async () => {
@@ -626,6 +748,7 @@ test("rebuy schema migration adds server endpoint and order claim/link columns o
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_of` VARCHAR(255) NOT NULL DEFAULT ''",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_order_id` VARCHAR(255) NULL DEFAULT NULL",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_cancelled` TINYINT(1) NOT NULL DEFAULT 0",
+    "ALTER TABLE `Orders` ADD COLUMN `rebuy_ignored_otps` TEXT NULL",
   ]);
 });
 
@@ -696,7 +819,7 @@ test("order list exposes completed cancellation and rebuy buttons with six-row s
   const rows = [
     { order_id: "otp", server_name: "s", status: "completed", otp: "1234", all_otps: ["1234"], refund_issued: true },
     { order_id: "otp-cancelled", server_name: "s", status: "completed", otp: "5678", all_otps: ["5678"], refund_issued: true, rebuy_cancelled: true },
-    { order_id: "refunded", server_name: "s", status: "cancelled", otp: "", all_otps: [], refund_issued: true },
+    { order_id: "refunded", server_name: "s", status: "cancelled", otp: "", all_otps: "[]", refund_issued: true },
     { order_id: "unrefunded", server_name: "s", status: "cancelled", otp: "", all_otps: [], refund_issued: false },
   ];
   const calls = {};
@@ -726,6 +849,7 @@ test("order list exposes completed cancellation and rebuy buttons with six-row s
   assert.equal(rows[1].can_rebuy, true);
   assert.equal(rows[1].can_rebuy_after_cancel, false);
   assert.equal(rows[2].can_rebuy, true);
+  assert.ok(Array.isArray(rows[2].all_otps));
   assert.equal(rows[3].can_rebuy, false);
 });
 
@@ -762,4 +886,179 @@ test("rebuy accepts the same text and JSON provider success formats as getNumber
       assert.deepEqual(rebought, { api_order_id: "provider-id", phone: "919876543210" });
     }
   } finally { global.fetch = originalFetch; }
+});
+
+test("provider cancellation captures STATUS_OK OTPs and allows missing activations only when requested", async () => {
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  try {
+    const server = { api_cancel_url: "https://provider.example/cancel?id=$id" };
+    global.fetch = async () => ({ status: 200, ok: true, text: async () => "STATUS_OK:001234" });
+    const result = await provider.cancelOrder(server, "id", { requireConfirmation: true });
+    assert.equal(result.success, false);
+    assert.equal(result.otp, "001234");
+    global.fetch = async () => ({ status: 200, ok: true, text: async () => "NO_ACTIVATION" });
+    assert.equal((await provider.cancelOrder(server, "id", { requireConfirmation: true })).success, false);
+    assert.equal((await provider.cancelOrder(server, "id", { requireConfirmation: true, allowMissing: true })).success, true);
+  } finally { global.fetch = originalFetch; }
+});
+
+test("expiry captures an OTP returned while cancelling and retains the original debit", async () => {
+  const f = walletFixture();
+  await f.wallet.reservePurchase({ userId: "u1", orderId: "expiry", amount: 4, description: "test" });
+  const order = await f.wallet.finalizePurchase({ order_id: "expiry", user_id: "u1", server_name: "s", external_order_id: "expiry", cost: 4, otp: "", all_otps: [], status: "active", expires_at: new Date(0) });
+  const watcher = watcherFixture(f, async () => ({ status: "waiting" }), async () => ({ success: false, otp: "654321" }));
+  await watcher.syncOrder(order);
+  assert.equal(f.tables.orders[0].otp, "654321");
+  assert.equal(f.tables.orders[0].status, "completed");
+  assert.equal(f.tables.users[0].balance, 6);
+  assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 0);
+});
+
+test("website duplicate buy requests allocate once and failed allocation restores funds", async () => {
+  const f = walletFixture();
+  let release, start;
+  const started = new Promise(resolve => { start = resolve; });
+  let calls = 0;
+  const routes = routesFixture(f, async () => { calls++; start(); return new Promise(resolve => { release = resolve; }); });
+  const first = response(), second = response();
+  const buying = routes.purchase({ userId: "u1", body: { service_id: "svc" } }, first);
+  await started;
+  await routes.purchase({ userId: "u1", body: { service_id: "svc" } }, second);
+  assert.equal(second.statusCode, 429);
+  assert.equal(calls, 1);
+  assert.equal(f.tables.users[0].balance, 4);
+  release({ error: "NO_NUMBERS" });
+  await buying;
+  assert.equal(first.statusCode, 400);
+  assert.equal(f.tables.users[0].balance, 10);
+  assert.equal(f.tables.orders.length, 0);
+  assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 1);
+});
+
+test("MySQL refund conditions generate IS NULL rather than IN (NULL) for legacy null OTPs", async () => {
+  const f = await mysqlFixture();
+  await f.User.findOne({ _id: 1, $or: [{ otp: "" }, { otp: null }] });
+  const sql = f.sequelize.getQueryInterface().queryGenerator.selectQuery("Orders", { where: f.reads.at(-1).where });
+  assert.match(sql, /`otp` IS NULL/);
+  assert.doesNotMatch(sql, /IN \([^)]*NULL/);
+});
+
+for (const dbType of ["mysql", "mongodb"]) {
+  for (const receivedOtp of [false, true]) {
+    test(`${dbType}: complete buy/rebuy/refund ledger balances agree (original OTP ${receivedOtp})`, async () => {
+      const f = walletFixture(dbType);
+      const price = 2.125;
+      const base = { order_id: "original", user_id: "u1", service_id: "svc", service_name: "test", country: "IN",
+        cost: price, phone: "919876543210", server_name: "s", external_order_id: "same", otp: "", all_otps: [], status: "active" };
+      await f.wallet.reservePurchase({ userId: "u1", orderId: "original", amount: price, description: "test" });
+      await f.wallet.finalizePurchase(base);
+      if (receivedOtp) Object.assign(f.tables.orders[0], { status: "completed", otp: "1234", all_otps: ["1234"], refund_issued: true, rebuy_cancelled: true });
+      else await f.wallet.refundOrder(f.tables.orders[0]._id, "cancelled", "test");
+      let calls = 0;
+      const rebuy = moduleFrom("utils/rebuy.js", {
+        "../models/Order": f.models.Order, "../models/Transaction": f.models.Transaction,
+        "../models/Server": { findOne: async () => ({ is_active: true, api_rebuy_url: "rebuy", api_cancel_url: "cancel" }) },
+        "../models/Service": { findById: async () => ({ service_code: "test" }) },
+        "./wallet": f.wallet,
+        "./providerApi": { cancelOrder: async () => ({ success: true }), rebuyOrder: async () => { calls++; return { api_order_id: "same", phone: base.phone }; } },
+        "./orderLocks": { acquireLockWithTimeout: async () => true, releaseLock() {} },
+      });
+      const result = await rebuy.rebuyCancelledOrder({ orderId: "original", userId: "u1" });
+      assert.equal(calls, 1);
+      assert.equal(result.order.cost, price);
+      assert.equal(result.order.phone, base.phone);
+      assert.equal(f.tables.users[0].balance, receivedOtp ? 5.75 : 7.875);
+      await assert.rejects(rebuy.rebuyCancelledOrder({ orderId: "original", userId: "u1" }), /REBUY_ALREADY_USED/);
+      assert.equal(calls, 1);
+      const rebuys = f.tables.orders.filter(order => order.rebuy_of);
+      assert.equal(rebuys.length, 1);
+      await Promise.all(Array.from({ length: 10 }, () => f.wallet.refundOrder(rebuys[0]._id, "cancelled", "test")));
+      assert.equal(f.tables.users[0].balance, receivedOtp ? 7.875 : 10);
+      const ledgerNet = f.tables.transactions.filter(tx => tx.status !== "failed").reduce((total, tx) => money(total + tx.amount), 0);
+      assert.equal(money(10 + ledgerNet), f.tables.users[0].balance);
+      const purchases = f.tables.transactions.filter(tx => tx.type === "purchase");
+      assert.equal(purchases.length, 2);
+      assert.match(purchases[0].reference, /^PROVIDER-ORDER:RETIRED:/);
+      assert.ok(!purchases[1].reference.includes("RETIRED"));
+    });
+  }
+}
+
+test("concurrent API buys cannot allocate numbers beyond the available balance", async () => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  let calls = 0;
+  const routes = routesFixture(f, async () => { calls++; return { api_order_id: "one", phone: "919876543210" }; });
+  const results = await Promise.all(Array.from({ length: 20 }, async () => {
+    const result = response();
+    await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getNumber", service: "test", country: "22" } }, result);
+    return result.body;
+  }));
+  assert.equal(results.filter(body => body.startsWith("ACCESS_NUMBER:")).length, 1);
+  assert.equal(results.filter(body => body === "NO_BALANCE").length, 19);
+  assert.equal(calls, 1);
+  assert.equal(f.tables.users[0].balance, 4);
+});
+
+test("API rejects structured credentials and IDs before any ownership lookup", async () => {
+  const f = walletFixture();
+  let lookups = 0;
+  f.models.User.findOne = async () => { lookups++; return { _id: "u1", api_key: "test-key" }; };
+  const routes = routesFixture(f, async () => ({}));
+  for (const query of [
+    { api_key: { $ne: "" }, action: "rebuy", id: "other-order" },
+    { apikey: ["test-key"], action: "getNumber" },
+    { api_key: "test-key", action: "rebuy", id: { $ne: "" } },
+  ]) {
+    const result = response();
+    await routes.gateway({ method: "GET", query }, result);
+    assert.ok(["BAD_KEY", "BAD_REQUEST"].includes(result.body));
+  }
+  assert.equal(lookups, 0);
+});
+
+test("admin refunds wait for provider confirmation and never refund an OTP returned during cancellation", async () => {
+  for (const cancellation of [{ success: false }, { success: false, otp: "009876" }, { success: true }]) {
+    const f = walletFixture();
+    await f.wallet.reservePurchase({ userId: "u1", orderId: "admin-provider", amount: 4, description: "test" });
+    await f.wallet.finalizePurchase({ order_id: "admin-provider", user_id: "u1", server_name: "s", external_order_id: "provider", cost: 4, otp: "", all_otps: [], status: "active" });
+    let recorded = false;
+    const handler = adminOrderFixture(f, {
+      server: { api_cancel_url: "cancel" },
+      cancelOrder: async (_server, id, options) => {
+        assert.equal(id, "provider");
+        assert.equal(options.requireConfirmation, true);
+        return cancellation;
+      },
+      recordOrderSms: async (_order, otp, options) => {
+        recorded = otp === "009876" && options.complete;
+        if (recorded) Object.assign(f.tables.orders[0], { otp, all_otps: [otp], refund_issued: true, status: "completed" });
+        return f.tables.orders[0];
+      },
+    });
+    const result = response();
+    await handler({ params: { id: "admin-provider" }, body: { status: "cancelled" } }, result);
+    assert.equal(f.tables.users[0].balance, cancellation.success ? 10 : 6);
+    assert.equal(f.tables.transactions.filter(tx => tx.type === "refund").length, cancellation.success ? 1 : 0);
+    assert.equal(result.statusCode, cancellation.success ? 200 : 409);
+    if (cancellation.otp) {
+      assert.equal(recorded, true);
+      assert.equal(f.tables.orders[0].status, "completed");
+      assert.equal(f.tables.orders[0].otp, "009876");
+    } else if (!cancellation.success) assert.equal(f.tables.orders[0].status, "active");
+  }
+});
+
+test("expired orders are not refunded while provider cancellation is unconfirmed", async () => {
+  const f = walletFixture();
+  await f.wallet.reservePurchase({ userId: "u1", orderId: "expiry-failed-cancel", amount: 4, description: "test" });
+  const order = await f.wallet.finalizePurchase({ order_id: "expiry-failed-cancel", user_id: "u1", server_name: "s", external_order_id: "expiry", cost: 4, otp: "", all_otps: [], status: "active", expires_at: new Date(0) });
+  let calls = 0;
+  const watcher = watcherFixture(f, async () => ({ status: "waiting" }), async () => { calls++; return { success: false }; });
+  await watcher.syncOrder(order);
+  assert.equal(calls, 1);
+  assert.equal(f.tables.orders[0].status, "active");
+  assert.equal(f.tables.users[0].balance, 6);
+  assert.equal(f.tables.transactions.filter(tx => tx.type === "refund").length, 0);
 });

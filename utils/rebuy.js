@@ -8,7 +8,7 @@ const { nanoid } = require("nanoid");
 const { acquireLockWithTimeout, releaseLock } = require("./orderLocks");
 const { money } = require("./money");
 
-const hasOtp = order => Boolean(order.otp || order.all_otps?.length);
+const hasOtp = order => wallet.hasOtp(order);
 const digits = value => String(value || "").replace(/\D/g, "");
 
 async function cancelCompletedOrderForRebuy({ orderId, userId }) {
@@ -49,7 +49,7 @@ async function rebuyCancelledOrder({ orderId, userId }) {
   if (!eligibleAfterOtpCancel && !eligibleRefunded) throw new Error("ORDER_NOT_REBUYABLE");
   if (original.rebuy_order_id) throw new Error("REBUY_ALREADY_USED");
 
-  const lockId = `rebuy:${String(original._id || original.id)}`;
+  const lockId = String(original._id || original.id);
   if (!(await acquireLockWithTimeout(lockId, 6000))) throw new Error("REBUY_IN_PROGRESS");
   try {
     original = await Order.findOne({ order_id: String(orderId), user_id: String(userId) });
@@ -68,13 +68,14 @@ async function rebuyCancelledOrder({ orderId, userId }) {
     }
 
     const server = await Server.findOne({ name: original.server_name });
-    if (!server?.is_active || !server.api_rebuy_url) throw new Error("REBUY_NOT_CONFIGURED");
+    if (!server?.is_active || !server.api_rebuy_url || !original.external_order_id || !digits(original.phone)) throw new Error("REBUY_NOT_CONFIGURED");
     const service = original.service_id ? await Service.findById(original.service_id) : null;
     const rebuyOrderId = "ORD-" + nanoid(16).toUpperCase();
     const amount = money(original.cost);
     let providerResult;
     let reserved = false;
     let claimed = false;
+    let rebuyAttempted = false;
     let reservedUser;
     try {
       reservedUser = await wallet.reservePurchase({ userId, orderId: rebuyOrderId, amount,
@@ -88,6 +89,13 @@ async function rebuyCancelledOrder({ orderId, userId }) {
       }, { $set: { rebuy_order_id: rebuyOrderId } }, { new: true });
       if (!orderClaim) throw new Error("REBUY_ALREADY_USED");
       claimed = true;
+      // Terminal local status alone does not prove that a provider activation
+      // was cancelled, particularly for old admin refunds or failed cleanup.
+      if (refunded) {
+        const cancelled = await providerApi.cancelOrder(server, original.external_order_id, { requireConfirmation: true, allowMissing: true });
+        if (!cancelled?.success) throw new Error("PROVIDER_CANCEL_FAILED");
+      }
+      rebuyAttempted = true;
       providerResult = await providerApi.rebuyOrder(server, {
         external_order_id: original.external_order_id,
         service_code: service?.service_code || original.service_id,
@@ -111,6 +119,10 @@ async function rebuyCancelledOrder({ orderId, userId }) {
         phone: original.phone,
         external_order_id: providerResult.api_order_id,
         rebuy_of: original.order_id,
+        rebuy_ignored_otps: [...new Set([
+          ...wallet.otpHistory(original), String(original.otp || "").trim(),
+          ...wallet.otpHistory({ all_otps: original.rebuy_ignored_otps }),
+        ].filter(Boolean))],
         cost: amount,
         status: "active",
         otp: "",
@@ -126,13 +138,16 @@ async function rebuyCancelledOrder({ orderId, userId }) {
       return { order, balance: reservedUser.balance };
     } catch (err) {
       const reversed = reserved ? await wallet.reversePurchase(rebuyOrderId).catch(() => false) : true;
-      if (claimed && reversed) {
+      let safeToReleaseClaim = !rebuyAttempted || providerResult?.no_allocation === true || err.message === "DUPLICATE_EXTERNAL_ORDER";
+      if (reversed && providerResult?.api_order_id && err.message !== "DUPLICATE_EXTERNAL_ORDER") {
+        const cleanup = await providerApi.cancelOrder(server, providerResult.api_order_id,
+          { requireConfirmation: true, allowMissing: true }).catch(() => null);
+        safeToReleaseClaim = cleanup?.success === true;
+      }
+      if (claimed && reversed && safeToReleaseClaim) {
         await Order.findOneAndUpdate({ _id: original._id || original.id, rebuy_order_id: rebuyOrderId }, {
           $set: { rebuy_order_id: "" },
         });
-      }
-      if (reversed && providerResult?.api_order_id && err.message !== "DUPLICATE_EXTERNAL_ORDER") {
-        providerApi.cancelOrder(server, providerResult.api_order_id).catch(() => {});
       }
       throw err;
     }
