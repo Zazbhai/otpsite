@@ -45,6 +45,13 @@ async function syncOrder(orderIdOrDoc) {
     }
     order = await Order.findById(id);
     if (!order || order.status !== "active") return order;
+    if (!order.multi_otp_enabled && order.otp) {
+      const completed = await Order.findOneAndUpdate({ _id: id, status: "active", otp: order.otp }, {
+        $set: { status: "completed", refund_issued: true },
+      }, { new: true });
+      if (completed) announce(completed);
+      return completed || Order.findById(id);
+    }
     if (expired && hasOtp(order)) {
       const completed = await Order.findOneAndUpdate({ _id: id, status: "active" }, {
         $set: { status: "completed", refund_issued: true },

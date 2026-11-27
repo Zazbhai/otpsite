@@ -35,7 +35,7 @@ function startWatcher() {
                   ]
               },
               // Project only fields needed for syncOrder to save memory
-              attributes: ['id', 'order_id', 'user_id', 'status', 'external_order_id', 'server_name', 'check_interval', 'last_check_at', 'expires_at', 'min_cancel_at', 'cost', 'multi_otp_enabled', 'otp', 'all_otps', 'verification_count', 'refund_issued']
+              attributes: ['id', 'order_id', 'user_id', 'status', 'external_order_id', 'server_name', 'check_interval', 'last_check_at', 'expires_at', 'min_cancel_at', 'cost', 'multi_otp_enabled', 'otp', 'all_otps', 'rebuy_ignored_otps', 'verification_count', 'refund_issued']
           });
       } else {
           // MongoDB logic

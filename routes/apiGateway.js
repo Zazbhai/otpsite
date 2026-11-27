@@ -230,7 +230,9 @@ router.all("/", async (req, res) => {
 
             if (!checkRes.error && checkRes.status !== "waiting") {
               if (checkRes.otp) {
-                const saved = await recordOrderSms(order, checkRes.otp);
+                const saved = await recordOrderSms(order, checkRes.otp, {
+                  complete: checkRes.status === "completed" && !order.multi_otp_enabled,
+                });
                 if (saved) {
                   if (saved.multi_otp_enabled && checkRes.status === "completed") {
                     providerApi.retryOrder(serverConf, order.external_order_id).catch(() => {});
@@ -238,7 +240,15 @@ router.all("/", async (req, res) => {
                   return res.send(`STATUS_OK:${saved.otp}`);
                 }
                 const current = await Order.findById(order._id);
-                if (current?.otp) return res.send(`STATUS_OK:${current.otp}`);
+                if (current?.otp) {
+                  if (checkRes.status === "completed" && !current.multi_otp_enabled && current.status === "active") {
+                    const completed = await Order.findOneAndUpdate({ _id: current._id, status: "active", otp: current.otp }, {
+                      $set: { status: "completed", refund_issued: true },
+                    }, { new: true });
+                    if (completed) emitToUser(String(user._id), "order", { orderId: completed.order_id, status: completed.status, otp: completed.otp, all_otps: completed.all_otps });
+                  }
+                  return res.send(`STATUS_OK:${current.otp}`);
+                }
                 if (!current || ["cancelled", "expired", "refunded"].includes(current.status)) {
                   return res.send("STATUS_CANCEL");
                 }

@@ -343,12 +343,16 @@ test("Mongoose executes the wallet rounding hook with timestamps enabled", async
   assert.equal(sentFilter.$and[0].$expr.$gte[1], 0.1);
 });
 
-function watcherFixture(f, checkStatus, cancelOrder = async () => ({})) {
+function watcherFixture(f, checkStatus, cancelOrder = async () => ({}), serverOptions = {}) {
   return moduleFrom("utils/orderStatusManager.js", {
     "../models/Order": f.models.Order,
-    "../models/Server": { findOne: async () => ({ api_check_status_url: "provider", api_cancel_url: "cancel" }) },
+    "../models/Server": { findOne: async () => ({ api_check_status_url: "provider", api_cancel_url: "cancel", ...serverOptions }) },
     "./wallet": f.wallet, "./realtimeEmitter": { emitToUser() {} },
-    "./orderSms": { recordOrderSms: async (order, otp, { complete } = {}) => f.models.Order.findOneAndUpdate({ _id: order._id, status: "active" }, { $set: { otp, all_otps: [otp], refund_issued: true, ...(complete ? { status: "completed" } : {}) } }) },
+    "./orderSms": { recordOrderSms: async (order, otp, { complete } = {}) => {
+      const current = f.tables.orders.find(row => String(row._id) === String(order._id));
+      if (!current || current.status !== "active" || current.otp === otp || current.all_otps?.includes(otp)) return null;
+      return f.models.Order.findOneAndUpdate({ _id: order._id, status: "active" }, { $set: { otp, all_otps: [...(current.all_otps || []), otp], refund_issued: true, ...(complete ? { status: "completed" } : {}) } });
+    } },
     "./providerApi": { checkStatus, cancelOrder },
     "./orderLocks": { acquireLock: () => true, releaseLock() {} },
   });
@@ -397,6 +401,47 @@ test("watcher checks the last provider OTP at expiry and never refunds a deliver
   assert.equal(f.tables.orders[0].refund_issued, true);
   assert.equal(f.tables.users[0].balance, 6);
   assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 0);
+});
+
+test("watcher honors each order's configured provider check interval", async () => {
+  const f = walletFixture();
+  const order = await f.models.Order.create({ _id: "poll-interval", order_id: "poll-interval", user_id: "u1",
+    server_name: "s", external_order_id: "poll", status: "active", otp: "", all_otps: [], refund_issued: false, check_interval: 5, last_check_at: new Date() });
+  let calls = 0;
+  const watcher = watcherFixture(f, async () => { calls++; return { status: "waiting" }; });
+  await watcher.syncOrder({ _id: "poll-interval" });
+  assert.equal(calls, 0);
+  f.tables.orders[0].last_check_at = new Date(Date.now() - 6000);
+  await watcher.syncOrder({ _id: "poll-interval" });
+  assert.equal(calls, 1);
+});
+
+test("watcher completes an active order when the provider repeats an OTP already saved by an API poll", async () => {
+  const f = walletFixture();
+  const order = await f.models.Order.create({ _id: "repeat-otp", order_id: "repeat-otp", user_id: "u1",
+    status: "active", otp: "001234", all_otps: ["001234"], refund_issued: true, check_interval: 3, last_check_at: new Date(0) });
+  const watcher = watcherFixture(f, async () => ({ status: "completed", otp: "001234" }));
+  await watcher.syncOrder(order);
+  assert.equal(f.tables.orders[0].status, "completed");
+  assert.equal(f.tables.orders[0].otp, "001234");
+  assert.equal(f.tables.users[0].balance, 10);
+  assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 0);
+});
+
+test("website order-status polling saves provider OTPs once and completes completed activations", async () => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  await f.models.Order.create({ _id: "api-poll", order_id: "api-poll", user_id: "u1", status: "active",
+    otp: "", all_otps: [], refund_issued: false, external_order_id: "provider-poll", server_name: "s" });
+  const routes = routesFixture(f, async () => ({}), undefined, undefined, async () => ({ status: "completed", otp: "000123" }));
+  routes.server.api_check_status_url = "provider";
+  const result = response();
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "api-poll" } }, result);
+  assert.equal(result.body, "STATUS_OK:000123");
+  assert.equal(f.tables.orders[0].status, "completed");
+  assert.equal(f.tables.orders[0].otp, "000123");
+  assert.deepEqual(f.tables.orders[0].all_otps, ["000123"]);
+  assert.equal(f.tables.users[0].balance, 10);
 });
 
 function response() {
@@ -509,7 +554,7 @@ for (const dbType of ["mysql", "mongodb"]) {
   });
 }
 
-function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw new Error("Rebuy not configured"); }, cancelCompletedOrderForRebuy = async () => { throw new Error("Cancel not configured"); }) {
+function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw new Error("Rebuy not configured"); }, cancelCompletedOrderForRebuy = async () => { throw new Error("Cancel not configured"); }, checkStatus = async () => ({ status: "waiting" })) {
   const originalFind = f.models.User.findById;
   f.models.User.findById = (...args) => {
     const query = originalFind(...args);
@@ -524,7 +569,7 @@ function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw n
     "../models/User": f.models.User, "../models/Order": f.models.Order, "../models/Transaction": f.models.Transaction,
     "../models/Service": { findById: async () => service, find: () => ({ sort: async () => [service] }) },
     "../models/Server": { findById: async () => server, findOne: async () => server, find: (...args) => f.serverFind(...args) },
-    "../utils/providerApi": { getNumber, cancelOrder: (...args) => f.cancelOrder ? f.cancelOrder(...args) : Promise.resolve({ success: true }) },
+    "../utils/providerApi": { getNumber, checkStatus, cancelOrder: (...args) => f.cancelOrder ? f.cancelOrder(...args) : Promise.resolve({ success: true }) },
     "../middleware/auth": { loginRequired() {}, optionalLogin() {} },
     "../utils/realtimeEmitter": { emitToUser() {} }, "../utils/adminRealtime": { notifyAdminChange() {} },
     "../utils/orderSms": { recordOrderSms: async (order, otp) => f.models.Order.findOneAndUpdate({ _id: order._id, status: "active" }, { $set: { otp, all_otps: [otp], refund_issued: true, status: "completed" } }) }, "../utils/bharatpe": {}, "../utils/paytm": {}, "../utils/omnipay": {}, "../utils/heleket": {}, "../utils/eaglepay": {},
@@ -900,6 +945,28 @@ test("provider cancellation captures STATUS_OK OTPs and allows missing activatio
     global.fetch = async () => ({ status: 200, ok: true, text: async () => "NO_ACTIVATION" });
     assert.equal((await provider.cancelOrder(server, "id", { requireConfirmation: true })).success, false);
     assert.equal((await provider.cancelOrder(server, "id", { requireConfirmation: true, allowMissing: true })).success, true);
+  } finally { global.fetch = originalFetch; }
+});
+
+test("provider status parser accepts text and common JSON OTP formats without mistaking wait codes for OTPs", async () => {
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  try {
+    const server = { api_check_status_url: "https://provider.example/status?id=$id" };
+    const cases = [
+      ["STATUS_OK: 001234 ", { status: "completed", otp: "001234" }],
+      ["STATUS_WAIT_CODE", { status: "waiting", otp: null }],
+      ["STATUS_OK", { status: "completed", otp: null }],
+      [JSON.stringify({ status: "SUCCESS", data: { otp_code: "00-4321" } }), { status: "completed", otp: "00-4321" }],
+      [JSON.stringify({ status: "WAITING" }), { status: "waiting", otp: null }],
+      [JSON.stringify({ status: "CANCELLED" }), { status: "cancelled", otp: null }],
+    ];
+    for (const [body, expected] of cases) {
+      global.fetch = async () => ({ status: 200, ok: true, text: async () => body });
+      assert.deepEqual(await provider.checkStatus(server, "provider-id"), expected, body);
+    }
+    global.fetch = async () => ({ status: 403, ok: false, text: async () => "forbidden" });
+    assert.match((await provider.checkStatus(server, "provider-id")).error, /status request failed/);
   } finally { global.fetch = originalFetch; }
 });
 

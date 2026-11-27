@@ -224,9 +224,9 @@ async function checkStatus(server, api_order_id) {
     order_id: api_order_id 
   });
   
-  const response = await callProvider(url, server);
+  const response = await callProvider(url, server, "GET", 10000);
   logToProviderFile(`checkStatus | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
-  const text = response.data.text || "";
+  const text = String(response.data.text || "").trim();
   if (isRateLimitedResponse(response)) {
      const retryAt = markProviderBackoff(server);
      return { error: "Provider rate limited", rate_limited: true, retry_at: retryAt };
@@ -234,17 +234,36 @@ async function checkStatus(server, api_order_id) {
 
   if (!response.ok) return { error: "Provider status request failed" };
 
-  if (text === "STATUS_WAIT_CODE" || text === "TZ_NUM_WAIT") {
+  const payload = response.data.data && typeof response.data.data === "object" ? response.data.data : {};
+  const providerStatus = String(response.data.status || response.data.state || payload.status || payload.state || "").trim().toUpperCase();
+  const providerOtp = response.data.otp ?? response.data.code ?? response.data.sms ??
+    response.data.otp_code ?? response.data.verification_code ?? payload.otp ?? payload.code ?? payload.sms ??
+    payload.otp_code ?? payload.verification_code;
+  if (providerOtp !== undefined && providerOtp !== null && String(providerOtp).trim()) {
+     return { status: ["COMPLETED", "SUCCESS", "SUCCESSFUL", "RECEIVED", "TRUE"].includes(providerStatus) ? "completed" : "waiting",
+       otp: String(providerOtp).trim() };
+  }
+
+  if (["STATUS_WAIT_CODE", "TZ_NUM_WAIT", "STATUS_WAIT", "WAITING", "PENDING"].includes(text.toUpperCase()) ||
+      ["WAITING", "PENDING", "STATUS_WAIT"].includes(providerStatus)) {
      return { status: "waiting", otp: null };
   }
 
-  if (text.startsWith("STATUS_OK:")) {
-     const otp = text.slice("STATUS_OK:".length);
+  if (text.toUpperCase().startsWith("STATUS_OK:")) {
+     const otp = text.slice(text.indexOf(":") + 1).trim();
+     if (!otp) return { error: "Provider returned an empty OTP" };
      return { status: "completed", otp };
   }
 
-  if (text === "STATUS_CANCEL") {
+  if (text.toUpperCase() === "STATUS_OK") return { status: "completed", otp: null };
+
+  if (["STATUS_CANCEL", "STATUS_CANCELLED", "CANCELLED", "CANCELED", "EXPIRED", "REFUNDED"].includes(text.toUpperCase()) ||
+      ["CANCELLED", "CANCELED", "EXPIRED", "REFUNDED"].includes(providerStatus)) {
      return { status: "cancelled", otp: null };
+  }
+
+  if (["COMPLETED", "SUCCESS", "SUCCESSFUL", "TRUE"].includes(providerStatus)) {
+     return { status: "completed", otp: null };
   }
 
   return { status: "waiting", otp: null }; // Default to waiting if unrecognized, to keep polling
