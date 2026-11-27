@@ -126,7 +126,15 @@ function walletFixture(dbType = "mysql") {
     return {
       async findById(id) { return wrap(tables[name].find(r => String(r._id) === String(id))); },
       async findOne(query) { return wrap(tables[name].find(r => matches(r, query))); },
-      find(query) { return { limit: async n => tables[name].filter(r => matches(r, query)).slice(0, n).map(wrap) }; },
+      find(query) {
+        let selected = tables[name].filter(r => matches(r, query));
+        const cursor = {
+          sort() { return cursor; },
+          limit(n) { selected = selected.slice(0, n); return Promise.resolve(selected.map(wrap)); },
+          then(resolve, reject) { return Promise.resolve(selected.map(wrap)).then(resolve, reject); },
+        };
+        return cursor;
+      },
       async findOneAndUpdate(query, update, options = {}) {
         const row = tables[name].find(r => matches(r, query));
         if (!row) return null;
@@ -746,8 +754,11 @@ test("API purchase also checks funds before provider and charges a successful or
   f.tables.users[0].balance = 10;
   const success = response();
   await routes.gateway(req, success);
-  assert.match(success.body, /^ACCESS_NUMBER:ORD-/);
+  assert.equal(success.body, "ACCESS_NUMBER:1:919876543210");
   assert.equal(f.tables.users[0].balance, 4);
+  const status = response();
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "1" } }, status);
+  assert.equal(status.body, "STATUS_WAIT_CODE");
 });
 
 test("website and API rebuy endpoints use the caller-owned activation ID and return the new activation", async () => {
@@ -959,7 +970,7 @@ test("rebuy and getNumber return identical plain-text success responses and norm
   const allocated = response();
   await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getNumber", service: "test", country: "22" } }, allocated);
   assert.equal(typeof allocated.body, "string");
-  assert.match(allocated.body, /^ACCESS_NUMBER:ORD-[^:]+:919876543210$/);
+  assert.equal(allocated.body, "ACCESS_NUMBER:provider-contract-test:919876543210");
   newOrder = f.tables.orders[0];
   for (const action of ["rebuy", "reBuy"]) {
     const rebought = response();
@@ -1125,9 +1136,9 @@ test("configured provider webhook becomes the primary OTP path with one-minute p
   assert.equal(f.tables.users[0].balance, 6);
 });
 
-test("private order history requires the server secret, filters India dates, paginates, and is not documented", async () => {
+test("private order history requires the server secret and returns only provider order ID and status", async () => {
   const rows = [
-    { _id: "3", order_id: "new", createdAt: new Date("2026-11-28T12:00:00.000Z"), status: "active" },
+    { _id: "3", order_id: "new", external_order_id: "provider-new", createdAt: new Date("2026-11-28T12:00:00.000Z"), status: "active", otp: "secret-otp" },
     { _id: "2", order_id: "middle", createdAt: new Date("2026-11-27T12:00:00.000Z"), status: "completed" },
     { _id: "1", order_id: "old", createdAt: new Date("2026-11-26T12:00:00.000Z"), status: "cancelled" },
   ];
@@ -1138,7 +1149,7 @@ test("private order history requires the server secret, filters India dates, pag
       find: filter => {
         const selected = rows.filter(row => !filter.createdAt ||
           (!filter.createdAt.$gte || row.createdAt >= filter.createdAt.$gte) && (!filter.createdAt.$lt || row.createdAt < filter.createdAt.$lt));
-        const query = { sort() { return query; }, skip(value) { query.offset = value; return query; }, limit(value) { query.size = value; return query; }, lean: async () => selected.slice(query.offset || 0, (query.offset || 0) + (query.size || selected.length)) };
+        const query = { select() { return query; }, sort() { return query; }, skip(value) { query.offset = value; return query; }, limit(value) { query.size = value; return query; }, lean: async () => selected.slice(query.offset || 0, (query.offset || 0) + (query.size || selected.length)) };
         return query;
       },
     },
@@ -1151,10 +1162,13 @@ test("private order history requires the server secret, filters India dates, pag
   const filtered = response();
   await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", from: "2026-11-27", to: "2026-11-28", page: "1", limit: "1" } }, filtered);
   assert.equal(filtered.statusCode, 200);
-  assert.equal(filtered.body.orders[0].order_id, "new");
+  assert.equal(filtered.body.orders[0].order_id, "provider-new");
+  assert.equal(filtered.body.orders[0].status, "active");
+  assert.deepEqual(Object.keys(filtered.body.orders[0]).sort(), ["order_id", "status"]);
   assert.equal(filtered.body.total, 2);
   assert.equal(filtered.body.limit, 1);
   assert.equal(filtered.headers["X-Robots-Tag"], "noindex, nofollow, noarchive");
+  assert.equal(filtered.headers["Referrer-Policy"], "no-referrer");
   assert.doesNotMatch(require("node:fs").readFileSync(require("node:path").join(root, "views/api-docs.html"), "utf8"), /private\/order-history/);
 });
 

@@ -17,7 +17,28 @@ const { rebuyCancelledOrder, cancelCompletedOrderForRebuy } = require("../utils/
 
 // Both allocation actions use the same legacy SMS API success response.
 function numberResponse(order) {
-  return `ACCESS_NUMBER:${order.order_id}:${String(order.phone).replace(/\D/g, "")}`;
+  return `ACCESS_NUMBER:${order.external_order_id || order.order_id}:${String(order.phone).replace(/\D/g, "")}`;
+}
+
+async function findUserOrdersByIds(userId, ids) {
+  const requestedIds = [...new Set(ids.map(id => String(id).trim()).filter(Boolean))];
+  if (!requestedIds.length) return new Map();
+  const orders = await Order.find({
+    user_id: String(userId),
+    $or: [{ order_id: { $in: requestedIds } }, { external_order_id: { $in: requestedIds } }],
+  }).sort({ createdAt: -1, _id: -1 });
+  const result = new Map();
+  for (const id of requestedIds) {
+    const matching = orders.filter(order => order.order_id === id || order.external_order_id === id);
+    result.set(id, matching.find(order => order.order_id === id) ||
+      matching.find(order => order.external_order_id === id && order.status === "active") ||
+      matching.find(order => order.external_order_id === id) || null);
+  }
+  return result;
+}
+
+async function findUserOrder(userId, id) {
+  return (await findUserOrdersByIds(userId, [id])).get(String(id).trim()) || null;
 }
 
 router.all("/", async (req, res) => {
@@ -199,7 +220,7 @@ router.all("/", async (req, res) => {
         const { id } = query;
         if (!id) return res.send("BAD_REQUEST");
 
-        let order = await Order.findOne({ order_id: id, user_id: String(user._id) });
+        let order = await findUserOrder(user._id, id);
         if (!order) return res.send("NO_ACTIVATION");
         const getPublicStatus = current => {
           const history = wallet.otpHistory(current);
@@ -228,7 +249,8 @@ router.all("/", async (req, res) => {
         const { id } = query;
         if (!id) return res.send("BAD_REQUEST");
         try {
-          const rebuy = await rebuyCancelledOrder({ orderId: id, userId: String(user._id) });
+          const original = await findUserOrder(user._id, id);
+          const rebuy = await rebuyCancelledOrder({ orderId: original?.order_id || id, userId: String(user._id) });
           return res.send(numberResponse(rebuy.order));
         } catch (err) {
           if (err.message === "INSUFFICIENT_BALANCE") return res.send("NO_BALANCE");
@@ -243,7 +265,8 @@ router.all("/", async (req, res) => {
         const { id } = query;
         if (!id) return res.send("BAD_REQUEST");
         try {
-          await cancelCompletedOrderForRebuy({ orderId: id, userId: String(user._id) });
+          const original = await findUserOrder(user._id, id);
+          await cancelCompletedOrderForRebuy({ orderId: original?.order_id || id, userId: String(user._id) });
           return res.send("ACCESS_CANCEL_FOR_REBUY");
         } catch (err) {
           if (err.message === "ORDER_NOT_FOUND") return res.send("NO_ACTIVATION");
@@ -256,17 +279,17 @@ router.all("/", async (req, res) => {
         const { id } = query;
         if (!id) return res.send("BAD_REQUEST");
         const ids = id.split(",").map(i => i.trim());
-        // For performance, we only return the DB state in V2 bulk checks
-        const orders = await Order.find({ order_id: { $in: ids }, user_id: user._id });
-        
+        const orders = await findUserOrdersByIds(user._id, ids);
         const result = {};
-        for (const order of orders) {
+        for (const id of ids) {
+           const order = orders.get(id);
+           if (!order) continue;
            if (order.status === "completed" || order.otp) {
-              result[order.order_id] = `STATUS_OK:${order.otp}`;
+              result[id] = `STATUS_OK:${order.otp}`;
            } else if (order.status === "cancelled" || order.status === "expired" || order.status === "refunded") {
-              result[order.order_id] = "STATUS_CANCEL";
+              result[id] = "STATUS_CANCEL";
            } else {
-              result[order.order_id] = "STATUS_WAIT_CODE";
+              result[id] = "STATUS_WAIT_CODE";
            }
         }
         return res.json(result);
@@ -276,7 +299,7 @@ router.all("/", async (req, res) => {
         const { id, status } = query;
         if (!id) return res.send("BAD_REQUEST");
         
-        let order = await Order.findOne({ order_id: id, user_id: String(user._id) });
+        let order = await findUserOrder(user._id, id);
         if (!order) return res.send("NO_ACTIVATION");
 
         const API_STATUS_CANCEL = process.env.API_STATUS_CANCEL || "8";

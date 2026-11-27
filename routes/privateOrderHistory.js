@@ -22,6 +22,9 @@ function keyMatches(supplied, expected) {
 
 router.get("/", async (req, res) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Referrer-Policy", "no-referrer");
+  res.set("X-Content-Type-Options", "nosniff");
   res.set("X-Robots-Tag", "noindex, nofollow, noarchive");
 
   if (!keyMatches(req.query?.key, process.env.ORDER_HISTORY_SECRET)) {
@@ -55,9 +58,11 @@ router.get("/", async (req, res) => {
   try {
     const [total, orders] = await Promise.all([
       Order.countDocuments(filter),
-      Order.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * pageSize).limit(pageSize).lean(),
+      Order.find(filter).select("order_id external_order_id status").sort({ createdAt: -1, _id: -1 })
+        .skip((page - 1) * pageSize).limit(pageSize).lean(),
     ]);
-    return res.json({ orders, total, page, limit: pageSize, pages: Math.ceil(total / pageSize) });
+    const publicOrders = orders.map(order => ({ order_id: order.external_order_id || order.order_id, status: order.status }));
+    return res.json({ orders: publicOrders, total, page, limit: pageSize, pages: Math.ceil(total / pageSize) });
   } catch (error) {
     console.error("[Private order history]", error.message);
     return res.status(500).json({ error: "Could not load order history" });

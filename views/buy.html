@@ -431,7 +431,7 @@
       label.textContent = `${order.service_name} | ${order.phone} | ${fmtMoney(order.cost)}`;
       const detail = document.createElement('div');
       detail.className = 'text-xs text-on-surface-variant mt-1';
-      detail.textContent = `${order.order_id} | ${order.status}`;
+      detail.textContent = `${order.external_order_id || order.order_id} | ${order.status}`;
       label.append(detail);
       row.append(label);
       if (order.can_rebuy || order.can_rebuy_after_cancel) {
