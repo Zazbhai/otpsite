@@ -30,7 +30,8 @@ app.use(cors({
     : false,
   credentials: true,
 }));
-app.use(morgan("dev"));
+// Do not write the private order-history key (a query parameter) to request logs.
+app.use(morgan("dev", { skip: req => req.path.replace(/\/+$/, "") === "/api/private/order-history" }));
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf.toString("utf8");
@@ -269,6 +270,8 @@ app.use("/api/payment/heleket", require("./routes/heleketWebhook"));
 app.use("/api/payment/eaglepay", require("./routes/eaglepayWebhook"));
 // Provider callbacks authenticate with a per-server secret; no user session is needed.
 app.use("/api/provider/webhook", require("./routes/providerWebhook"));
+// Private operational endpoint. Deliberately omitted from public API docs.
+app.use("/api/private/order-history", require("./routes/privateOrderHistory"));
 
 // API Gateway (SMS handler API standard)
 app.use("/stubs/handler_api.php", require("./routes/apiGateway"));

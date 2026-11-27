@@ -1084,7 +1084,9 @@ test("provider OTP webhook authenticates, saves once, emits through the normal S
     },
     "../utils/orderSms": { recordOrderSms: async (order, message, options) => {
       if (original.all_otps.includes(message)) return null;
-      saved.push({ order, message, options }); original.otp = message; original.all_otps.push(message); return original;
+      saved.push({ order, message, options }); original.otp = message; original.all_otps.push(message);
+      if (options.complete) original.status = "completed";
+      return original;
     } },
   }, { crypto: require("node:crypto") });
   const handler = router.stack[0].route.stack.at(-1).handle;
@@ -1099,11 +1101,61 @@ test("provider OTP webhook authenticates, saves once, emits through the normal S
   assert.equal(saved.length, 1);
   assert.equal(saved[0].message, "123456");
   assert.equal(saved[0].options.complete, true);
+  assert.equal(original.status, "completed");
+  assert.equal(saved[0].options.complete, true);
   const duplicate = response();
   await handler({ params: { server: "server-id" }, headers: { "x-provider-webhook-secret": "secret" }, body: { order_id: "ORD-WEBHOOK", otp: "123456" } }, duplicate);
   assert.equal(duplicate.statusCode, 200);
   assert.equal(duplicate.body.duplicate, true);
   assert.equal(saved.length, 1);
+});
+
+test("configured provider webhook becomes the primary OTP path with one-minute polling fallback", async () => {
+  const f = walletFixture();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const order = await f.wallet.reservePurchase({ userId: "u1", orderId: "webhook-poll", amount: 4, description: "test" })
+    .then(() => f.wallet.finalizePurchase({ order_id: "webhook-poll", user_id: "u1", server_name: "s", external_order_id: "provider", cost: 4, otp: "", all_otps: [], status: "active", check_interval: 3, expires_at: expiresAt }));
+  let statusCalls = 0;
+  const watcher = watcherFixture(f, async () => { statusCalls++; return { status: "waiting" }; }, async () => ({}), { otp_webhook_secret: "configured" });
+  await watcher.syncOrder(order);
+  assert.equal(statusCalls, 0);
+  assert.equal(f.tables.orders[0].status, "active");
+  const remainingMs = f.tables.orders[0].next_check_at.getTime() - Date.now();
+  assert.ok(remainingMs > 50000 && remainingMs <= 60000);
+  assert.equal(f.tables.users[0].balance, 6);
+});
+
+test("private order history requires the server secret, filters India dates, paginates, and is not documented", async () => {
+  const rows = [
+    { _id: "3", order_id: "new", createdAt: new Date("2026-11-28T12:00:00.000Z"), status: "active" },
+    { _id: "2", order_id: "middle", createdAt: new Date("2026-11-27T12:00:00.000Z"), status: "completed" },
+    { _id: "1", order_id: "old", createdAt: new Date("2026-11-26T12:00:00.000Z"), status: "cancelled" },
+  ];
+  const router = moduleFrom("routes/privateOrderHistory.js", {
+    "../models/Order": {
+      countDocuments: async filter => rows.filter(row => !filter.createdAt ||
+        (!filter.createdAt.$gte || row.createdAt >= filter.createdAt.$gte) && (!filter.createdAt.$lt || row.createdAt < filter.createdAt.$lt)).length,
+      find: filter => {
+        const selected = rows.filter(row => !filter.createdAt ||
+          (!filter.createdAt.$gte || row.createdAt >= filter.createdAt.$gte) && (!filter.createdAt.$lt || row.createdAt < filter.createdAt.$lt));
+        const query = { sort() { return query; }, skip(value) { query.offset = value; return query; }, limit(value) { query.size = value; return query; }, lean: async () => selected.slice(query.offset || 0, (query.offset || 0) + (query.size || selected.length)) };
+        return query;
+      },
+    },
+  }, { process: { env: { ORDER_HISTORY_SECRET: "0123456789abcdef0123456789abcdef01234567" } } });
+  const handler = router.stack[0].route.stack.at(-1).handle;
+  const response = () => ({ statusCode: 200, headers: {}, body: null, set(key, value) { this.headers[key] = value; }, status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; } });
+  const unauthorized = response();
+  await handler({ query: { key: "wrong" } }, unauthorized);
+  assert.equal(unauthorized.statusCode, 401);
+  const filtered = response();
+  await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", from: "2026-11-27", to: "2026-11-28", page: "1", limit: "1" } }, filtered);
+  assert.equal(filtered.statusCode, 200);
+  assert.equal(filtered.body.orders[0].order_id, "new");
+  assert.equal(filtered.body.total, 2);
+  assert.equal(filtered.body.limit, 1);
+  assert.equal(filtered.headers["X-Robots-Tag"], "noindex, nofollow, noarchive");
+  assert.doesNotMatch(require("node:fs").readFileSync(require("node:path").join(root, "views/api-docs.html"), "utf8"), /private\/order-history/);
 });
 
 test("expiry captures an OTP returned while cancelling and retains the original debit", async () => {
