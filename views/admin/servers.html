@@ -670,8 +670,12 @@
 
           <div class="form-group">
             <label class="form-label" for="srv-otp-webhook-secret">OTP Webhook Secret</label>
-            <input type="password" id="srv-otp-webhook-secret" class="form-input" autocomplete="new-password"
-              placeholder="Generated automatically; paste provider secret to rotate" />
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="password" id="srv-otp-webhook-secret" class="form-input" autocomplete="new-password"
+                placeholder="Generated automatically; paste provider secret to rotate" style="flex:1;min-width:0" />
+              <button type="button" id="srv-webhook-secret-visibility" class="btn btn-secondary btn-sm" aria-pressed="false" onclick="toggleServerWebhookSecret()">Show</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="copyServerWebhookSecret()">Copy key</button>
+            </div>
             <small class="text-muted">Webhook URL: <code id="srv-otp-webhook-url">/api/provider/webhook/&lt;server-id&gt;</code>. Post JSON with <code>order_id</code> and <code>otp</code>; authenticate with <code>Authorization: Bearer SECRET</code> or <code>X-Provider-Webhook-Secret</code>. With webhook configured, status polling becomes a once-per-minute fallback and resumes at expiry.</small>
           </div>
 
@@ -1105,6 +1109,7 @@
             (id === "srv-min-cancel") ? "2" :
               (id.includes("min") || id.includes("count") ? "0" : "");
       });
+      setServerWebhookSecretVisibility(false);
 
       document.getElementById("country-display-text").textContent = "Select Country";
       document.getElementById("country-search-container").style.display = "none";
@@ -1181,6 +1186,7 @@
       setVal("srv-retry-url", s.api_retry_url || "");
       setVal("srv-rebuy-url", s.api_rebuy_url || "");
       setVal("srv-otp-webhook-secret", s.otp_webhook_secret || "");
+      setServerWebhookSecretVisibility(false);
       const webhookUrl = document.getElementById("srv-otp-webhook-url");
       if (webhookUrl) webhookUrl.textContent = `${window.location.origin}/api/provider/webhook/${encodeURIComponent(s._id || s.id)}`;
       setVal("srv-cancel-mins", s.auto_cancel_minutes || 20);
@@ -1215,6 +1221,31 @@
       if (delBtn) delBtn.style.display = "block";
 
       openModal("srv-modal");
+    };
+
+    function setServerWebhookSecretVisibility(visible) {
+      const input = document.getElementById("srv-otp-webhook-secret");
+      const button = document.getElementById("srv-webhook-secret-visibility");
+      if (!input || !button) return;
+      input.type = visible ? "text" : "password";
+      button.textContent = visible ? "Hide" : "Show";
+      button.setAttribute("aria-pressed", visible ? "true" : "false");
+    }
+
+    window.toggleServerWebhookSecret = function () {
+      const button = document.getElementById("srv-webhook-secret-visibility");
+      setServerWebhookSecretVisibility(button?.getAttribute("aria-pressed") !== "true");
+    };
+
+    window.copyServerWebhookSecret = async function () {
+      const secret = document.getElementById("srv-otp-webhook-secret")?.value;
+      if (!secret) return toast("Save the server first to generate its webhook secret", "error");
+      try {
+        await navigator.clipboard.writeText(secret);
+        toast("Provider webhook secret copied", "success");
+      } catch (_) {
+        toast("Could not access the clipboard", "error");
+      }
     };
 
     window.saveServer = async function () {
