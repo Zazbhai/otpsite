@@ -216,7 +216,7 @@ async function getNumber(server, serviceCode, countryCode) {
 // 2. Check Status
 async function checkStatus(server, api_order_id) {
   if (!server.api_check_status_url) return { error: "Server missing API Check url" };
-  const backoffUntil = getProviderBackoff(server);
+  let backoffUntil = getProviderBackoff(server);
   if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
   
   let url = buildUrl(server.api_check_status_url, { 
@@ -224,15 +224,25 @@ async function checkStatus(server, api_order_id) {
     order_id: api_order_id 
   });
   
-  const response = await callProvider(url, server, "GET", 10000);
-  logToProviderFile(`checkStatus | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
-  const text = String(response.data.text || "").trim();
-  if (isRateLimitedResponse(response)) {
-     const retryAt = markProviderBackoff(server);
-     return { error: "Provider rate limited", rate_limited: true, retry_at: retryAt };
+  let response;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    backoffUntil = getProviderBackoff(server);
+    if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
+    response = await callProvider(url, server, "GET", 20000);
+    const body = response.data.text || JSON.stringify(response.data);
+    logToProviderFile(`checkStatus | ID=${api_order_id} | ATTEMPT=${attempt + 1} | HTTP=${response.status} | RESP=${body}`);
+    if (isRateLimitedResponse(response)) {
+      const retryAt = markProviderBackoff(server);
+      return { error: "Provider rate limited", rate_limited: true, retry_at: retryAt };
+    }
+    if (response.ok) break;
+    const retryable = response.timed_out || response.status >= 500 || response.status === 408 || response.status === 425;
+    if (!retryable) return { error: response.data.error || "Provider status request failed", status: response.status };
+    if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
   }
+  if (!response?.ok) return { error: response?.data?.error || "Provider status request failed", transient: true };
 
-  if (!response.ok) return { error: "Provider status request failed" };
+  const text = String(response.data.text || "").trim();
 
   const payload = response.data.data && typeof response.data.data === "object" ? response.data.data : {};
   const providerStatus = String(response.data.status || response.data.state || payload.status || payload.state || "").trim().toUpperCase();

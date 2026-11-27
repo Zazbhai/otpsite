@@ -1020,6 +1020,53 @@ test("provider status parser accepts text and common JSON OTP formats without mi
   } finally { global.fetch = originalFetch; }
 });
 
+test("provider status polling retries aborted requests and still saves a later OTP response", async () => {
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  let calls = 0;
+  try {
+    global.fetch = async () => {
+      calls++;
+      if (calls < 3) throw Object.assign(new Error("This operation was aborted"), { name: "AbortError" });
+      return { status: 200, ok: true, text: async () => "STATUS_OK:000123" };
+    };
+    const result = await provider.checkStatus({ api_check_status_url: "https://provider.example/status?id=$id" }, "provider-id");
+    assert.deepEqual(result, { status: "completed", otp: "000123" });
+    assert.equal(calls, 3);
+  } finally { global.fetch = originalFetch; }
+});
+
+test("provider status polling stops retrying authentication failures and bounds repeated timeouts", async () => {
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  let calls = 0;
+  try {
+    global.fetch = async () => { calls++; return { status: 403, ok: false, text: async () => "forbidden" }; };
+    const forbidden = await provider.checkStatus({ api_check_status_url: "https://provider.example/status" }, "id");
+    assert.match(forbidden.error, /status request failed/);
+    assert.equal(calls, 1);
+    calls = 0;
+    global.fetch = async () => { calls++; throw Object.assign(new Error("This operation was aborted"), { name: "AbortError" }); };
+    const timeout = await provider.checkStatus({ api_check_status_url: "https://provider.example/status" }, "id");
+    assert.equal(timeout.transient, true);
+    assert.equal(calls, 3);
+  } finally { global.fetch = originalFetch; }
+});
+
+test("transient status timeouts schedule another poll without completing or refunding the order", async () => {
+  const f = walletFixture();
+  await f.wallet.reservePurchase({ userId: "u1", orderId: "poll-timeout", amount: 4, description: "test" });
+  const order = await f.wallet.finalizePurchase({ order_id: "poll-timeout", user_id: "u1", server_name: "s",
+    external_order_id: "provider", cost: 4, otp: "", all_otps: [], status: "active", refund_issued: false, check_interval: 3 });
+  const watcher = watcherFixture(f, async () => ({ error: "Provider status request failed", transient: true }));
+  await watcher.syncOrder(order);
+  assert.equal(f.tables.orders[0].status, "active");
+  assert.equal(f.tables.orders[0].refund_issued, false);
+  assert.ok(f.tables.orders[0].next_check_at > new Date());
+  assert.equal(f.tables.users[0].balance, 6);
+  assert.equal(f.tables.transactions.filter(tx => tx.type === "refund").length, 0);
+});
+
 test("expiry captures an OTP returned while cancelling and retains the original debit", async () => {
   const f = walletFixture();
   await f.wallet.reservePurchase({ userId: "u1", orderId: "expiry", amount: 4, description: "test" });

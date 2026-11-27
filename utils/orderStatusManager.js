@@ -34,7 +34,7 @@ async function syncOrder(orderIdOrDoc) {
       }
       return order;
     }
-    const leaseUntil = new Date(now.getTime() + Math.max(interval, 12000));
+    const leaseUntil = new Date(now.getTime() + Math.max(interval, 70000));
     const claimed = await Order.findOneAndUpdate({
       _id: id, status: "active", $or: [{ next_check_at: null }, { next_check_at: { $lte: now } }],
     }, { $set: { next_check_at: leaseUntil } }, { new: true });
