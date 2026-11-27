@@ -347,7 +347,7 @@ test("Mongoose executes the wallet rounding hook with timestamps enabled", async
 function watcherFixture(f, checkStatus, cancelOrder = async () => ({}), serverOptions = {}) {
   return moduleFrom("utils/orderStatusManager.js", {
     "../models/Order": f.models.Order,
-    "../models/Server": { findOne: async () => ({ api_check_status_url: "provider", api_cancel_url: "cancel", ...serverOptions }) },
+    "../models/Server": { findOne: async () => { f.serverLookupCount = (f.serverLookupCount || 0) + 1; return { api_check_status_url: "provider", api_cancel_url: "cancel", ...serverOptions }; } },
     "./wallet": f.wallet, "./realtimeEmitter": { emitToUser() {} },
     "./orderSms": { recordOrderSms: async (order, otp, { complete } = {}) => {
       const current = f.tables.orders.find(row => String(row._id) === String(order._id));
@@ -413,10 +413,12 @@ test("watcher honors each order's configured provider check interval", async () 
   const watcher = watcherFixture(f, async () => { calls++; return { status: "waiting" }; });
   await watcher.syncOrder({ _id: "poll-interval" });
   assert.equal(calls, 0);
+  assert.equal(f.serverLookupCount || 0, 0);
   f.tables.orders[0].last_check_at = new Date(Date.now() - 6000);
   f.tables.orders[0].next_check_at = new Date(Date.now() - 6000);
   await watcher.syncOrder({ _id: "poll-interval" });
   assert.equal(calls, 1);
+  assert.equal(f.serverLookupCount, 1);
 });
 
 test("separate workers share the database polling lease for an active order", async () => {

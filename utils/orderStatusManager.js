@@ -19,10 +19,9 @@ async function syncOrder(orderIdOrDoc) {
     // Supplied watcher/route documents may predate a concurrent cancellation.
     let order = await Order.findById(id);
     if (!order || order.status !== "active") return order;
-    const server = await Server.findOne({ name: order.server_name });
     const now = new Date();
     const expired = order.expires_at && new Date(order.expires_at) <= now;
-    const interval = Math.max(3000, Number(order.check_interval || server?.check_interval || 3) * 1000);
+    const interval = Math.max(3000, Number(order.check_interval) * 1000 || 3000);
     let response;
     const nextCheckAt = order.next_check_at ? new Date(order.next_check_at) :
       (order.last_check_at ? new Date(new Date(order.last_check_at).getTime() + interval) : null);
@@ -41,6 +40,7 @@ async function syncOrder(orderIdOrDoc) {
     }, { $set: { next_check_at: leaseUntil } }, { new: true });
     if (!claimed) return Order.findById(id);
     order = claimed;
+    const server = await Server.findOne({ name: order.server_name });
     if (order.external_order_id && server?.api_check_status_url) {
       response = await providerApi.checkStatus(server, order.external_order_id);
       if (!response.error && response.otp?.trim()) {
