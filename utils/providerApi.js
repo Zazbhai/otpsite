@@ -259,7 +259,7 @@ async function cancelOrder(server, api_order_id, { requireConfirmation = false, 
     order_id: api_order_id 
   });
   
-  const response = await callProvider(url, server);
+  const response = await callProvider(url, server, "GET", 10000);
   logToProviderFile(`cancelOrder | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
   const text = response.data.text || "";
 

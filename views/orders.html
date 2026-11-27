@@ -420,25 +420,33 @@
   };
 
   window.loadOrders = loadOrders;
+  const pendingRebuyActions = new Set();
   window.rebuyFromHistory = async function (id) {
+    if (pendingRebuyActions.has(id)) return;
     const order = (window.__ordersForRebuy || []).find(item => String(item.order_id) === String(id));
     if (!order?.can_rebuy) return toast('This order is not available to rebuy', 'error');
     if (!await uiConfirm(`Rebuy this number for ${fmtMoney(order.cost)}? The cost will be deducted from your wallet.`)) return;
+    if (pendingRebuyActions.has(id)) return;
+    pendingRebuyActions.add(id);
     try {
       const result = await API.post(`/api/user/orders/${encodeURIComponent(id)}/rebuy`);
       toast('Same number rebought successfully', 'success');
       SPA.navigate(`/dashboard/orders/${encodeURIComponent(result.order.order_id)}`);
     } catch (error) { toast(error.message || 'Could not rebuy this number', 'error'); }
+    finally { pendingRebuyActions.delete(id); }
   };
   window.cancelForRebuyFromHistory = async function (id) {
+    if (pendingRebuyActions.has(id)) return;
     const order = (window.__ordersForRebuy || []).find(item => String(item.order_id) === String(id));
     if (!order?.can_rebuy_after_cancel) return toast('This order is not available for rebuy cancellation', 'error');
     if (!await uiConfirm('Cancel the completed provider activation so this number can be rebought?')) return;
+    pendingRebuyActions.add(id);
     try {
       await API.post(`/api/user/orders/${encodeURIComponent(id)}/cancel-for-rebuy`);
       toast('Activation cancelled. You can now rebuy the same number.', 'success');
       loadOrders(currentPage);
     } catch (error) { toast(error.message || 'Could not cancel activation', 'error'); }
+    finally { pendingRebuyActions.delete(id); }
   };
   window.initOrders = () => {
      loadOrders(currentPage, true);
