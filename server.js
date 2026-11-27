@@ -267,6 +267,8 @@ app.use("/api/accounts", require("./routes/accounts"));
 app.use("/api/payment/omnipay", require("./routes/omnipayWebhook"));
 app.use("/api/payment/heleket", require("./routes/heleketWebhook"));
 app.use("/api/payment/eaglepay", require("./routes/eaglepayWebhook"));
+// Provider callbacks authenticate with a per-server secret; no user session is needed.
+app.use("/api/provider/webhook", require("./routes/providerWebhook"));
 
 // API Gateway (SMS handler API standard)
 app.use("/stubs/handler_api.php", require("./routes/apiGateway"));

@@ -41,6 +41,14 @@ async function syncOrder(orderIdOrDoc) {
     if (!claimed) return Order.findById(id);
     order = claimed;
     const server = await Server.findOne({ name: order.server_name });
+    if (server?.otp_webhook_secret && !expired) {
+      const fallbackAt = new Date(now.getTime() + 60000);
+      const expiresAt = order.expires_at ? new Date(order.expires_at) : fallbackAt;
+      order = await Order.findOneAndUpdate({ _id: id, status: "active" }, {
+        $set: { next_check_at: expiresAt < fallbackAt ? expiresAt : fallbackAt },
+      }, { new: true });
+      return order || Order.findById(id);
+    }
     if (order.external_order_id && server?.api_check_status_url) {
       response = await providerApi.checkStatus(server, order.external_order_id);
       if (!response.error && response.otp?.trim()) {

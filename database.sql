@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS `Servers` (
   `api_cancel_url`        TEXT          NOT NULL,
   `api_retry_url`         TEXT          NOT NULL,
   `api_rebuy_url`         TEXT          NULL,
+  `otp_webhook_secret`    VARCHAR(128)  NOT NULL DEFAULT '',
   `auto_cancel_minutes`   INT           NOT NULL DEFAULT 20,
   `retry_count`           INT           NOT NULL DEFAULT 0,
   `min_cancel_minutes`    INT           NOT NULL DEFAULT 0,

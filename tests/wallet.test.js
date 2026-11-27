@@ -838,6 +838,7 @@ test("rebuy schema migration adds server endpoint and order claim/link columns o
     return [];
   } });
   assert.deepEqual(queries.filter(sql => sql.startsWith("ALTER TABLE")), [
+    "ALTER TABLE `Servers` ADD COLUMN `otp_webhook_secret` VARCHAR(128) NOT NULL DEFAULT ''",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_of` VARCHAR(255) NOT NULL DEFAULT ''",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_order_id` VARCHAR(255) NULL DEFAULT NULL",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_cancelled` TINYINT(1) NOT NULL DEFAULT 0",
@@ -1065,6 +1066,43 @@ test("transient status timeouts schedule another poll without completing or refu
   assert.ok(f.tables.orders[0].next_check_at > new Date());
   assert.equal(f.tables.users[0].balance, 6);
   assert.equal(f.tables.transactions.filter(tx => tx.type === "refund").length, 0);
+});
+
+test("provider OTP webhook authenticates, saves once, emits through the normal SMS path, and pauses polling", async () => {
+  const source = require("node:fs").readFileSync(require("node:path").join(root, "routes/providerWebhook.js"), "utf8");
+  const original = { _id: "order-db", order_id: "ORD-WEBHOOK", server_name: "Provider A", status: "active", otp: "", all_otps: [], multi_otp_enabled: false };
+  const saved = [];
+  const router = moduleFrom("routes/providerWebhook.js", {
+    "../models/Server": {
+      findById: async () => ({ name: "Provider A", is_active: true, otp_webhook_secret: "secret" }),
+      findOne: async () => null,
+    },
+    "../models/Order": {
+      findOne: async filter => filter.order_id === "ORD-WEBHOOK" ? original : null,
+      findById: async () => original,
+      find: () => ({ sort: () => ({ limit: async () => [] }) }),
+    },
+    "../utils/orderSms": { recordOrderSms: async (order, message, options) => {
+      if (original.all_otps.includes(message)) return null;
+      saved.push({ order, message, options }); original.otp = message; original.all_otps.push(message); return original;
+    } },
+  }, { crypto: require("node:crypto") });
+  const handler = router.stack[0].route.stack.at(-1).handle;
+  const response = () => ({ statusCode: 200, body: null, status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; } });
+  const unauthorized = response();
+  await handler({ params: { server: "server-id" }, headers: {}, body: { order_id: "ORD-WEBHOOK", otp: "123456" } }, unauthorized);
+  assert.equal(unauthorized.statusCode, 401);
+  const success = response();
+  await handler({ params: { server: "server-id" }, headers: { authorization: "Bearer secret" }, body: { order_id: "ORD-WEBHOOK", otp: "123456", status: "completed" } }, success);
+  assert.equal(success.statusCode, 200);
+  assert.equal(success.body.received, true);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].message, "123456");
+  const duplicate = response();
+  await handler({ params: { server: "server-id" }, headers: { "x-provider-webhook-secret": "secret" }, body: { order_id: "ORD-WEBHOOK", otp: "123456" } }, duplicate);
+  assert.equal(duplicate.statusCode, 200);
+  assert.equal(duplicate.body.duplicate, true);
+  assert.equal(saved.length, 1);
 });
 
 test("expiry captures an OTP returned while cancelling and retains the original debit", async () => {

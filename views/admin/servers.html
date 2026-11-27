@@ -668,6 +668,13 @@
             <small class="text-muted">Supported placeholders: $api_key, $id (provider order), $phone/$number, $service, $country. Provider must return ACCESS_NUMBER:id:phone or JSON with id and phone. Completed OTP orders require the Cancel URL to confirm cancellation (ACCESS_CANCEL, ACCESS_ACTIVATION_CANCELED, or JSON success:true) before rebuy.</small>
           </div>
 
+          <div class="form-group">
+            <label class="form-label" for="srv-otp-webhook-secret">OTP Webhook Secret</label>
+            <input type="password" id="srv-otp-webhook-secret" class="form-input" autocomplete="new-password"
+              placeholder="Generated automatically; paste provider secret to rotate" />
+            <small class="text-muted">Webhook URL: <code id="srv-otp-webhook-url">/api/provider/webhook/&lt;server-id&gt;</code>. Post JSON with <code>order_id</code> and <code>otp</code>; authenticate with <code>Authorization: Bearer SECRET</code> or <code>X-Provider-Webhook-Secret</code>. With webhook configured, status polling becomes a once-per-minute fallback and resumes at expiry.</small>
+          </div>
+
           <div class="form-row" style="grid-template-columns: 1fr 1fr">
             <div class="form-group">
               <label class="form-label">Auto-Cancel (min)</label>
@@ -1090,7 +1097,7 @@
       const title = document.getElementById("srv-title");
       if (title) title.textContent = "Add Server";
 
-      const fields = ["srv-id", "srv-name", "srv-country", "srv-get-url", "srv-check-url", "srv-cancel-url", "srv-retry-url", "srv-cancel-mins", "srv-min-cancel", "srv-retry-count", "srv-poll"];
+      const fields = ["srv-id", "srv-name", "srv-country", "srv-get-url", "srv-check-url", "srv-cancel-url", "srv-retry-url", "srv-otp-webhook-secret", "srv-cancel-mins", "srv-min-cancel", "srv-retry-count", "srv-poll"];
       fields.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = (id === "srv-cancel-mins") ? "20" :
@@ -1173,6 +1180,9 @@
       setVal("srv-cancel-url", s.api_cancel_url || "");
       setVal("srv-retry-url", s.api_retry_url || "");
       setVal("srv-rebuy-url", s.api_rebuy_url || "");
+      setVal("srv-otp-webhook-secret", s.otp_webhook_secret || "");
+      const webhookUrl = document.getElementById("srv-otp-webhook-url");
+      if (webhookUrl) webhookUrl.textContent = `${window.location.origin}/api/provider/webhook/${encodeURIComponent(s._id || s.id)}`;
       setVal("srv-cancel-mins", s.auto_cancel_minutes || 20);
       setVal("srv-min-cancel", s.min_cancel_minutes || 0);
       setVal("srv-retry-count", s.retry_count || 0);
@@ -1216,6 +1226,7 @@
         api_cancel_url: document.getElementById("srv-cancel-url").value.trim(),
         api_retry_url: document.getElementById("srv-retry-url").value.trim(),
         api_rebuy_url: document.getElementById("srv-rebuy-url").value.trim(),
+        otp_webhook_secret: document.getElementById("srv-otp-webhook-secret").value.trim(),
         auto_cancel_minutes: parseInt(document.getElementById("srv-cancel-mins").value) || 20,
         min_cancel_minutes: parseInt(document.getElementById("srv-min-cancel").value) || 0,
         retry_count: parseInt(document.getElementById("srv-retry-count").value) || 0,

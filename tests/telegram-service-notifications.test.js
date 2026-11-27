@@ -347,7 +347,7 @@ for (const dbType of ["mongodb", "mysql"]) {
       { name: "NEW", code: "new" }, { name: "Other", code: "other" },
     ];
     const app = admin(dbType, {}, {
-      Server: { findByIdAndUpdate: async () => ({ id: "s1" }) },
+      Server: { findByIdAndUpdate: async () => ({ id: "s1" }), findById: async () => ({ id: "s1", name: "India 1" }) },
       Service: { find: async () => stored, insertMany: async rows => { stored.push(...rows); return rows; } },
     }, { existsSync: () => true, readFileSync: () => JSON.stringify(catalog) });
     const body = { country_id: "c1", auto_add_services: true, provider_country_code: "IN", extra_profit: "1.5" };

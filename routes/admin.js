@@ -18,6 +18,7 @@ const heleket     = require("../utils/heleket");
 const multer      = require("multer");
 const path        = require("path");
 const fs          = require("fs");
+const { randomBytes } = require("node:crypto");
 const { DB_TYPE } = require("../utils/db");
 const { clearSettingsCache } = require("../utils/settingsCache");
 const { clearCache } = require("../utils/apiCache");
@@ -1021,7 +1022,9 @@ router.post("/servers", async (req, res) => {
     if (req.body.country_id === "0" || !req.body.country_id) {
       return res.status(400).json({ error: "Please select a country" });
     }
-    const server = await Server.create(req.body);
+    const serverData = { ...req.body };
+    if (!String(serverData.otp_webhook_secret || "").trim()) serverData.otp_webhook_secret = randomBytes(32).toString("hex");
+    const server = await Server.create(serverData);
     if (req.body.auto_add_services) await processAutoAddServices(server, req.body, serviceAlertContext(req, server));
     res.status(201).json(server);
   } catch (err) {
@@ -1038,7 +1041,13 @@ router.put("/servers/:id", async (req, res) => {
     if (req.body.country_id === "0" || !req.body.country_id) {
       return res.status(400).json({ error: "Please select a country" });
     }
-    const server = await Server.findByIdAndUpdate(req.params.id, req.body, { new: true }); 
+    const serverFields = { ...req.body };
+    const existingServer = await Server.findById(req.params.id);
+    if (!existingServer) return res.status(404).json({ error: "Server not found" });
+    if (!String(serverFields.otp_webhook_secret || "").trim()) {
+      serverFields.otp_webhook_secret = existingServer.otp_webhook_secret || randomBytes(32).toString("hex");
+    }
+    const server = await Server.findByIdAndUpdate(req.params.id, serverFields, { new: true }); 
     
     if (req.body.auto_add_services) {
       await processAutoAddServices(server, req.body, serviceAlertContext(req, server));
