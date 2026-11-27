@@ -22,6 +22,8 @@ function load(settings, overrides = {}) {
     clearTimeout,
     JSON,
     String,
+    URL,
+    process: { env: {} },
     console,
     ...overrides,
   }, { filename: "telegramNotifications.js" });
@@ -41,12 +43,13 @@ test("service-added notification sends the configured service and site names", a
     service_added_telegram_bot_token: "123456:abcdefghijklmnopqrstuvwxyz1234567890",
     service_added_telegram_chat_id: "@newservices",
     site_name: "Example OTP",
+    site_url: "https://example.com/",
   });
-  assert.equal((await notifyServiceAdded({ name: "WhatsApp" })).sent, true);
+  assert.equal((await notifyServiceAdded({ name: "WhatsApp", price: "10.5", country_code: "IN" }, { serverName: "Server 1" })).sent, true);
   assert.match(request.url, /\/sendMessage$/);
   assert.deepEqual(JSON.parse(request.options.body), {
     chat_id: "@newservices",
-    text: "WhatsApp service added in Example OTP",
+    text: "\uD83C\uDF89 New service added!\n\uD83C\uDF10 Example OTP\n\uD83D\uDCF1 Service: WhatsApp\n\uD83D\uDDA5 Server: Server 1\n\uD83C\uDF0D Country: IN\n\uD83D\uDCB0 Service price: INR 10.50\n\uD83D\uDD17 Visit website: https://example.com\nPrices shown are standard service prices before personal discounts.",
     disable_web_page_preview: true,
   });
 });
@@ -98,9 +101,9 @@ test("bulk notifications are serialized and respect Telegram retry_after", async
   const results = await Promise.all([notifyServiceAdded({ name: "A" }), notifyServiceAdded({ name: "B" })]);
   assert.ok(results.every(result => result.sent));
   assert.equal(requests.length, 3);
-  assert.match(requests[0].text, /^A /);
-  assert.match(requests[1].text, /^A /);
-  assert.match(requests[2].text, /^B /);
+  assert.match(requests[0].text, /Service: A\n/);
+  assert.match(requests[1].text, /Service: A\n/);
+  assert.match(requests[2].text, /Service: B\n/);
   assert.ok(requests[1].at - requests[0].at >= 2000);
   assert.ok(requests[2].at - requests[1].at >= 1100);
   assert.equal(jobs.size, 0);
@@ -223,12 +226,13 @@ test("admin settings require credentials when enabling and discard unsaved chann
 
 function admin(dbType, initial = {}, models = {}, files) {
   const values = new Map(Object.entries(initial));
-  const announcements = [];
+  const announcements = [], priceUpdates = [], additions = [];
   let invalidations = 0;
   const notifications = {
     BOT_TOKEN_KEY: TOKEN_KEY, CHAT_ID_KEY: CHAT_KEY, ENABLED_KEY,
     isConfigured: value => value === true || value === "true",
-    notifyServiceAdded: async service => { announcements.push(service.name); },
+    notifyServiceAdded: async (service, context) => { announcements.push(service.name); additions.push({ ...service, context }); },
+    notifyServicePriceUpdated: async (service, previousPrice, context) => { priceUpdates.push({ ...service, previousPrice, context }); },
   };
   const row = key => values.has(key) ? { key, value: values.get(key), update: async ({ value }) => values.set(key, value) } : null;
   const Setting = {
@@ -241,7 +245,7 @@ function admin(dbType, initial = {}, models = {}, files) {
   const module = { exports: {} };
   const authorization = (req, res, next) => next();
   vm.runInNewContext(fs.readFileSync(path.join(root, "routes/admin.js"), "utf8"), {
-    module, __dirname: path.join(root, "routes"), process: { env: {} },
+    module, __dirname: path.join(root, "routes"), process: { env: {} }, URL,
     console: { error() {}, log() {} },
     require(name) {
       if (name === "../models/Setting") return Setting;
@@ -260,12 +264,12 @@ function admin(dbType, initial = {}, models = {}, files) {
   }, { filename: "routes/admin.js" });
   const router = module.exports;
   return {
-    values, announcements, notifications,
+    values, announcements, priceUpdates, additions, notifications,
     get invalidations() { return invalidations; },
     async call(method, url, body = {}, params = {}) {
       const route = router.stack.find(layer => layer.route?.path === url && layer.route.methods[method]).route;
       const res = { statusCode: 200, status(code) { this.statusCode = code; return this; }, json(data) { this.data = data; return this; } };
-      await route.stack.at(-1).handle({ body, params }, res);
+      await route.stack.at(-1).handle({ body, params, protocol: "https", get: key => key === "host" ? "example.com" : undefined }, res);
       await Promise.resolve();
       return res;
     },
@@ -346,10 +350,142 @@ for (const dbType of ["mongodb", "mysql"]) {
       Server: { findByIdAndUpdate: async () => ({ id: "s1" }) },
       Service: { find: async () => stored, insertMany: async rows => { stored.push(...rows); return rows; } },
     }, { existsSync: () => true, readFileSync: () => JSON.stringify(catalog) });
-    const body = { country_id: "c1", auto_add_services: true, provider_country_code: "IN" };
+    const body = { country_id: "c1", auto_add_services: true, provider_country_code: "IN", extra_profit: "1.5" };
     assert.equal((await app.call("put", "/servers/:id", body, { id: "s1" })).statusCode, 200);
     assert.deepEqual(app.announcements, ["New", "Other"]);
+    assert.ok(app.additions.every(service => service.price === 6.5 && service.context.siteUrl === "https://example.com"));
     assert.equal((await app.call("put", "/servers/:id", body, { id: "s1" })).statusCode, 200);
     assert.deepEqual(app.announcements, ["New", "Other"]);
+  });
+}
+
+const alertSettings = {
+  [ENABLED_KEY]: true, [TOKEN_KEY]: "test-token", [CHAT_KEY]: "@channel", site_name: "Candy SMS",
+};
+const fastClock = class extends Date { static now() { return Date.now() + (this.tick = (this.tick || 0) + 2000); } };
+
+test("price alerts show emojis, saved service name, old and updated prices, and canonical website link", async () => {
+  const bodies = [];
+  const alerts = load({ ...alertSettings, site_url: "https://candysms.website/?tracking=ignore#top" }, {
+    Date: fastClock,
+    fetch: async (_url, options) => { bodies.push(JSON.parse(options.body)); return { ok: true, json: async () => ({ ok: true }) }; },
+  });
+  await alerts.notifyServicePriceUpdated({ name: "WhatsApp", price: "8.1250", country_code: "IN" }, "10.0000", { siteUrl: "https://internal.example", serverName: "India 1" });
+  assert.equal(bodies.length, 1);
+  assert.match(bodies[0].text, /\uD83D\uDCB8 Service price updated!/u);
+  assert.match(bodies[0].text, /Service: WhatsApp/);
+  assert.match(bodies[0].text, /Server: India 1/);
+  assert.match(bodies[0].text, /Country: IN/);
+  assert.match(bodies[0].text, /Previous price: INR 10\.00/);
+  assert.match(bodies[0].text, /Updated price: INR 8\.1250/);
+  assert.match(bodies[0].text, /Visit website: https:\/\/candysms\.website\n/);
+  assert.doesNotMatch(bodies[0].text, /internal|tracking=|#top/);
+  assert.equal(bodies[0].parse_mode, undefined);
+});
+
+test("unchanged, invalid, disabled, and unconfigured price alerts never contact Telegram", async () => {
+  const overrides = { fetch: async () => { throw new Error("Must not call Telegram"); } };
+  const alerts = load(alertSettings, overrides);
+  for (const [before, after] of [[10, "10.0000"], [0.1 + 0.2, 0.3], ["", 10], [10, NaN], [10, Infinity], [10, -1], [null, 5]]) {
+    assert.equal((await alerts.notifyServicePriceUpdated({ name: "Test", price: after }, before)).reason, "price_unchanged_or_invalid");
+  }
+  assert.equal((await load({ [ENABLED_KEY]: false }, overrides).notifyServicePriceUpdated({ name: "Test", price: 8 }, 10)).reason, "disabled");
+  assert.equal((await load({ [ENABLED_KEY]: true }, overrides).notifyServicePriceUpdated({ name: "Test", price: 8 }, 10)).reason, "not_configured");
+});
+
+test("additions and price changes share a queue and snapshot prices before later service edits", async () => {
+  const messages = [];
+  const alerts = load(alertSettings, { Date: fastClock,
+    fetch: async (_url, options) => { messages.push(JSON.parse(options.body).text); return { ok: true, json: async () => ({ ok: true }) }; },
+  });
+  const service = { name: "Test", price: 6 };
+  const added = alerts.notifyServiceAdded(service, { siteUrl: "https://example.com" });
+  service.price = 8;
+  const updated = alerts.notifyServicePriceUpdated(service, 6, { siteUrl: "https://example.com" });
+  service.price = 99;
+  await Promise.all([added, updated]);
+  assert.equal(messages.length, 2);
+  assert.match(messages[0], /Service price: INR 6\.00/);
+  assert.match(messages[1], /Previous price: INR 6\.00/);
+  assert.match(messages[1], /Updated price: INR 8\.00/);
+  assert.ok(messages.every(text => text.includes("Visit website: https://example.com")));
+  assert.ok(messages.every(text => !text.includes("99.00")));
+});
+
+test("website links use configured environment or request URL fallback and omit invalid schemes", async () => {
+  for (const [settings, env, fallback, expected] of [
+    [{}, { SITE_URL: "https://public.example/" }, "https://request.example", "https://public.example"],
+    [{ site_url: "javascript:alert(1)" }, {}, "https://request.example", "https://request.example"],
+    [{ site_url: "https://user:password@example.com" }, { WEBSITE_URL: "https://public.example" }, "https://request.example", "https://public.example"],
+  ]) {
+    let text;
+    const alerts = load({ ...alertSettings, ...settings }, { process: { env },
+      fetch: async (_url, options) => { text = JSON.parse(options.body).text; return { ok: true, json: async () => ({ ok: true }) }; },
+    });
+    await alerts.notifyServiceAdded({ name: "<b>Test</b>", price: 1 }, { siteUrl: fallback });
+    assert.ok(text.includes("Visit website: " + expected));
+    assert.doesNotMatch(text, /password|javascript:/);
+  }
+});
+
+test("admin website URL loads, tracks edits, saves and restores the saved link", async () => {
+  const page = settingsPage({ site_url: "https://candysms.website" });
+  await page.run("loadSettings()");
+  assert.equal(page.elements.get("s-site-url").value, "https://candysms.website");
+  page.elements.get("s-site-url").value = "https://new.example";
+  page.run("checkChanges()");
+  assert.equal(page.elements.get("save-bar").classList.contains("visible"), true);
+  await page.run("saveSettings()");
+  assert.equal(page.posts[0].body.site_url, "https://new.example");
+  await page.run("loadSettings()");
+  assert.equal(page.elements.get("s-site-url").value, "https://candysms.website");
+});
+
+for (const dbType of ["mongodb", "mysql"]) {
+  test(dbType + ": only committed price changes announce with before and after prices", async () => {
+    let failSave = false, duplicate = false;
+    const stored = { name: "WhatsApp", price: 10, country_code: "IN", server_id: "s1", service_code: "wa" };
+    const app = admin(dbType, {}, {
+      Service: {
+        findById: async () => ({ ...stored, async save() { if (failSave) throw new Error("Database failed"); Object.assign(stored, this); } }),
+        findOne: async () => duplicate ? { name: "Duplicate" } : null,
+      },
+      Server: {
+        findByPk: async () => ({ id: "s1", name: "India 1", country_id: "c1" }),
+        findById: () => ({ populate: async () => ({ _id: "s1", name: "India 1", country_id: { code: "IN" } }) }),
+      },
+      Country: { findByPk: async () => ({ code: "IN" }) },
+    });
+    assert.equal((await app.call("put", "/services/:id", { price: "10.0000" }, { id: "1" })).statusCode, 200);
+    assert.equal((await app.call("put", "/services/:id", { name: "Renamed" }, { id: "1" })).statusCode, 200);
+    assert.equal(app.priceUpdates.length, 0);
+    const body = { name: "WhatsApp", price: "8.1250", server_id: "s1" };
+    assert.equal((await app.call("put", "/services/:id", body, { id: "1" })).statusCode, 200);
+    assert.equal(app.priceUpdates.length, 1);
+    assert.equal(app.priceUpdates[0].name, "Whatsapp");
+    assert.equal(app.priceUpdates[0].previousPrice, 10);
+    assert.equal(app.priceUpdates[0].price, 8.125);
+    assert.equal(app.priceUpdates[0].context.siteUrl, "https://example.com");
+    assert.equal(app.priceUpdates[0].context.serverName, "India 1");
+    failSave = true;
+    assert.equal((await app.call("put", "/services/:id", { price: 9 }, { id: "1" })).statusCode, 400);
+    assert.equal(app.priceUpdates.length, 1);
+    failSave = false; duplicate = true;
+    assert.equal((await app.call("put", "/services/:id", { price: 9 }, { id: "1" })).statusCode, 400);
+    assert.equal(app.priceUpdates.length, 1);
+    duplicate = false;
+    app.notifications.notifyServicePriceUpdated = async () => { throw new Error("Telegram unavailable"); };
+    assert.equal((await app.call("put", "/services/:id", { price: 9 }, { id: "1" })).statusCode, 200);
+    assert.equal(stored.price, 9);
+  });
+
+  test(dbType + ": canonical website URL is validated and saved without query or credentials", async () => {
+    const app = admin(dbType);
+    for (const site_url of [null, {}, "javascript:alert(1)", "https://user:password@example.com", "not a url"]) {
+      assert.equal((await app.call("post", "/settings", { site_url })).statusCode, 400);
+      assert.equal(app.values.size, 0);
+    }
+    assert.equal((await app.call("post", "/settings", { site_url: " https://candysms.website/?x=1#top " })).statusCode, 200);
+    assert.equal(app.values.get("site_url"), "https://candysms.website");
   });
 }

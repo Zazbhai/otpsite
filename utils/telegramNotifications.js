@@ -12,15 +12,60 @@ let pending = Promise.resolve();
 let lastAttempt = 0;
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// Telegram limits messages to a single channel; serialize bulk service imports.
-function notifyServiceAdded(service) {
-  const name = service?.name;
-  const notification = pending.then(() => sendServiceAdded({ name }));
+function priceValue(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return null;
+  const price = Number(value);
+  return Number.isFinite(price) && price >= 0 ? Math.round(price * 10000) / 10000 : null;
+}
+
+function formatPrice(value) {
+  const price = priceValue(value);
+  return price === null ? "Not set" : "INR " + price.toFixed(4).replace(/(\.\d{2})0+$/, "$1");
+}
+
+const line = value => String(value || "").replace(/[\r\n\t]/g, " ").trim().slice(0, 200);
+
+function websiteUrl(settings, fallback) {
+  const env = typeof process === "undefined" ? {} : process.env;
+  for (const candidate of [settings.site_url, env.SITE_URL, env.WEBSITE_URL, fallback]) {
+    try {
+      const url = new URL(String(candidate || "").trim());
+      if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) continue;
+      url.search = "";
+      url.hash = "";
+      return url.href.replace(/\/$/, "");
+    } catch {}
+  }
+  return "";
+}
+
+// Snapshot mutable model fields before waiting in the shared Telegram queue.
+function queueNotification(type, service, context, previousPrice) {
+  const snapshot = {
+    name: line(service?.name) || "New service", price: service?.price,
+    country: line(service?.country_code), server: line(context?.serverName),
+    siteUrl: context?.siteUrl, previousPrice,
+  };
+  const notification = pending.then(() => sendServiceNotification(type, snapshot));
   pending = notification.catch(() => {});
   return notification;
 }
 
-async function sendServiceAdded(service) {
+// Telegram limits messages to a single channel; serialize additions and updates.
+function notifyServiceAdded(service, context = {}) {
+  return queueNotification("added", service, context);
+}
+
+function notifyServicePriceUpdated(service, previousPrice, context = {}) {
+  const before = priceValue(previousPrice);
+  const after = priceValue(service?.price);
+  if (before === null || after === null || before === after) {
+    return Promise.resolve({ sent: false, reason: "price_unchanged_or_invalid" });
+  }
+  return queueNotification("price", service, context, before);
+}
+
+async function sendServiceNotification(type, service) {
   const settings = await getCachedSettings();
   if (!isConfigured(settings[ENABLED_KEY])) return { sent: false, reason: "disabled" };
 
@@ -28,11 +73,26 @@ async function sendServiceAdded(service) {
   const chatId = String(settings[CHAT_ID_KEY] || "").trim();
   if (!token || !chatId) return { sent: false, reason: "not_configured" };
 
-  const siteName = String(settings.site_name || "").trim() || "Our site";
-  const serviceName = String(service?.name || "New");
+  const siteName = line(settings.site_name) || "Our site";
+  const lines = [
+    type === "price" ? "\uD83D\uDCB8 Service price updated!" : "\uD83C\uDF89 New service added!",
+    "\uD83C\uDF10 " + siteName,
+    "\uD83D\uDCF1 Service: " + service.name,
+  ];
+  if (service.server) lines.push("\uD83D\uDDA5 Server: " + service.server);
+  if (service.country) lines.push("\uD83C\uDF0D Country: " + service.country);
+  if (type === "price") {
+    lines.push("\uD83D\uDCB0 Previous price: " + formatPrice(service.previousPrice));
+    lines.push("\u2728 Updated price: " + formatPrice(service.price));
+  } else {
+    lines.push("\uD83D\uDCB0 Service price: " + formatPrice(service.price));
+  }
+  const url = websiteUrl(settings, service.siteUrl);
+  if (url) lines.push("\uD83D\uDD17 Visit website: " + url);
+  lines.push("Prices shown are standard service prices before personal discounts.");
   const delay = lastAttempt + 1100 - Date.now();
   if (delay > 0) await pause(delay);
-  return requestMessage(token, chatId, serviceName + " service added in " + siteName, true);
+  return requestMessage(token, chatId, lines.join("\n"), true);
 }
 
 async function requestMessage(token, chatId, text, allowRetry) {
@@ -78,4 +138,5 @@ module.exports = {
   ENABLED_KEY,
   isConfigured,
   notifyServiceAdded,
+  notifyServicePriceUpdated,
 };

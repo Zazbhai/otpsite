@@ -389,7 +389,7 @@
           <div class="card">
             <h3 style="margin-bottom:24px">Telegram Service Alerts</h3>
             <div style="display:flex;flex-direction:column;gap:20px">
-              <label class="form-label"><input type="checkbox" id="s-telegram-enabled" /> Announce newly added services</label>
+              <label class="form-label"><input type="checkbox" id="s-telegram-enabled" /> Announce new services and service price changes</label>
               <div class="form-group">
                 <label class="form-label" for="s-telegram-token">Bot Token</label>
                 <input type="password" id="s-telegram-token" class="form-input" autocomplete="new-password" placeholder="Leave blank to keep the saved token" />
@@ -399,7 +399,12 @@
                 <label class="form-label" for="s-telegram-chat">Channel ID or Username</label>
                 <input type="text" id="s-telegram-chat" class="form-input" placeholder="@yourchannel or -1001234567890" />
               </div>
-              <p style="color:var(--text-3)">Add your bot as a channel administrator with permission to post messages. Each new service sends: Service name service added in your site name.</p>
+              <div class="form-group">
+                <label class="form-label" for="s-site-url">Website URL</label>
+                <input type="url" id="s-site-url" class="form-input" placeholder="https://your-site.com" />
+                <small style="color:var(--text-3)">Public website link included in Telegram alerts. Leave blank to use the configured site address.</small>
+              </div>
+              <p style="color:var(--text-3)">Add your bot as a channel administrator with permission to post messages. Alerts include emojis, the service name, its standard price and your website link. Price changes show both the previous and updated prices in INR.</p>
             </div>
           </div>
         </div>
@@ -624,6 +629,7 @@
       
       const mapping = {
         's-site-name': 'site_name',
+        's-site-url': 'site_url',
         's-site-logo': 'site_logo',
         's-site-favicon': 'site_favicon',
         's-seo-title': 'seo_title',
@@ -653,6 +659,7 @@
         }
       }
 
+      document.getElementById("s-site-url").value = s.site_url || "";
       document.getElementById("s-telegram-enabled").checked = s.service_added_telegram_enabled === true || s.service_added_telegram_enabled === "true";
       document.getElementById("s-telegram-chat").value = s.service_added_telegram_chat_id || "";
       telegramTokenConfigured = s.service_added_telegram_configured === true;
@@ -736,6 +743,7 @@
       service_added_telegram_bot_token: document.getElementById("s-telegram-token").value,
       service_added_telegram_chat_id: document.getElementById("s-telegram-chat").value,
       site_name: document.getElementById("s-site-name").value,
+      site_url: document.getElementById("s-site-url").value.trim(),
       site_logo: document.getElementById("s-site-logo").value,
       site_favicon: document.getElementById("s-site-favicon").value,
       primary_color: document.getElementById("s-primary-color").value,
@@ -829,6 +837,7 @@
       service_added_telegram_bot_token: document.getElementById("s-telegram-token").value.trim(),
       service_added_telegram_chat_id: document.getElementById("s-telegram-chat").value.trim(),
       site_name: document.getElementById("s-site-name").value,
+      site_url: document.getElementById("s-site-url").value.trim(),
       site_logo: document.getElementById("s-site-logo").value,
       site_favicon: document.getElementById("s-site-favicon").value,
       primary_color: document.getElementById("s-primary-color").value,

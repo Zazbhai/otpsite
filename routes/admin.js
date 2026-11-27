@@ -30,6 +30,12 @@ const formatServiceName = (name) => {
   return name.trim().charAt(0).toUpperCase() + name.trim().slice(1).toLowerCase();
 };
 
+// Use the configured canonical URL in the sender, with this site as fallback.
+function serviceAlertContext(req, server) {
+  const host = typeof req.get === "function" ? req.get("host") : "";
+  return { siteUrl: host ? `${req.protocol || "https"}://${host}` : "", serverName: server?.name };
+}
+
 // Multer Config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -643,7 +649,7 @@ router.post("/services", upload.single("logo"), async (req, res) => {
 
     const service = await Service.create(serviceData);
     clearCache("services");
-    require("../utils/telegramNotifications").notifyServiceAdded(service)
+    require("../utils/telegramNotifications").notifyServiceAdded(service, serviceAlertContext(req, server))
       .catch(error => console.error("[Telegram service notification] Failed:", error.name || "Error"));
     res.status(201).json(service);
   } catch (err) { 
@@ -658,6 +664,9 @@ router.put("/services/:id", upload.single("logo"), async (req, res) => {
     if (name) name = formatServiceName(name);
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ error: "Service not found" });
+
+    const previousPrice = service.price;
+    let notificationServer;
 
     // Duplicate check for updates
     const checkServer = server_id || service.server_id;
@@ -688,7 +697,7 @@ router.put("/services/:id", upload.single("logo"), async (req, res) => {
          server = await Server.findById(server_id).populate("country_id", "code");
          if (server && server.country_id) service.country_code = server.country_id.code;
        }
-        service.server_id = server_id;
+        notificationServer = server;
         service.server_id = server_id;
      }
 
@@ -715,6 +724,10 @@ router.put("/services/:id", upload.single("logo"), async (req, res) => {
 
     await service.save();
     clearCache("services");
+    if (price !== undefined && Number(previousPrice) !== Number(service.price)) {
+      require("../utils/telegramNotifications").notifyServicePriceUpdated(service, previousPrice, serviceAlertContext(req, notificationServer))
+        .catch(error => console.error("[Telegram price notification] Failed:", error.name || "Error"));
+    }
     res.json(service);
   } catch (err) { 
     console.error("[Admin/Services] Update Error:", err.message);
@@ -853,7 +866,7 @@ function getRandomColor(index) {
 }
 
 
-async function processAutoAddServices(server, body) {
+async function processAutoAddServices(server, body, notificationContext = {}) {
 
   const fs = require('fs');
   const path = require('path');
@@ -993,7 +1006,7 @@ async function processAutoAddServices(server, body) {
       console.log(`[Admin/Servers] Auto-adding ${servicesToCreate.length} for server: ${server.id || server._id}`);
       const createdServices = await Service.insertMany(servicesToCreate);
       for (const service of createdServices) {
-        require("../utils/telegramNotifications").notifyServiceAdded(service)
+        require("../utils/telegramNotifications").notifyServiceAdded(service, { ...notificationContext, serverName: server.name })
           .catch(error => console.error("[Telegram service notification] Failed:", error.name || "Error"));
       }
       console.log(`[Admin/Servers] Auto-added ${servicesToCreate.length} NEW services to server`);
@@ -1010,7 +1023,7 @@ router.post("/servers", async (req, res) => {
       return res.status(400).json({ error: "Please select a country" });
     }
     const server = await Server.create(req.body);
-    if (req.body.auto_add_services) await processAutoAddServices(server, req.body);
+    if (req.body.auto_add_services) await processAutoAddServices(server, req.body, serviceAlertContext(req, server));
     res.status(201).json(server);
   } catch (err) {
     let msg = err.message;
@@ -1029,7 +1042,7 @@ router.put("/servers/:id", async (req, res) => {
     const server = await Server.findByIdAndUpdate(req.params.id, req.body, { new: true }); 
     
     if (req.body.auto_add_services) {
-      await processAutoAddServices(server, req.body);
+      await processAutoAddServices(server, req.body, serviceAlertContext(req, server));
     }
 
     res.json(server); 
@@ -1256,6 +1269,19 @@ router.post("/settings", async (req, res) => {
     // An empty password field means keep the existing secret.
     const settingsBody = { ...req.body };
     delete settingsBody.service_added_telegram_configured;
+    if (settingsBody.site_url !== undefined) {
+      if (typeof settingsBody.site_url !== "string") return res.status(400).json({ error: "Website URL must be an HTTP or HTTPS URL" });
+      settingsBody.site_url = settingsBody.site_url.trim();
+      if (settingsBody.site_url) {
+        try {
+          const url = new URL(settingsBody.site_url);
+          if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) throw new Error("Invalid URL");
+          url.search = "";
+          url.hash = "";
+          settingsBody.site_url = url.href.replace(/\/$/, "");
+        } catch { return res.status(400).json({ error: "Website URL must be an HTTP or HTTPS URL without credentials" }); }
+      }
+    }
     if (typeof botToken === "string") {
       if (!botToken.trim()) delete settingsBody[telegramNotifications.BOT_TOKEN_KEY];
       else settingsBody[telegramNotifications.BOT_TOKEN_KEY] = botToken.trim();
