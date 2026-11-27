@@ -728,3 +728,38 @@ test("order list exposes completed cancellation and rebuy buttons with six-row s
   assert.equal(rows[2].can_rebuy, true);
   assert.equal(rows[3].can_rebuy, false);
 });
+
+test("rebuy and getNumber return identical plain-text success responses and normalize phone digits", async () => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  let newOrder;
+  const routes = routesFixture(f,
+    async () => ({ api_order_id: "provider-contract-test", phone: "+91 98765-43210" }),
+    async () => ({ order: newOrder, balance: 4 }));
+  const allocated = response();
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getNumber", service: "test", country: "22" } }, allocated);
+  assert.equal(typeof allocated.body, "string");
+  assert.match(allocated.body, /^ACCESS_NUMBER:ORD-[^:]+:919876543210$/);
+  newOrder = f.tables.orders[0];
+  for (const action of ["rebuy", "reBuy"]) {
+    const rebought = response();
+    await routes.gateway({ method: "GET", query: { apikey: "test-key", action, id: "old-order" } }, rebought);
+    assert.equal(rebought.body, allocated.body);
+    assert.equal(rebought.statusCode, allocated.statusCode);
+  }
+});
+
+test("rebuy accepts the same text and JSON provider success formats as getNumber", async () => {
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  const server = { api_get_number_url: "https://provider.example/getNumber", api_rebuy_url: "https://provider.example/rebuy?id=$id", retry_count: 1 };
+  try {
+    for (const body of ["ACCESS_NUMBER:provider-id:+91 98765-43210", JSON.stringify({ id: "provider-id", phone: "+91 98765-43210" })]) {
+      global.fetch = async () => ({ ok: true, status: 200, text: async () => body });
+      const allocated = await provider.getNumber(server, "test", "22");
+      const rebought = await provider.rebuyOrder(server, { external_order_id: "old-provider-id", phone: "919876543210" });
+      assert.deepEqual(rebought, allocated);
+      assert.deepEqual(rebought, { api_order_id: "provider-id", phone: "919876543210" });
+    }
+  } finally { global.fetch = originalFetch; }
+});

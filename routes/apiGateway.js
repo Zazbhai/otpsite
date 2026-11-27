@@ -15,6 +15,11 @@ const { notifyAdminChange } = require("../utils/adminRealtime");
 const { recordOrderSms } = require("../utils/orderSms");
 const { rebuyCancelledOrder, cancelCompletedOrderForRebuy } = require("../utils/rebuy");
 
+// Both allocation actions use the same legacy SMS API success response.
+function numberResponse(order) {
+  return `ACCESS_NUMBER:${order.order_id}:${String(order.phone).replace(/\D/g, "")}`;
+}
+
 router.all("/", async (req, res) => {
   try {
     const query = req.method === "POST" ? req.body : req.query;
@@ -169,10 +174,8 @@ router.all("/", async (req, res) => {
           };
 
           const savedOrder = await wallet.finalizePurchase(orderData);
-          const orderResult = { orderId: savedOrder.order_id, phone: savedOrder.phone };
-
           orderSaved = true;
-          return res.send(`ACCESS_NUMBER:${orderResult.orderId}:${orderResult.phone.replace(/\D/g, '')}`);
+          return res.send(numberResponse(savedOrder));
         } catch (err) {
           if (balanceDeducted && !orderSaved) {
             console.log(`[API/Order/Rollback] Rollback refunding user ${user._id} amount ${finalPrice}`);
@@ -262,7 +265,7 @@ router.all("/", async (req, res) => {
         if (!id) return res.send("BAD_REQUEST");
         try {
           const rebuy = await rebuyCancelledOrder({ orderId: id, userId: String(user._id) });
-          return res.send(`ACCESS_NUMBER:${rebuy.order.order_id}:${String(rebuy.order.phone).replace(/\D/g, "")}`);
+          return res.send(numberResponse(rebuy.order));
         } catch (err) {
           if (err.message === "INSUFFICIENT_BALANCE") return res.send("NO_BALANCE");
           if (["ORDER_NOT_FOUND", "ORDER_NOT_REBUYABLE", "REBUY_ALREADY_USED", "REBUY_NOT_CONFIGURED", "ORIGINAL_REFUND_UNVERIFIED"].includes(err.message)) return res.send("BAD_STATUS");
