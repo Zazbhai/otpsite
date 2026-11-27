@@ -1098,6 +1098,7 @@ test("provider OTP webhook authenticates, saves once, emits through the normal S
   assert.equal(success.body.received, true);
   assert.equal(saved.length, 1);
   assert.equal(saved[0].message, "123456");
+  assert.equal(saved[0].options.complete, true);
   const duplicate = response();
   await handler({ params: { server: "server-id" }, headers: { "x-provider-webhook-secret": "secret" }, body: { order_id: "ORD-WEBHOOK", otp: "123456" } }, duplicate);
   assert.equal(duplicate.statusCode, 200);

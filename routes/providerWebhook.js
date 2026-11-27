@@ -64,7 +64,8 @@ router.post("/:server", async (req, res) => {
     }
 
     const providerStatus = String(body.status || body.state || "").toLowerCase();
-    const complete = !order.multi_otp_enabled && ["completed", "complete", "success", "successful"].includes(providerStatus);
+    const waiting = ["waiting", "pending", "processing"].includes(providerStatus);
+    const complete = !order.multi_otp_enabled && !waiting;
     const saved = await recordOrderSms(order, message, { complete, checkedAt: new Date() });
     const current = saved || await Order.findById(order._id);
     return res.json({ received: true, duplicate: !saved, order_id: current.order_id, status: current.status, otp: current.otp });
