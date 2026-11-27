@@ -28,7 +28,7 @@ async function cancelCompletedOrderForRebuy({ orderId, userId }) {
     if (!server?.is_active || !server.api_cancel_url || !server.api_rebuy_url || !order.external_order_id) {
       throw new Error("REBUY_CANCEL_NOT_CONFIGURED");
     }
-    const result = await providerApi.cancelOrder(server, order.external_order_id, { requireConfirmation: true });
+    const result = await providerApi.cancelOrder(server, order.external_order_id, { requireConfirmation: true, allowMissing: true });
     if (!result?.success) throw new Error("PROVIDER_CANCEL_FAILED");
     const updated = await Order.findOneAndUpdate({
       _id: order._id || order.id, user_id: String(userId), status: "completed",

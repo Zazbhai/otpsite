@@ -87,7 +87,8 @@ test("completed OTP order requires confirmed cancellation, retains its paid hist
   await assert.rejects(f.cancel({ ...args, userId: "attacker" }), /ORDER_NOT_FOUND/);
   assert.equal(f.calls.cancelled.length, 0);
   await f.cancel(args);
-  assert.equal(f.calls.cancelled[0][2].requireConfirmation, true);
+    assert.equal(f.calls.cancelled[0][2].requireConfirmation, true);
+    assert.equal(f.calls.cancelled[0][2].allowMissing, true);
   assert.equal(f.original.status, "completed");
   assert.equal(f.original.otp, "1234");
   assert.deepEqual(f.original.all_otps, ["1234"]);
