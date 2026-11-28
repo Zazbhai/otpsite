@@ -218,6 +218,49 @@ for (const dbType of ["mysql", "mongodb"]) test(`${dbType}: admin can find order
 });
 
 for (const dbType of ["mysql", "mongodb"]) {
+  test(`${dbType}: server saves normalize mode values, preserve omitted flags and verify persistence`, async () => {
+    let stored = { _id: "s1", name: "Provider", otp_webhook_enabled: "false", otp_webhook_secret: "preserved-secret" };
+    let writes = 0, persist = true;
+    const { router } = adminRouter(dbType, {
+      Server: {
+        findById: async () => ({ ...stored }),
+        findByIdAndUpdate: async (_id, fields) => { writes++; if (persist) stored = { ...stored, ...fields }; return { ...stored, ...fields }; },
+        create: async fields => { stored = { _id: "s1", ...fields }; return stored; },
+      },
+      Order: { update: async () => {}, updateMany: async () => {} },
+    });
+    const handler = router.stack.find(layer => layer.route?.path === "/servers/:id" && layer.route.methods.put).route.stack.at(-1).handle;
+    const create = router.stack.find(layer => layer.route?.path === "/servers" && layer.route.methods.post).route.stack.at(-1).handle;
+    let result, status;
+    const response = { json(value) { result = value; }, status(value) { status = value; return this; } };
+    const save = async flag => {
+      status = 200;
+      await handler({ params: { id: "s1" }, body: { country_id: "country", ...(flag === undefined ? {} : { otp_webhook_enabled: flag }) } }, response);
+    };
+    for (const flag of [true, "true", 1, "1", false, "false", 0, "0"]) {
+      await save(flag);
+      assert.equal(status, 200);
+      assert.equal(stored.otp_webhook_enabled, [true, "true", 1, "1"].includes(flag));
+    }
+    stored.otp_webhook_enabled = "false";
+    await save(undefined);
+    assert.equal(stored.otp_webhook_enabled, false);
+    const before = writes;
+    await save("invalid");
+    assert.equal(status, 400);
+    assert.equal(writes, before);
+    persist = false;
+    await save(true);
+    assert.equal(status, 400);
+    assert.match(result.error, /mode was not saved/);
+    persist = true;
+    for (const flag of ["true", "false"]) {
+      await create({ body: { country_id: "country", name: "Provider", otp_webhook_enabled: flag } }, response);
+      assert.equal(status, 201);
+      assert.equal(stored.otp_webhook_enabled, flag === "true");
+    }
+  });
+
   test(`${dbType}: changing server delivery mode reschedules its active orders`, async () => {
     const updates = [];
     let enabled = true;

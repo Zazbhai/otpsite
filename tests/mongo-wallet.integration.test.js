@@ -78,6 +78,46 @@ test("real MongoDB wallet conflicts, refunds and concurrent purchases", { timeou
     assert.equal(await Transaction.countDocuments({ user_id: String(owner._id), type: "purchase" }), 1);
   });
 
+  await t.test("saved admin webhook mode survives reload, accepts an authenticated OTP and stops provider polling", async () => {
+    const Server = require("../models/Server"), Country = require("../models/Country");
+    await Promise.all([Server.init(), Country.init()]);
+    const country = await Country.create({ code: "mode-test", name: "Mode test" });
+    const server = await Server.create({ name: "Webhook mode integration", country_id: country._id,
+      otp_webhook_enabled: false, otp_webhook_secret: "integration-webhook-secret", api_check_status_url: "https://provider.example/status" });
+    const owner = await user(10);
+    const order = await buy(owner, "webhook-mode", 4);
+    await Order.updateOne({ _id: order._id }, { $set: { server_name: server.name, next_check_at: new Date("2099-01-01") } });
+    const admin = require("../routes/admin");
+    const save = admin.stack.find(layer => layer.route?.path === "/servers/:id" && layer.route.methods.put).route.stack.at(-1).handle;
+    const invokeSave = async enabled => {
+      let status = 200, result;
+      await save({ params: { id: String(server._id) }, body: { country_id: String(country._id), otp_webhook_enabled: enabled } }, {
+        status(code) { status = code; return this; }, json(value) { result = value; },
+      });
+      assert.equal(status, 200, result?.error);
+    };
+    await invokeSave("true");
+    const reloaded = await Server.findById(server._id);
+    assert.equal(reloaded.otp_webhook_enabled, true);
+    assert.equal(reloaded.otp_webhook_secret, "integration-webhook-secret");
+    assert.ok((await Order.findById(order._id)).next_check_at < new Date("2099-01-01"));
+    assert.equal((await require("../utils/providerApi").checkStatus(reloaded, order.external_order_id)).webhook_only, true);
+    const webhook = require("../routes/providerWebhook").stack[0].route.stack.at(-1).handle;
+    let status = 200, result;
+    await webhook({ params: { server: String(server._id) }, headers: { authorization: "Bearer integration-webhook-secret" },
+      body: { external_order_id: order.external_order_id, otp: "001234" } }, {
+      status(code) { status = code; return this; }, json(value) { result = value; },
+    });
+    assert.equal(status, 200, result?.error);
+    assert.equal(result.received, true);
+    const received = await Order.findById(order._id);
+    assert.equal(received.otp, "001234");
+    assert.equal(received.status, "completed");
+    assert.equal((await User.findById(owner._id)).balance, 6);
+    await invokeSave("false");
+    assert.equal((await Server.findById(server._id)).otp_webhook_enabled, false);
+  });
+
   await t.test("real API status and balance calls respond while the provider is still pending", async () => {
     const express = require("express");
     const Server = require("../models/Server"), Service = require("../models/Service");

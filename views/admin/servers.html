@@ -909,6 +909,7 @@
 
 
   <script src="/js/main.js?v=1784210170377"></script>
+  <script src="/js/provider-mode.js?v=1"></script>
   
 
   <script>
@@ -1197,7 +1198,7 @@
       setVal("srv-retry-url", s.api_retry_url || "");
       setVal("srv-rebuy-url", s.api_rebuy_url || "");
       setVal("srv-otp-webhook-secret", s.otp_webhook_secret || "");
-      setVal("srv-delivery-mode", s.otp_webhook_enabled ? "webhook" : "polling");
+      setVal("srv-delivery-mode", ProviderMode.isProviderWebhookEnabled(s) ? "webhook" : "polling");
       updateServerDeliveryModeHelp();
       setServerWebhookSecretVisibility(false);
       const webhookUrl = document.getElementById("srv-otp-webhook-url");
@@ -1305,13 +1306,16 @@
       saveBtn.innerHTML = '<div class="spinner"></div>';
 
       try {
+        let saved;
         if (editingId) {
-          await API.put(`/api/admin/servers/${editingId}`, body);
-          toast("Server updated!", "success");
+          saved = await API.put(`/api/admin/servers/${editingId}`, body);
         } else {
-          await API.post("/api/admin/servers", body);
-          toast("Server added!", "success");
+          saved = await API.post("/api/admin/servers", body);
         }
+        if (!saved || ProviderMode.isProviderWebhookEnabled(saved) !== body.otp_webhook_enabled) {
+          throw new Error("OTP delivery mode was not saved. Reload the server and try again.");
+        }
+        toast(editingId ? "Server updated!" : "Server added!", "success");
         closeModal('srv-modal');
         loadData();
       } catch (e) {

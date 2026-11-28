@@ -19,6 +19,7 @@ const multer      = require("multer");
 const path        = require("path");
 const fs          = require("fs");
 const { randomBytes } = require("node:crypto");
+const { parseWebhookEnabled, isProviderWebhookEnabled } = require("../public/js/provider-mode");
 const { DB_TYPE } = require("../utils/db");
 const { clearSettingsCache } = require("../utils/settingsCache");
 const { clearCache } = require("../utils/apiCache");
@@ -1035,9 +1036,13 @@ router.post("/servers", async (req, res) => {
       return res.status(400).json({ error: "Please select a country" });
     }
     const serverData = { ...req.body };
-    serverData.otp_webhook_enabled = req.body.otp_webhook_enabled === true;
+    serverData.otp_webhook_enabled = parseWebhookEnabled(req.body.otp_webhook_enabled);
     if (!String(serverData.otp_webhook_secret || "").trim()) serverData.otp_webhook_secret = randomBytes(32).toString("hex");
     const server = await Server.create(serverData);
+    const persisted = await Server.findById(server._id || server.id);
+    if (!persisted || isProviderWebhookEnabled(persisted) !== serverData.otp_webhook_enabled) {
+      throw new Error("OTP delivery mode was not saved. Reload the server and try again.");
+    }
     if (req.body.auto_add_services) await processAutoAddServices(server, req.body, serviceAlertContext(req, server));
     res.status(201).json(server);
   } catch (err) {
@@ -1057,13 +1062,17 @@ router.put("/servers/:id", async (req, res) => {
     const serverFields = { ...req.body };
     const existingServer = await Server.findById(req.params.id);
     if (!existingServer) return res.status(404).json({ error: "Server not found" });
-    const webhookWasEnabled = Boolean(existingServer.otp_webhook_enabled);
+    const webhookWasEnabled = isProviderWebhookEnabled(existingServer);
     serverFields.otp_webhook_enabled = req.body.otp_webhook_enabled === undefined
-      ? webhookWasEnabled : req.body.otp_webhook_enabled === true;
+      ? webhookWasEnabled : parseWebhookEnabled(req.body.otp_webhook_enabled);
     if (!String(serverFields.otp_webhook_secret || "").trim()) {
       serverFields.otp_webhook_secret = existingServer.otp_webhook_secret || randomBytes(32).toString("hex");
     }
     const server = await Server.findByIdAndUpdate(req.params.id, serverFields, { new: true }); 
+    const persisted = await Server.findById(req.params.id);
+    if (!persisted || isProviderWebhookEnabled(persisted) !== serverFields.otp_webhook_enabled) {
+      throw new Error("OTP delivery mode was not saved. Reload the server and try again.");
+    }
     if (webhookWasEnabled !== serverFields.otp_webhook_enabled) await rescheduleServerOrders(server.name);
     
     if (req.body.auto_add_services) {

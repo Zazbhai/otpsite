@@ -5,6 +5,7 @@ const { emitToUser } = require("./realtimeEmitter");
 const { recordOrderSms } = require("./orderSms");
 const { refundOrder, hasOtp } = require("./wallet");
 const { acquireLock, releaseLock } = require("./orderLocks");
+const { isProviderWebhookEnabled } = require("../public/js/provider-mode");
 // Shared by the watcher and client-triggered checks in this process. Busy
 // orders remain due in the database for a later watcher tick; no queue grows.
 const SYNC_CONCURRENCY = 10;
@@ -62,7 +63,7 @@ async function syncOrder(orderIdOrDoc) {
     }, 20000);
     leaseTimer.unref?.();
     const server = await Server.findOne({ name: order.server_name });
-    const webhookOnly = server?.otp_webhook_enabled === true;
+    const webhookOnly = isProviderWebhookEnabled(server);
     if (webhookOnly && !expired) {
       nextRunAt = order.expires_at ? new Date(order.expires_at) : new Date("9999-12-31T23:59:59.000Z");
       return order;

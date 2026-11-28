@@ -4,6 +4,7 @@ const { Buffer } = require("node:buffer");
 const Server = require("../models/Server");
 const Order = require("../models/Order");
 const { recordOrderSms } = require("../utils/orderSms");
+const { isProviderWebhookEnabled } = require("../public/js/provider-mode");
 
 const router = express.Router();
 
@@ -58,7 +59,7 @@ router.post("/:server", async (req, res) => {
     const server = await findServer(req.params.server);
     if (!server || !authenticated(req, server)) return reject(401, "INVALID_WEBHOOK_AUTH", "Invalid webhook credentials or signature");
     if (!server.is_active) return reject(403, "SERVER_DISABLED", "Server is disabled");
-    if (server.otp_webhook_enabled !== true) return reject(403, "WEBHOOK_DISABLED", "Select Provider webhook mode in Admin > Servers and save");
+    if (!isProviderWebhookEnabled(server)) return reject(403, "WEBHOOK_DISABLED", "Select Provider webhook mode in Admin > Servers and save");
 
     const body = req.body || {};
     const explicitLocalId = value(body, ["local_order_id"]).slice(0, 255);

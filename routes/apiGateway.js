@@ -8,6 +8,7 @@ const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
 const Country = require("../models/Country");
 const providerApi = require("../utils/providerApi");
+const { isProviderWebhookEnabled } = require("../public/js/provider-mode");
 const { calculateUserPrice, parseDiscounts } = require("../utils/pricing");
 const { nanoid } = require("nanoid");
 const { withTransaction } = require("../utils/db");
@@ -249,7 +250,7 @@ router.all("/", async (req, res) => {
         };
         if (order.status !== "active") return res.send(getPublicStatus(order));
         const statusServer = await Server.findOne({ name: order.server_name });
-        if (statusServer?.otp_webhook_enabled === true) return res.send(getPublicStatus(order));
+        if (isProviderWebhookEnabled(statusServer)) return res.send(getPublicStatus(order));
         const interval = Math.max(3000, Number(order.check_interval || 3) * 1000);
         const nextCheckAt = order.next_check_at ? new Date(order.next_check_at) :
           (order.last_check_at ? new Date(new Date(order.last_check_at).getTime() + interval) : null);

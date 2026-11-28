@@ -1,4 +1,5 @@
 // Read-only lookup: no provider calls, order mutations, or wallet adjustments.
+const { isProviderWebhookEnabled } = require("../public/js/provider-mode");
 async function diagnoseProviderWebhook({ Server, Order, Transaction, Service, dbType }, serverId, suppliedIds) {
   const server = await Server.findById(serverId);
   if (!server) return { error: "SERVER_NOT_FOUND" };
@@ -31,7 +32,7 @@ async function diagnoseProviderWebhook({ Server, Order, Transaction, Service, db
           ? "POSSIBLE_SERVER_RENAME" : "CHECK_MATCH_FIELDS_SERVER_AND_STATUS" });
   }
   return { server: { id: String(server._id || server.id), name: server.name,
-    active: Boolean(server.is_active), webhook_enabled: Boolean(server.otp_webhook_enabled) }, results };
+    active: Boolean(server.is_active), webhook_enabled: isProviderWebhookEnabled(server) }, results };
 }
 
 function diagnoseProviderLog(text, ids) {

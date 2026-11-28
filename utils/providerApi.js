@@ -3,6 +3,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { isProviderWebhookEnabled } = require("../public/js/provider-mode");
 
 // Ensure data directory exists
 const DATA_DIR = path.join(__dirname, '..', 'onlinesim');
@@ -222,7 +223,7 @@ async function getNumber(server, serviceCode, countryCode, { onProgress } = {}) 
 async function checkStatus(server, api_order_id) {
   // Defense in depth: webhook servers never call Check Status URL, even if a
   // caller bypasses the background order synchronizer.
-  if (server.otp_webhook_enabled === true) return { status: "waiting", webhook_only: true };
+  if (isProviderWebhookEnabled(server)) return { status: "waiting", webhook_only: true };
   if (!server.api_check_status_url) return { error: "Server missing API Check url" };
   let backoffUntil = getProviderBackoff(server);
   if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };

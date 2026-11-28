@@ -520,14 +520,14 @@ test("API status responds from storage while a due background check saves the ne
   assert.equal(f.tables.users[0].balance, 10);
 });
 
-test("API getStatus in webhook mode reads stored OTPs without initiating synchronization", async () => {
+for (const enabled of [true, 1, "1", "true"]) test(`API getStatus in webhook mode (${String(enabled)} / ${typeof enabled}) reads stored OTPs without initiating synchronization`, async () => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";
   const order = await f.models.Order.create({ _id: "webhook-api", order_id: "webhook-api", user_id: "u1", status: "active",
     otp: "", all_otps: [], external_order_id: "external-webhook", server_name: "s", next_check_at: new Date(0) });
   let syncCalls = 0;
   const routes = routesFixture(f, async () => ({}), undefined, undefined, undefined, async current => { syncCalls++; return current; });
-  routes.server.otp_webhook_enabled = true;
+  routes.server.otp_webhook_enabled = enabled;
   const request = { method: "GET", query: { api_key: "test-key", action: "getStatus", id: order.external_order_id } };
   const waiting = response();
   await routes.gateway(request, waiting);
@@ -540,10 +540,10 @@ test("API getStatus in webhook mode reads stored OTPs without initiating synchro
   assert.equal(syncCalls, 0);
 });
 
-test("provider checkStatus never requests Check Status URL in webhook mode", async () => {
+for (const enabled of [true, 1, "1", "true"]) test(`provider checkStatus never requests Check Status URL in webhook mode (${String(enabled)} / ${typeof enabled})`, async () => {
   let calls = 0;
   const provider = moduleFrom("utils/providerApi.js", {}, { fetch: async () => { calls++; throw new Error("Unexpected status polling"); } });
-  const result = await provider.checkStatus({ otp_webhook_enabled: true, api_check_status_url: "https://provider.example/status" }, "id");
+  const result = await provider.checkStatus({ otp_webhook_enabled: enabled, api_check_status_url: "https://provider.example/status" }, "id");
   assert.equal(result.webhook_only, true);
   assert.equal(calls, 0);
 });

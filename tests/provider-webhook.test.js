@@ -13,7 +13,7 @@ function load(file, dependencies, extra = {}) {
   const module = { exports: {} };
   vm.runInNewContext(source(file), { module, exports: module.exports, Date,
     console: { info() {}, warn() {}, error() {} },
-    require: name => name in dependencies ? dependencies[name] : require(name),
+    require: name => name in dependencies ? dependencies[name] : name === "../public/js/provider-mode" ? require("../public/js/provider-mode") : require(name),
     ...extra,
   }, { filename: file });
   return module.exports;
@@ -147,6 +147,69 @@ test("valid credentials distinguish polling mode and a disabled server from inva
   result = await f.send({ order_id: order.external_order_id, otp: "001234" });
   assert.equal(result.body.code, "SERVER_DISABLED");
   assert.equal(order.otp, "");
+});
+
+test("provider callbacks accept explicit enabled representations and reject disabled strings", async t => {
+  const f = await fixture(t);
+  for (const enabled of [true, 1, "1", "true", " TRUE "]) {
+    f.serverConfig.otp_webhook_enabled = enabled;
+    const order = f.add();
+    assert.equal((await f.send({ external_order_id: order.external_order_id, otp: "001234" })).status, 200, String(enabled));
+    assert.equal(order.otp, "001234");
+  }
+  for (const disabled of [false, 0, "0", "false", " FALSE ", null, undefined, "", "unexpected", {}]) {
+    f.serverConfig.otp_webhook_enabled = disabled;
+    const order = f.add();
+    const result = await f.send({ external_order_id: order.external_order_id, otp: "001234" });
+    assert.equal(result.body.code, "WEBHOOK_DISABLED", String(disabled));
+    assert.equal(order.otp, "");
+  }
+});
+
+test("Servers page displays normalized modes, verifies save responses and retains failed edits", async () => {
+  const elements = new Map(), messages = [], saves = [];
+  const element = id => {
+    if (!elements.has(id)) elements.set(id, { value: "", checked: false, style: {}, classList: { remove() {} },
+      setAttribute() {}, getAttribute() {}, innerHTML: "", textContent: "" });
+    return elements.get(id);
+  };
+  let stored = { _id: "server-a", name: "Provider", country_id: "country-a", otp_webhook_enabled: "false" };
+  let persist = true, closes = 0;
+  const context = vm.createContext({
+    location: { origin: "https://example.test" },
+    document: { getElementById: element, querySelectorAll: () => [] },
+    requireAdmin: async () => false, openModal() {}, closeModal() { closes++; },
+    toast: (message, type) => messages.push({ message, type }),
+    API: {
+      get: async url => url.includes("countries") ? [{ _id: "country-a", name: "India" }] : [stored],
+      put: async (_url, body) => { saves.push(body); if (persist) stored = { ...stored, ...body }; return stored; },
+    },
+  });
+  context.window = context;
+  vm.runInContext(source("public/js/provider-mode.js"), context);
+  const html = source("views/admin/servers.html");
+  assert.ok(html.indexOf('/js/provider-mode.js?v=1') < html.indexOf('ProviderMode.isProviderWebhookEnabled'));
+  for (const script of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    if (!/src\s*=/.test(script[1])) vm.runInContext(script[2], context);
+  }
+  await vm.runInContext("loadData()", context);
+  context.openEdit("server-a");
+  assert.equal(element("srv-delivery-mode").value, "polling", '"false" does not display as enabled');
+  element("srv-delivery-mode").value = "webhook";
+  await context.saveServer();
+  assert.equal(saves[0].otp_webhook_enabled, true);
+  assert.equal(stored.otp_webhook_enabled, true);
+  await vm.runInContext("loadData()", context);
+  context.openEdit("server-a");
+  assert.equal(element("srv-delivery-mode").value, "webhook");
+  persist = false;
+  element("srv-delivery-mode").value = "polling";
+  const closedBefore = closes;
+  await context.saveServer();
+  assert.equal(closes, closedBefore);
+  assert.equal(messages.at(-1).type, "error");
+  assert.match(messages.at(-1).message, /mode was not saved/);
+  assert.equal(element("save-btn").disabled, false);
 });
 
 test("callbacks remain available during maintenance and after customer API throttling", async t => {
