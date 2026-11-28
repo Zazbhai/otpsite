@@ -8,7 +8,6 @@ const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
 const Country = require("../models/Country");
 const providerApi = require("../utils/providerApi");
-const { isProviderWebhookEnabled } = require("../public/js/provider-mode");
 const { calculateUserPrice, parseDiscounts } = require("../utils/pricing");
 const { nanoid } = require("nanoid");
 const { withTransaction } = require("../utils/db");
@@ -262,24 +261,8 @@ router.all("/", async (req, res) => {
           return "STATUS_WAIT_CODE";
         };
         if (order.status !== "active") return res.send(getPublicStatus(order));
-        let statusServer = null;
-        if (order.server_id && typeof Server.findById === "function") {
-          try { statusServer = await Server.findById(order.server_id); } catch (_) {}
-        }
-        if (!statusServer) statusServer = await Server.findOne({ name: order.server_name });
-        if (isProviderWebhookEnabled(statusServer)) return res.send(getPublicStatus(order));
-        const interval = Math.max(3000, Number(order.check_interval || 3) * 1000);
-        const nextCheckAt = order.next_check_at ? new Date(order.next_check_at) :
-          (order.last_check_at ? new Date(new Date(order.last_check_at).getTime() + interval) : null);
-        if (nextCheckAt && Date.now() < nextCheckAt.getTime() &&
-            (!order.expires_at || Date.now() < new Date(order.expires_at).getTime())) {
-          return res.send(getPublicStatus(order));
-        }
-        const { syncOrder } = require("../utils/orderStatusManager");
-        // The watcher remains authoritative. A client status read may wake a
-        // due check, but never waits on an upstream request or its retry loop.
-        Promise.resolve().then(() => syncOrder(order))
-          .catch(error => console.error("[API background status]", error.code || error.message));
+        // Status reads only return persisted state. The central watcher owns
+        // all provider polling so client traffic cannot compete for poll slots.
         return res.send(getPublicStatus(order));
       }
 

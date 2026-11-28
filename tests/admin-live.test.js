@@ -178,6 +178,14 @@ function adminRouter(dbType, overrides = {}) {
       ? ({ key: "all", date: null, start: null, end: null, timezone: "Asia/Calcutta", label: "All time" })
       : ({ key: "today", date: "2026-11-23", start: new Date(0), end: new Date(86400000), timezone: "Asia/Calcutta", label: "Today" }) };
     if (name === "../utils/adminRealtime") return { streamAdminChanges: (req, res) => res.json({ streamed: true }) };
+    if (name === "../utils/orderRescheduler") return { rescheduleActiveOrdersForServer: async server => {
+      const alternatives = [{ server_id: String(server.id || server._id) }, { server_name: server.name }];
+      if (dbType === "mysql") {
+        const { Op } = require("sequelize");
+        return models.Order.update({ next_check_at: new Date() }, { where: { status: "active", [Op.or]: alternatives } });
+      }
+      return models.Order.updateMany({ status: "active", $or: alternatives }, { $set: { next_check_at: new Date() } });
+    } };
     if (name.startsWith("../utils/")) return {};
     return require(name);
   };
@@ -266,8 +274,8 @@ for (const dbType of ["mysql", "mongodb"]) {
     let enabled = true;
     const { router } = adminRouter(dbType, {
       Server: {
-        findById: async () => ({ name: "Provider", otp_webhook_enabled: enabled, otp_webhook_secret: "preserved-secret" }),
-        findByIdAndUpdate: async (_id, fields) => { enabled = fields.otp_webhook_enabled; return { name: "Provider", ...fields }; },
+        findById: async () => ({ _id: "s1", id: "s1", name: "Provider", otp_webhook_enabled: enabled, otp_webhook_secret: "preserved-secret" }),
+        findByIdAndUpdate: async (_id, fields) => { enabled = fields.otp_webhook_enabled; return { _id: "s1", id: "s1", name: "Provider", ...fields }; },
       },
       Order: { update: async (...args) => updates.push(args), updateMany: async (...args) => updates.push(args) },
     });
@@ -279,8 +287,9 @@ for (const dbType of ["mysql", "mongodb"]) {
     assert.equal(result.otp_webhook_secret, "preserved-secret");
     assert.equal(updates.length, 1);
     const filter = dbType === "mysql" ? updates[0][1].where : updates[0][0];
-    assert.equal(filter.server_name, "Provider");
     assert.equal(filter.status, "active");
+    const alternatives = dbType === "mysql" ? filter[require("sequelize").Op.or] : filter.$or;
+    assert.deepEqual(alternatives, [{ server_id: "s1" }, { server_name: "Provider" }]);
     await handler({ params: { id: "s1" }, body: { country_id: "country", otp_webhook_enabled: false } }, response);
     assert.equal(updates.length, 1);
   });

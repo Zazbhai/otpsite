@@ -1023,15 +1023,6 @@ async function processAutoAddServices(server, body, notificationContext = {}) {
 
 router.get("/servers", async (_, res) => res.json(await Server.find().sort({ name: 1 }).populate("country_id")));
 
-async function rescheduleServerOrders(serverName) {
-  const now = new Date();
-  if (DB_TYPE === "mysql") {
-    await Order.update({ next_check_at: now }, { where: { server_name: serverName, status: "active" } });
-  } else {
-    await Order.updateMany({ server_name: serverName, status: "active" }, { $set: { next_check_at: now } });
-  }
-}
-
 router.post("/servers", async (req, res) => {
   try {
     if (req.body.country_id === "0" || !req.body.country_id) {
@@ -1075,7 +1066,9 @@ router.put("/servers/:id", async (req, res) => {
     if (!persisted || isProviderWebhookEnabled(persisted) !== serverFields.otp_webhook_enabled) {
       throw new Error("OTP delivery mode was not saved. Reload the server and try again.");
     }
-    if (webhookWasEnabled !== serverFields.otp_webhook_enabled) await rescheduleServerOrders(server.name);
+    if (webhookWasEnabled !== serverFields.otp_webhook_enabled) {
+      await require("../utils/orderRescheduler").rescheduleActiveOrdersForServer(server);
+    }
     
     if (req.body.auto_add_services) {
       await processAutoAddServices(server, req.body, serviceAlertContext(req, server));

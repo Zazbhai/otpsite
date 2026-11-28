@@ -526,7 +526,7 @@ test("watcher completes an active order when the provider repeats an OTP already
   assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 0);
 });
 
-test("API status responds from storage while a due background check saves the next OTP", async () => {
+test("API getStatus only reads saved OTP state and leaves polling to the watcher", async () => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";
   await f.models.Order.create({ _id: "api-poll", order_id: "api-poll", user_id: "u1", status: "active",
@@ -541,12 +541,8 @@ test("API status responds from storage while a due background check saves the ne
   await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "api-poll" } }, result);
   assert.equal(result.body, "STATUS_WAIT_CODE");
   await new Promise(setImmediate);
-  const fresh = response();
-  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "api-poll" } }, fresh);
-  assert.equal(fresh.body, "STATUS_OK:000123");
-  assert.equal(f.tables.orders[0].status, "completed");
-  assert.equal(f.tables.orders[0].otp, "000123");
-  assert.deepEqual(f.tables.orders[0].all_otps, ["000123"]);
+  assert.equal(f.tables.orders[0].status, "active");
+  assert.equal(f.tables.orders[0].otp, "");
   assert.equal(f.tables.users[0].balance, 10);
 });
 
@@ -578,7 +574,7 @@ for (const enabled of [true, 1, "1", "true"]) test(`provider checkStatus never r
   assert.equal(calls, 0);
 });
 
-test("API getStatus honors the order interval and syncs only after its scheduled time", async () => {
+test("API getStatus remains a read-only response regardless of the poll schedule", async () => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";
   const order = await f.models.Order.create({ _id: "paced-api", order_id: "paced-api", user_id: "u1", status: "active",
@@ -594,10 +590,10 @@ test("API getStatus honors the order interval and syncs only after its scheduled
   const due = response();
   await routes.gateway(req, due);
   assert.equal(due.body, "STATUS_WAIT_CODE");
-  assert.equal(syncCalls, 1);
+  assert.equal(syncCalls, 0);
 });
 
-test("a pending provider status request never holds the client getStatus response", { timeout: 1000 }, async t => {
+test("getStatus never initiates or waits for provider polling", { timeout: 1000 }, async t => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";
   await f.models.Order.create({ _id: "slow-status", order_id: "slow-status", user_id: "u1", status: "active",
@@ -609,7 +605,7 @@ test("a pending provider status request never holds the client getStatus respons
   const result = response();
   await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "slow-status" } }, result);
   assert.equal(result.body, "STATUS_WAIT_CODE");
-  assert.equal(calls, 1);
+  assert.equal(calls, 0);
 });
 
 test("a failed allocation reverses the debit before responding without waiting for slow provider cleanup", { timeout: 1000 }, async t => {
@@ -1450,7 +1446,7 @@ test("webhook expiry never checks status and refunds only after confirmed cancel
   assert.equal(f.tables.users[0].balance, 10);
 });
 
-test("watcher and API-triggered status checks share a concurrency cap and skipped orders stay due", { timeout: 3000 }, async t => {
+test("watcher polls stay bounded and API status reads do not consume polling capacity", { timeout: 3000 }, async t => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";
   const orders = [];
@@ -1551,6 +1547,35 @@ test("background recovery does not block due-order polling", async () => {
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(syncStarted, true);
   releaseRecovery();
+});
+
+test("switching delivery mode reschedules active orders by stable server ID and legacy name", async () => {
+  const calls = [];
+  const rescheduler = moduleFrom("utils/orderRescheduler.js", {
+    "../models/Order": { updateMany: async (...args) => { calls.push(args); return { modifiedCount: 1 }; } },
+    "./db": { DB_TYPE: "mongodb" },
+  });
+  const result = await rescheduler.rescheduleActiveOrdersForServer({ _id: "stable-id", name: "Current name" });
+  assert.equal(result.modifiedCount, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0][0])), { status: "active", $or: [
+    { server_id: "stable-id" }, { server_name: "Current name" },
+  ] });
+  assert.ok(calls[0][1].$set.next_check_at instanceof Date);
+});
+
+test("MySQL delivery-mode changes reschedule by server ID and legacy name", async () => {
+  const calls = [];
+  const rescheduler = moduleFrom("utils/orderRescheduler.js", {
+    "../models/Order": { update: async (...args) => { calls.push(args); return [2]; } },
+    "./db": { DB_TYPE: "mysql" },
+  });
+  const result = await rescheduler.rescheduleActiveOrdersForServer({ id: 7, name: "Current name" });
+  assert.deepEqual(result, [2]);
+  assert.equal(calls[0][1].where.status, "active");
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0][1].where[Op.or])), [
+    { server_id: "7" }, { server_name: "Current name" },
+  ]);
+  assert.ok(calls[0][0].next_check_at instanceof Date);
 });
 
 test("MySQL due-order query selects the primary key required to sync an order", async () => {

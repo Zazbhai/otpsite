@@ -681,12 +681,6 @@ router.get("/orders/:id", async (req, res) => {
 
     const serverConf = await Server.findOne({ name: order.server_name }).populate('country_id', 'name');
     
-    // Trigger background sync if active (non-blocking)
-    if (order.status === "active" && order.external_order_id) {
-      const { syncOrder } = require("../utils/orderStatusManager");
-      syncOrder(order).catch(err => console.error("BG Sync error:", err.message));
-    }
-
     if (!order) return res.status(404).json({ error: "Order not found" });
     const finalOrder = typeof order.toObject === 'function' ? order.toObject() : typeof order.toJSON === 'function' ? order.toJSON() : { ...order };
     finalOrder.server_country = serverConf?.country_id?.name || order.country;
