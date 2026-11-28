@@ -12,6 +12,16 @@ const { money } = require("./money");
 const hasOtp = order => wallet.hasOtp(order);
 const digits = value => String(value || "").replace(/\D/g, "");
 
+async function serverForOrder(order) {
+  if (order?.server_id && typeof Server.findById === "function") {
+    try {
+      const server = await Server.findById(order.server_id);
+      if (server) return server;
+    } catch (_) {}
+  }
+  return Server.findOne({ name: order?.server_name });
+}
+
 async function cancelCompletedOrderForRebuy({ orderId, userId }) {
   let order = await Order.findOne({ order_id: String(orderId), user_id: String(userId) });
   if (!order) throw new Error("ORDER_NOT_FOUND");
@@ -25,8 +35,8 @@ async function cancelCompletedOrderForRebuy({ orderId, userId }) {
     if (!order || order.status !== "completed" || !hasOtp(order) || order.rebuy_cancelled || order.rebuy_order_id) {
       throw new Error("ORDER_NOT_CANCELLABLE_FOR_REBUY");
     }
-    const server = await Server.findOne({ name: order.server_name });
-    if (!server?.is_active || !server.api_cancel_url || !server.api_rebuy_url || !order.external_order_id) {
+    const server = await serverForOrder(order);
+    if (!server?.is_active || !server.api_cancel_url || !server.api_rebuy_url || !providerOrderId(order)) {
       throw new Error("REBUY_CANCEL_NOT_CONFIGURED");
     }
     const result = await providerApi.cancelOrder(server, providerOrderId(order), { requireConfirmation: true, allowMissing: true });
@@ -68,8 +78,8 @@ async function rebuyCancelledOrder({ orderId, userId }) {
       throw new Error("ORIGINAL_REFUND_UNVERIFIED");
     }
 
-    const server = await Server.findOne({ name: original.server_name });
-    if (!server?.is_active || !server.api_rebuy_url || !original.external_order_id || !digits(original.phone)) throw new Error("REBUY_NOT_CONFIGURED");
+    const server = await serverForOrder(original);
+    if (!server?.is_active || !server.api_rebuy_url || !providerOrderId(original) || !digits(original.phone)) throw new Error("REBUY_NOT_CONFIGURED");
     const service = original.service_id ? await Service.findById(original.service_id) : null;
     const rebuyOrderId = "ORD-" + nanoid(16).toUpperCase();
     const amount = money(original.cost);

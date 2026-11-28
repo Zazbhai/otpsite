@@ -92,12 +92,13 @@ function logToProviderFile(msg) {
 
 function buildUrl(urlTemplate, { api_key, service, country, order_id, external_order_id, phone }) {
   let url = urlTemplate || "";
-  if (api_key) url = url.replace(/\{api_key\}|\$api_key/g, api_key);
-  if (service) url = url.replace(/\{service\}|\$service/g, service);
-  if (country) url = url.replace(/\{country\}|\$country/g, country);
-  if (order_id) url = url.replace(/\{order_id\}|\$order_id|\{id\}|\$id/g, order_id);
-  if (external_order_id) url = url.replace(/\{external_order_id\}|\$external_order_id/g, external_order_id);
-  if (phone) url = url.replace(/\{phone\}|\$phone|\{number\}|\$number/g, phone);
+  const replace = (pattern, value) => { if (value !== undefined && value !== null && value !== "") url = url.replace(pattern, encodeURIComponent(String(value))); };
+  replace(/\{api_key\}|\$api_key/g, api_key);
+  replace(/\{service\}|\$service/g, service);
+  replace(/\{country\}|\$country/g, country);
+  replace(/\{order_id\}|\$order_id|\{id\}|\$id/g, order_id);
+  replace(/\{external_order_id\}|\$external_order_id/g, external_order_id);
+  replace(/\{phone\}|\$phone|\{number\}|\$number/g, phone);
   return url;
 }
 
@@ -315,22 +316,28 @@ async function cancelOrder(server, api_order_id, { requireConfirmation = false, 
   
   const response = await callProvider(url, server);
   logToProviderFile(`cancelOrder | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
-  const text = response.data.text || "";
+  const text = String(response.data.text || "").trim();
+  const normalizedText = text.toUpperCase();
 
   if (!response.ok) return { success: false, error: "Provider cancellation failed" };
 
-  if (["ACCESS_CANCEL", "ACCESS_ACTIVATION_CANCELED", "ACCESS_CANCEL_ALREADY", "STATUS_CANCEL"].includes(text) ||
-      (allowMissing && text === "NO_ACTIVATION")) {
+  if (["ACCESS_CANCEL", "ACCESS_ACTIVATION_CANCELED", "ACCESS_CANCEL_ALREADY", "STATUS_CANCEL", "STATUS_CANCELLED", "STATUS_CANCELED"].includes(normalizedText) ||
+      (allowMissing && normalizedText === "NO_ACTIVATION")) {
      return { success: true };
   }
 
-  if (text === "STATUS_OK" || text.startsWith("STATUS_OK:") || text === "NO_ACTIVATION") {
-     return { success: false, otp: text.startsWith("STATUS_OK:") ? text.slice("STATUS_OK:".length).trim() : null,
+  if (normalizedText === "STATUS_OK" || normalizedText.startsWith("STATUS_OK:") || normalizedText === "NO_ACTIVATION") {
+     return { success: false, otp: normalizedText.startsWith("STATUS_OK:") ? text.slice("STATUS_OK:".length).trim() : null,
        error: "Cannot confirm cancellation" };
   }
 
-  const confirmed = response.data.success === true || response.data.status === "CANCELLED" ||
-    response.data.status === "CANCELED";
+  const body = response.data || {};
+  const nested = body.data && typeof body.data === "object" ? body.data : {};
+  const successValue = body.success ?? nested.success;
+  const statusValue = String(body.status ?? body.state ?? nested.status ?? nested.state ?? "").trim().toUpperCase();
+  const confirmed = successValue === true || String(successValue).toLowerCase() === "true" ||
+    body.status === true || nested.status === true ||
+    ["CANCELLED", "CANCELED", "ACCESS_CANCEL", "ACCESS_ACTIVATION_CANCELED", "ACCESS_CANCEL_ALREADY", "STATUS_CANCEL", "STATUS_CANCELLED", "STATUS_CANCELED"].includes(statusValue);
   return { success: requireConfirmation ? confirmed : response.ok, details: response.data };
 }
 

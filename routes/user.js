@@ -29,6 +29,16 @@ const { DB_TYPE } = require("../utils/db");
 const { parseWebhookUrl, buildSmsPayload, deliverWebhook } = require("../utils/customerWebhook");
 const { rebuyCancelledOrder, cancelCompletedOrderForRebuy } = require("../utils/rebuy");
 
+async function serverForOrder(order) {
+  if (order?.server_id && typeof Server.findById === "function") {
+    try {
+      const server = await Server.findById(order.server_id);
+      if (server) return server;
+    } catch (_) {}
+  }
+  return Server.findOne({ name: order?.server_name });
+}
+
 // --- CACHE SYSTEM ---
 const { getFromCache, setToCache } = require("../utils/apiCache");
 const { calculateUserPrice, parseDiscounts } = require("../utils/pricing");
@@ -679,7 +689,8 @@ router.get("/orders/:id", async (req, res) => {
     const order = await Order.findOne({ order_id: req.params.id, user_id: req.userId });
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    const serverConf = await Server.findOne({ name: order.server_name }).populate('country_id', 'name');
+    const serverConf = await serverForOrder(order);
+    if (serverConf?.populate) await serverConf.populate('country_id', 'name');
     
     if (!order) return res.status(404).json({ error: "Order not found" });
     const finalOrder = typeof order.toObject === 'function' ? order.toObject() : typeof order.toJSON === 'function' ? order.toJSON() : { ...order };
@@ -777,8 +788,8 @@ router.post("/orders/:id/cancel", async (req, res) => {
 
       // ── Step 3: Atomically claim the refund slot ──────────────────
       // Complete provider cancellation before exposing a refunded activation to rebuy.
-      const serverConf = await Server.findOne({ name: order.server_name });
-      if (!serverConf?.api_cancel_url || !order.external_order_id) throw new Error("PROVIDER_CANCEL_FAILED");
+      const serverConf = await serverForOrder(order);
+      if (!serverConf?.api_cancel_url || !providerOrderId(order)) throw new Error("PROVIDER_CANCEL_FAILED");
       if (serverConf?.api_cancel_url && providerOrderId(order)) {
         const cancelled = await providerApi.cancelOrder(serverConf, providerOrderId(order), { requireConfirmation: true, allowMissing: true });
         if (cancelled?.otp) {
@@ -826,8 +837,8 @@ router.post("/orders/:id/retry", async (req, res) => {
     }
 
     // Request Next SMS from provider
-    if (order.external_order_id) {
-      const serverConf = await Server.findOne({ name: order.server_name });
+    if (providerOrderId(order)) {
+      const serverConf = await serverForOrder(order);
       if (serverConf) {
         const retryRes = await providerApi.retryOrder(serverConf, providerOrderId(order));
         if (retryRes.error) return res.status(400).json({ error: "Number Not Available" });
@@ -839,8 +850,8 @@ router.post("/orders/:id/retry", async (req, res) => {
     order.otp = null; // clear current OTP from display
     // Use server's auto_cancel_minutes or default to 20
     let addMinutes = 20;
-    if (order.external_order_id) {
-      const serverConf = await Server.findOne({ name: order.server_name });
+    if (providerOrderId(order)) {
+      const serverConf = await serverForOrder(order);
       if (serverConf && serverConf.auto_cancel_minutes) {
         addMinutes = serverConf.auto_cancel_minutes;
       }

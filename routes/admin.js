@@ -497,7 +497,11 @@ router.patch("/orders/:id", async (req, res) => {
       const candidate = await Order.findOne({ order_id: req.params.id });
       if (!candidate) return res.status(404).json({ error: "Order not found" });
       if (candidate.status === "active" && !wallet.hasOtp(candidate)) {
-        const providerServer = await Server.findOne({ name: candidate.server_name });
+        let providerServer = null;
+        if (candidate.server_id && typeof Server.findById === "function") {
+          try { providerServer = await Server.findById(candidate.server_id); } catch (_) {}
+        }
+        if (!providerServer) providerServer = await Server.findOne({ name: candidate.server_name });
         if (!providerServer?.api_cancel_url || !providerOrderId(candidate)) {
           return res.status(409).json({ error: "Configure the provider cancellation endpoint before refunding this order." });
         }

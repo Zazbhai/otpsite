@@ -1139,6 +1139,37 @@ test("website and API cancellation endpoints scope completed-OTP cancellation to
   assert.equal(failure.body.can_rebuy, undefined);
 });
 
+test("provider cancellation sends the encoded provider activation ID to the configured cancel URL", async () => {
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  let requestedUrl = "";
+  try {
+    global.fetch = async url => {
+      requestedUrl = String(url);
+      return { status: 200, ok: true, text: async () => "ACCESS_CANCEL" };
+    };
+    const result = await provider.cancelOrder({
+      api_key: "key +/", api_cancel_url: "https://provider.example/api?api_key=$api_key&action=setStatus&status=8&id=$id",
+    }, "provider id/1", { requireConfirmation: true });
+    assert.equal(result.success, true);
+    assert.match(requestedUrl, /api_key=key%20%2B%2F/);
+    assert.match(requestedUrl, /status=8/);
+    assert.match(requestedUrl, /id=provider%20id%2F1/);
+  } finally { global.fetch = originalFetch; }
+});
+
+test("provider cancellation accepts explicit nested JSON confirmation and rejects vague success HTTP", async () => {
+  const provider = require("../utils/providerApi");
+  const originalFetch = global.fetch;
+  try {
+    const server = { api_cancel_url: "https://provider.example/cancel?id=$id" };
+    global.fetch = async () => ({ status: 200, ok: true, text: async () => JSON.stringify({ data: { status: "CANCELED" } }) });
+    assert.equal((await provider.cancelOrder(server, "id", { requireConfirmation: true })).success, true);
+    global.fetch = async () => ({ status: 200, ok: true, text: async () => "UNKNOWN" });
+    assert.equal((await provider.cancelOrder(server, "id", { requireConfirmation: true })).success, false);
+  } finally { global.fetch = originalFetch; }
+});
+
 test("fresh database SQL defines each table column once", () => {
   for (const table of source("database.sql").matchAll(/CREATE TABLE IF NOT EXISTS `([^`]+)` \(([\s\S]*?)\n\)/g)) {
     const names = [...table[2].matchAll(/^\s*`([^`]+)`\s+/gm)].map(match => match[1]);

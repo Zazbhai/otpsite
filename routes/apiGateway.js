@@ -18,6 +18,16 @@ const { rebuyCancelledOrder, cancelCompletedOrderForRebuy } = require("../utils/
 const { providerOrderId } = require("../utils/providerOrderId");
 const { retryForOrder } = require("../utils/providerWebhookQueue");
 
+async function serverForOrder(order) {
+  if (order?.server_id && typeof Server.findById === "function") {
+    try {
+      const server = await Server.findById(order.server_id);
+      if (server) return server;
+    } catch (_) {}
+  }
+  return Server.findOne({ name: order?.server_name });
+}
+
 // Both allocation actions use the same legacy SMS API success response.
 function numberResponse(order) {
   return `ACCESS_NUMBER:${order.provider_order_id || order.external_order_id || order.order_id}:${String(order.phone).replace(/\D/g, "")}`;
@@ -353,9 +363,9 @@ router.all("/", async (req, res) => {
                  return res.send(`BAD_STATUS`);
               }
 
-              const serverConf = await Server.findOne({ name: order.server_name });
-              if (!serverConf?.api_cancel_url || !order.external_order_id) return res.send("BAD_STATUS");
-              if (serverConf?.api_cancel_url && order.external_order_id) {
+              const serverConf = await serverForOrder(order);
+              if (!serverConf?.api_cancel_url || !providerOrderId(order)) return res.send("BAD_STATUS");
+              if (serverConf?.api_cancel_url && providerOrderId(order)) {
                 const cancelled = await providerApi.cancelOrder(serverConf, providerOrderId(order), { requireConfirmation: true, allowMissing: true });
                 if (cancelled?.otp) {
                   await recordOrderSms(order, cancelled.otp, { complete: true });
@@ -393,8 +403,8 @@ router.all("/", async (req, res) => {
            order.expires_at = new Date(Date.now() + 20 * 60 * 1000);
            
            // Call provider retry
-           const serverConf = await Server.findOne({ name: order.server_name });
-           if (serverConf && order.external_order_id) {
+           const serverConf = await serverForOrder(order);
+           if (serverConf && providerOrderId(order)) {
              const result = await providerApi.retryOrder(serverConf, providerOrderId(order));
              if (result.error) return res.send("NO_NUMBERS");
            }
