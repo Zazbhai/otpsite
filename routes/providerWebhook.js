@@ -118,7 +118,10 @@ router.post("/:server", async (req, res) => {
     }
     if (!order) {
       await saveUnmatchedCallback(server, externalId || localId, message, body);
-      return res.status(202).json({ received: true, queued: true, order_id: externalId || localId });
+      // The callback is durable at this point. A 200 prevents providers from
+      // retrying the same delivery while the queue matcher waits for the order
+      // mapping to be committed.
+      return res.json({ received: true, queued: true, order_id: externalId || localId });
     }
     if (order.status !== "active") {
       if (order.otp !== message && !order.all_otps?.includes(message)) {

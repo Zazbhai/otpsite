@@ -183,7 +183,7 @@ test("callback before order mapping is durably queued and delivered when mapping
   const f = await fixture(t);
   const payload = { external_order_id: "stable-client-order", otp: "001234" };
   const accepted = await f.send(payload);
-  assert.equal(accepted.status, 202);
+  assert.equal(accepted.status, 200);
   assert.equal(accepted.body.queued, true);
   assert.equal(f.callbacks.length, 1);
   assert.equal(f.callbacks[0].state, "pending");
@@ -302,7 +302,7 @@ test("foreign, ambiguous, mismatched and refunded orders are never updated", asy
   const f = await fixture(t);
   // Reused provider names must not allow an order from another server to match.
   const foreign = f.add({ server_id: "other-server", server_name: "Provider A" });
-  assert.equal((await f.send({ orderId: foreign.external_order_id, otp: "001234" })).status, 202);
+  assert.equal((await f.send({ orderId: foreign.external_order_id, otp: "001234" })).status, 200);
   assert.equal(f.callbacks.length, 1);
   const first = f.add(), second = f.add({ external_order_id: first.external_order_id });
   assert.equal((await f.send({ orderId: first.external_order_id, otp: "001234" })).status, 409);
