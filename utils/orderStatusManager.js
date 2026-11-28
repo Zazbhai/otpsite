@@ -15,6 +15,7 @@ function announce(order) {
 async function syncOrder(orderIdOrDoc) {
   const id = String(orderIdOrDoc?._id || orderIdOrDoc?.id || orderIdOrDoc);
   if (!acquireLock(id)) return null;
+  let leaseTimer, renewingLease, ownedLease, nextRunAt;
   try {
     // Supplied watcher/route documents may predate a concurrent cancellation.
     let order = await Order.findById(id);
@@ -40,16 +41,31 @@ async function syncOrder(orderIdOrDoc) {
     }, { $set: { next_check_at: leaseUntil } }, { new: true });
     if (!claimed) return Order.findById(id);
     order = claimed;
+    // Long provider calls retain their database lease across worker processes.
+    // Only extend the lease we own; a mode change can invalidate it safely.
+    ownedLease = leaseUntil;
+    leaseTimer = setInterval(() => {
+      if (renewingLease) return;
+      const renewedUntil = new Date(Date.now() + Math.max(interval, 70000));
+      renewingLease = Order.findOneAndUpdate({ _id: id, status: "active", next_check_at: ownedLease }, {
+        $set: { next_check_at: renewedUntil },
+      }, { new: true }).then(updated => {
+        if (updated) ownedLease = renewedUntil;
+        else clearInterval(leaseTimer);
+      }).catch(error => console.error("[Order lease]", error.message))
+        .finally(() => { renewingLease = null; });
+    }, 20000);
+    leaseTimer.unref?.();
     const server = await Server.findOne({ name: order.server_name });
-    if (server?.otp_webhook_secret && !expired) {
-      const fallbackAt = new Date(now.getTime() + 60000);
-      const expiresAt = order.expires_at ? new Date(order.expires_at) : fallbackAt;
-      order = await Order.findOneAndUpdate({ _id: id, status: "active" }, {
-        $set: { next_check_at: expiresAt < fallbackAt ? expiresAt : fallbackAt },
-      }, { new: true });
-      return order || Order.findById(id);
+    const webhookOnly = server?.otp_webhook_enabled === true;
+    if (webhookOnly && !expired) {
+      nextRunAt = order.expires_at ? new Date(order.expires_at) : new Date("9999-12-31T23:59:59.000Z");
+      return order;
     }
-    if (order.external_order_id && server?.api_check_status_url) {
+    if (webhookOnly) {
+      response = { status: "expired" };
+      nextRunAt = new Date(now.getTime() + interval);
+    } else if (order.external_order_id && server?.api_check_status_url) {
       response = await providerApi.checkStatus(server, order.external_order_id);
       if (!response.error && response.otp?.trim()) {
         const saved = await recordOrderSms(order, response.otp, {
@@ -62,16 +78,18 @@ async function syncOrder(orderIdOrDoc) {
       // Only bookkeeping fields are updated. Never save a pre-network document.
       const checkedAt = new Date();
       const scheduledAt = response.retry_at ? new Date(response.retry_at) : new Date(checkedAt.getTime() + interval);
+      nextRunAt = scheduledAt;
       order = await Order.findOneAndUpdate({ _id: id, status: "active" }, {
-        $set: { last_check_at: checkedAt, next_check_at: scheduledAt, ...(response.status === "waiting" ? { verification_count: 0 } : {}) },
+        $set: { last_check_at: checkedAt, ...(response.status === "waiting" ? { verification_count: 0 } : {}) },
         ...(!response.error && response.status !== "waiting" && !response.otp?.trim()
           ? { $inc: { verification_count: 1 } } : {}),
       }, { new: true });
       if (!order) return Order.findById(id);
     } else {
       const checkedAt = new Date();
+      nextRunAt = new Date(checkedAt.getTime() + interval);
       order = await Order.findOneAndUpdate({ _id: id, status: "active" }, {
-        $set: { last_check_at: checkedAt, next_check_at: new Date(checkedAt.getTime() + interval) },
+        $set: { last_check_at: checkedAt },
       }, { new: true });
       if (!order) return Order.findById(id);
     }
@@ -110,7 +128,19 @@ async function syncOrder(orderIdOrDoc) {
       return result.order;
     }
     return order;
-  } finally { releaseLock(id); }
+  } finally {
+    clearInterval(leaseTimer);
+    try {
+      if (renewingLease) await renewingLease;
+      // Keep the lease through slow cancellation calls too. Publish the next
+      // check only once processing finishes, without overwriting a mode switch.
+      if (ownedLease && nextRunAt) await Order.findOneAndUpdate({
+        _id: id, status: "active", next_check_at: ownedLease,
+      }, { $set: { next_check_at: nextRunAt } }, { new: true });
+    } finally {
+      releaseLock(id);
+    }
+  }
 }
 
 module.exports = { syncOrder };

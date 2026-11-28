@@ -10,6 +10,8 @@ function startWatcher() {
 
   let isRunning = false;
   let lastRecoveryAt = 0;
+  const inFlight = new Set();
+  const CONCURRENCY = 10;
 
   // Wake frequently, but only load orders whose indexed check time has arrived.
   setInterval(async () => {
@@ -24,6 +26,8 @@ function startWatcher() {
       }
       const { Op } = require("sequelize");
       const { DB_TYPE } = require("./db");
+      const capacity = CONCURRENCY - inFlight.size;
+      if (capacity <= 0) return;
 
       // Optimization: Fetch ONLY active orders that are due for a check
       // This prevents loading thousands of orders into memory just to filter them
@@ -33,6 +37,7 @@ function startWatcher() {
           dueOrders = await Order.findAll({
               where: {
                   status: "active",
+                  id: { [Op.notIn]: [...inFlight] },
                   [Op.or]: [
                   { next_check_at: null },
                   { next_check_at: { [Op.lte]: now } }
@@ -41,18 +46,19 @@ function startWatcher() {
               // Project only fields needed for syncOrder to save memory
               attributes: ['id', 'order_id', 'user_id', 'status', 'external_order_id', 'server_name', 'check_interval', 'last_check_at', 'next_check_at', 'expires_at', 'min_cancel_at', 'cost', 'multi_otp_enabled', 'otp', 'all_otps', 'rebuy_ignored_otps', 'verification_count', 'refund_issued'],
               order: [['next_check_at', 'ASC'], ['id', 'ASC']],
-              limit: 100,
+              limit: capacity,
           });
       } else {
           // MongoDB logic
           dueOrders = await Order.find({
               status: "active",
+              _id: { $nin: [...inFlight] },
               $or: [
                   { next_check_at: { $exists: false } },
                   { next_check_at: null },
                   { next_check_at: { $lte: now } }
               ]
-          }).sort({ next_check_at: 1, _id: 1 }).limit(100);
+          }).sort({ next_check_at: 1, _id: 1 }).limit(capacity);
       }
 
       if (dueOrders.length === 0) {
@@ -62,11 +68,15 @@ function startWatcher() {
 
       console.log(`🕒 Order Monitor: Syncing ${dueOrders.length} due orders...`);
 
-      // Process up to 10 orders in parallel to speed up the loop without crashing the API
-      const CONCURRENCY = 10;
-      for (let i = 0; i < dueOrders.length; i += CONCURRENCY) {
-        const batch = dueOrders.slice(i, i + CONCURRENCY);
-        await Promise.allSettled(batch.map(order => syncOrder(order)));
+      // Let each request finish independently; one slow provider must not hold
+      // the next batch or stop purchase recovery on subsequent timer ticks.
+      for (const order of dueOrders) {
+        const id = String(order._id || order.id);
+        if (inFlight.has(id)) continue;
+        inFlight.add(id);
+        Promise.resolve().then(() => syncOrder(order))
+          .catch(err => console.error("[Order Monitor] Order sync failed:", err.message))
+          .finally(() => inFlight.delete(id));
       }
     } catch (err) {
       console.error("[Order Monitor] Global loop error:", err.message);

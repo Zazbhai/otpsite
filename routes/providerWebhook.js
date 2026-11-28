@@ -39,7 +39,7 @@ function value(body, keys) {
 router.post("/:server", async (req, res) => {
   try {
     const server = await findServer(req.params.server);
-    if (!server || !server.is_active || !server.otp_webhook_secret ||
+    if (!server || !server.is_active || server.otp_webhook_enabled !== true || !server.otp_webhook_secret ||
         !equalSecret(suppliedSecret(req), server.otp_webhook_secret)) {
       return res.status(401).json({ error: "Invalid webhook credentials" });
     }

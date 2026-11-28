@@ -92,7 +92,7 @@ function buildUrl(urlTemplate, { api_key, service, country, order_id, phone }) {
   return url;
 }
 
-async function callProvider(url, server, method = "GET", timeoutMs = 4000) {
+async function callProvider(url, server, method = "GET") {
   const options = {
     method,
     headers: {
@@ -106,17 +106,13 @@ async function callProvider(url, server, method = "GET", timeoutMs = 4000) {
 
   console.log(`\n[DEBUG] === CALLING 3RD PARTY PROVIDER ===\nMETHOD: ${method}\nURL: ${url}\nHEADERS:`, options.headers, `\n`);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
   // Prevent any Node 18+ fetch caching issues
   const sep = url.includes('?') ? '&' : '?';
   const noCacheUrl = `${url}${sep}_t=${Date.now()}`;
 
   try {
-    const res = await fetch(noCacheUrl, { ...options, cache: 'no-store', signal: controller.signal });
+    const res = await fetch(noCacheUrl, { ...options, cache: 'no-store' });
     const text = await res.text();
-    clearTimeout(timeoutId);
     let data;
     try {
       data = JSON.parse(text);
@@ -126,7 +122,6 @@ async function callProvider(url, server, method = "GET", timeoutMs = 4000) {
     }
     return { status: res.status, ok: res.ok, data };
   } catch (err) {
-    clearTimeout(timeoutId);
     console.error("Provider API Error:", err.message);
     // A provider timeout is an inventory failure from the caller's point of
     // view. Do not expose transport details such as "This operation was
@@ -157,7 +152,7 @@ async function getNumber(server, serviceCode, countryCode) {
   while (attempt < maxRetries || attempt === 0) {
     if (attempt > 0) console.log(`[RETRY] Attempt ${attempt}/${maxRetries - 1} for getNumber...`);
     
-    const response = await callProvider(url, server, "GET", 10000);
+    const response = await callProvider(url, server);
     logToProviderFile(`getNumber | URL=${url} | RESP=${response.data.text || JSON.stringify(response.data)}`);
     const text = response.data.text || "";
     if (isRateLimitedResponse(response)) {
@@ -228,7 +223,7 @@ async function checkStatus(server, api_order_id) {
   for (let attempt = 0; attempt < 3; attempt++) {
     backoffUntil = getProviderBackoff(server);
     if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
-    response = await callProvider(url, server, "GET", 20000);
+    response = await callProvider(url, server);
     const body = response.data.text || JSON.stringify(response.data);
     logToProviderFile(`checkStatus | ID=${api_order_id} | ATTEMPT=${attempt + 1} | HTTP=${response.status} | RESP=${body}`);
     if (isRateLimitedResponse(response)) {
@@ -288,7 +283,7 @@ async function cancelOrder(server, api_order_id, { requireConfirmation = false, 
     order_id: api_order_id 
   });
   
-  const response = await callProvider(url, server, "GET", 10000);
+  const response = await callProvider(url, server);
   logToProviderFile(`cancelOrder | ID=${api_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
   const text = response.data.text || "";
 
@@ -349,7 +344,7 @@ async function rebuyOrder(server, order) {
     order_id: order.external_order_id,
     phone: order.phone,
   });
-  const response = await callProvider(url, server, "GET", 10000);
+  const response = await callProvider(url, server);
   logToProviderFile(`rebuyOrder | ID=${order.external_order_id} | RESP=${response.data.text || JSON.stringify(response.data)}`);
   const text = response.data.text || "";
   const noAllocation = /^(NO_NUMBERS|NO_BALANCE|NO_MONEY|BAD_SERVICE|BAD_STATUS|NO_ACTIVATION)$/i.test(text);

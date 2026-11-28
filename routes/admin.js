@@ -1017,12 +1017,22 @@ async function processAutoAddServices(server, body, notificationContext = {}) {
 
 router.get("/servers", async (_, res) => res.json(await Server.find().sort({ name: 1 }).populate("country_id")));
 
+async function rescheduleServerOrders(serverName) {
+  const now = new Date();
+  if (DB_TYPE === "mysql") {
+    await Order.update({ next_check_at: now }, { where: { server_name: serverName, status: "active" } });
+  } else {
+    await Order.updateMany({ server_name: serverName, status: "active" }, { $set: { next_check_at: now } });
+  }
+}
+
 router.post("/servers", async (req, res) => {
   try {
     if (req.body.country_id === "0" || !req.body.country_id) {
       return res.status(400).json({ error: "Please select a country" });
     }
     const serverData = { ...req.body };
+    serverData.otp_webhook_enabled = req.body.otp_webhook_enabled === true;
     if (!String(serverData.otp_webhook_secret || "").trim()) serverData.otp_webhook_secret = randomBytes(32).toString("hex");
     const server = await Server.create(serverData);
     if (req.body.auto_add_services) await processAutoAddServices(server, req.body, serviceAlertContext(req, server));
@@ -1044,10 +1054,14 @@ router.put("/servers/:id", async (req, res) => {
     const serverFields = { ...req.body };
     const existingServer = await Server.findById(req.params.id);
     if (!existingServer) return res.status(404).json({ error: "Server not found" });
+    const webhookWasEnabled = Boolean(existingServer.otp_webhook_enabled);
+    serverFields.otp_webhook_enabled = req.body.otp_webhook_enabled === undefined
+      ? webhookWasEnabled : req.body.otp_webhook_enabled === true;
     if (!String(serverFields.otp_webhook_secret || "").trim()) {
       serverFields.otp_webhook_secret = existingServer.otp_webhook_secret || randomBytes(32).toString("hex");
     }
     const server = await Server.findByIdAndUpdate(req.params.id, serverFields, { new: true }); 
+    if (webhookWasEnabled !== serverFields.otp_webhook_enabled) await rescheduleServerOrders(server.name);
     
     if (req.body.auto_add_services) {
       await processAutoAddServices(server, req.body, serviceAlertContext(req, server));

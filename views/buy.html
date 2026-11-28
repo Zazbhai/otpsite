@@ -1091,22 +1091,22 @@
     }, 800);
   };
 
-  let allocationController = null;
+  let allocationInProgress = false;
   window.placeOrder = async function() {
-    if (allocationController) return;
+    if (allocationInProgress) return;
     if (!requireLogin()) return;
     if (!selectedService || !selectedCountry) {
       toast('Please select service and country', 'error');
       return;
     }
     
-    allocationController = new AbortController();
+    allocationInProgress = true;
     window.startAllocation();
     
     try {
       const res = await API.post('/api/user/orders', {
         service_id: selectedService._id
-      }, { timeout: 60000, signal: allocationController.signal });
+      });
       
       window.finishAllocation(res.order.phone);
       
@@ -1118,12 +1118,6 @@
       }
       
     } catch (e) {
-      if (e.name === 'AbortError') {
-        toast('Could not confirm the order. Check your order history before buying again.', 'info');
-        window.failAllocation();
-        return;
-      }
-
       const isNetworkError = e.message === 'Failed to fetch' || e.message === 'NetworkError when attempting to fetch resource.' || e.name === 'TypeError';
 
       if (isNetworkError) {
@@ -1137,7 +1131,7 @@
       toast(msg, 'error');
       window.failAllocation();
     } finally {
-      allocationController = null;
+      allocationInProgress = false;
     }
   };
 

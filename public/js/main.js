@@ -27,32 +27,14 @@ function skeletonGrid(count = 4, className = 'card') {
 }
 
 const API = {
-  fetchWithTimeout: async (url, options = {}) => {
-    const { timeout = 45000, signal: externalSignal, ...restOptions } = options;
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    
-    // Merge external signal with internal timeout signal
-    if (externalSignal) {
-      externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
-    }
-
-    try {
-      const response = await fetch(url, { ...restOptions, signal: controller.signal });
-      clearTimeout(id);
-      return response;
-    } catch (e) {
-      clearTimeout(id);
-      throw e;
-    }
-  },
-  get:   (url, options = {}) => API.fetchWithTimeout(url, { headers: authHeaders(), ...options }).then(handleRes),
-  post:  (url, body, options = {}) => API.fetchWithTimeout(url, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
-  patch: (url, body, options = {}) => API.fetchWithTimeout(url, { method: "PATCH", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
-  put:   (url, body, options = {}) => API.fetchWithTimeout(url, { method: "PUT", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
-  del:   (url, options = {}) => API.fetchWithTimeout(url, { method: "DELETE", headers: authHeaders(), ...options }).then(handleRes),
+  fetchRequest: (url, options = {}) => fetch(url, options),
+  get:   (url, options = {}) => API.fetchRequest(url, { headers: authHeaders(), ...options }).then(handleRes),
+  post:  (url, body, options = {}) => API.fetchRequest(url, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
+  patch: (url, body, options = {}) => API.fetchRequest(url, { method: "PATCH", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
+  put:   (url, body, options = {}) => API.fetchRequest(url, { method: "PUT", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body), ...options }).then(handleRes),
+  del:   (url, options = {}) => API.fetchRequest(url, { method: "DELETE", headers: authHeaders(), ...options }).then(handleRes),
   delete: (url, options = {}) => API.del(url, options),
-  upload: (url, formData, method = "POST", options = {}) => API.fetchWithTimeout(url, { method: method, headers: authHeaders(), body: formData, ...options }).then(handleRes),
+  upload: (url, formData, method = "POST", options = {}) => API.fetchRequest(url, { method: method, headers: authHeaders(), body: formData, ...options }).then(handleRes),
 };
 
 function authHeaders() {

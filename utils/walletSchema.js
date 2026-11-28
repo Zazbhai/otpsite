@@ -45,7 +45,7 @@ async function ensureWalletSchema(sequelize) {
 }
 async function ensureRebuySchema(sequelize) {
   const { QueryTypes } = require("sequelize");
-  for (const [table, column, definition] of [["Servers", "api_rebuy_url", "TEXT NULL"], ["Servers", "otp_webhook_secret", "VARCHAR(128) NOT NULL DEFAULT ''"], ["Orders", "rebuy_of", "VARCHAR(255) NOT NULL DEFAULT ''"], ["Orders", "rebuy_order_id", "VARCHAR(255) NULL DEFAULT NULL"], ["Orders", "rebuy_cancelled", "TINYINT(1) NOT NULL DEFAULT 0"], ["Orders", "rebuy_ignored_otps", "TEXT NULL"], ["Orders", "next_check_at", "DATETIME NULL"]]) {
+  for (const [table, column, definition] of [["Servers", "api_rebuy_url", "TEXT NULL"], ["Servers", "otp_webhook_secret", "VARCHAR(128) NOT NULL DEFAULT ''"], ["Servers", "otp_webhook_enabled", "TINYINT(1) NOT NULL DEFAULT 0"], ["Orders", "rebuy_of", "VARCHAR(255) NOT NULL DEFAULT ''"], ["Orders", "rebuy_order_id", "VARCHAR(255) NULL DEFAULT NULL"], ["Orders", "rebuy_cancelled", "TINYINT(1) NOT NULL DEFAULT 0"], ["Orders", "rebuy_ignored_otps", "TEXT NULL"], ["Orders", "next_check_at", "DATETIME NULL"]]) {
     const columns = await sequelize.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column", { replacements: { table, column }, type: QueryTypes.SELECT });
     if (!columns.length) await sequelize.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`);
   }

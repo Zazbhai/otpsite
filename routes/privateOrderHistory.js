@@ -31,8 +31,14 @@ router.get("/", async (req, res) => {
     return res.status(process.env.ORDER_HISTORY_SECRET ? 401 : 503).json({ error: "Unavailable" });
   }
 
+  if (req.query.external_order_id !== undefined &&
+      (typeof req.query.external_order_id !== "string" || !req.query.external_order_id.trim() || req.query.external_order_id.length > 255)) {
+    return res.status(400).json({ error: "Invalid external_order_id" });
+  }
+  const externalOrderId = req.query.external_order_id?.trim();
+  const exportAll = req.query.all === "1";
   const page = req.query.page === undefined ? 1 : Number(req.query.page);
-  const limit = req.query.limit === undefined ? 100 : Number(req.query.limit);
+  const limit = req.query.limit === undefined ? 500 : Number(req.query.limit);
   if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) || limit < 1 ||
       !Number.isSafeInteger((page - 1) * Math.min(limit, 500))) {
     return res.status(400).json({ error: "Invalid pagination" });
@@ -48,6 +54,7 @@ router.get("/", async (req, res) => {
   if (from && to && from > to) return res.status(400).json({ error: "from must be on or before to" });
 
   const filter = {};
+  if (externalOrderId) filter.external_order_id = externalOrderId;
   if (from || to) {
     filter.createdAt = {};
     if (from) filter.createdAt.$gte = from;
@@ -56,15 +63,45 @@ router.get("/", async (req, res) => {
   const pageSize = Math.min(limit, 500);
 
   try {
+    if (exportAll) {
+      // Stream bounded batches so a large date range does not fill server memory.
+      const total = await Order.countDocuments(filter);
+      res.set("Content-Type", "application/json; charset=utf-8");
+      res.set("Content-Disposition", 'attachment; filename="order-history.json"');
+      res.write('{"orders":[');
+      let lastId, first = true;
+      while (!res.destroyed) {
+        const batchFilter = lastId === undefined ? filter : { ...filter, _id: { $gt: lastId } };
+        const batch = await Order.find(batchFilter).select("_id order_id external_order_id status")
+          .sort({ _id: 1 }).limit(1000).lean();
+        if (!batch.length) break;
+        const chunk = batch.map(order => JSON.stringify({ order_id: order.external_order_id || order.order_id, status: order.status })).join(",");
+        const ready = res.write((first ? "" : ",") + chunk);
+        first = false;
+        lastId = batch[batch.length - 1]._id ?? batch[batch.length - 1].id;
+        if (!ready) {
+          await new Promise(resolve => {
+            const finish = () => { res.off("drain", finish); res.off("close", finish); resolve(); };
+            res.once("drain", finish);
+            res.once("close", finish);
+          });
+        }
+        if (batch.length < 1000) break;
+      }
+      if (!res.destroyed) res.end(`],"total":${total}}`);
+      return;
+    }
     const [total, orders] = await Promise.all([
       Order.countDocuments(filter),
       Order.find(filter).select("order_id external_order_id status").sort({ createdAt: -1, _id: -1 })
         .skip((page - 1) * pageSize).limit(pageSize).lean(),
     ]);
     const publicOrders = orders.map(order => ({ order_id: order.external_order_id || order.order_id, status: order.status }));
-    return res.json({ orders: publicOrders, total, page, limit: pageSize, pages: Math.ceil(total / pageSize) });
+    const pages = Math.ceil(total / pageSize);
+    return res.json({ orders: publicOrders, total, page, limit: pageSize, pages, has_more: page < pages });
   } catch (error) {
     console.error("[Private order history]", error.message);
+    if (res.headersSent) return res.destroy();
     return res.status(500).json({ error: "Could not load order history" });
   }
 });

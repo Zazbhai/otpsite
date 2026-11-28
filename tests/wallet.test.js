@@ -16,7 +16,7 @@ function moduleFrom(file, dependencies, extra = {}) {
       if (name in dependencies) return dependencies[name];
       if (name.startsWith(".")) return require(path.resolve(path.dirname(path.join(root, file)), name));
       return require(name);
-    }, console, Date, setTimeout, clearTimeout, __dirname: path.dirname(path.join(root, file)), ...extra,
+    }, console, Date, setTimeout, clearTimeout, setInterval, clearInterval, __dirname: path.dirname(path.join(root, file)), ...extra,
   }, { filename: file });
   return module.exports;
 }
@@ -102,6 +102,7 @@ function walletFixture(dbType = "mysql") {
     if (key === "$or") return value.some(q => matches(row, q));
     if (key === "$and") return value.every(q => matches(row, q));
     const current = row[key];
+    if (value instanceof Date) return new Date(current).getTime() === value.getTime();
     if (value && typeof value === "object" && !(value instanceof Date)) {
       return Object.entries(value).every(([op, target]) => {
         if (op === "$gte") return current >= target;
@@ -352,7 +353,7 @@ test("Mongoose executes the wallet rounding hook with timestamps enabled", async
   assert.equal(sentFilter.$and[0].$expr.$gte[1], 0.1);
 });
 
-function watcherFixture(f, checkStatus, cancelOrder = async () => ({}), serverOptions = {}) {
+function watcherFixture(f, checkStatus, cancelOrder = async () => ({}), serverOptions = {}, extra = {}) {
   return moduleFrom("utils/orderStatusManager.js", {
     "../models/Order": f.models.Order,
     "../models/Server": { findOne: async () => { f.serverLookupCount = (f.serverLookupCount || 0) + 1; return { api_check_status_url: "provider", api_cancel_url: "cancel", ...serverOptions }; } },
@@ -364,7 +365,7 @@ function watcherFixture(f, checkStatus, cancelOrder = async () => ({}), serverOp
     } },
     "./providerApi": { checkStatus, cancelOrder },
     "./orderLocks": { acquireLock: () => true, releaseLock() {} },
-  });
+  }, extra);
 }
 
 test("watcher never overwrites a refund committed while a provider poll is in flight", async () => {
@@ -445,6 +446,42 @@ test("separate workers share the database polling lease for an active order", as
   assert.equal(calls, 1);
   finish({ status: "waiting" });
   await running;
+});
+
+for (const phase of ["polling", "webhook cancellation"]) test(`long ${phase} renews its lease and respects a mode switch`, async () => {
+  const f = walletFixture();
+  let clock = Date.now(), renew, finish, started, calls = 0;
+  class ClockDate extends Date {
+    constructor(...args) { super(...(args.length ? args : [clock])); }
+    static now() { return clock; }
+  }
+  const waiting = new Promise(resolve => { started = resolve; });
+  const slow = async () => { calls++; started(); return new Promise(resolve => { finish = resolve; }); };
+  const webhook = phase === "webhook cancellation";
+  const order = await f.models.Order.create({ _id: "long", order_id: "long", user_id: "u1",
+    server_name: "s", external_order_id: "provider", status: "active", otp: "", all_otps: [],
+    check_interval: 3, ...(webhook ? { expires_at: new Date(0) } : {}) });
+  const options = { otp_webhook_enabled: webhook };
+  const extra = { Date: ClockDate, setInterval: callback => { renew = callback; return 1; }, clearInterval() {} };
+  const first = watcherFixture(f, slow, slow, options, extra);
+  const second = watcherFixture(f, slow, slow, options, { Date: ClockDate });
+  const running = first.syncOrder(order);
+  await waiting;
+  clock += 60000;
+  renew();
+  await new Promise(setImmediate);
+  assert.equal(f.tables.orders[0].next_check_at.getTime(), clock + 70000);
+  clock += 20000; // The original lease has now expired.
+  await second.syncOrder(order);
+  assert.equal(calls, 1);
+  const changedModeAt = new Date(clock);
+  f.tables.orders[0].next_check_at = changedModeAt;
+  renew();
+  await new Promise(setImmediate);
+  assert.equal(f.tables.orders[0].next_check_at.getTime(), changedModeAt.getTime());
+  finish(webhook ? { success: false } : { status: "waiting" });
+  await running;
+  assert.equal(f.tables.orders[0].next_check_at.getTime(), changedModeAt.getTime());
 });
 
 test("watcher completes an active order when the provider repeats an OTP already saved by an API poll", async () => {
@@ -740,6 +777,26 @@ test("provider allocation maps fetch and response-body aborts to NO_NUMBERS and 
   }
 });
 
+test("provider requests wait for a delayed response without installing an abort deadline", async () => {
+  let resolveResponse, started;
+  const began = new Promise(resolve => { started = resolve; });
+  const provider = moduleFrom("utils/providerApi.js", {
+    fs: { existsSync: () => true, readFileSync: () => "[]", appendFileSync() {} },
+  }, {
+    setTimeout() { throw new Error("Provider request must not install an abort timer"); },
+    fetch: async (_url, options) => {
+      assert.equal(options.signal, undefined);
+      started();
+      return new Promise(resolve => { resolveResponse = resolve; });
+    }, console: { log() {}, error() {} },
+  });
+  const waiting = provider.getNumber({ api_get_number_url: "https://provider.example/getNumber" }, "test", "22");
+  await began;
+  resolveResponse({ ok: true, status: 200, text: async () => "ACCESS_NUMBER:delayed:919876543210" });
+  const result = await waiting;
+  assert.equal(result.api_order_id, "delayed");
+});
+
 test("API purchase also checks funds before provider and charges a successful order", async () => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";
@@ -850,6 +907,7 @@ test("rebuy schema migration adds server endpoint and order claim/link columns o
   } });
   assert.deepEqual(queries.filter(sql => sql.startsWith("ALTER TABLE")), [
     "ALTER TABLE `Servers` ADD COLUMN `otp_webhook_secret` VARCHAR(128) NOT NULL DEFAULT ''",
+    "ALTER TABLE `Servers` ADD COLUMN `otp_webhook_enabled` TINYINT(1) NOT NULL DEFAULT 0",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_of` VARCHAR(255) NOT NULL DEFAULT ''",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_order_id` VARCHAR(255) NULL DEFAULT NULL",
     "ALTER TABLE `Orders` ADD COLUMN `rebuy_cancelled` TINYINT(1) NOT NULL DEFAULT 0",
@@ -1083,9 +1141,10 @@ test("provider OTP webhook authenticates, saves once, emits through the normal S
   const source = require("node:fs").readFileSync(require("node:path").join(root, "routes/providerWebhook.js"), "utf8");
   const original = { _id: "order-db", order_id: "ORD-WEBHOOK", server_name: "Provider A", status: "active", otp: "", all_otps: [], multi_otp_enabled: false };
   const saved = [];
+  let webhookEnabled = false;
   const router = moduleFrom("routes/providerWebhook.js", {
     "../models/Server": {
-      findById: async () => ({ name: "Provider A", is_active: true, otp_webhook_secret: "secret" }),
+      findById: async () => ({ name: "Provider A", is_active: true, otp_webhook_secret: "secret", otp_webhook_enabled: webhookEnabled }),
       findOne: async () => null,
     },
     "../models/Order": {
@@ -1105,6 +1164,11 @@ test("provider OTP webhook authenticates, saves once, emits through the normal S
   const unauthorized = response();
   await handler({ params: { server: "server-id" }, headers: {}, body: { order_id: "ORD-WEBHOOK", otp: "123456" } }, unauthorized);
   assert.equal(unauthorized.statusCode, 401);
+  const disabled = response();
+  await handler({ params: { server: "server-id" }, headers: { authorization: "Bearer secret" }, body: { order_id: "ORD-WEBHOOK", otp: "123456" } }, disabled);
+  assert.equal(disabled.statusCode, 401);
+  assert.equal(saved.length, 0);
+  webhookEnabled = true;
   const success = response();
   await handler({ params: { server: "server-id" }, headers: { authorization: "Bearer secret" }, body: { order_id: "ORD-WEBHOOK", otp: "123456", status: "completed" } }, success);
   assert.equal(success.statusCode, 200);
@@ -1121,19 +1185,77 @@ test("provider OTP webhook authenticates, saves once, emits through the normal S
   assert.equal(saved.length, 1);
 });
 
-test("configured provider webhook becomes the primary OTP path with one-minute polling fallback", async () => {
+test("enabled provider webhook stops status polling until order expiry", async () => {
   const f = walletFixture();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
   const order = await f.wallet.reservePurchase({ userId: "u1", orderId: "webhook-poll", amount: 4, description: "test" })
     .then(() => f.wallet.finalizePurchase({ order_id: "webhook-poll", user_id: "u1", server_name: "s", external_order_id: "provider", cost: 4, otp: "", all_otps: [], status: "active", check_interval: 3, expires_at: expiresAt }));
   let statusCalls = 0;
-  const watcher = watcherFixture(f, async () => { statusCalls++; return { status: "waiting" }; }, async () => ({}), { otp_webhook_secret: "configured" });
+  const watcher = watcherFixture(f, async () => { statusCalls++; return { status: "waiting" }; }, async () => ({}), { otp_webhook_secret: "configured", otp_webhook_enabled: true });
   await watcher.syncOrder(order);
   assert.equal(statusCalls, 0);
   assert.equal(f.tables.orders[0].status, "active");
   const remainingMs = f.tables.orders[0].next_check_at.getTime() - Date.now();
-  assert.ok(remainingMs > 50000 && remainingMs <= 60000);
+  assert.ok(remainingMs > 9 * 60 * 1000 && remainingMs <= 10 * 60 * 1000);
   assert.equal(f.tables.users[0].balance, 6);
+});
+
+test("polling mode checks the provider even when a webhook secret has been generated", async () => {
+  const f = walletFixture();
+  const order = await f.models.Order.create({ order_id: "polling", user_id: "u1", server_name: "s",
+    external_order_id: "upstream", status: "active", otp: "", all_otps: [], expires_at: new Date(Date.now() + 60000) });
+  let polls = 0;
+  const watcher = watcherFixture(f, async () => { polls++; return { status: "waiting" }; }, undefined,
+    { otp_webhook_secret: "generated", otp_webhook_enabled: false });
+  await watcher.syncOrder(order);
+  assert.equal(polls, 1);
+});
+
+test("webhook expiry never checks status and refunds only after confirmed cancellation", async () => {
+  const f = walletFixture();
+  await f.wallet.reservePurchase({ userId: "u1", orderId: "webhook-expiry", amount: 4, description: "test" });
+  const order = await f.wallet.finalizePurchase({ order_id: "webhook-expiry", user_id: "u1", cost: 4,
+    server_name: "s", external_order_id: "upstream", status: "active", otp: "", all_otps: [], expires_at: new Date(0) });
+  let confirmed = false, polls = 0;
+  const watcher = watcherFixture(f, async () => { polls++; return { status: "waiting" }; },
+    async () => ({ success: confirmed }), { otp_webhook_enabled: true, otp_webhook_secret: "generated" });
+  await watcher.syncOrder(order);
+  assert.equal(f.tables.orders[0].status, "active");
+  assert.equal(f.tables.users[0].balance, 6);
+  confirmed = true;
+  f.tables.orders[0].next_check_at = new Date(0);
+  await watcher.syncOrder(order);
+  assert.equal(polls, 0);
+  assert.equal(f.tables.orders[0].status, "expired");
+  assert.equal(f.tables.users[0].balance, 10);
+});
+
+test("background watcher starts new work while one provider request remains pending", async () => {
+  const sift = require("sift").default;
+  const pending = new Map();
+  const started = [];
+  let tick;
+  let rows = [{ _id: "slow", status: "active", next_check_at: new Date(0) }];
+  const watcher = moduleFrom("utils/orderWatcher.js", {
+    "../models/Order": { find(filter) {
+      const query = { sort() { return query; }, limit: async n => rows.filter(sift(filter)).slice(0, n) };
+      return query;
+    } },
+    "./db": { DB_TYPE: "mongodb" },
+    "./wallet": { recoverPendingPurchases: async () => {} },
+    "./orderStatusManager": { syncOrder: async order => {
+      started.push(order._id);
+      return new Promise(resolve => pending.set(order._id, resolve));
+    } },
+  }, { setInterval(callback) { tick = callback; }, console: { log() {}, error() {} } });
+  watcher.startWatcher();
+  await tick();
+  rows.push({ _id: "other", status: "active", next_check_at: new Date(0) });
+  await tick();
+  assert.deepEqual(started, ["slow", "other"]);
+  await tick();
+  assert.equal(started.length, 2);
+  for (const resolve of pending.values()) resolve();
 });
 
 test("private order history requires the server secret and returns only provider order ID and status", async () => {
@@ -1144,11 +1266,11 @@ test("private order history requires the server secret and returns only provider
   ];
   const router = moduleFrom("routes/privateOrderHistory.js", {
     "../models/Order": {
-      countDocuments: async filter => rows.filter(row => !filter.createdAt ||
-        (!filter.createdAt.$gte || row.createdAt >= filter.createdAt.$gte) && (!filter.createdAt.$lt || row.createdAt < filter.createdAt.$lt)).length,
+      countDocuments: async filter => rows.filter(row => (!filter.external_order_id || row.external_order_id === filter.external_order_id) && (!filter.createdAt ||
+        (!filter.createdAt.$gte || row.createdAt >= filter.createdAt.$gte) && (!filter.createdAt.$lt || row.createdAt < filter.createdAt.$lt))).length,
       find: filter => {
-        const selected = rows.filter(row => !filter.createdAt ||
-          (!filter.createdAt.$gte || row.createdAt >= filter.createdAt.$gte) && (!filter.createdAt.$lt || row.createdAt < filter.createdAt.$lt));
+        const selected = rows.filter(row => (!filter.external_order_id || row.external_order_id === filter.external_order_id) && (!filter.createdAt ||
+          (!filter.createdAt.$gte || row.createdAt >= filter.createdAt.$gte) && (!filter.createdAt.$lt || row.createdAt < filter.createdAt.$lt)));
         const query = { select() { return query; }, sort() { return query; }, skip(value) { query.offset = value; return query; }, limit(value) { query.size = value; return query; }, lean: async () => selected.slice(query.offset || 0, (query.offset || 0) + (query.size || selected.length)) };
         return query;
       },
@@ -1167,9 +1289,58 @@ test("private order history requires the server secret and returns only provider
   assert.deepEqual(Object.keys(filtered.body.orders[0]).sort(), ["order_id", "status"]);
   assert.equal(filtered.body.total, 2);
   assert.equal(filtered.body.limit, 1);
+  assert.equal(filtered.body.has_more, true);
   assert.equal(filtered.headers["X-Robots-Tag"], "noindex, nofollow, noarchive");
   assert.equal(filtered.headers["Referrer-Policy"], "no-referrer");
+  const directLookup = response();
+  await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", external_order_id: "provider-new" } }, directLookup);
+  assert.equal(directLookup.statusCode, 200);
+  assert.equal(directLookup.body.total, 1);
+  assert.equal(directLookup.body.orders[0].order_id, "provider-new");
+  assert.equal(directLookup.body.orders[0].status, "active");
+  const nextPage = response();
+  await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", from: "2026-11-27", to: "2026-11-28", page: "2", limit: "1" } }, nextPage);
+  assert.equal(nextPage.body.orders[0].order_id, "middle");
+  assert.equal(nextPage.body.has_more, false);
+  const badId = response();
+  await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", external_order_id: { $ne: "" } } }, badId);
+  assert.equal(badId.statusCode, 400);
   assert.doesNotMatch(require("node:fs").readFileSync(require("node:path").join(root, "views/api-docs.html"), "utf8"), /private\/order-history/);
+});
+
+test("private history exports every matching order across bounded batches and exact India date boundaries", async () => {
+  const sift = require("sift").default;
+  const date = new Date("2026-11-24T18:30:00.000Z");
+  const rows = Array.from({ length: 2001 }, (_, i) => ({ _id: i + 1, order_id: `local-${i}`,
+    external_order_id: `provider-${i}`, status: "completed", createdAt: date, otp: "never-export" }));
+  rows.push({ _id: 2002, order_id: "end", status: "cancelled", createdAt: new Date("2026-11-28T18:29:59.999Z") },
+    { _id: 2003, order_id: "excluded-before", status: "active", createdAt: new Date("2026-11-24T18:29:59.999Z") },
+    { _id: 2004, order_id: "excluded-after", status: "active", createdAt: new Date("2026-11-28T18:30:00.000Z") });
+  const batches = [];
+  const router = moduleFrom("routes/privateOrderHistory.js", {
+    "../models/Order": {
+      countDocuments: async filter => rows.filter(sift(filter)).length,
+      find(filter) {
+        let limit = 0;
+        const query = { select() { return query; }, sort() { return query; },
+          limit(n) { limit = n; return query; },
+          async lean() { const batch = rows.filter(sift(filter)).slice(0, limit); batches.push(batch.length); return batch; } };
+        return query;
+      },
+    },
+  }, { process: { env: { ORDER_HISTORY_SECRET: "0123456789abcdef0123456789abcdef01234567" } } });
+  const handler = router.stack[0].route.stack.at(-1).handle;
+  let output = "";
+  const res = { destroyed: false, set() {}, write(value) { output += value; return true; }, end(value) { output += value; } };
+  await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", from: "2026-11-25", to: "2026-11-28", all: "1" } }, res);
+  const result = JSON.parse(output);
+  assert.equal(result.total, 2002);
+  assert.equal(result.orders.length, 2002);
+  assert.deepEqual(batches, [1000, 1000, 2]);
+  assert.equal(new Set(result.orders.map(row => row.order_id)).size, 2002);
+  assert.equal(result.orders[0].order_id, "provider-0");
+  assert.equal(result.orders.at(-1).order_id, "end");
+  assert.ok(result.orders.every(row => Object.keys(row).sort().join(",") === "order_id,status"));
 });
 
 test("expiry captures an OTP returned while cancelling and retains the original debit", async () => {

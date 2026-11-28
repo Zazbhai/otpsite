@@ -676,7 +676,16 @@
               <button type="button" id="srv-webhook-secret-visibility" class="btn btn-secondary btn-sm" aria-pressed="false" onclick="toggleServerWebhookSecret()">Show</button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="copyServerWebhookSecret()">Copy key</button>
             </div>
-            <small class="text-muted">Webhook URL: <code id="srv-otp-webhook-url">/api/provider/webhook/&lt;server-id&gt;</code>. Post JSON with <code>order_id</code> and <code>otp</code>; authenticate with <code>Authorization: Bearer SECRET</code> or <code>X-Provider-Webhook-Secret</code>. With webhook configured, status polling becomes a once-per-minute fallback and resumes at expiry.</small>
+            <small class="text-muted">Webhook URL: <code id="srv-otp-webhook-url">/api/provider/webhook/&lt;server-id&gt;</code>. POST JSON with <code>external_order_id</code> (provider activation ID) and <code>otp</code>, or the local <code>order_id</code>. Authenticate with <code>Authorization: Bearer SECRET</code> or <code>X-Provider-Webhook-Secret</code>. Select Provider webhook below to enable callbacks.</small>
+          </div>
+
+          <div class="form-group" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <label class="form-label" for="srv-delivery-mode">OTP Delivery Mode</label>
+            <select id="srv-delivery-mode" class="form-input" onchange="updateServerDeliveryModeHelp()">
+              <option value="polling">Check Status URL polling</option>
+              <option value="webhook">Provider webhook</option>
+            </select>
+            <small class="text-muted" id="srv-delivery-mode-help">Polling mode uses Check Status URL. Webhook mode stops status polling completely and requires the provider to POST every OTP to the webhook URL.</small>
           </div>
 
           <div class="form-row" style="grid-template-columns: 1fr 1fr">
@@ -1110,6 +1119,8 @@
               (id.includes("min") || id.includes("count") ? "0" : "");
       });
       setServerWebhookSecretVisibility(false);
+      document.getElementById("srv-delivery-mode").value = "polling";
+      updateServerDeliveryModeHelp();
 
       document.getElementById("country-display-text").textContent = "Select Country";
       document.getElementById("country-search-container").style.display = "none";
@@ -1186,6 +1197,8 @@
       setVal("srv-retry-url", s.api_retry_url || "");
       setVal("srv-rebuy-url", s.api_rebuy_url || "");
       setVal("srv-otp-webhook-secret", s.otp_webhook_secret || "");
+      setVal("srv-delivery-mode", s.otp_webhook_enabled ? "webhook" : "polling");
+      updateServerDeliveryModeHelp();
       setServerWebhookSecretVisibility(false);
       const webhookUrl = document.getElementById("srv-otp-webhook-url");
       if (webhookUrl) webhookUrl.textContent = `${window.location.origin}/api/provider/webhook/${encodeURIComponent(s._id || s.id)}`;
@@ -1248,6 +1261,16 @@
       }
     };
 
+    window.updateServerDeliveryModeHelp = function () {
+      const mode = document.getElementById("srv-delivery-mode")?.value;
+      document.getElementById("srv-check-url").disabled = mode === "webhook";
+      document.getElementById("srv-poll").disabled = mode === "webhook";
+      const help = document.getElementById("srv-delivery-mode-help");
+      if (help) help.textContent = mode === "webhook"
+        ? "Webhook only: Check Status URL polling is disabled. The provider must POST each OTP to this webhook."
+        : "Polling only: the server uses Check Status URL. Provider webhook callbacks are disabled.";
+    };
+
     window.saveServer = async function () {
       const body = {
         name: document.getElementById("srv-name").value.trim(),
@@ -1258,6 +1281,7 @@
         api_retry_url: document.getElementById("srv-retry-url").value.trim(),
         api_rebuy_url: document.getElementById("srv-rebuy-url").value.trim(),
         otp_webhook_secret: document.getElementById("srv-otp-webhook-secret").value.trim(),
+        otp_webhook_enabled: document.getElementById("srv-delivery-mode").value === "webhook",
         auto_cancel_minutes: parseInt(document.getElementById("srv-cancel-mins").value) || 20,
         min_cancel_minutes: parseInt(document.getElementById("srv-min-cancel").value) || 0,
         retry_count: parseInt(document.getElementById("srv-retry-count").value) || 0,

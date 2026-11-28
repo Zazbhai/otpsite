@@ -185,6 +185,32 @@ function adminRouter(dbType, overrides = {}) {
   return { router: module.exports, authorized };
 }
 
+for (const dbType of ["mysql", "mongodb"]) {
+  test(`${dbType}: changing server delivery mode reschedules its active orders`, async () => {
+    const updates = [];
+    let enabled = true;
+    const { router } = adminRouter(dbType, {
+      Server: {
+        findById: async () => ({ name: "Provider", otp_webhook_enabled: enabled, otp_webhook_secret: "preserved-secret" }),
+        findByIdAndUpdate: async (_id, fields) => { enabled = fields.otp_webhook_enabled; return { name: "Provider", ...fields }; },
+      },
+      Order: { update: async (...args) => updates.push(args), updateMany: async (...args) => updates.push(args) },
+    });
+    const handler = router.stack.find(layer => layer.route?.path === "/servers/:id" && layer.route.methods.put).route.stack.at(-1).handle;
+    let result;
+    const response = { json(value) { result = value; }, status() { return this; } };
+    await handler({ params: { id: "s1" }, body: { country_id: "country", otp_webhook_enabled: false } }, response);
+    assert.equal(result.otp_webhook_enabled, false);
+    assert.equal(result.otp_webhook_secret, "preserved-secret");
+    assert.equal(updates.length, 1);
+    const filter = dbType === "mysql" ? updates[0][1].where : updates[0][0];
+    assert.equal(filter.server_name, "Provider");
+    assert.equal(filter.status, "active");
+    await handler({ params: { id: "s1" }, body: { country_id: "country", otp_webhook_enabled: false } }, response);
+    assert.equal(updates.length, 1);
+  });
+}
+
 test("admin Deposits includes existing promo credits while preserving search, status and user filters", async () => {
   const sift = require("sift").default;
   const records = [
