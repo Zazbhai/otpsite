@@ -226,3 +226,39 @@ test("terminal filter suppresses routine debug output and retains webhook activi
   target.error("Database disconnected");
   assert.deepEqual(output.map(item => item.method), ["info", "log", "warn", "error"]);
 });
+
+test("read-only webhook diagnosis distinguishes absent, local, database and renamed-server IDs", async () => {
+  const { diagnoseProviderWebhook } = require("../utils/providerWebhookDiagnosis");
+  const rows = [
+    { _id: "111111111111111111111111", order_id: "ORD-1", external_order_id: "external-1", server_name: "Current", status: "active" },
+    { _id: "222222222222222222222222", order_id: "ORD-2", external_order_id: "external-2", server_name: "Old name", service_id: "service-1", status: "active" },
+  ];
+  const dependencies = {
+    Server: { findById: async () => ({ _id: "server-1", name: "Current", is_active: true, otp_webhook_enabled: true, api_key: "private" }) },
+    Order: { find: filter => ({ select: () => ({ limit: async () => rows.filter(row =>
+      filter.$or.some(branch => Object.entries(branch).every(([key, value]) => row[key] === value))) }) }) },
+    Transaction: { find: () => ({ select: () => ({ limit: async () => [{ status: "completed" }] }) }) },
+    Service: { findById: async () => ({ server_id: "server-1" }) }, dbType: "mongodb",
+  };
+  const report = await diagnoseProviderWebhook(dependencies, "server-1", ["missing", "ORD-1", rows[0]._id, "external-1", "external-2"]);
+  assert.equal(report.results[0].diagnosis, "NO_SAVED_ORDER_FOR_THIS_ID");
+  assert.deepEqual(report.results[1].matches[0].matches_by, ["order_id"]);
+  assert.deepEqual(report.results[2].matches[0].matches_by, ["database_id"]);
+  assert.equal(report.results[3].diagnosis, "ACTIVE_EXTERNAL_ORDER_MATCH");
+  assert.equal(report.results[4].diagnosis, "POSSIBLE_SERVER_RENAME");
+  assert.doesNotMatch(JSON.stringify(report), /private|api_key|otp|phone/);
+});
+
+test("provider allocation diagnosis prints matching IDs without exposing URLs, credentials, phones or OTPs", () => {
+  const { diagnoseProviderLog } = require("../utils/providerWebhookDiagnosis");
+  const report = diagnoseProviderLog([
+    'getNumber | URL=https://provider.example?api_key=private | RESP=ACCESS_NUMBER:provider-id:919123456789',
+    'getNumber | URL=https://provider.example?api_key=private | RESP={"data":{"orderId":"nested-id","number":"919123456789","secret":"private"}}',
+    'getNumber | URL=https://provider.example | RESP=ACCESS_NUMBER:unrelated-id:919123456789',
+    'checkStatus | ID=provider-id | RESP=STATUS_OK:123456',
+  ].join("\n"), ["provider-id", "nested-id"]);
+  assert.equal(report.length, 2);
+  assert.deepEqual(report[0].allocation_ids, { text_order_id: "provider-id" });
+  assert.deepEqual(report[1].allocation_ids, { orderId: "nested-id" });
+  assert.doesNotMatch(JSON.stringify(report), /private|919123456789|123456|unrelated-id|URL/);
+});
