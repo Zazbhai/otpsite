@@ -451,6 +451,7 @@ const appendLog = require("./batchedLog").createBatchedLog((batch, done) => fs.a
 
 const originalConsoleLog = console.log.bind(console);
 const originalConsoleError = console.error.bind(console);
+const originalConsoleWarn = console.warn.bind(console);
 
 const logToFile = (msg, isError = false) => {
     const timestamp = new Date().toISOString();
@@ -470,6 +471,12 @@ console.error = (...args) => {
     const msg = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ');
     logToFile(msg, true);
     originalConsoleError(...args);
+};
+
+console.warn = (...args) => {
+    const msg = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ');
+    logToFile(msg, true);
+    originalConsoleWarn(...args);
 };
 
 const log = (msg) => console.log(msg);

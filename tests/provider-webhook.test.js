@@ -212,7 +212,7 @@ test("terminal logs include webhook data and response while excluding credential
   assert.doesNotMatch(JSON.stringify(f.logs), /webhook-secret|private-key|hidden|authorization/i);
 });
 
-test("terminal filter suppresses routine debug output and retains webhook activity and failures", () => {
+test("terminal filter allows only webhook/callback messages and suppresses slow API warnings", () => {
   const output = [];
   const target = Object.fromEntries(["log", "info", "debug", "warn", "error"].map(method =>
     [method, (...args) => output.push({ method, args })]));
@@ -224,7 +224,11 @@ test("terminal filter suppresses routine debug output and retains webhook activi
   target.log("[OmniPay Deposit Callback]", "credited");
   target.warn("Provider failed");
   target.error("Database disconnected");
+  target.warn("[Slow API request]", '{"outcome":"client_disconnected"}');
+  target.warn("[Provider webhook]", "ORDER_NOT_FOUND");
+  target.error("[Customer webhook]", "Callback failed");
   assert.deepEqual(output.map(item => item.method), ["info", "log", "warn", "error"]);
+  assert.ok(output.every(item => /webhook|callback/i.test(item.args[0])));
 });
 
 test("read-only webhook diagnosis distinguishes absent, local, database and renamed-server IDs", async () => {

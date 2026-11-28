@@ -9,7 +9,9 @@ The optional `LICENSE_DOMAIN` setting restricts requests to one hostname.
 
 Run `node tests/admin-live.test.js` to check admin updates. The SMSCandy import tests use a privately supplied SQL fixture at `smscandy-backup/smscandy-db.sql`.
 
-For slow `getNumber` requests, inspect `[Slow API request]` stages. A stage such as
+Terminal output is limited to webhook/callback messages. Other warnings and errors
+are recorded in `app.log`.
+For slow `getNumber` requests, inspect `[Slow API request]` stages in `app.log`. A stage such as
 `provider_getNumber_1_headers` means attempt 1 is waiting for the provider's response
 headers (including DNS, connection and TLS setup); `_body` means headers arrived
 but the response body has not finished. `_retry_wait` is the pause between attempts.
