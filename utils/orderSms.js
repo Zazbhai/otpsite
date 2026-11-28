@@ -66,12 +66,17 @@ async function recordOrderSms(order, rawMessage, { complete = false, checkedAt }
       if (!current || current.status !== "active" || current.otp === message) return null;
       const history = Array.isArray(current.all_otps) ? current.all_otps : [];
       if (history.includes(message)) return null;
+      // For single-OTP activations the first committed OTP wins. Parallel
+      // callbacks with different payloads must not overwrite a valid code.
+      if (!current.multi_otp_enabled && (current.otp || history.length)) return null;
       current.set({ ...fields, all_otps: [...history, message] });
       return current.save({ transaction });
     });
   } else {
+    const filter = { _id: order._id, status: "active", otp: { $ne: message }, all_otps: { $ne: message } };
+    if (!order.multi_otp_enabled) filter.otp = { $in: ["", null] };
     saved = await Order.findOneAndUpdate(
-      { _id: order._id, status: "active", otp: { $ne: message }, all_otps: { $ne: message } },
+      filter,
       { $set: fields, $addToSet: { all_otps: message } },
       { new: true }
     );

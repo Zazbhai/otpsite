@@ -47,6 +47,12 @@ async function fixture(t, dbType = "mongodb") {
       return wrap(row);
     },
   };
+  let transactionTail = Promise.resolve();
+  const withTransaction = fn => {
+    const result = transactionTail.then(() => fn({}));
+    transactionTail = result.catch(() => {});
+    return result;
+  };
   const Callback = {
     async findOne(filter) { return callbacks.find(row => matches(row, filter)) || null; },
     async create(data) {
@@ -64,7 +70,7 @@ async function fixture(t, dbType = "mongodb") {
   const sms = load("utils/orderSms.js", {
     "../models/Order": Order, "../models/User": {}, "../models/Country": {},
     "../models/UserWebhook": { findOne: async () => null },
-    "./db": { DB_TYPE: dbType, withTransaction: async fn => fn({}) },
+    "./db": { DB_TYPE: dbType, withTransaction },
     "./customerWebhook": {}, "./realtimeEmitter": { emitToUser: (...args) => notifications.push(args) },
   });
   const queue = load("utils/providerWebhookQueue.js", {
@@ -294,17 +300,56 @@ test("callbacks remain available during maintenance and after customer API throt
 
 test("foreign, ambiguous, mismatched and refunded orders are never updated", async t => {
   const f = await fixture(t);
-  const foreign = f.add({ server_id: "other-server", server_name: "Another provider" });
+  // Reused provider names must not allow an order from another server to match.
+  const foreign = f.add({ server_id: "other-server", server_name: "Provider A" });
   assert.equal((await f.send({ orderId: foreign.external_order_id, otp: "001234" })).status, 202);
   assert.equal(f.callbacks.length, 1);
   const first = f.add(), second = f.add({ external_order_id: first.external_order_id });
   assert.equal((await f.send({ orderId: first.external_order_id, otp: "001234" })).status, 409);
   assert.equal((await f.send({ local_order_id: first.order_id, external_order_id: "different", otp: "001234" })).body.code, "ORDER_ID_MISMATCH");
   const refunded = f.add({ status: "refunded" });
-  assert.equal((await f.send({ orderId: refunded.external_order_id, otp: "001234" })).status, 202);
+  assert.equal((await f.send({ orderId: refunded.external_order_id, otp: "001234" })).status, 409);
   assert.equal((await f.send({ local_order_id: refunded.order_id, otp: "001234" })).body.code, "ORDER_NOT_ACTIVE");
   assert.equal(f.notifications.length, 0);
   assert.equal(second.otp, "");
+});
+
+for (const dbType of ["mongodb", "mysql"]) test(`${dbType}: parallel distinct callbacks cannot overwrite the first OTP on a single-OTP order`, async t => {
+  const f = await fixture(t, dbType), order = f.add();
+  const [first, second] = await Promise.all([
+    f.send({ external_order_id: order.external_order_id, otp: "111111" }),
+    f.send({ external_order_id: order.external_order_id, otp: "222222" }),
+  ]);
+  assert.ok([200, 409].includes(first.status), JSON.stringify(first));
+  assert.ok([200, 409].includes(second.status), JSON.stringify(second));
+  assert.ok(["111111", "222222"].includes(order.otp));
+  assert.deepEqual(Array.from(order.all_otps), [order.otp]);
+  assert.equal(order.status, "completed");
+});
+
+test("parallel callbacks for separate orders save each OTP to its matching activation", async t => {
+  const f = await fixture(t);
+  const first = f.add(), second = f.add();
+  const results = await Promise.all([
+    f.send({ external_order_id: first.external_order_id, otp: "111111" }),
+    f.send({ external_order_id: second.external_order_id, otp: "222222" }),
+  ]);
+  assert.deepEqual(results.map(result => result.status), [200, 200]);
+  assert.equal(first.otp, "111111");
+  assert.equal(second.otp, "222222");
+  assert.deepEqual(Array.from(first.all_otps), ["111111"]);
+  assert.deepEqual(Array.from(second.all_otps), ["222222"]);
+});
+
+test("provider webhook accepts concurrent bursts above 1,000 callbacks per minute", { timeout: 15000 }, async t => {
+  const f = await fixture(t), order = f.add();
+  const payload = { external_order_id: order.external_order_id, otp: "001234" };
+  const responses = [];
+  for (let i = 0; i < 1020; i++) responses.push(await f.send(payload));
+  assert.equal(responses.length, 1020);
+  assert.ok(responses.every(result => result.status >= 200 && result.status < 300));
+  assert.equal(order.otp, payload.otp);
+  assert.deepEqual(order.all_otps, [payload.otp]);
 });
 
 test("multi-OTP callbacks retain every distinct code and ignore the previous rebuy's SMS", async t => {

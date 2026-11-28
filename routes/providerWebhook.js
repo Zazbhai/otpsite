@@ -75,7 +75,12 @@ router.post("/:server", async (req, res) => {
     if (!message || (!localId && !providerId)) return reject(400, "INVALID_PAYLOAD", "Order ID and OTP are required");
 
     const serverId = String(server._id || server.id || req.params.server);
-    const serverScope = { $or: [{ server_name: String(server.name || "") }, { server_id: serverId }] };
+    // Match this exact provider first. Only fall back to server_name for legacy
+    // orders without a saved server ID; names can be reused or changed.
+    const serverScope = serverId ? { $or: [
+      { server_id: serverId },
+      { server_name: String(server.name || ""), server_id: { $in: [null, ""] } },
+    ] } : { server_name: String(server.name || "") };
     let order = localId ? await Order.findOne({ ...serverScope, order_id: localId }) : null;
     if (order && providerId && ![order.external_order_id, order.provider_order_id, order.order_id].map(String).includes(providerId)) {
       return reject(409, "ORDER_ID_MISMATCH", "Local and provider order IDs refer to different orders");
@@ -98,7 +103,17 @@ router.post("/:server", async (req, res) => {
           .sort({ createdAt: -1, _id: -1 }).limit(1);
         const latest = previous[0];
         // MySQL stores all_otps as JSON text; compare decoded history here.
-        order = latest && (latest.otp === message || latest.all_otps?.includes(message)) ? latest : null;
+        if (latest) {
+          if (latest.otp === message || latest.all_otps?.includes(message)) {
+            // A duplicate of a stored SMS is acknowledged with the order's
+            // current state; anything else from a finished order is rejected.
+            if (latest.status !== "active") {
+              return res.json({ received: true, duplicate: true, order_id: publicOrderId(latest), status: latest.status });
+            }
+            order = latest;
+          }
+          else return reject(409, "ORDER_NOT_ACTIVE", "Order is no longer active; OTP was not saved");
+        }
       }
     }
     if (!order) {

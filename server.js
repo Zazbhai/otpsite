@@ -87,7 +87,8 @@ function apiRateLimitKey(req) {
 app.use("/api/", rateLimit({
   windowMs: 60 * 1000,
   max: 1000,
-  // Callbacks have their own limit, so customer API traffic cannot drop OTPs.
+  // Authenticated provider callbacks bypass the customer API quota so traffic
+  // bursts and client usage cannot throttle incoming OTP deliveries.
   skip: req => /^\/provider\/webhook\/[^/]+\/?$/.test(req.path),
   keyGenerator: apiRateLimitKey,
   standardHeaders: true,
@@ -273,9 +274,9 @@ app.use("/api/payment/omnipay", require("./routes/omnipayWebhook"));
 app.use("/api/payment/heleket", require("./routes/heleketWebhook"));
 app.use("/api/payment/eaglepay", require("./routes/eaglepayWebhook"));
 // Provider callbacks authenticate with a server secret or signature; no user session is needed.
-app.use("/api/provider/webhook", rateLimit({
-  windowMs: 60 * 1000, max: 1000, standardHeaders: true, legacyHeaders: false,
-}), require("./routes/providerWebhook"));
+// Exempt callbacks from customer API throttling; durable/idempotent writes and
+// per-order database conditions handle retries and parallel provider delivery.
+app.use("/api/provider/webhook", require("./routes/providerWebhook"));
 // Private operational endpoint. Deliberately omitted from public API docs.
 app.use("/api/private/order-history", require("./routes/privateOrderHistory"));
 // Private operational endpoint. Deliberately omitted from public API docs.
