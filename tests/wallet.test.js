@@ -891,6 +891,44 @@ test("provider requests wait for a delayed response without installing an abort 
   assert.equal(result.api_order_id, "delayed");
 });
 
+test("allocation diagnostics distinguish waiting for headers from a stalled response body", async () => {
+  const phases = [];
+  let receiveHeaders, receiveBody;
+  const provider = moduleFrom("utils/providerApi.js", {
+    fs: { existsSync: () => true, readFileSync: () => "[]", appendFile(_path, _line, callback) { callback(null); } },
+  }, {
+    fetch: async () => new Promise(resolve => { receiveHeaders = resolve; }),
+    console: { log() {}, error() {} },
+  });
+  const waiting = provider.getNumber({ api_get_number_url: "https://provider.example/getNumber" }, "test", "22", {
+    onProgress: (phase, attempt) => phases.push([phase, attempt]),
+  });
+  assert.deepEqual(phases, [["headers", 1]]);
+  receiveHeaders({ ok: true, status: 200, text: () => new Promise(resolve => { receiveBody = resolve; }) });
+  await new Promise(setImmediate);
+  assert.deepEqual(phases, [["headers", 1], ["body", 1]]);
+  receiveBody("ACCESS_NUMBER:diagnosed:919876543210");
+  assert.equal((await waiting).api_order_id, "diagnosed");
+  assert.deepEqual(phases, [["headers", 1], ["body", 1], ["parse", 1]]);
+});
+
+test("allocation diagnostics number retries and cannot break an otherwise successful purchase", async () => {
+  let calls = 0;
+  const phases = [];
+  const provider = moduleFrom("utils/providerApi.js", {
+    fs: { existsSync: () => true, readFileSync: () => "[]", appendFile(_path, _line, callback) { callback(null); } },
+  }, {
+    fetch: async () => ({ ok: true, status: 200, text: async () => ++calls === 1 ? "NO_NUMBERS" : "ACCESS_NUMBER:retry:919876543210" }),
+    setTimeout: callback => { callback(); }, console: { log() {}, error() {} },
+  });
+  const result = await provider.getNumber({ api_get_number_url: "https://provider.example/getNumber", retry_count: 2 }, "test", "22", {
+    onProgress: (phase, attempt) => { phases.push([phase, attempt]); throw new Error("Diagnostic listener failed"); },
+  });
+  assert.equal(result.api_order_id, "retry");
+  assert.equal(calls, 2);
+  assert.deepEqual(phases, [["headers", 1], ["body", 1], ["parse", 1], ["retry_wait", 1], ["headers", 2], ["body", 2], ["parse", 2]]);
+});
+
 test("API purchase also checks funds before provider and charges a successful order", async () => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";

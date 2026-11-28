@@ -174,7 +174,9 @@ router.all("/", async (req, res) => {
         try {
           try {
             mark("provider_getNumber");
-            providerRes = await providerApi.getNumber(serverConf, svc.service_code, svc.country_code || country);
+            providerRes = await providerApi.getNumber(serverConf, svc.service_code, svc.country_code || country, {
+              onProgress: (phase, attempt) => mark(`provider_getNumber_${attempt}_${phase}`),
+            });
           } catch (apiErr) {
             providerRes = { error: apiErr.message || "Provider API Failure" };
           }

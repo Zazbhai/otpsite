@@ -96,7 +96,7 @@ function buildUrl(urlTemplate, { api_key, service, country, order_id, phone }) {
   return url;
 }
 
-async function callProvider(url, server, method = "GET") {
+async function callProvider(url, server, method = "GET", onHeaders) {
   const options = {
     method,
     headers: {
@@ -114,6 +114,7 @@ async function callProvider(url, server, method = "GET") {
 
   try {
     const res = await fetch(noCacheUrl, { ...options, cache: 'no-store' });
+    onHeaders?.();
     const text = await res.text();
     let data;
     try {
@@ -136,7 +137,7 @@ async function callProvider(url, server, method = "GET") {
 }
 
 // 1. Get Number
-async function getNumber(server, serviceCode, countryCode) {
+async function getNumber(server, serviceCode, countryCode, { onProgress } = {}) {
   if (!server.api_get_number_url) return { error: "Server missing API GET url" };
   const backoffUntil = getProviderBackoff(server);
   if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
@@ -150,11 +151,17 @@ async function getNumber(server, serviceCode, countryCode) {
   const maxRetries = Math.min(5, Math.max(1, Number(server.retry_count) || 1));
   let attempt = 0;
   let lastError = null;
+  // Observation only: diagnostics must never change allocation or retry behavior.
+  const progress = (phase, currentAttempt = attempt + 1) => {
+    try { onProgress?.(phase, currentAttempt); } catch (_) {}
+  };
 
   while (attempt < maxRetries || attempt === 0) {
     if (attempt > 0) console.log(`[RETRY] Attempt ${attempt}/${maxRetries - 1} for getNumber...`);
     
-    const response = await callProvider(url, server);
+    progress("headers");
+    const response = await callProvider(url, server, "GET", () => progress("body"));
+    progress("parse");
     logToProviderFile(`getNumber | URL=${url} | RESP=${response.data.text || JSON.stringify(response.data)}`);
     const text = response.data.text || "";
     if (isRateLimitedResponse(response)) {
@@ -202,6 +209,7 @@ async function getNumber(server, serviceCode, countryCode) {
     if (attempt > 0) {
        console.log(`[RETRYABLE_ERROR] Provider returned: ${text || 'EMPTY'}. Attempting retry ${attempt}/${maxRetries - 1}`);
        // Optional: Add a small delay between retries to avoid spamming the provider
+       progress("retry_wait", attempt);
        await new Promise(r => setTimeout(r, 1000));
     }
   }
