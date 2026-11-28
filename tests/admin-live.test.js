@@ -387,9 +387,36 @@ test("modified browser scripts and inline admin scripts parse", () => {
   assert.match(source("views/admin/transactions.html"), /status=\$\{txStatus\}/);
 });
 
+test("order pages load their reference renderer even with cached main.js missing the helper", () => {
+  for (const file of ["admin/orders", "admin/user-detail", "orders", "order-detail"]) {
+    const html = source(`views/${file}.html`);
+    const context = vm.createContext({});
+    // A browser with an older cached shared bundle has no order reference helper.
+    vm.runInContext("function copyToClipboard() {}", context);
+    const renderPosition = html.indexOf("${orderReferencesHtml(o)}");
+    assert.ok(renderPosition > 0, file);
+    const dependencies = [...html.slice(0, renderPosition).matchAll(/<script\b([^>]*)src="([^"]+)"([^>]*)><\/script>/g)];
+    const references = dependencies.find(match => match[2] === "/js/order-references.js?v=1");
+    assert.ok(references, `${file} loads the renderer before using it`);
+    assert.ok(!/\b(async|defer|module)\b/.test(references[1] + references[3]), file);
+    const sharedIndex = dependencies.findIndex(match => match[2].startsWith("/js/main.js"));
+    assert.ok(sharedIndex >= 0 && sharedIndex < dependencies.indexOf(references), file);
+    vm.runInContext(source("public/js/order-references.js"), context);
+    context.o = { order_id: "local-1", external_order_id: "provider-2" };
+    const expression = html.slice(renderPosition).match(/^\$\{(orderReferencesHtml\(o\))\}/)[1];
+    const rendered = vm.runInContext(expression, context);
+    assert.ok(rendered.includes("local-1"), file);
+    assert.ok(rendered.includes("provider-2"), file);
+    // The same script also works alongside the shared helper in newer bundles.
+    vm.runInContext(source("public/js/main.js").split("const API =")[0], context);
+    vm.runInContext(source("public/js/order-references.js"), context);
+    assert.equal(vm.runInContext(expression, context), rendered, file);
+  }
+});
+
 test("displaying and copying provider IDs escapes attribute and HTML characters", () => {
   const context = vm.createContext({});
-  vm.runInContext(source("public/js/main.js").split("const API =")[0], context);
+  vm.runInContext(source("public/js/order-references.js"), context);
   const html = context.orderReferencesHtml({ order_id: "local-1", external_order_id: '\"><img src=x onerror=alert(1)>' });
   assert.ok(html.includes("External order ID"));
   assert.ok(html.includes("local-1"));
