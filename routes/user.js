@@ -608,10 +608,13 @@ router.get("/orders", async (req, res) => {
     const { status, page = 1, limit = 20, q, rebuy_candidates } = req.query;
     const filter = { user_id: req.userId };
     if (q) {
+      if (typeof q !== "string") return res.status(400).json({ error: "Invalid order search" });
+      const search = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       filter.$or = [
-        { order_id: new RegExp(q, "i") },
-        { phone: new RegExp(q, "i") },
-        { service_name: new RegExp(q, "i") }
+        { order_id: { $regex: search, $options: "i" } },
+        { external_order_id: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { service_name: { $regex: search, $options: "i" } }
       ];
     }
 
@@ -629,7 +632,7 @@ router.get("/orders", async (req, res) => {
     }
     const total  = await Order.countDocuments(filter);
     const orders = await Order.find(filter)
-      .select("order_id service_id service_name cost status phone createdAt all_otps otp country server_name service_image service_color expires_at min_cancel_at rebuy_order_id rebuy_cancelled refund_issued")
+      .select("order_id external_order_id service_id service_name cost status phone createdAt all_otps otp country server_name service_image service_color expires_at min_cancel_at rebuy_order_id rebuy_cancelled refund_issued")
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))

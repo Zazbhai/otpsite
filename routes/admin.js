@@ -421,12 +421,15 @@ router.get("/orders", async (req, res) => {
     const { status, page = 1, limit = 30, user_id, q } = req.query;
     const filter = {};
     if (q) {
+      if (typeof q !== "string") return res.status(400).json({ error: "Invalid order search" });
+      const search = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const orClauses = [
-        { order_id: new RegExp(q, "i") },
-        { phone: new RegExp(q, "i") },
-        { service_name: new RegExp(q, "i") }
+        { order_id: { $regex: search, $options: "i" } },
+        { external_order_id: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { service_name: { $regex: search, $options: "i" } }
       ];
-      if (mongoose.Types.ObjectId.isValid(q)) orClauses.push({ user_id: new mongoose.Types.ObjectId(q) });
+      if (mongoose.Types.ObjectId.isValid(q)) orClauses.push({ user_id: q });
       filter.$or = orClauses;
     }
 

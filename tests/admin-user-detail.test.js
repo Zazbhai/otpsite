@@ -163,6 +163,7 @@ function browser(get) {
     fmtMoney: amount => Number(amount).toFixed(2), userAvatar: () => "avatar", toast() {},
   });
   const html = fs.readFileSync(path.join(__dirname, "../views/admin/user-detail.html"), "utf8");
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "../public/js/main.js"), "utf8").split("const API =")[0], context);
   for (const script of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     if (!/src\s*=/.test(script[1])) vm.runInContext(script[2], context);
   }

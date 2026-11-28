@@ -1037,6 +1037,34 @@ test("fresh database SQL defines each table column once", () => {
   }
 });
 
+test("customer order search includes external IDs, escapes punctuation and only returns the owner's orders", async () => {
+  const f = walletFixture(), sift = require("sift").default;
+  const rows = [
+    { order_id: "local", external_order_id: "provider.a+1", user_id: "u1", status: "active", server_name: "s" },
+    { order_id: "wrong", external_order_id: "providerXa111", user_id: "u1", status: "active", server_name: "s" },
+    { order_id: "foreign", external_order_id: "provider.a+1", user_id: "u2", status: "active", server_name: "s" },
+  ];
+  let fields;
+  f.models.Order.countDocuments = async filter => rows.filter(sift(filter)).length;
+  f.models.Order.find = filter => ({
+    select(value) { fields = value; return this; }, sort() { return this; }, skip() { return this; }, limit() { return this; },
+    lean: async () => rows.filter(sift(filter)),
+  });
+  f.serverFind = () => ({ select() { return this; }, populate() { return this; }, lean: async () => [] });
+  const routes = routesFixture(f, async () => ({})), result = response();
+  await routes.listOrders({ userId: "u1", query: { q: "provider.a+1" } }, result);
+  assert.equal(result.body.total, 1);
+  assert.equal(result.body.orders[0].order_id, "local");
+  assert.equal(result.body.orders[0].external_order_id, "provider.a+1");
+  assert.ok(fields.split(" ").includes("external_order_id"));
+});
+
+test("MySQL order search translates escaped provider IDs into a database regular expression", async () => {
+  const f = await mysqlFixture();
+  await f.User.findOne({ $or: [{ external_order_id: { $regex: "provider\\.a\\+1", $options: "i" } }] });
+  assert.equal(f.reads[0].where[Op.or][0].external_order_id[Op.regexp], "provider\\.a\\+1");
+});
+
 test("order list exposes completed cancellation and rebuy buttons with six-row server pagination", async () => {
   const f = walletFixture();
   const rows = [

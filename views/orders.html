@@ -111,7 +111,7 @@
       <div class="p-4 sm:p-6 border-b border-outline-variant/20 bg-surface/50 flex flex-col md:flex-row gap-3.5 md:gap-4 items-stretch md:items-center justify-between">
         <div class="relative w-full md:w-80 lg:w-96">
           <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
-          <input class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl py-2.5 pl-10 pr-4 font-body-sm text-xs sm:text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-inner" placeholder="Search by service or number..." type="text" id="order-search" onkeyup="debounceOrderSearch()"/>
+          <input class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl py-2.5 pl-10 pr-4 font-body-sm text-xs sm:text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-inner" placeholder="Order ID, external ID, service or number..." type="text" id="order-search" onkeyup="debounceOrderSearch()"/>
         </div>
         
         <!-- Filter Tabs -->
@@ -131,7 +131,7 @@
             <thead>
               <tr class="bg-surface-container-lowest border-b border-outline-variant/30">
                 <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Service</th>
-                <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Order ID</th>
+                <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Order IDs</th>
                 <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Number / OTP</th>
                 <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Cost</th>
                 <th class="py-3 px-6 font-label-md text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Status</th>
@@ -277,7 +277,7 @@
             </div>
           </td>
           <td class="py-3 px-6">
-            <span class="font-mono text-[11px] text-on-surface-variant font-medium">${o.external_order_id || o.order_id}</span>
+            ${orderReferencesHtml(o)}
           </td>
           <td class="py-3 px-6">
             <div class="flex flex-col">
@@ -364,7 +364,7 @@
           </div>
 
           <div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-0.5">
-            <span class="font-mono">#${o.external_order_id || o.order_id}</span>
+            ${orderReferencesHtml(o)}
             <div class="flex items-center gap-3">
               <span class="font-bold text-on-surface text-xs">${fmtMoney(o.cost)}</span>
               <span>•</span>

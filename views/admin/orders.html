@@ -94,7 +94,7 @@
       <h1 style="font-size:24px">Orders <span id="total-count" class="text-muted text-sm"></span></h1>
       <div class="search-box" style="position:relative">
         <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.6">🔍</span>
-        <input type="text" id="order-search" class="form-input" style="padding-left:36px" placeholder="" onkeyup="debounceSearch()" />
+        <input type="text" id="order-search" class="form-input" style="padding-left:36px" placeholder="Order ID, external ID, phone or service" onkeyup="debounceSearch()" />
       </div>
     </div>
 
@@ -108,7 +108,7 @@
     <div class="card" style="padding:0;overflow:hidden">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Order ID</th><th>User</th><th>Service</th><th>Server</th><th>Phone</th><th>OTP</th><th>Cost</th><th>Status</th><th>Date</th><th></th></tr></thead>
+          <thead><tr><th>Order IDs</th><th>User</th><th>Service</th><th>Server</th><th>Phone</th><th>OTP</th><th>Cost</th><th>Status</th><th>Date</th><th></th></tr></thead>
           <tbody id="orders-body">
             <tr><td colspan="10" style="text-align:center;padding:48px"><div class="spinner" style="margin:0 auto"></div></td></tr>
           </tbody>
@@ -181,6 +181,10 @@
 
       <!-- Secondary Info -->
       <div style="margin-top: 24px; display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="grid-column:1/-1;padding:12px;background:var(--surface);border-radius:12px;border:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:4px">External order ID (provider)</div>
+          <button type="button" id="o-external-id" onclick="if(this.dataset.orderReference) copyToClipboard(this.dataset.orderReference)" title="Copy external order ID" style="background:none;border:0;padding:0;color:inherit;font-family:monospace;overflow-wrap:anywhere;text-align:left;cursor:pointer">Not available</button>
+        </div>
         <div style="padding:12px; background:var(--surface); border-radius:12px; border:1px solid var(--border);">
           <div style="font-size:10px; color:var(--text-3); text-transform:uppercase; margin-bottom:4px;">User ID</div>
           <div id="o-user-id" style="font-size:12px; font-weight:600; font-family: 'JetBrains Mono', monospace; word-break: break-all;">—</div>
@@ -224,7 +228,7 @@
       document.getElementById("total-count").textContent = `(${data.total.toLocaleString()})`;
       tbody.innerHTML = data.orders.map(o => `
         <tr>
-          <td data-label="Order ID" class="mono text-xs">${o.order_id}</td>
+          <td data-label="Order IDs" class="mono text-xs">${orderReferencesHtml(o)}</td>
           <td data-label="User" class="text-sm">
             <a href="/admin/users/${o.user_id}" class="text-accent" style="font-weight:600; text-decoration:none;">
               <div style="display:flex; flex-direction:column;">
@@ -262,6 +266,8 @@
   window.openEdit = function(o) {
     document.getElementById("o-id").value = o.order_id;
     document.getElementById("o-id-display").textContent = `#${o.order_id}`;
+    document.getElementById("o-external-id").textContent = o.external_order_id || "Not available";
+    document.getElementById("o-external-id").dataset.orderReference = o.external_order_id || "";
     document.getElementById("o-service-name").textContent = o.service_name;
     document.getElementById("o-user-id").textContent = o.user_id;
     document.getElementById("o-phone").textContent = o.phone || "Assigning...";

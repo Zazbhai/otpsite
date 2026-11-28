@@ -326,7 +326,7 @@
           </div>
           <div class="table-wrap">
             <table class="mobile-card-table">
-              <thead><tr><th>Service</th><th>Phone</th><th>Cost</th><th>Status</th></tr></thead>
+              <thead><tr><th>Order IDs</th><th>Service</th><th>Phone</th><th>Cost</th><th>Status</th></tr></thead>
               <tbody id="orders-body"></tbody>
             </table>
           </div>
@@ -506,11 +506,12 @@
   function renderOrders() {
     document.getElementById('orders-body').innerHTML = loadedOrders.length ? loadedOrders.map(o => `
       <tr onclick="window.location.href='/admin/orders/${encodeURIComponent(o._id || o.id)}'" style="cursor:pointer">
+        <td data-label="Order IDs">${orderReferencesHtml(o)}</td>
         <td data-label="Service">${safeHtml(o.service_name)}</td>
         <td data-label="Phone" class="mono font-bold">${safeHtml(o.phone || '-')}</td>
         <td data-label="Cost" class="text-danger">-${fmtMoney(o.cost)}</td>
         <td data-label="Status">${orderBadge(o.status)}</td>
-      </tr>`).join('') : '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No orders for this period</td></tr>';
+      </tr>`).join('') : '<tr><td colspan="5" class="text-center text-muted" style="padding:24px">No orders for this period</td></tr>';
   }
 
   async function loadMoreOrders() {

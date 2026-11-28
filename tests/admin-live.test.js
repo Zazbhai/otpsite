@@ -185,6 +185,38 @@ function adminRouter(dbType, overrides = {}) {
   return { router: module.exports, authorized };
 }
 
+for (const dbType of ["mysql", "mongodb"]) test(`${dbType}: admin can find orders by literal external ID with pagination and status filters`, async () => {
+  const sift = require("sift").default;
+  const records = [
+    { order_id: "local-1", external_order_id: "provider.a+1", user_id: "u1", status: "active" },
+    { order_id: "local-2", external_order_id: "provider.a+1", user_id: "u1", status: "completed" },
+    { order_id: "local-3", external_order_id: "providerXa111", user_id: "u1", status: "active" },
+    { order_id: "local-4", external_order_id: "provider.a+1", user_id: "u2", status: "active" },
+    { order_id: "local-5", external_order_id: "e4f4b2e3e46a79666b2f07d8", user_id: "u1", status: "active" },
+  ];
+  const Order = {
+    countDocuments: async filter => records.filter(sift(filter)).length,
+    find(filter) {
+      let offset = 0, size = 30;
+      return { sort() { return this; }, skip(value) { offset = value; return this; }, limit(value) { size = value; return this; },
+        lean: async () => records.filter(sift(filter)).slice(offset, offset + size) };
+    },
+  };
+  const { router } = adminRouter(dbType, { Order, User: { find: () => ({ lean: async () => [] }) } });
+  const handler = router.stack.find(layer => layer.route?.path === "/orders" && layer.route.methods.get).route.stack[0].handle;
+  let result, statusCode;
+  const res = { json(data) { result = data; }, status(code) { statusCode = code; return this; } };
+  await handler({ query: { q: "provider.a+1", status: "active", user_id: "u1", limit: 1 } }, res);
+  assert.equal(result.total, 1);
+  assert.equal(result.orders[0].order_id, "local-1");
+  assert.equal(result.orders[0].external_order_id, "provider.a+1");
+  await handler({ query: { q: "e4f4b2e3e46a79666b2f07d8", status: "all" } }, res);
+  assert.equal(result.total, 1);
+  assert.equal(result.orders[0].order_id, "local-5");
+  await handler({ query: { q: { $ne: "" } } }, res);
+  assert.equal(statusCode, 400);
+});
+
 for (const dbType of ["mysql", "mongodb"]) {
   test(`${dbType}: changing server delivery mode reschedules its active orders`, async () => {
     const updates = [];
@@ -353,4 +385,15 @@ test("modified browser scripts and inline admin scripts parse", () => {
   }
   assert.match(source("views/admin/transactions.html"), /URLSearchParams\(window\.location\.search\)/);
   assert.match(source("views/admin/transactions.html"), /status=\$\{txStatus\}/);
+});
+
+test("displaying and copying provider IDs escapes attribute and HTML characters", () => {
+  const context = vm.createContext({});
+  vm.runInContext(source("public/js/main.js").split("const API =")[0], context);
+  const html = context.orderReferencesHtml({ order_id: "local-1", external_order_id: '\"><img src=x onerror=alert(1)>' });
+  assert.ok(html.includes("External order ID"));
+  assert.ok(html.includes("local-1"));
+  assert.ok(html.includes("&quot;&gt;&lt;img"));
+  assert.ok(html.includes("copyToClipboard(this.dataset.orderReference)"));
+  assert.ok(!html.includes("<img"));
 });
