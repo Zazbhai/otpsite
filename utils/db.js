@@ -435,16 +435,7 @@ const withTransaction = async (callback) => {
     }
   } else {
     const mongoose = require("mongoose");
-    const session = await mongoose.startSession();
-    try {
-      let result;
-      await session.withTransaction(async () => {
-        result = await callback(session);
-      });
-      return result;
-    } finally {
-      await session.endSession();
-    }
+    return require("./mongoTransaction").runMongoTransaction(() => mongoose.startSession(), callback);
   }
 };
 
