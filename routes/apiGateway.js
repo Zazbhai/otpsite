@@ -13,6 +13,7 @@ const { nanoid } = require("nanoid");
 const { withTransaction } = require("../utils/db");
 const { notifyAdminChange } = require("../utils/adminRealtime");
 const { recordOrderSms } = require("../utils/orderSms");
+const { emitToUser } = require("../utils/realtimeEmitter");
 const { rebuyCancelledOrder, cancelCompletedOrderForRebuy } = require("../utils/rebuy");
 
 // Both allocation actions use the same legacy SMS API success response.
