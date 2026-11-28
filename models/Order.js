@@ -34,9 +34,8 @@ if (DB_TYPE === "mysql") {
     expires_at: { type: DataTypes.DATE },
     min_cancel_at: { type: DataTypes.DATE },
     external_order_id: { type: DataTypes.STRING, defaultValue: "" },
-    // Stable client/API reference. `external_order_id` is the value sent to
-    // providers as external_order_id; this field stores the provider's own
-    // activation/dashboard ID for polling and legacy callbacks.
+    // The provider activation ID is the public external order reference for
+    // new orders. `order_id` remains the internal wallet/ledger reservation ID.
     provider_order_id: { type: DataTypes.STRING, defaultValue: "" },
     server_id: { type: DataTypes.STRING, defaultValue: "" },
     rebuy_of: { type: DataTypes.STRING, defaultValue: "" },

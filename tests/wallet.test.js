@@ -959,8 +959,9 @@ test("API purchase also checks funds before provider and charges a successful or
   const success = response();
   await routes.gateway(req, success);
   const clientOrderId = success.body.split(":")[1];
-  assert.match(clientOrderId, /^ORD-/);
-  assert.equal(f.tables.orders[0].external_order_id, clientOrderId);
+  assert.equal(clientOrderId, "1");
+  assert.match(f.tables.orders[0].order_id, /^ORD-/);
+  assert.equal(f.tables.orders[0].external_order_id, "1");
   assert.equal(f.tables.orders[0].provider_order_id, "1");
   assert.equal(f.tables.users[0].balance, 4);
   const status = response();
@@ -1210,8 +1211,9 @@ test("rebuy and getNumber return identical plain-text success responses and norm
   await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getNumber", service: "test", country: "22" } }, allocated);
   assert.equal(typeof allocated.body, "string");
   const clientOrderId = allocated.body.split(":")[1];
-  assert.match(clientOrderId, /^ORD-/);
-  assert.equal(f.tables.orders[0].external_order_id, clientOrderId);
+  assert.equal(clientOrderId, "provider-contract-test");
+  assert.match(f.tables.orders[0].order_id, /^ORD-/);
+  assert.equal(f.tables.orders[0].external_order_id, "provider-contract-test");
   assert.equal(f.tables.orders[0].provider_order_id, "provider-contract-test");
   newOrder = f.tables.orders[0];
   for (const action of ["rebuy", "reBuy"]) {
@@ -1546,6 +1548,36 @@ test("private order history requires the server secret and returns only provider
   await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", external_order_id: { $ne: "" } } }, badId);
   assert.equal(badId.statusCode, 400);
   assert.doesNotMatch(require("node:fs").readFileSync(require("node:path").join(root, "views/api-docs.html"), "utf8"), /private\/order-history/);
+});
+
+test("private order verifier resolves provider, external and local IDs without exposing order data", async () => {
+  const rows = [{ order_id: "ORD-LOCAL", external_order_id: "provider-id", provider_order_id: "provider-id", status: "active" }];
+  const router = moduleFrom("routes/privateOrderVerify.js", {
+    "../models/Order": {
+      findOne: filter => {
+        const values = filter.$or.map(condition => Object.values(condition)[0]);
+        const row = rows.find(item => values.includes(item.order_id) || values.includes(item.external_order_id) || values.includes(item.provider_order_id));
+        const query = { select() { return query; }, lean: async () => row || null };
+        return query;
+      },
+    },
+  }, { process: { env: { ORDER_HISTORY_SECRET: "0123456789abcdef0123456789abcdef01234567" } } });
+  const handler = router.stack[0].route.stack.at(-1).handle;
+  const response = () => ({ statusCode: 200, body: null, headers: {}, set(key, value) { this.headers[key] = value; }, status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; } });
+  const unauthorized = response();
+  await handler({ query: { key: "wrong", order_id: "provider-id" } }, unauthorized);
+  assert.equal(unauthorized.statusCode, 401);
+  const found = response();
+  await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", order_id: "ORD-LOCAL" } }, found);
+  assert.equal(found.body.found, true);
+  assert.equal(found.body.order_id, "provider-id");
+  assert.equal(found.body.status, "active");
+  const missing = response();
+  await handler({ query: { key: "0123456789abcdef0123456789abcdef01234567", order_id: "missing" } }, missing);
+  assert.equal(missing.body.found, false);
+  assert.equal(missing.body.order_id, "missing");
+  assert.equal(missing.body.status, "NOT_FOUND");
+  assert.doesNotMatch(JSON.stringify(found.body), /provider_order_id|external_order_id/);
 });
 
 test("private history exports every matching order across bounded batches and exact India date boundaries", async () => {

@@ -170,7 +170,7 @@ test("legacy provider dashboard ID resolves through provider_order_id", async t 
   const result = await f.send({ external_order_id: "provider-dashboard-id", otp: "001234" });
   assert.equal(result.status, 200);
   assert.equal(order.otp, "001234");
-  assert.equal(order.order_id, result.body.order_id);
+  assert.equal(result.body.order_id, "provider-dashboard-id");
 });
 
 test("callback before order mapping is durably queued and delivered when mapping appears", async t => {
@@ -191,7 +191,7 @@ test("callback before order mapping is durably queued and delivered when mapping
   assert.deepEqual(order.all_otps, [payload.otp]);
 });
 
-test("getNumber sends the preallocated client ID upstream as external_order_id", async () => {
+test("getNumber does not send an external_order_id parameter", async () => {
   const provider = require("../utils/providerApi"), originalFetch = global.fetch;
   let requestedUrl = "";
   try {
@@ -199,10 +199,10 @@ test("getNumber sends the preallocated client ID upstream as external_order_id",
       requestedUrl = String(url);
       return { ok: true, status: 200, text: async () => "ACCESS_NUMBER:provider-dashboard-id:919000000000" };
     };
-    const result = await provider.getNumber({ api_get_number_url: "https://provider.example/get?service={service}&country={country}", retry_count: 1 },
+    const result = await provider.getNumber({ api_get_number_url: "https://provider.example/get?service={service}&country={country}&external_order_id={external_order_id}", retry_count: 1 },
       "wa", "22", { externalOrderId: "CLIENT-ORDER-123" });
     assert.equal(result.api_order_id, "provider-dashboard-id");
-    assert.match(requestedUrl, /external_order_id=CLIENT-ORDER-123/);
+    assert.doesNotMatch(requestedUrl, /[?&]external_order_id=/);
   } finally { global.fetch = originalFetch; }
 });
 

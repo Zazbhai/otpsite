@@ -535,7 +535,7 @@ router.post("/orders", async (req, res) => {
     // 2. Provider API call (OUTSIDE database transaction)
     let providerRes;
     try {
-      providerRes = await providerApi.getNumber(serverConf, service.service_code, service.country_code, { externalOrderId: reservedOrderId });
+      providerRes = await providerApi.getNumber(serverConf, service.service_code, service.country_code);
     } catch (apiErr) {
       providerRes = { error: apiErr.message || "Provider API Failure" };
     }
@@ -561,7 +561,7 @@ router.post("/orders", async (req, res) => {
       server_name: serverConf.name,
       country: service.country_code,
       phone: providerRes.phone,
-      external_order_id: reservedOrderId,
+      external_order_id: providerRes.api_order_id,
       provider_order_id: providerRes.api_order_id,
       server_id: String(serverConf._id || serverConf.id || ""),
       cost: finalPrice,

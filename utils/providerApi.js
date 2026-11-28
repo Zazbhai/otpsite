@@ -139,7 +139,7 @@ async function callProvider(url, server, method = "GET", onHeaders) {
 }
 
 // 1. Get Number
-async function getNumber(server, serviceCode, countryCode, { onProgress, externalOrderId } = {}) {
+async function getNumber(server, serviceCode, countryCode, { onProgress } = {}) {
   if (!server.api_get_number_url) return { error: "Server missing API GET url" };
   const backoffUntil = getProviderBackoff(server);
   if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
@@ -148,12 +148,12 @@ async function getNumber(server, serviceCode, countryCode, { onProgress, externa
     api_key: server.api_key, 
     service: serviceCode, 
     country: countryCode,
-    order_id: externalOrderId,
-    external_order_id: externalOrderId,
   });
-  if (externalOrderId && !/[?&]external_order_id=/.test(url)) {
-    url += `${url.includes("?") ? "&" : "?"}external_order_id=${encodeURIComponent(String(externalOrderId))}`;
-  }
+  // The provider creates the activation ID. Never pass our internal wallet
+  // reservation ID as external_order_id; use the provider response as the
+  // canonical client-facing order reference instead.
+  url = url.replace(/([?&])external_order_id=[^&]*/ig, "$1")
+    .replace(/\?&/g, "?").replace(/&&+/g, "&").replace(/[?&]+$/, "");
   
   const maxRetries = Math.min(5, Math.max(1, Number(server.retry_count) || 1));
   let attempt = 0;

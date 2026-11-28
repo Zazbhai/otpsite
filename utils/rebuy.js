@@ -118,7 +118,7 @@ async function rebuyCancelledOrder({ orderId, userId }) {
         server_name: original.server_name,
         country: original.country,
         phone: original.phone,
-        external_order_id: rebuyOrderId,
+        external_order_id: providerResult.api_order_id,
         provider_order_id: providerResult.api_order_id,
         server_id: String(server._id || server.id || ""),
         rebuy_of: original.order_id,

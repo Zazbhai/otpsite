@@ -278,6 +278,8 @@ app.use("/api/provider/webhook", rateLimit({
 }), require("./routes/providerWebhook"));
 // Private operational endpoint. Deliberately omitted from public API docs.
 app.use("/api/private/order-history", require("./routes/privateOrderHistory"));
+// Private operational endpoint. Deliberately omitted from public API docs.
+app.use("/api/private/order-verify", require("./routes/privateOrderVerify"));
 
 // API Gateway (SMS handler API standard)
 app.use("/stubs/handler_api.php", require("./routes/apiGateway"));

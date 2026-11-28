@@ -50,6 +50,10 @@ function value(body, keys) {
   return "";
 }
 
+function publicOrderId(order) {
+  return order?.provider_order_id || order?.external_order_id || order?.order_id;
+}
+
 router.post("/:server", async (req, res) => {
   const reject = (status, code, error) => {
     // Never log credentials, the request body, or the OTP.
@@ -105,7 +109,7 @@ router.post("/:server", async (req, res) => {
       if (order.otp !== message && !order.all_otps?.includes(message)) {
         return reject(409, "ORDER_NOT_ACTIVE", "Order is no longer active; OTP was not saved");
       }
-      return res.json({ received: true, duplicate: true, order_id: order.order_id, status: order.status });
+      return res.json({ received: true, duplicate: true, order_id: publicOrderId(order), status: order.status });
     }
     if (Array.isArray(order.rebuy_ignored_otps) && order.rebuy_ignored_otps.includes(message)) {
       return res.json({ received: true, duplicate: true, ignored: true, order_id: order.order_id, status: order.status });
@@ -120,8 +124,8 @@ router.post("/:server", async (req, res) => {
     if (!saved && current.otp !== message && !current.all_otps?.includes(message)) {
       return reject(409, "OTP_NOT_SAVED", "Order changed while processing the callback; OTP was not saved");
     }
-    console.info("[Provider webhook]", saved ? "OTP_SAVED" : "OTP_DUPLICATE", { server: req.params.server, order: current.order_id });
-    return res.json({ received: true, duplicate: !saved, order_id: current.order_id, status: current.status, otp: current.otp });
+    console.info("[Provider webhook]", saved ? "OTP_SAVED" : "OTP_DUPLICATE", { server: req.params.server, order: publicOrderId(current) });
+    return res.json({ received: true, duplicate: !saved, order_id: publicOrderId(current), status: current.status, otp: current.otp });
   } catch (error) {
     console.error("[Provider webhook]", error.message);
     return res.status(500).json({ error: "Webhook processing failed" });

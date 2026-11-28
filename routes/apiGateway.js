@@ -21,7 +21,7 @@ const { retryForOrder } = require("../utils/providerWebhookQueue");
 
 // Both allocation actions use the same legacy SMS API success response.
 function numberResponse(order) {
-  return `ACCESS_NUMBER:${order.external_order_id || order.order_id}:${String(order.phone).replace(/\D/g, "")}`;
+  return `ACCESS_NUMBER:${order.provider_order_id || order.external_order_id || order.order_id}:${String(order.phone).replace(/\D/g, "")}`;
 }
 
 async function findUserOrdersByIds(userId, ids) {
@@ -181,7 +181,6 @@ router.all("/", async (req, res) => {
           try {
             mark("provider_getNumber");
             providerRes = await providerApi.getNumber(serverConf, svc.service_code, svc.country_code || country, {
-              externalOrderId: reservedOrderId,
               onProgress: (phase, attempt) => mark(`provider_getNumber_${attempt}_${phase}`),
             });
           } catch (apiErr) {
@@ -204,7 +203,9 @@ router.all("/", async (req, res) => {
             server_name: serverConf.name,
             country,
             phone: providerRes.phone,
-            external_order_id: reservedOrderId,
+            // The provider activation ID is the public order reference. Keep
+            // order_id as the internal reservation/ledger key.
+            external_order_id: providerRes.api_order_id,
             provider_order_id: providerRes.api_order_id,
             server_id: String(serverConf._id || serverConf.id || ""),
             cost: finalPrice,
