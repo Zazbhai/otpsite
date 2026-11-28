@@ -14,7 +14,11 @@ async function main() {
   if (DB_TYPE === "mysql") await sequelize.authenticate();
   else await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000, autoIndex: false });
   const limit = Math.min(100000, Math.max(1, Number(process.env.WALLET_AUDIT_LIMIT) || 10000));
-  const orders = await Order.find({}).sort({ createdAt: -1 }).limit(limit);
+  const userId = String(process.env.WALLET_AUDIT_USER_ID || "").trim();
+  const user = userId ? await User.findById(userId).select("balance") : null;
+  if (userId && !user) throw new Error("AUDIT_USER_NOT_FOUND");
+  const scope = userId ? { user_id: userId } : {};
+  const orders = await Order.find(scope).sort({ createdAt: -1 }).limit(limit);
   const findings = [];
   for (const order of orders) {
     const transactions = await Transaction.find({ order_id: order.order_id });
@@ -33,15 +37,26 @@ async function main() {
     if (refunds.length && !order.refund_issued) issues.push("refund_flag_missing");
     if (issues.length) findings.push({ order_id: order.order_id, user_id: String(order.user_id), charged, refunded, issues });
   }
-  const negativeUsers = await User.find({ balance: { $lt: 0 } }).select("_id balance").limit(limit);
-  const pendingPurchases = await Transaction.find({ type: "purchase", status: "pending", createdAt: { $lt: new Date(Date.now() - 15 * 60000) } }).limit(limit);
-  const report = { generated_at: new Date().toISOString(), orders_checked: orders.length, limit,
+  const negativeUsers = userId ? (Number(user.balance) < 0 ? [user] : []) : await User.find({ balance: { $lt: 0 } }).select("_id balance").limit(limit);
+  const pendingPurchases = await Transaction.find({ ...scope, type: "purchase", status: "pending", createdAt: { $lt: new Date(Date.now() - 15 * 60000) } }).limit(limit);
+  const refundRows = await Transaction.find({ ...scope, type: "refund", status: "completed" }).sort({ createdAt: -1 }).limit(limit);
+  const purchaseRows = await Transaction.find({ ...scope, type: "purchase", status: "completed", amount: { $lt: 0 } }).limit(limit);
+  const refundsTotal = money(refundRows.reduce((sum, tx) => sum + Number(tx.amount), 0));
+  const chargesTotal = money(purchaseRows.reduce((sum, tx) => sum - Number(tx.amount), 0));
+  const report = { generated_at: new Date().toISOString(), user_id: userId || null,
+    current_balance: user ? money(user.balance) : null, orders_checked: orders.length, limit,
+    totals: { completed_purchase_rows: purchaseRows.length, completed_purchase_amount: chargesTotal,
+      completed_refund_rows: refundRows.length, completed_refund_amount: refundsTotal },
+    recent_refunds: refundRows.map(tx => ({ order_id: tx.order_id, amount: money(tx.amount), createdAt: tx.createdAt })),
     findings, negative_balances: negativeUsers.map(user => ({ user_id: String(user._id), balance: user.balance })),
     pending_purchases: pendingPurchases.map(tx => ({ order_id: tx.order_id, user_id: String(tx.user_id), amount: tx.amount })) };
   const output = path.join(__dirname, "..", "scratch", "wallet-audit.json");
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2));
-  console.log(JSON.stringify({ orders_checked: orders.length, orders_with_issues: findings.length,
+  console.log(JSON.stringify({ user_id: userId || null, current_balance: user ? money(user.balance) : null,
+    orders_checked: orders.length, orders_with_issues: findings.length,
+    completed_purchase_amount: chargesTotal, completed_refund_amount: refundsTotal,
+    refund_rows: refundRows.length,
     negative_balances: negativeUsers.length, stale_reservations: pendingPurchases.length, report: output }));
 }
 main().catch(err => {

@@ -218,6 +218,19 @@ for (const dbType of ["mysql", "mongodb"]) {
     assert.equal(f.tables.users[0].balance, 10);
   });
 
+  test(`${dbType}: refund refuses an ambiguous duplicate purchase ledger without crediting either amount`, async () => {
+    const f = walletFixture(dbType);
+    await f.wallet.reservePurchase({ userId: "u1", orderId: "ambiguous-refund", amount: 4, description: "test" });
+    const order = await f.wallet.finalizePurchase({ order_id: "ambiguous-refund", user_id: "u1", cost: 4,
+      server_name: "server", external_order_id: "provider", status: "active", otp: "", all_otps: [] });
+    f.tables.transactions.push({ _id: "duplicate-purchase", user_id: "u1", order_id: "ambiguous-refund",
+      type: "purchase", status: "completed", amount: -30000, reference: "duplicate" });
+    await assert.rejects(f.wallet.refundOrder(order._id, "cancelled", "test"), /PURCHASE_LEDGER_AMBIGUOUS/);
+    assert.equal(f.tables.users[0].balance, 6);
+    assert.equal(f.tables.orders[0].status, "active");
+    assert.equal(f.tables.transactions.filter(tx => tx.type === "refund").length, 0);
+  });
+
   test(`${dbType}: webhook/verify/approval replay credits once, owner is enforced`, async () => {
     const f = walletFixture(dbType);
     const tx = await f.models.Transaction.create({ user_id: "u1", type: "deposit", status: "pending", amount: 5, reference: "pay" });

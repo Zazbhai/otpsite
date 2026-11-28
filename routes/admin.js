@@ -546,7 +546,7 @@ router.patch("/orders/:id", async (req, res) => {
     console.error("Admin order update error:", err);
     if (err.message === "ORDER_NOT_REFUNDABLE") return res.status(409).json({ error: "An order with a received OTP cannot be refunded" });
     if (err.message === "ORDER_ALREADY_REFUNDED") return res.status(409).json({ error: "This order has already been refunded" });
-    if (["PURCHASE_DEBIT_UNVERIFIED", "PURCHASE_LEDGER_MISSING", "ORDER_COST_MISMATCH"].includes(err.message)) return res.status(409).json({ error: "The original charge needs review before this order can be refunded" });
+    if (["PURCHASE_DEBIT_UNVERIFIED", "PURCHASE_LEDGER_MISSING", "PURCHASE_LEDGER_AMBIGUOUS", "ORDER_COST_MISMATCH", "REFUND_EXCEEDS_ORDER_COST"].includes(err.message)) return res.status(409).json({ error: "The original charge needs review before this order can be refunded" });
     if (err.message === "USER_NOT_FOUND") return res.status(404).json({ error: "Order owner not found" });
     res.status(500).json({ error: "Server error" }); 
   }

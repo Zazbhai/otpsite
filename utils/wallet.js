@@ -52,9 +52,13 @@ async function refundOrder(orderId, status, description, session) {
       return { refunded: false, order: current };
     }
     // Refund only money that was actually charged, to its original owner.
-    const purchase = await Transaction.findOne({ order_id: current.order_id, user_id: String(current.user_id), type: "purchase", status: "completed" }, null, options);
+    const purchases = await Transaction.find({ order_id: current.order_id, user_id: String(current.user_id),
+      type: "purchase", status: "completed" }, null, options).limit(2);
+    if (purchases.length !== 1) throw new Error(purchases.length ? "PURCHASE_LEDGER_AMBIGUOUS" : "PURCHASE_LEDGER_MISSING");
+    const purchase = purchases[0];
     assertVerifiedPurchase(purchase, current.cost);
     const amount = positiveMoney(-Number(purchase.amount));
+    if (amount > money(current.cost)) throw new Error("REFUND_EXCEEDS_ORDER_COST");
     const claimed = await Order.findOneAndUpdate(
       { _id: current._id, status: "active", refund_issued: { $ne: true }, $or: [{ otp: "" }, { otp: null }] },
       { $set: { status, refund_issued: true } }, { ...options, new: true });
