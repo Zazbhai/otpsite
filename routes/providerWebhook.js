@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("node:crypto");
+const { Buffer } = require("node:buffer");
 const Server = require("../models/Server");
 const Order = require("../models/Order");
 const { recordOrderSms } = require("../utils/orderSms");
@@ -16,6 +17,17 @@ function equalSecret(actual, expected) {
   return crypto.timingSafeEqual(
     crypto.createHash("sha256").update(String(actual)).digest(),
     crypto.createHash("sha256").update(String(expected)).digest(),
+  );
+}
+
+function authenticated(req, server) {
+  if (server.otp_webhook_secret && equalSecret(suppliedSecret(req), server.otp_webhook_secret)) return true;
+  // SMS Candy signs the exact transmitted JSON with the customer's API key.
+  // Also allow a dedicated webhook secret when the sender supports one.
+  const signature = String(req.headers["x-smscandy-signature"] || "").trim();
+  if (!/^[a-f0-9]{64}$/i.test(signature) || typeof req.rawBody !== "string") return false;
+  return [server.otp_webhook_secret, server.api_key].filter(key => typeof key === "string" && key.trim()).some(key =>
+    crypto.timingSafeEqual(Buffer.from(signature, "hex"), crypto.createHmac("sha256", key).update(req.rawBody).digest())
   );
 }
 
@@ -37,28 +49,53 @@ function value(body, keys) {
 }
 
 router.post("/:server", async (req, res) => {
+  const reject = (status, code, error) => {
+    // Never log credentials, the request body, or the OTP.
+    console.warn("[Provider webhook]", code, { server: req.params.server });
+    return res.status(status).json({ error, code });
+  };
   try {
     const server = await findServer(req.params.server);
-    if (!server || !server.is_active || server.otp_webhook_enabled !== true || !server.otp_webhook_secret ||
-        !equalSecret(suppliedSecret(req), server.otp_webhook_secret)) {
-      return res.status(401).json({ error: "Invalid webhook credentials" });
-    }
+    if (!server || !authenticated(req, server)) return reject(401, "INVALID_WEBHOOK_AUTH", "Invalid webhook credentials or signature");
+    if (!server.is_active) return reject(403, "SERVER_DISABLED", "Server is disabled");
+    if (server.otp_webhook_enabled !== true) return reject(403, "WEBHOOK_DISABLED", "Select Provider webhook mode in Admin > Servers and save");
 
     const body = req.body || {};
-    const localId = value(body, ["order_id", "orderId", "local_order_id", "activation"]).slice(0, 255);
+    const explicitLocalId = value(body, ["local_order_id"]).slice(0, 255);
+    const localId = explicitLocalId || value(body, ["order_id", "orderId", "activation"]).slice(0, 255);
     const providerId = value(body, ["external_order_id", "externalOrderId", "provider_order_id", "providerOrderId", "activation_id", "activationId", "id"]).slice(0, 255);
     const message = value(body, ["otp", "code", "sms", "message", "text"]).slice(0, 4000);
-    if (!message || (!localId && !providerId)) return res.status(400).json({ error: "Order ID and OTP are required" });
+    if (!message || (!localId && !providerId)) return reject(400, "INVALID_PAYLOAD", "Order ID and OTP are required");
 
     let order = localId ? await Order.findOne({ order_id: localId, server_name: server.name }) : null;
-    if (!order && providerId) {
-      const matches = await Order.find({ external_order_id: providerId, server_name: server.name, status: "active" })
-        .sort({ createdAt: -1, _id: -1 }).limit(2);
-      if (matches.length > 1) return res.status(409).json({ error: "Ambiguous provider activation ID; send the local order_id" });
-      order = matches[0] || null;
+    if (order && providerId && String(order.external_order_id) !== providerId) {
+      return reject(409, "ORDER_ID_MISMATCH", "Local and provider order IDs refer to different orders");
     }
-    if (!order) return res.status(404).json({ error: "Active order not found" });
-    if (order.status !== "active") return res.json({ received: true, duplicate: true, order_id: order.order_id, status: order.status });
+    // Providers commonly send their activation ID as order_id or orderId.
+    const externalId = providerId || (!explicitLocalId ? localId : "");
+    if (!order && externalId) {
+      const matches = await Order.find({ external_order_id: externalId, server_name: server.name, status: "active" })
+        .sort({ createdAt: -1, _id: -1 }).limit(2);
+      if (matches.length > 1) return reject(409, "AMBIGUOUS_ORDER", "Ambiguous provider activation ID; send the local_order_id");
+      order = matches[0] || null;
+      if (!order) {
+        // Acknowledge retries of an already stored SMS without reviving a
+        // completed/refunded order or crediting/debiting the wallet again.
+        const previous = await Order.find({ external_order_id: externalId, server_name: server.name,
+          status: { $ne: "active" } })
+          .sort({ createdAt: -1, _id: -1 }).limit(1);
+        const latest = previous[0];
+        // MySQL stores all_otps as JSON text; compare decoded history here.
+        order = latest && (latest.otp === message || latest.all_otps?.includes(message)) ? latest : null;
+      }
+    }
+    if (!order) return reject(404, "ORDER_NOT_FOUND", "Active order not found for this server; check the provider order ID");
+    if (order.status !== "active") {
+      if (order.otp !== message && !order.all_otps?.includes(message)) {
+        return reject(409, "ORDER_NOT_ACTIVE", "Order is no longer active; OTP was not saved");
+      }
+      return res.json({ received: true, duplicate: true, order_id: order.order_id, status: order.status });
+    }
     if (Array.isArray(order.rebuy_ignored_otps) && order.rebuy_ignored_otps.includes(message)) {
       return res.json({ received: true, duplicate: true, ignored: true, order_id: order.order_id, status: order.status });
     }
@@ -68,6 +105,11 @@ router.post("/:server", async (req, res) => {
     const complete = !order.multi_otp_enabled && !waiting;
     const saved = await recordOrderSms(order, message, { complete, checkedAt: new Date() });
     const current = saved || await Order.findById(order._id);
+    if (!current) return reject(404, "ORDER_NOT_FOUND", "Order no longer exists");
+    if (!saved && current.otp !== message && !current.all_otps?.includes(message)) {
+      return reject(409, "OTP_NOT_SAVED", "Order changed while processing the callback; OTP was not saved");
+    }
+    console.info("[Provider webhook]", saved ? "OTP_SAVED" : "OTP_DUPLICATE", { server: req.params.server, order: current.order_id });
     return res.json({ received: true, duplicate: !saved, order_id: current.order_id, status: current.status, otp: current.otp });
   } catch (error) {
     console.error("[Provider webhook]", error.message);

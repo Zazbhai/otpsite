@@ -1166,7 +1166,8 @@ test("provider OTP webhook authenticates, saves once, emits through the normal S
   assert.equal(unauthorized.statusCode, 401);
   const disabled = response();
   await handler({ params: { server: "server-id" }, headers: { authorization: "Bearer secret" }, body: { order_id: "ORD-WEBHOOK", otp: "123456" } }, disabled);
-  assert.equal(disabled.statusCode, 401);
+  assert.equal(disabled.statusCode, 403);
+  assert.equal(disabled.body.code, "WEBHOOK_DISABLED");
   assert.equal(saved.length, 0);
   webhookEnabled = true;
   const success = response();
