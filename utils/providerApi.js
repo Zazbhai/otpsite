@@ -104,8 +104,6 @@ async function callProvider(url, server, method = "GET") {
     options.headers["Authorization"] = `Bearer ${server.api_key}`;
   }
 
-  console.log(`\n[DEBUG] === CALLING 3RD PARTY PROVIDER ===\nMETHOD: ${method}\nURL: ${url}\nHEADERS:`, options.headers, `\n`);
-
   // Prevent any Node 18+ fetch caching issues
   const sep = url.includes('?') ? '&' : '?';
   const noCacheUrl = `${url}${sep}_t=${Date.now()}`;
@@ -210,6 +208,9 @@ async function getNumber(server, serviceCode, countryCode) {
 
 // 2. Check Status
 async function checkStatus(server, api_order_id) {
+  // Defense in depth: webhook servers never call Check Status URL, even if a
+  // caller bypasses the background order synchronizer.
+  if (server.otp_webhook_enabled === true) return { status: "waiting", webhook_only: true };
   if (!server.api_check_status_url) return { error: "Server missing API Check url" };
   let backoffUntil = getProviderBackoff(server);
   if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };

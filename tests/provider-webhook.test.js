@@ -9,11 +9,12 @@ const rateLimit = require("express-rate-limit");
 const root = path.resolve(__dirname, "..");
 const source = name => fs.readFileSync(path.join(root, name), "utf8");
 
-function load(file, dependencies) {
+function load(file, dependencies, extra = {}) {
   const module = { exports: {} };
   vm.runInNewContext(source(file), { module, exports: module.exports, Date,
     console: { info() {}, warn() {}, error() {} },
     require: name => name in dependencies ? dependencies[name] : require(name),
+    ...extra,
   }, { filename: file });
   return module.exports;
 }
@@ -54,7 +55,8 @@ async function fixture(t, dbType = "mongodb") {
     "../models/Server": { findById: async id => id === "server-a" ? serverConfig : null, findOne: async () => null },
     "../models/Order": Order, "../utils/orderSms": sms,
   });
-  const app = express();
+  const app = express(), logs = [];
+  app.use(load("utils/webhookLogging.js", {}, { console: { info: (...args) => logs.push(args) } }).logProviderWebhook);
   app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf.toString("utf8"); } }));
   let maintenance = false;
   // Execute the production limit and maintenance middleware to verify callbacks
@@ -87,7 +89,7 @@ async function fixture(t, dbType = "mongodb") {
     orders.push(row);
     return row;
   };
-  return { send, add, serverConfig, orders, notifications, base, Order, maintenance: value => { maintenance = value; } };
+  return { send, add, serverConfig, orders, notifications, base, Order, logs, maintenance: value => { maintenance = value; } };
 }
 
 for (const dbType of ["mysql", "mongodb"]) {
@@ -190,4 +192,37 @@ test("a concurrent refund cannot produce a false acknowledgement for an unsaved 
   assert.equal(result.body.code, "OTP_NOT_SAVED");
   assert.equal(order.otp, "");
   assert.equal(f.notifications.length, 0);
+});
+
+test("terminal logs include webhook data and response while excluding credentials and other requests", async t => {
+  const f = await fixture(t), order = f.add();
+  await fetch(`${f.base}/api/customer-test?api_key=private-key`);
+  assert.equal(f.logs.length, 0);
+  await f.send({ orderId: order.external_order_id, code: "001234", api_key: "private-key", secret: "hidden" });
+  await f.send({ orderId: order.external_order_id, code: "001234" }, {});
+  assert.equal(f.logs.length, 2);
+  const success = JSON.parse(f.logs[0][1]);
+  assert.equal(success.http_status, 200);
+  assert.equal(success.data.code, "001234");
+  assert.equal(success.response.received, true);
+  assert.equal(success.response.otp, "001234");
+  const failure = JSON.parse(f.logs[1][1]);
+  assert.equal(failure.http_status, 401);
+  assert.equal(failure.response.code, "INVALID_WEBHOOK_AUTH");
+  assert.doesNotMatch(JSON.stringify(f.logs), /webhook-secret|private-key|hidden|authorization/i);
+});
+
+test("terminal filter suppresses routine debug output and retains webhook activity and failures", () => {
+  const output = [];
+  const target = Object.fromEntries(["log", "info", "debug", "warn", "error"].map(method =>
+    [method, (...args) => output.push({ method, args })]));
+  require("../utils/terminalLogger").installTerminalLogging(target);
+  target.log("HEADERS:", { Accept: "application/json" });
+  target.info("Order Monitor: Syncing orders");
+  target.debug("Provider URL containing a secret");
+  target.info("[Provider webhook]", "OTP_SAVED");
+  target.log("[OmniPay Deposit Callback]", "credited");
+  target.warn("Provider failed");
+  target.error("Database disconnected");
+  assert.deepEqual(output.map(item => item.method), ["info", "log", "warn", "error"]);
 });

@@ -232,6 +232,8 @@ router.all("/", async (req, res) => {
           return "STATUS_WAIT_CODE";
         };
         if (order.status !== "active") return res.send(getPublicStatus(order));
+        const statusServer = await Server.findOne({ name: order.server_name });
+        if (statusServer?.otp_webhook_enabled === true) return res.send(getPublicStatus(order));
         const interval = Math.max(3000, Number(order.check_interval || 3) * 1000);
         const nextCheckAt = order.next_check_at ? new Date(order.next_check_at) :
           (order.last_check_at ? new Date(new Date(order.last_check_at).getTime() + interval) : null);

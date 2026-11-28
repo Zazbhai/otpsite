@@ -1,8 +1,8 @@
+require("./utils/terminalLogger").installTerminalLogging();
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const morgan = require("morgan");
 const path = require("path");
 const os = require("os");
 const rateLimit = require("express-rate-limit");
@@ -30,8 +30,8 @@ app.use(cors({
     : false,
   credentials: true,
 }));
-// Do not write the private order-history key (a query parameter) to request logs.
-app.use(morgan("dev", { skip: req => req.path.replace(/\/+$/, "").toLowerCase() === "/api/private/order-history" }));
+// Log provider payloads/responses without headers, credentials or query strings.
+app.use(require("./utils/webhookLogging").logProviderWebhook);
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf.toString("utf8");
