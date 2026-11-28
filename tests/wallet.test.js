@@ -966,6 +966,9 @@ test("API purchase also checks funds before provider and charges a successful or
   const status = response();
   await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: clientOrderId } }, status);
   assert.equal(status.body, "STATUS_WAIT_CODE");
+  const legacyStatus = response();
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "1" } }, legacyStatus);
+  assert.equal(legacyStatus.body, "STATUS_WAIT_CODE");
 });
 
 test("website and API rebuy endpoints use the caller-owned activation ID and return the new activation", async () => {

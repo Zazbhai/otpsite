@@ -174,6 +174,7 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   UNIQUE KEY `uq_orders_order_id`     (`order_id`),
   KEY        `idx_orders_user_id`     (`user_id`),
   KEY        `idx_orders_user_external` (`user_id`, `external_order_id`, `createdAt`),
+  KEY        `idx_orders_server_provider` (`server_id`, `provider_order_id`),
   KEY        `idx_orders_status`      (`status`),
   KEY        `idx_orders_status_next_check` (`status`, `next_check_at`),
   KEY        `idx_orders_created_at`  (`createdAt`)

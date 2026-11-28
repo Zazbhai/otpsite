@@ -676,7 +676,7 @@
               <button type="button" id="srv-webhook-secret-visibility" class="btn btn-secondary btn-sm" aria-pressed="false" onclick="toggleServerWebhookSecret()">Show</button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="copyServerWebhookSecret()">Copy key</button>
             </div>
-            <small class="text-muted">Webhook URL: <code id="srv-otp-webhook-url">/api/provider/webhook/&lt;server-id&gt;</code>. POST JSON with <code>external_order_id</code> (provider activation ID) and <code>otp</code>. Provider IDs in <code>order_id</code> or <code>orderId</code> also work; use <code>local_order_id</code> to specify a local ID. Authenticate with <code>Authorization: Bearer SECRET</code> or <code>X-Provider-Webhook-Secret</code>. SMS Candy senders can instead use <code>X-SmsCandy-Signature</code>: HMAC-SHA256 of the exact JSON body, signed with this server's API key or webhook secret. Select Provider webhook below and save to enable callbacks.</small>
+            <small class="text-muted">Webhook URL: <code id="srv-otp-webhook-url">/api/provider/webhook/&lt;server-id&gt;</code>. POST JSON with <code>external_order_id</code> (the stable client/API order ID returned by getNumber) and <code>otp</code>. Older callbacks using the provider dashboard order ID are also resolved. Authenticate with <code>Authorization: Bearer SECRET</code> or <code>X-Provider-Webhook-Secret</code>. SMS Candy senders can instead use <code>X-SmsCandy-Signature</code>: HMAC-SHA256 of the exact JSON body, signed with this server's API key or webhook secret. Select Provider webhook below and save to enable callbacks.</small>
           </div>
 
           <div class="form-group" style="flex-direction:column;align-items:flex-start;gap:8px">

@@ -29,14 +29,17 @@ async function findUserOrdersByIds(userId, ids) {
   if (!requestedIds.length) return new Map();
   const orders = await Order.find({
     user_id: String(userId),
-    $or: [{ order_id: { $in: requestedIds } }, { external_order_id: { $in: requestedIds } }],
+    $or: [{ order_id: { $in: requestedIds } }, { external_order_id: { $in: requestedIds } },
+      { provider_order_id: { $in: requestedIds } }],
   }).sort({ createdAt: -1, _id: -1 });
   const result = new Map();
   for (const id of requestedIds) {
-    const matching = orders.filter(order => order.order_id === id || order.external_order_id === id);
+    const matching = orders.filter(order => order.order_id === id || order.external_order_id === id || order.provider_order_id === id);
     result.set(id, matching.find(order => order.order_id === id) ||
       matching.find(order => order.external_order_id === id && order.status === "active") ||
-      matching.find(order => order.external_order_id === id) || null);
+      matching.find(order => order.external_order_id === id) ||
+      matching.find(order => order.provider_order_id === id && order.status === "active") ||
+      matching.find(order => order.provider_order_id === id) || null);
   }
   return result;
 }
