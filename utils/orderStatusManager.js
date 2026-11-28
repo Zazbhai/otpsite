@@ -6,6 +6,7 @@ const { recordOrderSms } = require("./orderSms");
 const { refundOrder, hasOtp } = require("./wallet");
 const { acquireLock, releaseLock } = require("./orderLocks");
 const { isProviderWebhookEnabled } = require("../public/js/provider-mode");
+const { providerOrderId } = require("./providerOrderId");
 // Shared by the watcher and client-triggered checks in this process. Busy
 // orders remain due in the database for a later watcher tick; no queue grows.
 const SYNC_CONCURRENCY = 10;
@@ -71,14 +72,14 @@ async function syncOrder(orderIdOrDoc) {
     if (webhookOnly) {
       response = { status: "expired" };
       nextRunAt = new Date(now.getTime() + interval);
-    } else if (order.external_order_id && server?.api_check_status_url) {
-      response = await providerApi.checkStatus(server, order.external_order_id);
+    } else if (providerOrderId(order) && server?.api_check_status_url) {
+      response = await providerApi.checkStatus(server, providerOrderId(order));
       if (!response.error && response.otp?.trim()) {
         const saved = await recordOrderSms(order, response.otp, {
           complete: response.status === "completed" && !order.multi_otp_enabled, checkedAt: now,
         });
         if (saved?.multi_otp_enabled && response.status === "completed") {
-          providerApi.retryOrder(server, order.external_order_id).catch(() => {});
+          providerApi.retryOrder(server, providerOrderId(order)).catch(() => {});
         }
       }
       // Only bookkeeping fields are updated. Never save a pre-network document.
@@ -117,8 +118,8 @@ async function syncOrder(orderIdOrDoc) {
     }
     const providerEnded = !response?.error && ["cancelled", "expired", "refunded"].includes(response?.status) && order.verification_count >= 3;
     if (!hasOtp(order) && (providerEnded || (expired && checkDue))) {
-      if (expired && server?.api_cancel_url && order.external_order_id) {
-        const cancelled = await providerApi.cancelOrder(server, order.external_order_id, { requireConfirmation: true, allowMissing: true }).catch(() => null);
+      if (expired && server?.api_cancel_url && providerOrderId(order)) {
+        const cancelled = await providerApi.cancelOrder(server, providerOrderId(order), { requireConfirmation: true, allowMissing: true }).catch(() => null);
         if (cancelled?.otp) {
           const completed = await recordOrderSms(order, cancelled.otp, { complete: true, checkedAt: now });
           return completed || Order.findById(id);

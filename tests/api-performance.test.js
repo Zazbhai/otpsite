@@ -98,12 +98,13 @@ test("API lookup index migration is additive and skips existing SQL indexes", as
   } };
   await ensureApiQueryIndexes({ DB_TYPE: "mysql", sequelize });
   await ensureApiQueryIndexes({ DB_TYPE: "mysql", sequelize });
-  assert.equal(writes.length, 4);
+  assert.equal(writes.length, 5);
   assert.ok(writes.every(sql => sql.startsWith("CREATE INDEX")));
   assert.ok(writes[0].includes("`api_key`"));
   assert.ok(writes[1].includes("`external_order_id`"));
   assert.ok(writes[2].includes("`price`"));
   assert.match(writes[3], /\(`status`, `next_check_at`, `id`\)/);
+  assert.match(writes[4], /\(`server_id`, `provider_order_id`\)/);
 });
 
 test("MongoDB watcher index covers status, scheduled time and stable queue ordering", async () => {

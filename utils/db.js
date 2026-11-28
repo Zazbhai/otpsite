@@ -43,6 +43,7 @@ const connectDB = async () => {
       require("../models/Server");
       require("../models/Country");
       require("../models/Transaction");
+      require("../models/ProviderWebhookCallback");
       require("../models/Setting");
       require("../models/PromoCode");
       require("../models/ReadymadeAccount");
@@ -57,6 +58,16 @@ const connectDB = async () => {
 
       await require("./walletSchema").ensureReferenceSchema(sequelize);
       await sequelize.sync({ alter: false });
+      // Existing MySQL deployments use alter:false; add the two mapping
+      // columns explicitly and let sync create the durable callback inbox.
+      const ordersTable = await sequelize.getQueryInterface().describeTable("Orders");
+      if (!ordersTable.provider_order_id) await sequelize.getQueryInterface().addColumn("Orders", "provider_order_id", {
+        type: require("sequelize").DataTypes.STRING, allowNull: false, defaultValue: "",
+      });
+      if (!ordersTable.server_id) await sequelize.getQueryInterface().addColumn("Orders", "server_id", {
+        type: require("sequelize").DataTypes.STRING, allowNull: false, defaultValue: "",
+      });
+      await require("../models/ProviderWebhookCallback").sync();
       await require("./apiQueryIndexes").ensureApiQueryIndexes({ DB_TYPE, sequelize });
       await require("./walletSchema").ensureWalletSchema(sequelize);
       await require("./walletSchema").ensureRebuySchema(sequelize);

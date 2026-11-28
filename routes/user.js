@@ -18,6 +18,8 @@ const omnipay = require("../utils/omnipay");
 const heleket = require("../utils/heleket");
 const eaglepay = require("../utils/eaglepay");
 const providerApi = require("../utils/providerApi");
+const { retryForOrder } = require("../utils/providerWebhookQueue");
+const { providerOrderId } = require("../utils/providerOrderId");
 const { recordOrderSms } = require("../utils/orderSms");
 const { nanoid }  = require("nanoid");
 const { emitToUser } = require("../utils/realtimeEmitter");
@@ -533,7 +535,7 @@ router.post("/orders", async (req, res) => {
     // 2. Provider API call (OUTSIDE database transaction)
     let providerRes;
     try {
-      providerRes = await providerApi.getNumber(serverConf, service.service_code, service.country_code);
+      providerRes = await providerApi.getNumber(serverConf, service.service_code, service.country_code, { externalOrderId: reservedOrderId });
     } catch (apiErr) {
       providerRes = { error: apiErr.message || "Provider API Failure" };
     }
@@ -559,7 +561,9 @@ router.post("/orders", async (req, res) => {
       server_name: serverConf.name,
       country: service.country_code,
       phone: providerRes.phone,
-      external_order_id: providerRes.api_order_id,
+      external_order_id: reservedOrderId,
+      provider_order_id: providerRes.api_order_id,
+      server_id: String(serverConf._id || serverConf.id || ""),
       cost: finalPrice,
       status: "active",
       expires_at: expiresAt,
@@ -572,6 +576,8 @@ router.post("/orders", async (req, res) => {
 
     const finalResult = await wallet.finalizePurchase(orderData);
     orderSaved = true;
+    Promise.resolve().then(() => retryForOrder(finalResult))
+      .catch(error => console.error("[Provider webhook queue] Retry failed:", error.code || error.name));
     emitToUser(String(req.userId), "balance", { balance: orderResult.userBalance });
 
     res.json({ order: finalResult });
@@ -613,6 +619,7 @@ router.get("/orders", async (req, res) => {
       filter.$or = [
         { order_id: { $regex: search, $options: "i" } },
         { external_order_id: { $regex: search, $options: "i" } },
+        { provider_order_id: { $regex: search, $options: "i" } },
         { phone: { $regex: search, $options: "i" } },
         { service_name: { $regex: search, $options: "i" } }
       ];
@@ -632,7 +639,7 @@ router.get("/orders", async (req, res) => {
     }
     const total  = await Order.countDocuments(filter);
     const orders = await Order.find(filter)
-      .select("order_id external_order_id service_id service_name cost status phone createdAt all_otps otp country server_name service_image service_color expires_at min_cancel_at rebuy_order_id rebuy_cancelled refund_issued")
+      .select("order_id external_order_id provider_order_id service_id service_name cost status phone createdAt all_otps otp country server_name service_image service_color expires_at min_cancel_at rebuy_order_id rebuy_cancelled refund_issued")
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
@@ -778,8 +785,8 @@ router.post("/orders/:id/cancel", async (req, res) => {
       // Complete provider cancellation before exposing a refunded activation to rebuy.
       const serverConf = await Server.findOne({ name: order.server_name });
       if (!serverConf?.api_cancel_url || !order.external_order_id) throw new Error("PROVIDER_CANCEL_FAILED");
-      if (serverConf?.api_cancel_url && order.external_order_id) {
-        const cancelled = await providerApi.cancelOrder(serverConf, order.external_order_id, { requireConfirmation: true, allowMissing: true });
+      if (serverConf?.api_cancel_url && providerOrderId(order)) {
+        const cancelled = await providerApi.cancelOrder(serverConf, providerOrderId(order), { requireConfirmation: true, allowMissing: true });
         if (cancelled?.otp) {
           const completed = await recordOrderSms(order, cancelled.otp, { complete: true });
           return res.json({ success: true, order: completed || await Order.findById(order._id), refunded: false });
@@ -828,7 +835,7 @@ router.post("/orders/:id/retry", async (req, res) => {
     if (order.external_order_id) {
       const serverConf = await Server.findOne({ name: order.server_name });
       if (serverConf) {
-        const retryRes = await providerApi.retryOrder(serverConf, order.external_order_id);
+        const retryRes = await providerApi.retryOrder(serverConf, providerOrderId(order));
         if (retryRes.error) return res.status(400).json({ error: "Number Not Available" });
       }
     }

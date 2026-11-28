@@ -16,6 +16,8 @@ const { notifyAdminChange } = require("../utils/adminRealtime");
 const { recordOrderSms } = require("../utils/orderSms");
 const { emitToUser } = require("../utils/realtimeEmitter");
 const { rebuyCancelledOrder, cancelCompletedOrderForRebuy } = require("../utils/rebuy");
+const { providerOrderId } = require("../utils/providerOrderId");
+const { retryForOrder } = require("../utils/providerWebhookQueue");
 
 // Both allocation actions use the same legacy SMS API success response.
 function numberResponse(order) {
@@ -176,6 +178,7 @@ router.all("/", async (req, res) => {
           try {
             mark("provider_getNumber");
             providerRes = await providerApi.getNumber(serverConf, svc.service_code, svc.country_code || country, {
+              externalOrderId: reservedOrderId,
               onProgress: (phase, attempt) => mark(`provider_getNumber_${attempt}_${phase}`),
             });
           } catch (apiErr) {
@@ -198,7 +201,9 @@ router.all("/", async (req, res) => {
             server_name: serverConf.name,
             country,
             phone: providerRes.phone,
-            external_order_id: providerRes.api_order_id,
+            external_order_id: reservedOrderId,
+            provider_order_id: providerRes.api_order_id,
+            server_id: String(serverConf._id || serverConf.id || ""),
             cost: finalPrice,
             status: "active",
             expires_at: new Date(Date.now() + (serverConf.auto_cancel_minutes || 20) * 60 * 1000),
@@ -212,6 +217,10 @@ router.all("/", async (req, res) => {
           mark("save_order");
           const savedOrder = await wallet.finalizePurchase(orderData);
           orderSaved = true;
+          // Replay queued callbacks after the order is committed; never add
+          // provider-queue latency to the client's allocation response.
+          Promise.resolve().then(() => retryForOrder(savedOrder))
+            .catch(error => console.error("[Provider webhook queue] Retry failed:", error.code || error.name));
           return res.send(numberResponse(savedOrder));
         } catch (err) {
           if (balanceDeducted && !orderSaved) {
@@ -356,7 +365,7 @@ router.all("/", async (req, res) => {
               const serverConf = await Server.findOne({ name: order.server_name });
               if (!serverConf?.api_cancel_url || !order.external_order_id) return res.send("BAD_STATUS");
               if (serverConf?.api_cancel_url && order.external_order_id) {
-                const cancelled = await providerApi.cancelOrder(serverConf, order.external_order_id, { requireConfirmation: true, allowMissing: true });
+                const cancelled = await providerApi.cancelOrder(serverConf, providerOrderId(order), { requireConfirmation: true, allowMissing: true });
                 if (cancelled?.otp) {
                   await recordOrderSms(order, cancelled.otp, { complete: true });
                   return res.send("ACCESS_CANCEL");
@@ -395,7 +404,7 @@ router.all("/", async (req, res) => {
            // Call provider retry
            const serverConf = await Server.findOne({ name: order.server_name });
            if (serverConf && order.external_order_id) {
-             const result = await providerApi.retryOrder(serverConf, order.external_order_id);
+             const result = await providerApi.retryOrder(serverConf, providerOrderId(order));
              if (result.error) return res.send("NO_NUMBERS");
            }
 

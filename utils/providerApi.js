@@ -87,12 +87,13 @@ function logToProviderFile(msg) {
   appendProviderLog(line);
 }
 
-function buildUrl(urlTemplate, { api_key, service, country, order_id, phone }) {
+function buildUrl(urlTemplate, { api_key, service, country, order_id, external_order_id, phone }) {
   let url = urlTemplate || "";
   if (api_key) url = url.replace(/\{api_key\}|\$api_key/g, api_key);
   if (service) url = url.replace(/\{service\}|\$service/g, service);
   if (country) url = url.replace(/\{country\}|\$country/g, country);
   if (order_id) url = url.replace(/\{order_id\}|\$order_id|\{id\}|\$id/g, order_id);
+  if (external_order_id) url = url.replace(/\{external_order_id\}|\$external_order_id/g, external_order_id);
   if (phone) url = url.replace(/\{phone\}|\$phone|\{number\}|\$number/g, phone);
   return url;
 }
@@ -138,7 +139,7 @@ async function callProvider(url, server, method = "GET", onHeaders) {
 }
 
 // 1. Get Number
-async function getNumber(server, serviceCode, countryCode, { onProgress } = {}) {
+async function getNumber(server, serviceCode, countryCode, { onProgress, externalOrderId } = {}) {
   if (!server.api_get_number_url) return { error: "Server missing API GET url" };
   const backoffUntil = getProviderBackoff(server);
   if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
@@ -146,8 +147,13 @@ async function getNumber(server, serviceCode, countryCode, { onProgress } = {}) 
   let url = buildUrl(server.api_get_number_url, { 
     api_key: server.api_key, 
     service: serviceCode, 
-    country: countryCode 
+    country: countryCode,
+    order_id: externalOrderId,
+    external_order_id: externalOrderId,
   });
+  if (externalOrderId && !/[?&]external_order_id=/.test(url)) {
+    url += `${url.includes("?") ? "&" : "?"}external_order_id=${encodeURIComponent(String(externalOrderId))}`;
+  }
   
   const maxRetries = Math.min(5, Math.max(1, Number(server.retry_count) || 1));
   let attempt = 0;

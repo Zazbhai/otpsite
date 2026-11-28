@@ -161,11 +161,14 @@ async function reservePurchase({ userId, orderId, amount, description }) {
 async function finalizePurchase(orderData) {
   try { return await withTransaction(async session => {
     const options = optionsFor(session);
-    const providerIdentity = [orderData.server_name, String(orderData.external_order_id)];
+    const providerId = String(orderData.provider_order_id || orderData.external_order_id);
+    const providerIdentity = [orderData.server_name, providerId];
     const providerReference = "PROVIDER-ORDER:" + require("crypto").createHash("sha256")
       .update(JSON.stringify(providerIdentity)).digest("hex");
     // External IDs are scoped to the provider, not globally across servers.
-    const identity = { server_name: orderData.server_name, external_order_id: orderData.external_order_id };
+    const identity = orderData.provider_order_id
+      ? { $and: [{ server_name: orderData.server_name }, { $or: [{ provider_order_id: providerId }, { external_order_id: providerId }] }] }
+      : { server_name: orderData.server_name, external_order_id: providerId };
     if (orderData.rebuy_of) {
       const parent = await Order.findOne({ order_id: orderData.rebuy_of, user_id: String(orderData.user_id),
         rebuy_order_id: orderData.order_id }, null, options);
@@ -174,18 +177,18 @@ async function finalizePurchase(orderData) {
             (parent.status === "completed" && parent.rebuy_cancelled))) throw new Error("ORDER_NOT_REBUYABLE");
       // Retired activations may share a provider ID across a chain of rebuys.
       // Inspect every conflicting activation, rather than only the oldest one.
-      const conflict = await Order.findOne({ ...identity, $or: [
+      const conflict = await Order.findOne({ $and: [identity, { $or: [
         { user_id: { $ne: String(orderData.user_id) } }, { phone: { $ne: orderData.phone } },
         { $and: [{ status: { $nin: ["cancelled", "expired", "refunded"] } }, { rebuy_cancelled: { $ne: true } }] },
-      ] }, null, options);
+      ] }] }, null, options);
       if (conflict) throw new Error("DUPLICATE_EXTERNAL_ORDER");
       // Keep one unique ledger reference for the current provider activation.
       // Retire the old reference in this transaction so concurrent rebuys of
       // different ancestors cannot both claim the same upstream activation.
       const previous = await Transaction.findOne({ reference: providerReference }, null, options);
       if (previous) {
-        const retired = await Order.findOne({ ...identity, order_id: previous.order_id,
-          user_id: String(orderData.user_id), phone: orderData.phone }, null, options);
+        const retired = await Order.findOne({ $and: [identity, { order_id: previous.order_id,
+          user_id: String(orderData.user_id), phone: orderData.phone }] }, null, options);
         if (previous.type !== "purchase" || previous.status !== "completed" || !retired ||
             !(["cancelled", "expired", "refunded"].includes(retired.status) ||
               (retired.status === "completed" && retired.rebuy_cancelled))) throw new Error("DUPLICATE_EXTERNAL_ORDER");

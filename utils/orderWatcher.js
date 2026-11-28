@@ -23,6 +23,7 @@ function startWatcher() {
       if (now.getTime() - lastRecoveryAt >= 60000) {
         lastRecoveryAt = now.getTime();
         await require("./wallet").recoverPendingPurchases();
+        await require("./providerWebhookQueue").retryPendingCallbacks(100);
       }
       const { Op } = require("sequelize");
       const { DB_TYPE } = require("./db");

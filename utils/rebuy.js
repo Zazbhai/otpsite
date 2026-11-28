@@ -4,6 +4,7 @@ const Service = require("../models/Service");
 const Transaction = require("../models/Transaction");
 const wallet = require("./wallet");
 const providerApi = require("./providerApi");
+const providerOrderId = order => String(order?.provider_order_id || order?.external_order_id || "").trim();
 const { nanoid } = require("nanoid");
 const { acquireLockWithTimeout, releaseLock } = require("./orderLocks");
 const { money } = require("./money");
@@ -28,7 +29,7 @@ async function cancelCompletedOrderForRebuy({ orderId, userId }) {
     if (!server?.is_active || !server.api_cancel_url || !server.api_rebuy_url || !order.external_order_id) {
       throw new Error("REBUY_CANCEL_NOT_CONFIGURED");
     }
-    const result = await providerApi.cancelOrder(server, order.external_order_id, { requireConfirmation: true, allowMissing: true });
+    const result = await providerApi.cancelOrder(server, providerOrderId(order), { requireConfirmation: true, allowMissing: true });
     if (!result?.success) throw new Error("PROVIDER_CANCEL_FAILED");
     const updated = await Order.findOneAndUpdate({
       _id: order._id || order.id, user_id: String(userId), status: "completed",
@@ -92,12 +93,12 @@ async function rebuyCancelledOrder({ orderId, userId }) {
       // Terminal local status alone does not prove that a provider activation
       // was cancelled, particularly for old admin refunds or failed cleanup.
       if (refunded) {
-        const cancelled = await providerApi.cancelOrder(server, original.external_order_id, { requireConfirmation: true, allowMissing: true });
+        const cancelled = await providerApi.cancelOrder(server, providerOrderId(original), { requireConfirmation: true, allowMissing: true });
         if (!cancelled?.success) throw new Error("PROVIDER_CANCEL_FAILED");
       }
       rebuyAttempted = true;
       providerResult = await providerApi.rebuyOrder(server, {
-        external_order_id: original.external_order_id,
+        external_order_id: providerOrderId(original),
         service_code: service?.service_code || original.service_id,
         service_id: original.service_id,
         country: original.country,
@@ -117,7 +118,9 @@ async function rebuyCancelledOrder({ orderId, userId }) {
         server_name: original.server_name,
         country: original.country,
         phone: original.phone,
-        external_order_id: providerResult.api_order_id,
+        external_order_id: rebuyOrderId,
+        provider_order_id: providerResult.api_order_id,
+        server_id: String(server._id || server.id || ""),
         rebuy_of: original.order_id,
         rebuy_ignored_otps: [...new Set([
           ...wallet.otpHistory(original), String(original.otp || "").trim(),
@@ -135,6 +138,8 @@ async function rebuyCancelledOrder({ orderId, userId }) {
         check_interval: server.check_interval || 3,
         multi_otp_enabled: server.multi_otp_supported || false,
       });
+      Promise.resolve().then(() => require("./providerWebhookQueue").retryForOrder(order))
+        .catch(error => console.error("[Provider webhook queue] Retry failed:", error.code || error.name));
       return { order, balance: reservedUser.balance };
     } catch (err) {
       const reversed = reserved ? await wallet.reversePurchase(rebuyOrderId).catch(() => false) : true;

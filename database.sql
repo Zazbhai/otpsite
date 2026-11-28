@@ -155,6 +155,8 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   `expires_at`        DATETIME                DEFAULT NULL,
   `min_cancel_at`     DATETIME                DEFAULT NULL,
   `external_order_id` VARCHAR(100)   NOT NULL DEFAULT '',
+  `provider_order_id` VARCHAR(255)   NOT NULL DEFAULT '',
+  `server_id` VARCHAR(255)   NOT NULL DEFAULT '',
   `rebuy_of` VARCHAR(100) NOT NULL DEFAULT '',
   `rebuy_order_id` VARCHAR(100) NULL DEFAULT NULL,
   `rebuy_cancelled` TINYINT(1) NOT NULL DEFAULT 0,
@@ -175,6 +177,32 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   KEY        `idx_orders_status`      (`status`),
   KEY        `idx_orders_status_next_check` (`status`, `next_check_at`),
   KEY        `idx_orders_created_at`  (`createdAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- -----------------------------------------------------------
+-- Table: ProviderWebhookCallbacks
+-- Durable inbox for callbacks received before the order mapping is saved.
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ProviderWebhookCallbacks` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `dedupe_key` VARCHAR(128) NOT NULL,
+  `server_id` VARCHAR(255) NOT NULL,
+  `server_name` VARCHAR(100) NOT NULL DEFAULT '',
+  `external_order_id` VARCHAR(255) NOT NULL,
+  `otp` TEXT NOT NULL,
+  `status` VARCHAR(80) NOT NULL DEFAULT '',
+  `payload` TEXT NOT NULL,
+  `state` ENUM('pending','matched') NOT NULL DEFAULT 'pending',
+  `matched_order_id` VARCHAR(100) NOT NULL DEFAULT '',
+  `attempts` INT NOT NULL DEFAULT 0,
+  `matched_at` DATETIME DEFAULT NULL,
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_provider_webhook_dedupe` (`dedupe_key`),
+  KEY `idx_provider_webhook_pending` (`server_id`, `external_order_id`, `state`),
+  KEY `idx_provider_webhook_created` (`createdAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

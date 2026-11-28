@@ -33,7 +33,7 @@ async function historyPage(Model, scope, query = {}, kind = "transactions") {
     throw new Error("Invalid history page");
   }
   const fields = kind === "orders"
-    ? "_id order_id external_order_id service_name phone cost status createdAt"
+    ? "_id order_id external_order_id provider_order_id server_id service_name phone cost status createdAt"
     : "_id type status amount balance_after reference order_id description createdAt";
   const rows = await Model.find({ ...scope, ...(kind === "transactions" ? TABS[tab] : {}) })
     .select(fields).sort({ createdAt: -1, _id: -1 }).skip(offset).limit(PAGE_SIZE + 1);

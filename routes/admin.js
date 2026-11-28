@@ -26,6 +26,7 @@ const { clearCache } = require("../utils/apiCache");
 const { emitToAll, emitToUser } = require("../utils/realtimeEmitter");
 const { resolveAnalyticsPeriod } = require("../utils/analyticsPeriod");
 const userDetails = require("../utils/adminUserDetails");
+const { providerOrderId } = require("../utils/providerOrderId");
 
 const formatServiceName = (name) => {
   if (!name) return "";
@@ -427,6 +428,7 @@ router.get("/orders", async (req, res) => {
       const orClauses = [
         { order_id: { $regex: search, $options: "i" } },
         { external_order_id: { $regex: search, $options: "i" } },
+        { provider_order_id: { $regex: search, $options: "i" } },
         { phone: { $regex: search, $options: "i" } },
         { service_name: { $regex: search, $options: "i" } }
       ];
@@ -496,11 +498,11 @@ router.patch("/orders/:id", async (req, res) => {
       if (!candidate) return res.status(404).json({ error: "Order not found" });
       if (candidate.status === "active" && !wallet.hasOtp(candidate)) {
         const providerServer = await Server.findOne({ name: candidate.server_name });
-        if (!providerServer?.api_cancel_url || !candidate.external_order_id) {
+        if (!providerServer?.api_cancel_url || !providerOrderId(candidate)) {
           return res.status(409).json({ error: "Configure the provider cancellation endpoint before refunding this order." });
         }
         const cancellation = await require("../utils/providerApi").cancelOrder(providerServer,
-          candidate.external_order_id, { requireConfirmation: true, allowMissing: true });
+          providerOrderId(candidate), { requireConfirmation: true, allowMissing: true });
         if (cancellation?.otp) {
           await require("../utils/orderSms").recordOrderSms(candidate, cancellation.otp, { complete: true });
           return res.status(409).json({ error: "The provider returned an OTP. The order was completed without a refund." });

@@ -34,6 +34,11 @@ if (DB_TYPE === "mysql") {
     expires_at: { type: DataTypes.DATE },
     min_cancel_at: { type: DataTypes.DATE },
     external_order_id: { type: DataTypes.STRING, defaultValue: "" },
+    // Stable client/API reference. `external_order_id` is the value sent to
+    // providers as external_order_id; this field stores the provider's own
+    // activation/dashboard ID for polling and legacy callbacks.
+    provider_order_id: { type: DataTypes.STRING, defaultValue: "" },
+    server_id: { type: DataTypes.STRING, defaultValue: "" },
     rebuy_of: { type: DataTypes.STRING, defaultValue: "" },
     rebuy_order_id: { type: DataTypes.STRING, defaultValue: "" },
     rebuy_cancelled: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -65,7 +70,8 @@ if (DB_TYPE === "mysql") {
       { name: "idx_orders_due_queue", fields: ["status", "next_check_at", "id"] },
       { fields: ['createdAt'] },
       { fields: ['order_id'], unique: true },
-      { fields: ['server_name', 'external_order_id'] }
+      { fields: ['server_name', 'external_order_id'] },
+      { fields: ['server_id', 'provider_order_id'] },
     ]
   });
 
@@ -91,6 +97,8 @@ if (DB_TYPE === "mysql") {
       expires_at:        { type: Date },
       min_cancel_at:     { type: Date },
       external_order_id: { type: String, default: "" },
+      provider_order_id: { type: String, default: "" },
+      server_id: { type: String, default: "" },
       rebuy_of: { type: String, default: "" },
       rebuy_order_id: { type: String, default: "" },
       rebuy_cancelled: { type: Boolean, default: false },
@@ -107,6 +115,7 @@ if (DB_TYPE === "mysql") {
     { timestamps: true }
   );
   orderSchema.index({ server_name: 1, external_order_id: 1 });
+  orderSchema.index({ server_id: 1, provider_order_id: 1 });
   orderSchema.index({ user_id: 1, external_order_id: 1, createdAt: -1 }, { name: "idx_orders_user_external" });
   orderSchema.index({ user_id: 1, createdAt: -1, _id: -1 });
   orderSchema.index({ status: 1, next_check_at: 1 });

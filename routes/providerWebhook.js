@@ -5,6 +5,7 @@ const Server = require("../models/Server");
 const Order = require("../models/Order");
 const { recordOrderSms } = require("../utils/orderSms");
 const { isProviderWebhookEnabled } = require("../public/js/provider-mode");
+const { saveUnmatchedCallback } = require("../utils/providerWebhookQueue");
 
 const router = express.Router();
 
@@ -62,35 +63,44 @@ router.post("/:server", async (req, res) => {
     if (!isProviderWebhookEnabled(server)) return reject(403, "WEBHOOK_DISABLED", "Select Provider webhook mode in Admin > Servers and save");
 
     const body = req.body || {};
+    if (!body || typeof body !== "object" || Array.isArray(body)) return reject(400, "INVALID_PAYLOAD", "JSON object payload is required");
     const explicitLocalId = value(body, ["local_order_id"]).slice(0, 255);
     const localId = explicitLocalId || value(body, ["order_id", "orderId", "activation"]).slice(0, 255);
     const providerId = value(body, ["external_order_id", "externalOrderId", "provider_order_id", "providerOrderId", "activation_id", "activationId", "id"]).slice(0, 255);
     const message = value(body, ["otp", "code", "sms", "message", "text"]).slice(0, 4000);
     if (!message || (!localId && !providerId)) return reject(400, "INVALID_PAYLOAD", "Order ID and OTP are required");
 
-    let order = localId ? await Order.findOne({ order_id: localId, server_name: server.name }) : null;
-    if (order && providerId && String(order.external_order_id) !== providerId) {
+    const serverId = String(server._id || server.id || req.params.server);
+    const serverScope = { $or: [{ server_name: String(server.name || "") }, { server_id: serverId }] };
+    let order = localId ? await Order.findOne({ ...serverScope, order_id: localId }) : null;
+    if (order && providerId && ![order.external_order_id, order.provider_order_id, order.order_id].map(String).includes(providerId)) {
       return reject(409, "ORDER_ID_MISMATCH", "Local and provider order IDs refer to different orders");
     }
     // Providers commonly send their activation ID as order_id or orderId.
     const externalId = providerId || (!explicitLocalId ? localId : "");
     if (!order && externalId) {
-      const matches = await Order.find({ external_order_id: externalId, server_name: server.name, status: "active" })
+      const matches = await Order.find({ $and: [serverScope, { status: "active" }, { $or: [
+        { external_order_id: externalId }, { provider_order_id: externalId }, { order_id: externalId },
+      ] }] })
         .sort({ createdAt: -1, _id: -1 }).limit(2);
       if (matches.length > 1) return reject(409, "AMBIGUOUS_ORDER", "Ambiguous provider activation ID; send the local_order_id");
       order = matches[0] || null;
       if (!order) {
         // Acknowledge retries of an already stored SMS without reviving a
         // completed/refunded order or crediting/debiting the wallet again.
-        const previous = await Order.find({ external_order_id: externalId, server_name: server.name,
-          status: { $ne: "active" } })
+        const previous = await Order.find({ $and: [serverScope, { status: { $ne: "active" } }, { $or: [
+          { external_order_id: externalId }, { provider_order_id: externalId }, { order_id: externalId },
+        ] }] })
           .sort({ createdAt: -1, _id: -1 }).limit(1);
         const latest = previous[0];
         // MySQL stores all_otps as JSON text; compare decoded history here.
         order = latest && (latest.otp === message || latest.all_otps?.includes(message)) ? latest : null;
       }
     }
-    if (!order) return reject(404, "ORDER_NOT_FOUND", "Active order not found for this server; check the provider order ID");
+    if (!order) {
+      await saveUnmatchedCallback(server, externalId || localId, message, body);
+      return res.status(202).json({ received: true, queued: true, order_id: externalId || localId });
+    }
     if (order.status !== "active") {
       if (order.otp !== message && !order.all_otps?.includes(message)) {
         return reject(409, "ORDER_NOT_ACTIVE", "Order is no longer active; OTP was not saved");

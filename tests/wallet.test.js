@@ -734,6 +734,8 @@ function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw n
   const dependencies = {
     "../utils/wallet": f.wallet, "../utils/db": f.db,
     "../utils/rebuy": { rebuyCancelledOrder, cancelCompletedOrderForRebuy },
+    "../utils/providerWebhookQueue": { retryForOrder: async () => 0 },
+    "../utils/providerOrderId": { providerOrderId: order => String(order?.provider_order_id || order?.external_order_id || "").trim() },
     "../utils/orderStatusManager": { syncOrder },
     "../models/User": f.models.User, "../models/Order": f.models.Order, "../models/Transaction": f.models.Transaction,
     "../models/Service": { findById: async () => service, find: () => ({ sort: () => ({ limit: async () => [service] }) }) },
@@ -956,10 +958,13 @@ test("API purchase also checks funds before provider and charges a successful or
   f.tables.users[0].balance = 10;
   const success = response();
   await routes.gateway(req, success);
-  assert.equal(success.body, "ACCESS_NUMBER:1:919876543210");
+  const clientOrderId = success.body.split(":")[1];
+  assert.match(clientOrderId, /^ORD-/);
+  assert.equal(f.tables.orders[0].external_order_id, clientOrderId);
+  assert.equal(f.tables.orders[0].provider_order_id, "1");
   assert.equal(f.tables.users[0].balance, 4);
   const status = response();
-  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "1" } }, status);
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: clientOrderId } }, status);
   assert.equal(status.body, "STATUS_WAIT_CODE");
 });
 
@@ -1201,7 +1206,10 @@ test("rebuy and getNumber return identical plain-text success responses and norm
   const allocated = response();
   await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getNumber", service: "test", country: "22" } }, allocated);
   assert.equal(typeof allocated.body, "string");
-  assert.equal(allocated.body, "ACCESS_NUMBER:provider-contract-test:919876543210");
+  const clientOrderId = allocated.body.split(":")[1];
+  assert.match(clientOrderId, /^ORD-/);
+  assert.equal(f.tables.orders[0].external_order_id, clientOrderId);
+  assert.equal(f.tables.orders[0].provider_order_id, "provider-contract-test");
   newOrder = f.tables.orders[0];
   for (const action of ["rebuy", "reBuy"]) {
     const rebought = response();

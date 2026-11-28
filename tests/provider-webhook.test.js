@@ -20,11 +20,13 @@ function load(file, dependencies, extra = {}) {
 }
 
 async function fixture(t, dbType = "mongodb") {
-  const serverConfig = { name: "Provider A", is_active: true, otp_webhook_enabled: true,
+  const serverConfig = { _id: "server-a", name: "Provider A", is_active: true, otp_webhook_enabled: true,
     otp_webhook_secret: "webhook-secret", api_key: "provider-api-key" };
-  const orders = [], notifications = [];
+  const orders = [], notifications = [], callbacks = [];
   const matches = (row, filter) => Object.entries(filter).every(([key, value]) => {
     if (key === "$or") return value.some(branch => matches(row, branch));
+    if (key === "$and") return value.every(branch => matches(row, branch));
+    if (value && typeof value === "object" && "$in" in value) return value.$in.includes(row[key]);
     if (value && typeof value === "object" && "$ne" in value) return Array.isArray(row[key])
       ? !row[key].includes(value.$ne) : row[key] !== value.$ne;
     return Array.isArray(row[key]) ? row[key].includes(value) : row[key] === value;
@@ -45,15 +47,33 @@ async function fixture(t, dbType = "mongodb") {
       return wrap(row);
     },
   };
+  const Callback = {
+    async findOne(filter) { return callbacks.find(row => matches(row, filter)) || null; },
+    async create(data) {
+      if (callbacks.some(row => row.dedupe_key === data.dedupe_key)) { const error = new Error("duplicate"); error.code = 11000; throw error; }
+      const row = { _id: `callback-${callbacks.length}`, attempts: 0, ...data }; callbacks.push(row); return row;
+    },
+    async findOneAndUpdate(filter, update) {
+      const row = callbacks.find(row => matches(row, filter)); if (!row) return null;
+      if (update.$inc) for (const [key, value] of Object.entries(update.$inc)) row[key] = Number(row[key] || 0) + value;
+      if (update.$set) Object.assign(row, update.$set);
+      return row;
+    },
+    find(filter) { return { sort: () => ({ limit: async n => callbacks.filter(row => matches(row, filter)).slice(0, n) }), limit: async n => callbacks.filter(row => matches(row, filter)).slice(0, n) }; },
+  };
   const sms = load("utils/orderSms.js", {
     "../models/Order": Order, "../models/User": {}, "../models/Country": {},
     "../models/UserWebhook": { findOne: async () => null },
     "./db": { DB_TYPE: dbType, withTransaction: async fn => fn({}) },
     "./customerWebhook": {}, "./realtimeEmitter": { emitToUser: (...args) => notifications.push(args) },
   });
+  const queue = load("utils/providerWebhookQueue.js", {
+    "../models/ProviderWebhookCallback": Callback, "../models/Order": Order, "./orderSms": sms,
+  });
   const router = load("routes/providerWebhook.js", {
     "../models/Server": { findById: async id => id === "server-a" ? serverConfig : null, findOne: async () => null },
     "../models/Order": Order, "../utils/orderSms": sms,
+    "../utils/providerWebhookQueue": queue,
   });
   const app = express(), logs = [];
   app.use(load("utils/webhookLogging.js", {}, { console: { info: (...args) => logs.push(args) } }).logProviderWebhook);
@@ -80,16 +100,18 @@ async function fixture(t, dbType = "mongodb") {
     const response = await fetch(`${base}/api/provider/webhook/${server}`, {
       method: "POST", headers: { "content-type": "application/json", ...headers }, body: raw,
     });
-    return { status: response.status, body: await response.json() };
+    const text = await response.text();
+    let parsed; try { parsed = JSON.parse(text); } catch { parsed = text; }
+    return { status: response.status, body: parsed };
   };
   const add = (fields = {}) => {
     const row = { _id: `db-${orders.length}`, order_id: `local-${orders.length}`, external_order_id: `external-${orders.length}`,
-      server_name: "Provider A", user_id: "owner", status: "active", otp: "", all_otps: [],
+      server_id: "server-a", server_name: "Provider A", user_id: "owner", status: "active", otp: "", all_otps: [],
       multi_otp_enabled: false, cost: 4, ...fields };
     orders.push(row);
     return row;
   };
-  return { send, add, serverConfig, orders, notifications, base, Order, logs, maintenance: value => { maintenance = value; } };
+  return { send, add, serverConfig, orders, callbacks, notifications, base, Order, queue, logs, maintenance: value => { maintenance = value; } };
 }
 
 for (const dbType of ["mysql", "mongodb"]) {
@@ -134,6 +156,54 @@ test("missing, incorrect and malformed credentials never save an OTP", async t =
   }
   assert.equal(order.otp, "");
   assert.equal(f.notifications.length, 0);
+});
+
+test("authenticated malformed JSON and missing fields return 400", async t => {
+  const f = await fixture(t);
+  assert.equal((await f.send("{bad json")).status, 400);
+  assert.equal((await f.send({ external_order_id: "client-id" })).status, 400);
+  assert.equal(f.callbacks.length, 0);
+});
+
+test("legacy provider dashboard ID resolves through provider_order_id", async t => {
+  const f = await fixture(t), order = f.add({ external_order_id: "client-stable-id", provider_order_id: "provider-dashboard-id" });
+  const result = await f.send({ external_order_id: "provider-dashboard-id", otp: "001234" });
+  assert.equal(result.status, 200);
+  assert.equal(order.otp, "001234");
+  assert.equal(order.order_id, result.body.order_id);
+});
+
+test("callback before order mapping is durably queued and delivered when mapping appears", async t => {
+  const f = await fixture(t);
+  const payload = { external_order_id: "stable-client-order", otp: "001234" };
+  const accepted = await f.send(payload);
+  assert.equal(accepted.status, 202);
+  assert.equal(accepted.body.queued, true);
+  assert.equal(f.callbacks.length, 1);
+  assert.equal(f.callbacks[0].state, "pending");
+
+  const order = f.add({ external_order_id: payload.external_order_id });
+  assert.equal(await f.queue.retryForOrder(order), 1);
+  assert.equal(order.otp, payload.otp);
+  assert.equal(order.status, "completed");
+  assert.equal(f.callbacks[0].state, "matched");
+  assert.equal((await f.send(payload)).status, 200);
+  assert.deepEqual(order.all_otps, [payload.otp]);
+});
+
+test("getNumber sends the preallocated client ID upstream as external_order_id", async () => {
+  const provider = require("../utils/providerApi"), originalFetch = global.fetch;
+  let requestedUrl = "";
+  try {
+    global.fetch = async url => {
+      requestedUrl = String(url);
+      return { ok: true, status: 200, text: async () => "ACCESS_NUMBER:provider-dashboard-id:919000000000" };
+    };
+    const result = await provider.getNumber({ api_get_number_url: "https://provider.example/get?service={service}&country={country}", retry_count: 1 },
+      "wa", "22", { externalOrderId: "CLIENT-ORDER-123" });
+    assert.equal(result.api_order_id, "provider-dashboard-id");
+    assert.match(requestedUrl, /external_order_id=CLIENT-ORDER-123/);
+  } finally { global.fetch = originalFetch; }
 });
 
 test("valid credentials distinguish polling mode and a disabled server from invalid authentication", async t => {
@@ -224,13 +294,14 @@ test("callbacks remain available during maintenance and after customer API throt
 
 test("foreign, ambiguous, mismatched and refunded orders are never updated", async t => {
   const f = await fixture(t);
-  const foreign = f.add({ server_name: "Another provider" });
-  assert.equal((await f.send({ orderId: foreign.external_order_id, otp: "001234" })).status, 404);
+  const foreign = f.add({ server_id: "other-server", server_name: "Another provider" });
+  assert.equal((await f.send({ orderId: foreign.external_order_id, otp: "001234" })).status, 202);
+  assert.equal(f.callbacks.length, 1);
   const first = f.add(), second = f.add({ external_order_id: first.external_order_id });
   assert.equal((await f.send({ orderId: first.external_order_id, otp: "001234" })).status, 409);
   assert.equal((await f.send({ local_order_id: first.order_id, external_order_id: "different", otp: "001234" })).body.code, "ORDER_ID_MISMATCH");
   const refunded = f.add({ status: "refunded" });
-  assert.equal((await f.send({ orderId: refunded.external_order_id, otp: "001234" })).status, 404);
+  assert.equal((await f.send({ orderId: refunded.external_order_id, otp: "001234" })).status, 202);
   assert.equal((await f.send({ local_order_id: refunded.order_id, otp: "001234" })).body.code, "ORDER_NOT_ACTIVE");
   assert.equal(f.notifications.length, 0);
   assert.equal(second.otp, "");

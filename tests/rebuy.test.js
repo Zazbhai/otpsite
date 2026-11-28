@@ -70,6 +70,8 @@ function fixture({ reserveError, providerResult, cancelResult, finalizeError } =
       if (name === "nanoid") return { nanoid: () => ++nextId === 1 ? "NEW-ORDER-ID" : "OTHER-ORDER-ID" };
       if (name === "./wallet") return dependencies["../utils/wallet"];
       if (name === "./providerApi") return dependencies["../utils/providerApi"];
+      if (name === "./providerOrderId") return { providerOrderId: order => String(order?.provider_order_id || order?.external_order_id || "").trim() };
+      if (name === "./providerWebhookQueue") return { retryForOrder: async () => 0 };
       if (name === "./orderLocks") return dependencies["../utils/orderLocks"];
       if (name === "./money") return require("../utils/money");
       return require(name);

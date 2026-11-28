@@ -182,8 +182,10 @@
       <!-- Secondary Info -->
       <div style="margin-top: 24px; display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div style="grid-column:1/-1;padding:12px;background:var(--surface);border-radius:12px;border:1px solid var(--border)">
-          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:4px">External order ID (provider)</div>
-          <button type="button" id="o-external-id" onclick="if(this.dataset.orderReference) copyToClipboard(this.dataset.orderReference)" title="Copy external order ID" style="background:none;border:0;padding:0;color:inherit;font-family:monospace;overflow-wrap:anywhere;text-align:left;cursor:pointer">Not available</button>
+          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:4px">Client/API order ID</div>
+          <button type="button" id="o-external-id" onclick="if(this.dataset.orderReference) copyToClipboard(this.dataset.orderReference)" title="Copy client/API order ID" style="background:none;border:0;padding:0;color:inherit;font-family:monospace;overflow-wrap:anywhere;text-align:left;cursor:pointer">Not available</button>
+          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin:12px 0 4px">Provider dashboard order ID</div>
+          <button type="button" id="o-provider-id" onclick="if(this.dataset.orderReference) copyToClipboard(this.dataset.orderReference)" title="Copy provider dashboard order ID" style="background:none;border:0;padding:0;color:inherit;font-family:monospace;overflow-wrap:anywhere;text-align:left;cursor:pointer">Not available</button>
         </div>
         <div style="padding:12px; background:var(--surface); border-radius:12px; border:1px solid var(--border);">
           <div style="font-size:10px; color:var(--text-3); text-transform:uppercase; margin-bottom:4px;">User ID</div>
@@ -269,6 +271,8 @@
     document.getElementById("o-id-display").textContent = `#${o.order_id}`;
     document.getElementById("o-external-id").textContent = o.external_order_id || "Not available";
     document.getElementById("o-external-id").dataset.orderReference = o.external_order_id || "";
+    document.getElementById("o-provider-id").textContent = o.provider_order_id || o.external_order_id || "Not available";
+    document.getElementById("o-provider-id").dataset.orderReference = o.provider_order_id || o.external_order_id || "";
     document.getElementById("o-service-name").textContent = o.service_name;
     document.getElementById("o-user-id").textContent = o.user_id;
     document.getElementById("o-phone").textContent = o.phone || "Assigning...";
