@@ -244,10 +244,13 @@ async function checkStatus(server, api_order_id) {
   });
   
   let response;
+  const deadline = Date.now() + STATUS_REQUEST_TIMEOUT_MS;
   for (let attempt = 0; attempt < 3; attempt++) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
     backoffUntil = getProviderBackoff(server);
     if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
-    response = await callProvider(url, server, "GET", undefined, { timeoutMs: STATUS_REQUEST_TIMEOUT_MS });
+    response = await callProvider(url, server, "GET", undefined, { timeoutMs: remainingMs });
     const body = response.data.text || JSON.stringify(response.data);
     logToProviderFile(`checkStatus | ID=${api_order_id} | ATTEMPT=${attempt + 1} | HTTP=${response.status} | RESP=${body}`);
     if (isRateLimitedResponse(response)) {
@@ -257,7 +260,10 @@ async function checkStatus(server, api_order_id) {
     if (response.ok) break;
     const retryable = response.timed_out || response.status >= 500 || response.status === 408 || response.status === 425;
     if (!retryable) return { error: response.data.error || "Provider status request failed", status: response.status };
-    if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+    if (attempt < 2) {
+      const retryDelay = Math.min(500 * (attempt + 1), Math.max(0, deadline - Date.now()));
+      if (retryDelay > 0) await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
   }
   if (!response?.ok) return { error: response?.data?.error || "Provider status request failed", transient: true };
 

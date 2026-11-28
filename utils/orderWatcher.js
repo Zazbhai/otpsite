@@ -10,6 +10,7 @@ function startWatcher() {
 
   let isRunning = false;
   let lastRecoveryAt = 0;
+  let recoveryRunning = false;
   // Keep both a stable string key (for local de-duplication) and the native
   // database ID (ObjectId/number) used by the indexed exclusion query.
   const inFlight = new Map();
@@ -22,10 +23,16 @@ function startWatcher() {
 
     try {
       const now = new Date();
-      if (now.getTime() - lastRecoveryAt >= 60000) {
+      if (now.getTime() - lastRecoveryAt >= 60000 && !recoveryRunning) {
         lastRecoveryAt = now.getTime();
-        await require("./wallet").recoverPendingPurchases();
-        await require("./providerWebhookQueue").retryPendingCallbacks(100);
+        recoveryRunning = true;
+        // Recovery and webhook replay must never delay the due-order queue.
+        // They can touch hundreds of rows and are safe to run independently.
+        Promise.resolve().then(async () => {
+          await require("./wallet").recoverPendingPurchases();
+          await require("./providerWebhookQueue").retryPendingCallbacks(100);
+        }).catch(error => console.error("[Order Monitor] Recovery failed:", error.message))
+          .finally(() => { recoveryRunning = false; });
       }
       const { Op } = require("sequelize");
       const { DB_TYPE } = require("./db");

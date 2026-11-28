@@ -1533,6 +1533,42 @@ test("background watcher starts new work while one provider request remains pend
   for (const resolve of pending.values()) resolve();
 });
 
+test("background recovery does not block due-order polling", async () => {
+  let tick, syncStarted = false, releaseRecovery;
+  const recovery = new Promise(resolve => { releaseRecovery = resolve; });
+  const watcher = moduleFrom("utils/orderWatcher.js", {
+    "../models/Order": { find: () => {
+      const query = { sort() { return query; }, limit: async () => [{ _id: "due", status: "active", next_check_at: new Date(0) }] };
+      return query;
+    } },
+    "./db": { DB_TYPE: "mongodb" },
+    "./wallet": { recoverPendingPurchases: async () => recovery },
+    "./providerWebhookQueue": { retryPendingCallbacks: async () => {} },
+    "./orderStatusManager": { syncOrder: async () => { syncStarted = true; } },
+  }, { setInterval(callback) { tick = callback; }, console: { log() {}, error() {} } });
+  watcher.startWatcher();
+  await tick();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(syncStarted, true);
+  releaseRecovery();
+});
+
+test("MySQL due-order query selects the primary key required to sync an order", async () => {
+  let tick, options, syncedId;
+  const row = { id: 42, order_id: "mysql-order", status: "active", next_check_at: new Date(0) };
+  const watcher = moduleFrom("utils/orderWatcher.js", {
+    "../models/Order": { findAll: async query => { options = query; return [row]; } },
+    "./db": { DB_TYPE: "mysql" },
+    "./wallet": { recoverPendingPurchases: async () => {} },
+    "./orderStatusManager": { syncOrder: async order => { syncedId = order.id; } },
+  }, { setInterval(callback) { tick = callback; }, console: { log() {}, error() {} } });
+  watcher.startWatcher();
+  await tick();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(options.attributes.includes("id"));
+  assert.equal(syncedId, 42);
+});
+
 test("background watcher drains 1,000 due orders in bounded batches without duplicate work", async () => {
   const sift = require("sift").default;
   const ObjectId = require("mongoose").Types.ObjectId;
