@@ -22,6 +22,9 @@ const appendProviderLog = require("./batchedLog").createBatchedLog((batch, done)
 // Back off all polling for this provider briefly after a 429 response.
 const providerBackoff = new Map();
 const PROVIDER_BACKOFF_MS = 10_000;
+// Status checks run in the background. Bound only these calls so an
+// unresponsive provider cannot permanently consume every polling worker.
+const STATUS_REQUEST_TIMEOUT_MS = 30_000;
 
 function providerKey(server) {
   return String(server?.api_check_status_url || server?.api_get_number_url || server?.name || "provider");
@@ -98,7 +101,7 @@ function buildUrl(urlTemplate, { api_key, service, country, order_id, external_o
   return url;
 }
 
-async function callProvider(url, server, method = "GET", onHeaders) {
+async function callProvider(url, server, method = "GET", onHeaders, { timeoutMs } = {}) {
   const options = {
     method,
     headers: {
@@ -115,7 +118,8 @@ async function callProvider(url, server, method = "GET", onHeaders) {
   const noCacheUrl = `${url}${sep}_t=${Date.now()}`;
 
   try {
-    const res = await fetch(noCacheUrl, { ...options, cache: 'no-store' });
+    const signal = timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined;
+    const res = await fetch(noCacheUrl, { ...options, cache: 'no-store', ...(signal ? { signal } : {}) });
     onHeaders?.();
     const text = await res.text();
     let data;
@@ -243,7 +247,7 @@ async function checkStatus(server, api_order_id) {
   for (let attempt = 0; attempt < 3; attempt++) {
     backoffUntil = getProviderBackoff(server);
     if (backoffUntil) return { error: "Provider rate limited", rate_limited: true, retry_at: backoffUntil };
-    response = await callProvider(url, server);
+    response = await callProvider(url, server, "GET", undefined, { timeoutMs: STATUS_REQUEST_TIMEOUT_MS });
     const body = response.data.text || JSON.stringify(response.data);
     logToProviderFile(`checkStatus | ID=${api_order_id} | ATTEMPT=${attempt + 1} | HTTP=${response.status} | RESP=${body}`);
     if (isRateLimitedResponse(response)) {

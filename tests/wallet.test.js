@@ -367,9 +367,13 @@ test("Mongoose executes the wallet rounding hook with timestamps enabled", async
 });
 
 function watcherFixture(f, checkStatus, cancelOrder = async () => ({}), serverOptions = {}, extra = {}) {
+  const server = { api_check_status_url: "provider", api_cancel_url: "cancel", ...serverOptions };
   return moduleFrom("utils/orderStatusManager.js", {
     "../models/Order": f.models.Order,
-    "../models/Server": { findOne: async () => { f.serverLookupCount = (f.serverLookupCount || 0) + 1; return { api_check_status_url: "provider", api_cancel_url: "cancel", ...serverOptions }; } },
+    "../models/Server": {
+      findById: async id => { f.serverLookupById = id; return f.serverLookupByIdResult === null ? null : server; },
+      findOne: async () => { f.serverLookupCount = (f.serverLookupCount || 0) + 1; return server; },
+    },
     "./wallet": f.wallet, "./realtimeEmitter": { emitToUser() {} },
     "./orderSms": { recordOrderSms: async (order, otp, { complete } = {}) => {
       const current = f.tables.orders.find(row => String(row._id) === String(order._id));
@@ -441,6 +445,19 @@ test("watcher honors each order's configured provider check interval", async () 
   await watcher.syncOrder({ _id: "poll-interval" });
   assert.equal(calls, 1);
   assert.equal(f.serverLookupCount, 1);
+});
+
+test("watcher resolves a renamed provider through the saved server ID", async () => {
+  const f = walletFixture();
+  const order = await f.models.Order.create({ _id: "renamed-server", order_id: "renamed-server", user_id: "u1",
+    server_id: "stable-server-id", server_name: "Old server name", external_order_id: "provider-id",
+    status: "active", otp: "", all_otps: [], next_check_at: new Date(0) });
+  let calls = 0;
+  const watcher = watcherFixture(f, async () => { calls++; return { status: "waiting" }; });
+  await watcher.syncOrder(order);
+  assert.equal(calls, 1);
+  assert.equal(f.serverLookupById, "stable-server-id");
+  assert.equal(f.serverLookupCount || 0, 0);
 });
 
 test("separate workers share the database polling lease for an active order", async () => {
@@ -537,7 +554,7 @@ for (const enabled of [true, 1, "1", "true"]) test(`API getStatus in webhook mod
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";
   const order = await f.models.Order.create({ _id: "webhook-api", order_id: "webhook-api", user_id: "u1", status: "active",
-    otp: "", all_otps: [], external_order_id: "external-webhook", server_name: "s", next_check_at: new Date(0) });
+    otp: "", all_otps: [], external_order_id: "external-webhook", server_id: "srv", server_name: "Old server name", next_check_at: new Date(0) });
   let syncCalls = 0;
   const routes = routesFixture(f, async () => ({}), undefined, undefined, undefined, async current => { syncCalls++; return current; });
   routes.server.otp_webhook_enabled = enabled;
@@ -1276,6 +1293,22 @@ test("provider status parser accepts text and common JSON OTP formats without mi
   } finally { global.fetch = originalFetch; }
 });
 
+test("provider status requests have a background-only upper bound", async () => {
+  let requestedTimeout, passedSignal, expectedSignal;
+  const provider = moduleFrom("utils/providerApi.js", {}, {
+    AbortSignal: { timeout(ms) { requestedTimeout = ms; expectedSignal = {}; return expectedSignal; } },
+    fetch: async (_url, options) => {
+      passedSignal = options.signal;
+      return { status: 200, ok: true, text: async () => "STATUS_WAIT_CODE" };
+    },
+  });
+  const result = await provider.checkStatus({ api_check_status_url: "https://provider.example/status" }, "id");
+  assert.equal(result.status, "waiting");
+  assert.equal(result.otp, null);
+  assert.equal(requestedTimeout, 30000);
+  assert.equal(passedSignal, expectedSignal);
+});
+
 test("provider status polling retries aborted requests and still saves a later OTP response", async () => {
   const provider = require("../utils/providerApi");
   const originalFetch = global.fetch;
@@ -1498,6 +1531,40 @@ test("background watcher starts new work while one provider request remains pend
   await tick();
   assert.equal(started.length, 2);
   for (const resolve of pending.values()) resolve();
+});
+
+test("background watcher drains 1,000 due orders in bounded batches without duplicate work", async () => {
+  const sift = require("sift").default;
+  const ObjectId = require("mongoose").Types.ObjectId;
+  const started = [];
+  let tick, active = 0, peak = 0;
+  const rows = Array.from({ length: 1000 }, (_, i) => ({
+    _id: new ObjectId(), label: `scale-${i}`, status: "active", next_check_at: new Date(0),
+  }));
+  const watcher = moduleFrom("utils/orderWatcher.js", {
+    "../models/Order": { find(filter) {
+      const query = { sort() { return query; }, limit: async n => rows.filter(sift(filter)).slice(0, n) };
+      return query;
+    } },
+    "./db": { DB_TYPE: "mongodb" },
+    "./wallet": { recoverPendingPurchases: async () => {} },
+    "./orderStatusManager": { syncOrder: async order => {
+      active++; peak = Math.max(peak, active); started.push(order.label);
+      await new Promise(resolve => setImmediate(resolve));
+      const row = rows.find(item => item._id.equals(order._id));
+      if (row) row.next_check_at = new Date(Date.now() + 60000);
+      active--;
+    } },
+  }, { setInterval(callback) { tick = callback; }, console: { log() {}, error() {} } });
+  watcher.startWatcher();
+  for (let i = 0; i < 100; i++) {
+    await tick();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(active, 0);
+  }
+  assert.equal(started.length, 1000);
+  assert.equal(new Set(started).size, 1000);
+  assert.ok(peak <= 10);
 });
 
 test("private order history requires the server secret and returns only provider order ID and status", async () => {

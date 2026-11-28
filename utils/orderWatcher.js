@@ -10,7 +10,9 @@ function startWatcher() {
 
   let isRunning = false;
   let lastRecoveryAt = 0;
-  const inFlight = new Set();
+  // Keep both a stable string key (for local de-duplication) and the native
+  // database ID (ObjectId/number) used by the indexed exclusion query.
+  const inFlight = new Map();
   const CONCURRENCY = 10;
 
   // Wake frequently, but only load orders whose indexed check time has arrived.
@@ -38,7 +40,7 @@ function startWatcher() {
           dueOrders = await Order.findAll({
               where: {
                   status: "active",
-                  id: { [Op.notIn]: [...inFlight] },
+                  id: { [Op.notIn]: [...inFlight.values()] },
                   [Op.or]: [
                   { next_check_at: null },
                   { next_check_at: { [Op.lte]: now } }
@@ -53,7 +55,7 @@ function startWatcher() {
           // MongoDB logic
           dueOrders = await Order.find({
               status: "active",
-              _id: { $nin: [...inFlight] },
+              _id: { $nin: [...inFlight.values()] },
               $or: [
                   { next_check_at: { $exists: false } },
                   { next_check_at: null },
@@ -74,7 +76,8 @@ function startWatcher() {
       for (const order of dueOrders) {
         const id = String(order._id || order.id);
         if (inFlight.has(id)) continue;
-        inFlight.add(id);
+        const databaseId = DB_TYPE === "mysql" ? (order.id ?? order._id) : (order._id ?? order.id);
+        inFlight.set(id, databaseId);
         Promise.resolve().then(() => syncOrder(order))
           .catch(err => console.error("[Order Monitor] Order sync failed:", err.message))
           .finally(() => inFlight.delete(id));

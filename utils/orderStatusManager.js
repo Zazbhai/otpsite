@@ -63,7 +63,13 @@ async function syncOrder(orderIdOrDoc) {
         .finally(() => { renewingLease = null; });
     }, 20000);
     leaseTimer.unref?.();
-    const server = await Server.findOne({ name: order.server_name });
+    // Prefer the immutable server ID. Name is retained only for legacy orders
+    // and can change in Admin without breaking status polling.
+    let server = null;
+    if (order.server_id && typeof Server.findById === "function") {
+      try { server = await Server.findById(order.server_id); } catch (_) {}
+    }
+    if (!server) server = await Server.findOne({ name: order.server_name });
     const webhookOnly = isProviderWebhookEnabled(server);
     if (webhookOnly && !expired) {
       nextRunAt = order.expires_at ? new Date(order.expires_at) : new Date("9999-12-31T23:59:59.000Z");

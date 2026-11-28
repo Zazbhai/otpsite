@@ -262,7 +262,11 @@ router.all("/", async (req, res) => {
           return "STATUS_WAIT_CODE";
         };
         if (order.status !== "active") return res.send(getPublicStatus(order));
-        const statusServer = await Server.findOne({ name: order.server_name });
+        let statusServer = null;
+        if (order.server_id && typeof Server.findById === "function") {
+          try { statusServer = await Server.findById(order.server_id); } catch (_) {}
+        }
+        if (!statusServer) statusServer = await Server.findOne({ name: order.server_name });
         if (isProviderWebhookEnabled(statusServer)) return res.send(getPublicStatus(order));
         const interval = Math.max(3000, Number(order.check_interval || 3) * 1000);
         const nextCheckAt = order.next_check_at ? new Date(order.next_check_at) :
