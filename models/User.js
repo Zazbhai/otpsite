@@ -51,6 +51,7 @@ if (DB_TYPE === "mysql") {
       }
     },
     indexes: [
+      { name: "idx_users_api_key", fields: ["api_key"] },
       { fields: ["email"], unique: true },
       { fields: ["username"], unique: true },
       { fields: ["referral_code"], unique: true },
@@ -93,6 +94,7 @@ if (DB_TYPE === "mysql") {
     { timestamps: true }
   );
 
+  userSchema.index({ api_key: 1 }, { name: "idx_users_api_key" });
   userSchema.pre("save", function(next) {
     if (!this.avatar_url) {
       const avatars = [

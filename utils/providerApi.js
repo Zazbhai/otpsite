@@ -79,7 +79,9 @@ function isDuplicate(number) {
 
 function logToProviderFile(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`;
-  fs.appendFileSync(LOG_FILE, line);
+  fs.appendFile(LOG_FILE, line, error => {
+    if (error) console.error("[Provider log write]", error.code || error.name);
+  });
 }
 
 function buildUrl(urlTemplate, { api_key, service, country, order_id, phone }) {

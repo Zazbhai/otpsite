@@ -56,6 +56,7 @@ if (DB_TYPE === "mysql") {
     }
   }, {
     indexes: [
+      { name: "idx_orders_user_external", fields: ["user_id", "external_order_id", "createdAt"] },
       { fields: ['status'] },
       { fields: ['user_id'] },
       { fields: ['user_id', 'createdAt', 'id'] },
@@ -105,6 +106,7 @@ if (DB_TYPE === "mysql") {
     { timestamps: true }
   );
   orderSchema.index({ server_name: 1, external_order_id: 1 });
+  orderSchema.index({ user_id: 1, external_order_id: 1, createdAt: -1 }, { name: "idx_orders_user_external" });
   orderSchema.index({ user_id: 1, createdAt: -1, _id: -1 });
   orderSchema.index({ status: 1, next_check_at: 1 });
   Order = mongoose.model("Order", orderSchema);

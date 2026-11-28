@@ -77,4 +77,64 @@ test("real MongoDB wallet conflicts, refunds and concurrent purchases", { timeou
     assert.equal((await User.findById(owner._id)).balance, 2);
     assert.equal(await Transaction.countDocuments({ user_id: String(owner._id), type: "purchase" }), 1);
   });
+
+  await t.test("real API status and balance calls respond while the provider is still pending", async () => {
+    const express = require("express");
+    const Server = require("../models/Server"), Service = require("../models/Service");
+    await require("../utils/apiQueryIndexes").ensureApiQueryIndexes({ DB_TYPE: "mongodb", models: { User, Order, Service } });
+    await Promise.all([Server.init(), Service.init()]);
+    const server = await Server.create({ name: "test-provider", slug: "performance", api_get_number_url: "https://provider.example/get",
+      api_check_status_url: "https://provider.example/status", otp_webhook_enabled: false });
+    await Service.create({ name: "Performance test", service_code: "perf", country_code: "22", price: 1, server_id: server._id });
+    const owner = await user(30);
+    owner.api_key = "performance-test-key"; await owner.save();
+    const order = await buy(owner, "performance-status", 2);
+    await Order.updateOne({ _id: order._id }, { $set: { next_check_at: new Date(0) } });
+    const provider = require("../utils/providerApi");
+    const originalStatus = provider.checkStatus, originalNumber = provider.getNumber;
+    let finish, pollStarted = false, pollFinished = false, allocations = 0;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    provider.checkStatus = async () => { pollStarted = true; const result = await waiting; pollFinished = true; return result; };
+    provider.getNumber = async () => {
+      const id = ++allocations;
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return { api_order_id: `delayed-allocation-${id}`, phone: "919000000000" };
+    };
+    const app = express();
+    app.use(require("../utils/apiTiming").trackGatewayTiming);
+    app.use("/stubs/handler_api.php", require("../routes/apiGateway"));
+    const listener = app.listen(0, "127.0.0.1");
+    await new Promise(resolve => listener.once("listening", resolve));
+    const base = `http://127.0.0.1:${listener.address().port}/stubs/handler_api.php?api_key=${owner.api_key}`;
+    try {
+      const started = Date.now();
+      const responses = await Promise.all(Array.from({ length: 20 }, async () => {
+        const response = await fetch(`${base}&action=getStatus&id=${order.external_order_id}`);
+        assert.equal(response.status, 200);
+        return response.text();
+      }));
+      assert.ok(responses.every(body => body === "STATUS_WAIT_CODE"));
+      assert.equal(pollStarted, true);
+      assert.equal(pollFinished, false);
+      assert.ok(Date.now() - started < 2000);
+      assert.equal(await (await fetch(`${base}&action=getBalance`)).text(), "ACCESS_BALANCE:28.0000");
+      const buysStarted = Date.now();
+      const purchases = await Promise.all(Array.from({ length: 8 }, async () =>
+        (await fetch(`${base}&action=getNumber&service=perf&country=22`)).text()));
+      assert.ok(purchases.every(body => body.startsWith("ACCESS_NUMBER:")), JSON.stringify(purchases));
+      assert.equal(new Set(purchases).size, 8);
+      assert.ok(Date.now() - buysStarted < 2000);
+      const allocated = await fetch(`${base}&action=getNumber&service=perf&country=22`);
+      assert.equal(await allocated.text(), "ACCESS_NUMBER:delayed-allocation-9:919000000000");
+      assert.match(allocated.headers.get("server-timing"), /provider_getNumber;dur=/);
+      assert.equal((await User.findById(owner._id)).balance, 19);
+      const plan = await User.find({ api_key: owner.api_key }).explain("executionStats");
+      assert.match(JSON.stringify(plan.queryPlanner.winningPlan), /idx_users_api_key/);
+    } finally {
+      finish({ status: "waiting" });
+      await new Promise(resolve => setTimeout(resolve, 50));
+      provider.checkStatus = originalStatus; provider.getNumber = originalNumber;
+      await new Promise(resolve => { listener.close(resolve); listener.closeAllConnections(); });
+    }
+  });
 });

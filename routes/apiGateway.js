@@ -43,7 +43,9 @@ async function findUserOrder(userId, id) {
 }
 
 router.all("/", async (req, res) => {
+  const mark = stage => req.apiTiming?.mark(stage);
   try {
+    mark("authenticate");
     const query = req.method === "POST" ? req.body : req.query;
     if (!query || typeof query !== "object" || Array.isArray(query)) return res.send("BAD_REQUEST");
     const { action } = query;
@@ -115,6 +117,7 @@ router.all("/", async (req, res) => {
       }
 
       case "getNumber": {
+        mark("service_lookup");
         let { service, country, operator, maxPrice } = query;
         if (!service) return res.send("BAD_SERVICE");
         if (!country) return res.send("BAD_COUNTRY");
@@ -134,7 +137,7 @@ router.all("/", async (req, res) => {
         }
 
         // Find matching services and pick the cheapest one
-        const services = await Service.find(filter).sort({ price: 1 });
+        const services = await Service.find(filter).sort({ price: 1 }).limit(1);
         if (!services || services.length === 0) return res.send("BAD_SERVICE");
 
         const svc = services[0];
@@ -147,6 +150,7 @@ router.all("/", async (req, res) => {
         if (user.balance < finalPrice) return res.send("NO_BALANCE");
         if (maxPrice && finalPrice > parseFloat(maxPrice)) return res.send("NO_NUMBERS");
 
+        mark("server_lookup");
         const serverConf = await Server.findById(svc.server_id);
         if (!serverConf || !serverConf.is_active) return res.send("NO_NUMBERS");
 
@@ -155,17 +159,21 @@ router.all("/", async (req, res) => {
         const reservedOrderId = "ORD-" + nanoid(16).toUpperCase();
         let orderSaved = false;
         try {
+          mark("reserve_balance");
           await wallet.reservePurchase({ userId: user._id, orderId: reservedOrderId,
             amount: finalPrice, description: `API: Purchased ${svc.name} (${country})` });
           balanceDeducted = true;
         } catch (err) {
-          return res.send("NO_BALANCE");
+          if (err.message === "INSUFFICIENT_BALANCE") return res.send("NO_BALANCE");
+          console.error("[API reservation]", err.code || err.message);
+          return res.send("ERROR");
         }
 
         // 2. Call provider API (outside transaction)
         let providerRes = null;
         try {
           try {
+            mark("provider_getNumber");
             providerRes = await providerApi.getNumber(serverConf, svc.service_code, svc.country_code || country);
           } catch (apiErr) {
             providerRes = { error: apiErr.message || "Provider API Failure" };
@@ -198,11 +206,13 @@ router.all("/", async (req, res) => {
             multi_otp_enabled: serverConf.multi_otp_supported || false
           };
 
+          mark("save_order");
           const savedOrder = await wallet.finalizePurchase(orderData);
           orderSaved = true;
           return res.send(numberResponse(savedOrder));
         } catch (err) {
           if (balanceDeducted && !orderSaved) {
+            mark("reverse_purchase");
             console.log(`[API/Order/Rollback] Rollback refunding user ${user._id} amount ${finalPrice}`);
             const reversed = await wallet.reversePurchase(reservedOrderId).catch(refundErr => {
               console.error("[API/Order/Rollback]", reservedOrderId, refundErr.message);
@@ -210,7 +220,10 @@ router.all("/", async (req, res) => {
             });
 
             if (reversed && err.message !== "DUPLICATE_EXTERNAL_ORDER" && providerRes?.api_order_id) {
-              await providerApi.cancelOrder(serverConf, providerRes.api_order_id).catch(() => {});
+              // The debit reversal is committed. Provider cleanup can finish
+              // independently without holding the client's failure response.
+              providerApi.cancelOrder(serverConf, providerRes.api_order_id)
+                .catch(cleanupError => console.error("[API allocation cleanup]", cleanupError.code || cleanupError.message));
             }
           }
           return res.send("NO_NUMBERS");
@@ -218,6 +231,7 @@ router.all("/", async (req, res) => {
       }
 
       case "getStatus": {
+        mark("status_lookup");
         const { id } = query;
         if (!id) return res.send("BAD_REQUEST");
 
@@ -242,8 +256,10 @@ router.all("/", async (req, res) => {
           return res.send(getPublicStatus(order));
         }
         const { syncOrder } = require("../utils/orderStatusManager");
-        order = await syncOrder(order) || await Order.findById(order._id);
-        if (!order) return res.send("NO_ACTIVATION");
+        // The watcher remains authoritative. A client status read may wake a
+        // due check, but never waits on an upstream request or its retry loop.
+        Promise.resolve().then(() => syncOrder(order))
+          .catch(error => console.error("[API background status]", error.code || error.message));
         return res.send(getPublicStatus(order));
       }
 

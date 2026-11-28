@@ -57,6 +57,7 @@ const connectDB = async () => {
 
       await require("./walletSchema").ensureReferenceSchema(sequelize);
       await sequelize.sync({ alter: false });
+      await require("./apiQueryIndexes").ensureApiQueryIndexes({ DB_TYPE, sequelize });
       await require("./walletSchema").ensureWalletSchema(sequelize);
       await require("./walletSchema").ensureRebuySchema(sequelize);
 
@@ -71,6 +72,9 @@ const connectDB = async () => {
 
     try {
       await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
+      await require("./apiQueryIndexes").ensureApiQueryIndexes({ DB_TYPE, models: {
+        User: require("../models/User"), Order: require("../models/Order"), Service: require("../models/Service"),
+      } });
       log("✅ MongoDB connected");
     } catch (err) {
       log("❌ MongoDB connection error: " + err.message);
@@ -452,7 +456,7 @@ const logToFile = (msg, isError = false) => {
     const prefix = isError ? "[ERROR]" : "[INFO]";
     const line = `[${timestamp}] ${prefix} ${msg}\n`;
     try {
-        fs.appendFileSync(logFile, line);
+        fs.appendFile(logFile, line, () => {});
     } catch (e) {}
 };
 

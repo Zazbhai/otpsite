@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS `Users` (
   UNIQUE KEY `uq_users_username`     (`username`),
   UNIQUE KEY `uq_users_email`        (`email`),
   UNIQUE KEY `uq_users_referral_code`(`referral_code`),
-  KEY        `idx_users_referred_by` (`referred_by`)
+  KEY        `idx_users_referred_by` (`referred_by`),
+  KEY        `idx_users_api_key` (`api_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -128,6 +129,7 @@ CREATE TABLE IF NOT EXISTS `Services` (
   KEY `idx_services_server_id`    (`server_id`),
   KEY `idx_services_country_code` (`country_code`),
   KEY `idx_services_is_active`    (`is_active`),
+  KEY `idx_services_allocation` (`service_code`, `country_code`, `is_active`, `price`),
   CONSTRAINT `fk_services_server` FOREIGN KEY (`server_id`)
     REFERENCES `Servers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -169,6 +171,7 @@ CREATE TABLE IF NOT EXISTS `Orders` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_orders_order_id`     (`order_id`),
   KEY        `idx_orders_user_id`     (`user_id`),
+  KEY        `idx_orders_user_external` (`user_id`, `external_order_id`, `createdAt`),
   KEY        `idx_orders_status`      (`status`),
   KEY        `idx_orders_status_next_check` (`status`, `next_check_at`),
   KEY        `idx_orders_created_at`  (`createdAt`)

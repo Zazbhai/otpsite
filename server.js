@@ -17,6 +17,7 @@ const io = require('socket.io')(server, {
 });
 const cookieParser = require("cookie-parser");
 const PORT = process.env.PORT || 5000;
+app.use(require("./utils/apiTiming").trackGatewayTiming);
 
 /* ─── Middleware ──────────────────────────────────────────────── */
 app.use(cookieParser());

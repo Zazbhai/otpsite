@@ -26,6 +26,7 @@ if (DB_TYPE === "mysql") {
     }
   }, {
     indexes: [
+      { name: "idx_services_allocation", fields: ["service_code", "country_code", "is_active", "price"] },
       { fields: ['service_code', 'country_code', 'is_active'] },
       { fields: ['is_active'] },
       { fields: ['server_id'] },
@@ -59,6 +60,7 @@ if (DB_TYPE === "mysql") {
     { timestamps: true }
   );
   serviceSchema.index({ service_code: 1, country_code: 1, is_active: 1 });
+  serviceSchema.index({ service_code: 1, country_code: 1, is_active: 1, price: 1 }, { name: "idx_services_allocation" });
   serviceSchema.index({ server_id: 1 });
   Service = mongoose.model("Service", serviceSchema);
 }

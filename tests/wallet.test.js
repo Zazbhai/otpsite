@@ -496,7 +496,7 @@ test("watcher completes an active order when the provider repeats an OTP already
   assert.equal(f.tables.transactions.filter(t => t.type === "refund").length, 0);
 });
 
-test("website order-status polling saves provider OTPs once and completes completed activations", async () => {
+test("API status responds from storage while a due background check saves the next OTP", async () => {
   const f = walletFixture();
   f.tables.users[0].api_key = "test-key";
   await f.models.Order.create({ _id: "api-poll", order_id: "api-poll", user_id: "u1", status: "active",
@@ -509,7 +509,11 @@ test("website order-status polling saves provider OTPs once and completes comple
   });
   const result = response();
   await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "api-poll" } }, result);
-  assert.equal(result.body, "STATUS_OK:000123");
+  assert.equal(result.body, "STATUS_WAIT_CODE");
+  await new Promise(setImmediate);
+  const fresh = response();
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "api-poll" } }, fresh);
+  assert.equal(fresh.body, "STATUS_OK:000123");
   assert.equal(f.tables.orders[0].status, "completed");
   assert.equal(f.tables.orders[0].otp, "000123");
   assert.deepEqual(f.tables.orders[0].all_otps, ["000123"]);
@@ -561,6 +565,38 @@ test("API getStatus honors the order interval and syncs only after its scheduled
   await routes.gateway(req, due);
   assert.equal(due.body, "STATUS_WAIT_CODE");
   assert.equal(syncCalls, 1);
+});
+
+test("a pending provider status request never holds the client getStatus response", { timeout: 1000 }, async t => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  await f.models.Order.create({ _id: "slow-status", order_id: "slow-status", user_id: "u1", status: "active",
+    otp: "", all_otps: [], external_order_id: "provider", server_name: "s", next_check_at: new Date(0) });
+  let finish, calls = 0;
+  const pending = new Promise(resolve => { finish = resolve; });
+  t.after(() => finish(null));
+  const routes = routesFixture(f, async () => ({}), undefined, undefined, undefined, async () => { calls++; return pending; });
+  const result = response();
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: "slow-status" } }, result);
+  assert.equal(result.body, "STATUS_WAIT_CODE");
+  assert.equal(calls, 1);
+});
+
+test("a failed allocation reverses the debit before responding without waiting for slow provider cleanup", { timeout: 1000 }, async t => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  f.wallet.finalizePurchase = async () => { throw new Error("Failed to save order"); };
+  let finish, calls = 0;
+  const pending = new Promise(resolve => { finish = resolve; });
+  t.after(() => finish({ success: true }));
+  f.cancelOrder = async () => { calls++; return pending; };
+  const routes = routesFixture(f, async () => ({ api_order_id: "cleanup-order", phone: "919000000000" }));
+  const result = response();
+  await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getNumber", service: "test", country: "22" } }, result);
+  assert.equal(result.body, "NO_NUMBERS");
+  assert.equal(calls, 1);
+  assert.equal(f.tables.users[0].balance, 10);
+  assert.equal(f.tables.transactions.filter(tx => tx.type === "refund").length, 1);
 });
 
 function response() {
@@ -687,7 +723,7 @@ function routesFixture(f, getNumber, rebuyCancelledOrder = async () => { throw n
     "../utils/rebuy": { rebuyCancelledOrder, cancelCompletedOrderForRebuy },
     "../utils/orderStatusManager": { syncOrder },
     "../models/User": f.models.User, "../models/Order": f.models.Order, "../models/Transaction": f.models.Transaction,
-    "../models/Service": { findById: async () => service, find: () => ({ sort: async () => [service] }) },
+    "../models/Service": { findById: async () => service, find: () => ({ sort: () => ({ limit: async () => [service] }) }) },
     "../models/Server": { findById: async () => server, findOne: async () => server, find: (...args) => f.serverFind(...args) },
     "../utils/providerApi": { getNumber, checkStatus, cancelOrder: (...args) => f.cancelOrder ? f.cancelOrder(...args) : Promise.resolve({ success: true }) },
     "../middleware/auth": { loginRequired() {}, optionalLogin() {} },
@@ -820,7 +856,7 @@ test("provider allocation maps fetch and response-body aborts to NO_NUMBERS and 
     const logs = [];
     const aborted = Object.assign(new Error("This operation was aborted"), { name: "AbortError" });
     const provider = moduleFrom("utils/providerApi.js", {
-      fs: { existsSync: () => true, readFileSync: () => "[]", appendFileSync() {} },
+      fs: { existsSync: () => true, readFileSync: () => "[]", appendFile(_path, _line, callback) { callback(null); } },
     }, {
       AbortController,
       fetch: async () => {
@@ -839,7 +875,7 @@ test("provider requests wait for a delayed response without installing an abort 
   let resolveResponse, started;
   const began = new Promise(resolve => { started = resolve; });
   const provider = moduleFrom("utils/providerApi.js", {
-    fs: { existsSync: () => true, readFileSync: () => "[]", appendFileSync() {} },
+    fs: { existsSync: () => true, readFileSync: () => "[]", appendFile(_path, _line, callback) { callback(null); } },
   }, {
     setTimeout() { throw new Error("Provider request must not install an abort timer"); },
     fetch: async (_url, options) => {
