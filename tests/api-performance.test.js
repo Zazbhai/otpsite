@@ -110,10 +110,30 @@ test("API lookup index migration is additive and skips existing SQL indexes", as
 test("MongoDB watcher index covers status, scheduled time and stable queue ordering", async () => {
   const { ensureApiQueryIndexes } = require("../utils/apiQueryIndexes");
   const writes = [];
-  const model = { collection: { createIndex: async (fields, options) => writes.push({ fields, options }) } };
+  const model = { collection: { indexes: async () => [], createIndex: async (fields, options) => writes.push({ fields, options }) } };
   await ensureApiQueryIndexes({ DB_TYPE: "mongodb", models: { User: model, Order: model, Service: model } });
   const queue = writes.find(write => write.options.name === "idx_orders_due_queue");
   assert.deepEqual(queue.fields, { status: 1, next_check_at: 1, _id: 1 });
+});
+
+test("MongoDB lookup index reuses an existing equivalent index regardless of name", async () => {
+  const { ensureApiQueryIndexes } = require("../utils/apiQueryIndexes");
+  const writes = [];
+  const emptyCollection = { indexes: async () => [], createIndex: async (fields, options) => writes.push({ fields, options }) };
+  const orderCollection = {
+    indexes: async () => [
+      { name: "_id_", key: { _id: 1 } },
+      { name: "server_id_1_provider_order_id_1", key: { server_id: 1, provider_order_id: 1 } },
+    ],
+    createIndex: async (fields, options) => writes.push({ fields, options }),
+  };
+  await ensureApiQueryIndexes({ DB_TYPE: "mongodb", models: {
+    User: { collection: emptyCollection },
+    Order: { collection: orderCollection },
+    Service: { collection: emptyCollection },
+  } });
+  assert.equal(writes.some(write => write.options.name === "idx_orders_server_provider"), false);
+  assert.ok(writes.some(write => write.options.name === "idx_orders_due_queue"));
 });
 
 test("file logging batches bursts and bounds outstanding writes when disk is slow", async () => {
