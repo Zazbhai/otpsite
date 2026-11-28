@@ -5,6 +5,10 @@ const { emitToUser } = require("./realtimeEmitter");
 const { recordOrderSms } = require("./orderSms");
 const { refundOrder, hasOtp } = require("./wallet");
 const { acquireLock, releaseLock } = require("./orderLocks");
+// Shared by the watcher and client-triggered checks in this process. Busy
+// orders remain due in the database for a later watcher tick; no queue grows.
+const SYNC_CONCURRENCY = 10;
+let runningSyncs = 0;
 
 function announce(order) {
   emitToUser(String(order.user_id), "order", {
@@ -14,7 +18,8 @@ function announce(order) {
 
 async function syncOrder(orderIdOrDoc) {
   const id = String(orderIdOrDoc?._id || orderIdOrDoc?.id || orderIdOrDoc);
-  if (!acquireLock(id)) return null;
+  if (runningSyncs >= SYNC_CONCURRENCY || !acquireLock(id)) return null;
+  runningSyncs++;
   let leaseTimer, renewingLease, ownedLease, nextRunAt;
   try {
     // Supplied watcher/route documents may predate a concurrent cancellation.
@@ -139,6 +144,7 @@ async function syncOrder(orderIdOrDoc) {
       }, { $set: { next_check_at: nextRunAt } }, { new: true });
     } finally {
       releaseLock(id);
+      runningSyncs--;
     }
   }
 }

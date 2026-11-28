@@ -447,6 +447,7 @@ const withTransaction = async (callback) => {
 const fs = require("fs");
 const path = require("path");
 const logFile = path.join(__dirname, "../app.log");
+const appendLog = require("./batchedLog").createBatchedLog((batch, done) => fs.appendFile(logFile, batch, done));
 
 const originalConsoleLog = console.log.bind(console);
 const originalConsoleError = console.error.bind(console);
@@ -455,9 +456,7 @@ const logToFile = (msg, isError = false) => {
     const timestamp = new Date().toISOString();
     const prefix = isError ? "[ERROR]" : "[INFO]";
     const line = `[${timestamp}] ${prefix} ${msg}\n`;
-    try {
-        fs.appendFile(logFile, line, () => {});
-    } catch (e) {}
+    appendLog(line);
 };
 
 // Overwrite global console methods

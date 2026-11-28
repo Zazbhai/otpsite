@@ -12,6 +12,10 @@ if (!fs.existsSync(DATA_DIR)) {
 
 const DUP_FILE = path.join(DATA_DIR, 'duplicate_number_block.json');
 const LOG_FILE = path.join(DATA_DIR, 'onlinesim_log.txt');
+const appendProviderLog = require("./batchedLog").createBatchedLog((batch, done) => fs.appendFile(LOG_FILE, batch, error => {
+  if (error) console.error("[Provider log write]", error.code || error.name);
+  done();
+}));
 
 // Provider limits apply to the server/API key, not to an individual order.
 // Back off all polling for this provider briefly after a 429 response.
@@ -79,9 +83,7 @@ function isDuplicate(number) {
 
 function logToProviderFile(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`;
-  fs.appendFile(LOG_FILE, line, error => {
-    if (error) console.error("[Provider log write]", error.code || error.name);
-  });
+  appendProviderLog(line);
 }
 
 function buildUrl(urlTemplate, { api_key, service, country, order_id, phone }) {

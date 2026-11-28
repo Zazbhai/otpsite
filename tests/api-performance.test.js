@@ -40,6 +40,25 @@ test("failed settings reads release the shared request so the next request can r
   assert.equal(calls, 2);
 });
 
+test("service cache evicts old user/search keys, expires entries, and preserves scoped invalidation", () => {
+  let now = 0;
+  const cache = load("utils/apiCache.js", {}, { Date: class extends Date { static now() { return now; } } });
+  for (let i = 0; i < 1000; i++) cache.setToCache(`services_user_${i}`, { user: i });
+  assert.equal(cache.getFromCache("services_user_899"), null);
+  assert.equal(cache.getFromCache("services_user_900").user, 900);
+  assert.equal(cache.getFromCache("services_user_999").user, 999);
+  cache.setToCache("countries", ["in"]);
+  cache.clearCache("services_");
+  assert.equal(cache.getFromCache("services_user_999"), null);
+  assert.deepEqual(cache.getFromCache("countries"), ["in"]);
+  now = 60000;
+  assert.equal(cache.getFromCache("countries"), null);
+  cache.setToCache("services_fresh", "new");
+  assert.equal(cache.getFromCache("services_fresh"), "new");
+  cache.clearCache();
+  assert.equal(cache.getFromCache("services_fresh"), null);
+});
+
 test("gateway timing identifies the blocked stage without credentials or changing a response", () => {
   let now = 0, timer, cleared = false;
   const logs = [];
@@ -79,9 +98,59 @@ test("API lookup index migration is additive and skips existing SQL indexes", as
   } };
   await ensureApiQueryIndexes({ DB_TYPE: "mysql", sequelize });
   await ensureApiQueryIndexes({ DB_TYPE: "mysql", sequelize });
-  assert.equal(writes.length, 3);
+  assert.equal(writes.length, 4);
   assert.ok(writes.every(sql => sql.startsWith("CREATE INDEX")));
   assert.ok(writes[0].includes("`api_key`"));
   assert.ok(writes[1].includes("`external_order_id`"));
   assert.ok(writes[2].includes("`price`"));
+  assert.match(writes[3], /\(`status`, `next_check_at`, `id`\)/);
+});
+
+test("MongoDB watcher index covers status, scheduled time and stable queue ordering", async () => {
+  const { ensureApiQueryIndexes } = require("../utils/apiQueryIndexes");
+  const writes = [];
+  const model = { collection: { createIndex: async (fields, options) => writes.push({ fields, options }) } };
+  await ensureApiQueryIndexes({ DB_TYPE: "mongodb", models: { User: model, Order: model, Service: model } });
+  const queue = writes.find(write => write.options.name === "idx_orders_due_queue");
+  assert.deepEqual(queue.fields, { status: 1, next_check_at: 1, _id: 1 });
+});
+
+test("file logging batches bursts and bounds outstanding writes when disk is slow", async () => {
+  const jobs = [], writes = [], completions = [];
+  const { createBatchedLog } = load("utils/batchedLog.js", {}, {
+    setTimeout(callback) { jobs.push(callback); return 1; },
+  });
+  const append = createBatchedLog((batch, done) => { writes.push(batch); completions.push(done); });
+  for (let i = 0; i < 100; i++) append(`request ${i}\n`);
+  assert.equal(writes.length, 0);
+  assert.equal(jobs.length, 1);
+  jobs.shift()();
+  assert.equal(writes.length, 1);
+  assert.ok(writes[0].includes("request 99\n"));
+  for (let i = 0; i < 20000; i++) append("x".repeat(1000) + "\n");
+  assert.equal(writes.length, 1, "never append concurrently while disk is blocked");
+  assert.equal(jobs.length, 0);
+  completions.shift()();
+  while (jobs.length) { jobs.shift()(); completions.shift()(); }
+  assert.ok(writes.slice(1).every(batch => Buffer.byteLength(batch) <= 64 * 1024));
+  assert.ok(writes.reduce((sum, batch) => sum + Buffer.byteLength(batch), 0) < 300 * 1024);
+  assert.match(writes.join(""), /Dropped \d+ lines/);
+  append("recovered\n"); jobs.shift()(); completions.shift()();
+  assert.equal(writes.at(-1), "recovered\n");
+});
+
+test("file logging keeps accepting messages after append failures and truncates oversized records", () => {
+  const jobs = [], writes = [];
+  let failed = false;
+  const { createBatchedLog } = load("utils/batchedLog.js", {}, {
+    setTimeout(callback) { jobs.push(callback); return 1; },
+  });
+  const append = createBatchedLog((batch, done) => {
+    if (!failed) { failed = true; throw new Error("disk unavailable"); }
+    writes.push(batch); done();
+  });
+  append("first\n"); jobs.shift()();
+  append("a".repeat(500000)); jobs.shift()();
+  assert.match(writes[0], / \[truncated\]\n$/);
+  assert.ok(Buffer.byteLength(writes[0]) < 64 * 1024);
 });

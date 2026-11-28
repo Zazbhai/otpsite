@@ -1353,6 +1353,61 @@ test("webhook expiry never checks status and refunds only after confirmed cancel
   assert.equal(f.tables.users[0].balance, 10);
 });
 
+test("watcher and API-triggered status checks share a concurrency cap and skipped orders stay due", { timeout: 3000 }, async t => {
+  const f = walletFixture();
+  f.tables.users[0].api_key = "test-key";
+  const orders = [];
+  for (let i = 0; i < 25; i++) orders.push(await f.models.Order.create({
+    _id: `bounded-${i}`, order_id: `bounded-${i}`, external_order_id: `provider-${i}`,
+    user_id: "u1", status: "active", otp: "", all_otps: [], server_name: "s", next_check_at: new Date(0),
+  }));
+  const pending = new Map(), started = new Set();
+  let active = 0, peak = 0;
+  const watcher = watcherFixture(f, async (_server, id) => {
+    active++; peak = Math.max(peak, active); started.add(id);
+    return new Promise(resolve => pending.set(id, () => { active--; resolve({ status: "waiting" }); }));
+  });
+  t.after(() => { for (const finish of pending.values()) finish(); });
+  const initial = orders.slice(0, 10).map(order => watcher.syncOrder(order));
+  await new Promise(setImmediate);
+  assert.equal(active, 10);
+  const routes = routesFixture(f, async () => ({}), undefined, undefined, undefined, watcher.syncOrder);
+  await Promise.all(orders.slice(10).map(async order => {
+    const result = response();
+    await routes.gateway({ method: "GET", query: { api_key: "test-key", action: "getStatus", id: order.order_id } }, result);
+    assert.equal(result.body, "STATUS_WAIT_CODE");
+  }));
+  await new Promise(setImmediate);
+  assert.equal(started.size, 10);
+  assert.ok(f.tables.orders.slice(10).every(order => order.next_check_at.getTime() === 0));
+  for (const finish of pending.values()) finish();
+  pending.clear();
+  await Promise.all(initial);
+  // Later watcher passes still process every skipped order.
+  for (let offset = 10; offset < orders.length; offset += 10) {
+    const batch = orders.slice(offset, offset + 10).map(order => watcher.syncOrder(order));
+    await new Promise(setImmediate);
+    for (const finish of pending.values()) finish();
+    pending.clear();
+    await Promise.all(batch);
+  }
+  assert.equal(started.size, 25);
+  assert.equal(peak, 10);
+  assert.equal(active, 0);
+});
+
+test("failed background checks release their shared capacity", async () => {
+  const f = walletFixture();
+  const order = await f.models.Order.create({ _id: "sync-error", status: "active", server_name: "s", external_order_id: "provider-error" });
+  const findById = f.models.Order.findById;
+  f.models.Order.findById = async () => { throw new Error("temporary database failure"); };
+  const watcher = watcherFixture(f, async () => ({ status: "waiting" }));
+  const failures = await Promise.allSettled(Array.from({ length: 10 }, () => watcher.syncOrder(order)));
+  assert.equal(failures.filter(result => result.status === "rejected").length, 10);
+  f.models.Order.findById = findById;
+  assert.equal((await watcher.syncOrder(order))._id, order._id);
+});
+
 test("background watcher starts new work while one provider request remains pending", async () => {
   const sift = require("sift").default;
   const pending = new Map();
